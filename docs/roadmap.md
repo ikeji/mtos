@@ -14,7 +14,7 @@
 
 ステップ3: そのコンパイラで自分自身をコンパイル  [完了]
            独自言語製コンパイラ → ネイティブなコンパイラ実行ファイル
-           (Gen2==Gen3 の自己ホスト検証は tests/test_gen3.sh で CI 化)
+           (Gen2==Gen3 の自己ホスト検証は compiler/tests/test_gen3.sh で CI 化)
 
 ステップ3.5: 独自言語製プログラムを実機 RP2350 で直接動かす  [完了]
            asm_pass2/pass2 をセクション並べ替えリンカとして動かし、
@@ -51,7 +51,7 @@
 
 - [ ] 独自言語の文法を確定（language.md を固める）
 - [x] クロスコンパイル環境構築（riscv64-unknown-elf-gcc, qemu-riscv32）
-- [x] QEMU環境構築（`qemu-system-riscv32 -M virt`、`tests/test_asm.sh` で CI 化）
+- [x] QEMU環境構築（`qemu-system-riscv32 -M virt`、`compiler/tests/test_asm.sh` で CI 化）
 - [x] QEMUでHello World（virt、16550 UART、TC ソースから UART 出力確認）
 - [x] RP2350実機でもHello World（初期 bring-up 時に `pico2/hello.tc` +
       `compile-pico2.sh` で実機動作確認。以降はカーネル同梱の
@@ -99,8 +99,8 @@ C言語でフルパイプラインを実装し、動作を検証する。
       PIC、`; raw` / `; load_base` ディレクティブ、自動 `__global_pointer$`）
 - [x] `compile-gen2.sh` (Gen1 parse + Gen2 via qemu) で TC ソースを RV32 ELF/raw に
 - [x] `compile-gen3.sh` で Gen3 (= Gen2 がコンパイルした Gen2) を生成
-- [x] 自己コンパイル検証 (`tests/test_gen3.sh` が Gen2 == Gen3 の BC/ASM 一致を CI で検証)
-- [x] `tests/test_asm.sh` で TC ソースから qemu-system-riscv32 -M virt での end-to-end 検証
+- [x] 自己コンパイル検証 (`compiler/tests/test_gen3.sh` が Gen2 == Gen3 の BC/ASM 一致を CI で検証)
+- [x] `compiler/tests/test_asm.sh` で TC ソースから qemu-system-riscv32 -M virt での end-to-end 検証
 
 ## フェーズ2.5: TC プログラムを Pico 2 実機で動かす
 
@@ -110,12 +110,12 @@ C言語でフルパイプラインを実装し、動作を検証する。
 
 - [x] picobin IMAGE_DEF ブロック (RP2350 RISC-V family ID 0xE48BFF5A)
 - [x] core1 park、XOSC/clk_peri/RESETS/GPIO/UART0 初期化 (現在は
-      `kernel/platform_pico2.s` に集約、standalone 初期版の
+      `kernel/platform/pico2/platform_pico2.s` に集約、standalone 初期版の
       `pico2/crt0_pico2.s` は kernel 版で置き換えて削除済み)
 - [x] SRAM ゼロクリア、gp 設定、runtime_init 呼び出し
-- [x] Pico 2 向け BSS レイアウト (`kernel/crt0_pico2_data.s` の __arena)
+- [x] Pico 2 向け BSS レイアウト (`kernel/platform/pico2/crt0_pico2_data.s` の __arena)
 - [x] `tools/bin2uf2.py`: raw bin → UF2 (family_id=0xe48bff5a)。
-      `kernel/build.sh --target pico2` が内部で呼ぶ
+      `kernel/scripts/build.sh --target pico2` が内部で呼ぶ
 - [x] 実機 Pico 2 で UART 出力 (bring-up 時は standalone hello、
       現在は kernel + guest task 経由。test_pico2.sh で継続検証)
 - [x] sys_write / sys_read / 複数ファイル import が Pico 2 でも動作 (kernel/ で確認)
@@ -137,12 +137,12 @@ C言語でフルパイプラインを実装し、動作を検証する。
       - bc2asm ≈ 120〜126 KB (~11x)
       - asm-pass1 ≈ 227〜268 KB (~40x、label pool shrink 後)
       - asm-pass2 ≈ 260〜280 KB (Phase 5 stream-emit、旧 4.6 MB 比 ~16x)
-      `tests/test_phase7.sh` で OS 上の Hello World split pipeline を
+      `integration/test_phase7.sh` で OS 上の Hello World split pipeline を
       回帰確認。compiler 全タスクが Pico 2 kernel arena 480 KB に
       余裕で収まる状態。残件は bcrun.tc::vm_run の AST pool outlier
       (intentionally out of scope)
 - [x] **Gen2 toolchain migration (2026-04-15)**: compile-gen2.sh /
-      compile-gen3.sh / kernel/build.sh / tests/test_common.sh /
+      compile-gen3.sh / kernel/scripts/build.sh / tests/test_common.sh /
       test_gen3.sh / tc_run.sh を新パイプライン (sigscan + tcheck +
       asm_pass2 + asm_pass3) に切り替え、`compiler/typecheck.tc` と
       `compiler/asm.tc` を削除 (+ kernel/tasks/typecheck/, kernel/
@@ -152,7 +152,7 @@ C言語でフルパイプラインを実装し、動作を検証する。
 - [ ] TC コンパイラ自身を Pico 2 上で動かす (Pico 2 セルフホスト)。
       K3 案C + K7 part 1/2 で pico2 kernel arena 256 KB → 480 KB、
       dynamic sys_spawn / sys_wait + sh (UART interactive) が実機で
-      動作確認済。tests/test_pico2.sh が UART 経由で `catfile\n` /
+      動作確認済。kernel/tests/test_pico2.sh が UART 経由で `catfile\n` /
       `launcher\n` / `quit\n` を sh に送って実機検証 (2 件 PASS)。
       Phase 4/5 で asm_pass3 peak が 280 KB まで落ちたので compiler
       task 群はすべて 480 KB arena に収まる。残件: sh から compiler
@@ -164,7 +164,7 @@ C言語でフルパイプラインを実装し、動作を検証する。
 フェーズ2.5 で作ったベアメタル起動コードを再利用し、
 trap/scheduler を加えてマルチタスク OS の足場を築く。
 
-- [x] ブートスタブ (kernel/platform_{virt,pico2}.s: _start, SP/GP/SRAM 初期化)
+- [x] ブートスタブ (kernel/platform/{virt,pico2}/platform_{virt,pico2}.s: _start, SP/GP/SRAM 初期化)
 - [x] UARTドライバ (16550 / PL011、do_uart_write/read で抽象化)
 - [x] メモリアロケータ (runtime.tc kmalloc/kfree、free-list first-fit + 10-bucket)
 - [x] 例外・割り込みハンドラ枠組み (trap vector、132B コンテキスト保存/復元、mscratch swap)
@@ -190,7 +190,7 @@ trap/scheduler を加えてマルチタスク OS の足場を築く。
 - [x] QEMU virt で動作確認（2タスクが交互に A/B を出力）
 - [x] タスクの初期化済みデータコピー（task_crt0.s で PC 相対 la + gp 相対コピー）
 - [x] sys_read (16550 UART / PL011 UART の RX)
-- [x] Pico 2 向けカーネル (kernel/platform_pico2.s + .data Flash→SRAM コピー)
+- [x] Pico 2 向けカーネル (kernel/platform/pico2/platform_pico2.s + .data Flash→SRAM コピー)
 - [x] Pico 2 実機でプリエンプティブマルチタスク動作確認（SIO MTIME + 64-bit mtimecmp）
 - [x] Debug Probe + openocd-rpi (Raspberry Pi fork) で実機フラッシュ・デバッグ環境
 - [x] **カーネル共通化**: trap_common.s + platform_{virt,pico2}.s,
@@ -202,18 +202,18 @@ trap/scheduler を加えてマルチタスク OS の足場を築く。
 全体設計は `docs/filesystem.md`。段階的に実装中（step 1..9）。
 
 - [x] 設計ドキュメント統合 (`docs/filesystem.md`, VFS + mtfs 層)
-- [x] virtio-mmio スキャン (`kernel/block_virtio.tc` block_init、legacy v1)
+- [x] virtio-mmio スキャン (`kernel/platform/virt/block_virtio.tc` block_init、legacy v1)
 - [x] virtio-blk queue 初期化 + sector 0 read (polling、split virtqueue)
-- [x] `tests/test_os.sh` fs_virtio: kernel が mkfs.py image の sector 0 を hex 出力
+- [x] `kernel/tests/test_os.sh` fs_virtio: kernel が mkfs.py image の sector 0 を hex 出力
 - [x] `tools/mkfs.py`: MyTinyFS (mtfs) ディスクイメージ生成
-- [x] `kernel/mtfs.tc`: mount + lookup + open + read + close
+- [x] `kernel/src/mtfs.tc`: mount + lookup + open + read + close
       (root 直下のみ、inode table 全キャッシュ、MtfsFDArray で fd 管理)
-- [x] `kernel/vfs.tc` + syscall 追加（sys_openat=56/sys_close=57/
+- [x] `kernel/src/vfs.tc` + syscall 追加（sys_openat=56/sys_close=57/
       sys_read=63/sys_write=64 を VFS 経由で dispatch。fd<3 は UART）
 - [x] タスクから `/hello.txt` を open/read する catfile ゲストタスク
       (sys_openat/close/read/write を task_crt0.s のスタブ経由で発行、
-      `kernel/tasks/catfile/catfile.tc`、`tests/test_os.sh` で CAT: 出力を検証)
-- [x] `kernel/block_flash.tc` (Pico 2 XIP memcpy) に差し替え
+      `userland/bin/catfile/catfile.tc`、`kernel/tests/test_os.sh` で CAT: 出力を検証)
+- [x] `kernel/platform/pico2/block_flash.tc` (Pico 2 XIP memcpy) に差し替え
       (mtfs.tc/vfs.tc から block_virtio.tc の import を外して backend 中立化、
       build.sh --target pico2 が mkfs.py で mtfs イメージを生成して
       bin2s.sh 経由で `_mtfs_image` として .rodata に埋め込み、
@@ -225,28 +225,28 @@ trap/scheduler を加えてマルチタスク OS の足場を築く。
 ## フェーズ6: ユーザランド基盤 (完了)
 
 実装計画は `docs/task/phase6_userland.md`。5 ステップ全完了、
-virt は `make test` の fs_virtio、pico2 は `tests/test_pico2.sh` 実機
+virt は `make test` の fs_virtio、pico2 は `kernel/tests/test_pico2.sh` 実機
 で継続検証している。
 
-- [x] Step 6.1: 最小限の libc 相当 (`kernel/tasks/libtc/libtc.tc`、
+- [x] Step 6.1: 最小限の libc 相当 (`userland/lib/libtc/libtc.tc`、
       `puts` / `str_nul` / `strlen`)。catfile の重複ヘルパを集約、
       以後 launcher と sh でも使用。
 - [x] Step 6.2: ゲストバイナリを mtfs に格納 (`/bin/hello` 等)。
       `tools/mkfs.py` をディレクトリ指定に拡張 (1 階層のサブディレクトリ
       対応)、`vfs_open` が `/bin/hello` のような多階層パスを解決、
-      `kernel/loader.tc` の `load_task` が VFS からタスクバイナリを読み
+      `kernel/src/loader.tc` の `load_task` が VFS からタスクバイナリを読み
       `make_task` でフレーム化。virt (fs_virtio テスト) / pico2 実機
       (test_pico2.sh) 両方で動作確認済み。
 - [x] Step 6.3: sys_exec + ローダ
       - `vfs_xip_addr` / `mtfs_xip_addr` 実装 (block_xip_base 経由で
         flash は `_mtfs_image_addr + (data_start + start_block)*512`、
         virtio-blk は 0)
-      - `kernel/loader.tc` の `load_task` が vfs_xip_addr を見て
+      - `kernel/src/loader.tc` の `load_task` が vfs_xip_addr を見て
         XIP 直接実行 / RAM コピーを切り替え
       - `sys_exec(path)` ecall (a7=221) + `sys_exec_handler` が
         `sched_replace_current` で呼び出し元スロットを新バイナリに
         差し替え、`_switch_frame` 経由で mret で飛ぶ
-      - `kernel/tasks/launcher/launcher.tc` が `/bin/catfile` を
+      - `userland/bin/launcher/launcher.tc` が `/bin/catfile` を
         sys_exec するデモとして virt / pico2 実機の両方で動作確認
 - [x] Step 6.4: `/bin/sh` 最小シェル (UART 1 行読み → sys_exec の
       単発版、step 6.5 でループ化)。virt slot 2 に登録。pico2 はハード
@@ -278,14 +278,14 @@ virt は `make test` の fs_virtio、pico2 は `tests/test_pico2.sh` 実機
 
 **qemu virt + pico2 実機の両方で完走**:
 - virt: `test_phase7.sh` で 4 stage 全 pipeline 動作
-- **pico2 実機: `tests/test_pico2_phase7_sd.sh` で `/sd/` 経由 phase 7
+- **pico2 実機: `kernel/tests/test_pico2_phase7_sd.sh` で `/sd/` 経由 phase 7
   通し、~125 秒で `/sd/HW` を実行して "Hello, World!" 出力 (K7 解決、
   commit cf22718 + 37c99c7 + b8049d2 + 5dfa631)** — 2026-05-13 再計測で
-  `tests/test_pico2_bench.sh` 経由 **1 boot ~13.8 秒** まで短縮、
+  `kernel/tests/test_pico2_bench.sh` 経由 **1 boot ~13.8 秒** まで短縮、
   `docs/scaling.md` Q1
 
 K7 解決の決め手 3 点:
-1. `kernel/block_sd.tc` + MBR 対応 fatfs で SD カードを永続ストレージ化
+1. `kernel/platform/pico2/block_sd.tc` + MBR 対応 fatfs で SD カードを永続ストレージ化
 2. PLL_SYS bring-up で CPU 150 MHz 化 (asm_pass2 単独 310 → 27 秒、
    11.5×)
 3. `tests/pico2_pipeline_drive.py` でプロンプト同期 UART (PL011 RX
@@ -304,13 +304,13 @@ K7 解決の決め手 3 点:
       kernel arena は 96 MB。実測ピークは #7 に記録
 - [x] **K3 案C**: タスクバイナリの先頭 8 バイトに `.word
       arena_size; .word stack_size` を埋め込み、loader.tc が読む。
-      kernel/build.sh の `task_arena_size()` / `task_stack_size()`
+      kernel/scripts/build.sh の `task_arena_size()` / `task_stack_size()`
       per-task テーブルで各タスクが宣言。16 MB 固定を撲滅
 - [x] **E-step2**: `runtime.tc` に per-task ピークメモリ計測を追加
       (`km_dump_peak`)、task_crt0.s がタスク終了時に
       `[kmem peak=... live=...]` を stderr にダンプ
 - [x] **C-1**: parse / sigscan / tcheck / codegen / bc2asm /
-      asm_pass2 / asm_pass3 を `kernel/tasks/<name>/<name>.tc`
+      asm_pass2 / asm_pass3 を `userland/bin/<name>/<name>.tc`
       シンボリックリンクで `EXTRA_TASKS` 経由でビルドし、
       sh から中間ファイル経由のパイプラインを回す
 - [x] **M4**: OS 上で parse が単段動く
@@ -320,14 +320,14 @@ K7 解決の決め手 3 点:
       を asm_pass2/pass2 に通して raw binary を生成、`/tmp/hw` に
       書き出して sh の絶対パス対応で実行。Hello World が OS 上で
       自己コンパイル + 自己実行できることを確認
-      (`tests/test_phase7.sh`)
+      (`integration/test_phase7.sh`)
 - [x] **パイプライン 100 KB 計画 (Phase 1 + 2 + 3)**: sigscan /
       tcheck / asm_pass2 / asm_pass3 を新設、codegen / bc2asm を
       in-place で shrink。test_phase7.sh が sigscan + tcheck +
       asm_pass2 + asm_pass3 の full split pipeline で Hello World
       を完走。詳細は `docs/task/pipeline_100kb.md`
 - [x] **Gen2 toolchain migration**: compile-gen2.sh / compile-gen3.sh
-      / kernel/build.sh / tests/test_common.sh / test_gen3.sh /
+      / kernel/scripts/build.sh / tests/test_common.sh / test_gen3.sh /
       tc_run.sh を sigscan + tcheck + asm_pass2 + asm_pass3 に
       切り替え、`compiler/typecheck.tc` / `compiler/asm.tc`
       (+ 関連 symlink / test_split.sh / tc_asm.sh) を削除
@@ -337,14 +337,14 @@ K7 解決の決め手 3 点:
       concurrent spawn して wait。`echo hello | cat | wc` 等が動作
 - [x] **M7-minimal** (2026-04-16): OS 上で string_buffer.tc
       (imports なし) を Gen2 パイプラインで自己コンパイル。
-      `tests/test_phase7.sh` stage 2 で parse + sigscan + tcheck +
+      `integration/test_phase7.sh` stage 2 で parse + sigscan + tcheck +
       codegen + bc2asm を通して .s を生成し "# end of" マーカーで
       検証。所要時間 ~5 分 (qemu-virt OS 経由)。mtfs 経由で
       /src/string_buffer.tc を staging、/imports_open.txt も追加。
       tmpfs 上限を 16 → 32 files / 8 → 16 fds に拡大
 - [x] **フルセルフホスト: 全 8 コンパイラを pico2 上で byte-exact
       再生成** (2026-05-14、K18、commit `d59e9c0`):
-      `tests/fixtures/pico2_compile_<name>.sh` (parse, sigscan,
+      `integration/fixtures/pico2_compile_<name>.sh` (parse, sigscan,
       tcheck, codegen, bc2asm, asm_pass1, asm_pass2, asm_pass3) を
       msh から実行すると、device の /sd/ に出力される `.bin` が
       `build/kernel/tasks/<name>.bin` と md5 完全一致する。これで
@@ -367,11 +367,11 @@ K7 解決の決め手 3 点:
 
 - [x] **self_replicate に platform_pico2.tc 対応 + per-file pre-encode
       pipeline** (2026-05-09): K13 完成後に compile pipeline が
-      `kernel/platform_pico2.tc` を新設して do_uart_* / do_write /
+      `kernel/platform/pico2/platform_pico2.tc` を新設して do_uart_* / do_write /
       do_read を asm から TC へ移行したため、self_replicate REFRESH 経路で
       `/sd/pp.s` が生成されないと on-device link で
       `undefined label do_write__i32__u32__i32` が出ていた。
-      `tests/fixtures/pico2_compile_platform.sh` を新設、
+      `integration/fixtures/pico2_compile_platform.sh` を新設、
       orchestrator step 0d として組み込み (commit 37b791b)。
 
       合わせて step 2 を per-file pre-encode + `asm_pass2` に
@@ -433,7 +433,7 @@ K7 解決の決め手 3 点:
       - step 4: `bin2uf2` → /sd/k.uf2 = 7.6 MB (758 s)
 
       実装の決め手:
-      - `bin2uf2` task (`kernel/tasks/bin2uf2/bin2uf2.tc`):
+      - `bin2uf2` task (`userland/bin/bin2uf2/bin2uf2.tc`):
         `tools/bin2uf2.py` の TC port、qemu virt で byte-exact
         確認済 (commit b9067cd, b495864, fb9c7fb)
       - boot-time dumper (`kernel_pico2.tc::dump_mtfs_to_sd`):
@@ -468,7 +468,7 @@ K7 解決の決め手 3 点:
         (1) fatfs `dir_create` が FAT root cluster の最初の 128
             entries 分しか割り当てない (chain extension 未実装) ため、
             長期間 /sd を使うと "spawn failed" 多発。
-            `tests/fixtures/pico2_cleanup_sd.sh` で削減可。
+            `integration/fixtures/pico2_cleanup_sd.sh` で削減可。
         (2) fatfs.tc の 8.3 制限により出力ファイル名は basename
             ≤ 8 char + ext ≤ 3 char に収める必要あり。
             `kernel_nodisk.bin` (17 char) は不可、`knod.bin` で運用。
@@ -477,14 +477,14 @@ K7 解決の決め手 3 点:
       = 全 .tc ソース) を pico2 実機で再ビルドし、host gen2 と
       byte-exact md5 一致。コンパイラツールは linked .bin で、
       ランタイムとカーネルモジュールは .s で比較。bench
-      `tests/fixtures/pico2_compile_*.sh`。残りは platform.s /
+      `integration/fixtures/pico2_compile_*.sh`。残りは platform.s /
       trap_common.s / crt0_pico2_data.s (手書き asm、コンパイラ
       無関係) とディスクイメージのみ — 全コード部の self-host 完成。
 - [x] **Gen3 セルフホスト on pico2** (2026-05-05): 7 ツール全部
       (parse / sigscan / tcheck / codegen / bc2asm / asm_pass2 /
       asm_pass3) を pico2 実機で再ビルドし、host gen2 build と
       byte-exact md5 一致を確認。各ツール bench は
-      `tests/fixtures/pico2_compile_<tool>.sh`、合計 ~6300 秒
+      `integration/fixtures/pico2_compile_<tool>.sh`、合計 ~6300 秒
       (~105 分)。fatfs の 8.3 制限で `ac_imports.th` →
       `ac_imp.th`、`asm_pass2.bin` → `ap1.bin` 等の rename が
       必要だったほか、codegen task arena を 128 KB → 192 KB に
@@ -496,7 +496,7 @@ K7 解決の決め手 3 点:
       **byte-exact 一致** (md5 e294aa0ff55a2b3bdf9f3c2b38dd91b1)。
       各 .tc に対して parse → sigscan → tcheck → codegen → bc2asm
       (4 ファイル) を回し、最後に asm_pass2/asm_pass3 で全 .s +
-      prelude_tail.s を link。bench `tests/fixtures/pico2_compile_parse.sh`、
+      prelude_tail.s を link。bench `integration/fixtures/pico2_compile_parse.sh`、
       合計 ~414 s (PLL_SYS 150 MHz)、生成 parse.bin の実行は 119 s。
       前提: kernel arena 504→508 KB、tcheck task arena 128→256 KB、
       asm_pass2 が --strip-out 不要時に ref+def state を即 release
@@ -524,9 +524,9 @@ K7 解決の決め手 3 点:
       neofetch (banner + task stats)
 - [x] **coreutils**: wc, head, cp, du
 - [x] **vi エディタ**: normal/insert/cmdline mode、hjkl/dd/gg、
-      :w/:q/:wq、ANSI 描画。`kernel/tasks/vi/vi.tc`
-- [x] **`make run-pico2` (2026-04-17)**: build + flash + 双方向
-      UART コンソール (`tests/pico2_tty.py`)。Ctrl-a x で終了
+      :w/:q/:wq、ANSI 描画。`userland/bin/vi/vi.tc`
+- [x] **`make -C kernel run-pico2` (2026-04-17)**: build + flash + 双方向
+      UART コンソール (`integration/pico2_tty.py`)。Ctrl-a x で終了
 - [x] **OS 機能追加 (2026-04-17 後半)**:
       - VFS: `ls /` で仮想マウントポイント (/proc, /tmp) を表示
       - pico2_tty.py: raw mode 端末で LF → CR+LF 変換
@@ -546,9 +546,10 @@ K7 解決の決め手 3 点:
 - [x] **非ブロッキング UART stdin (2026-04-18)**: sh の stdin 読み込み
       が他タスクをブロックする問題を修正。do_uart_try_read + -2
       sentinel + sched_yield_read で yield and retry
-- [x] **kernel/build.sh 解体 (2026-04-18)**: Makefile を per-task
+- [x] **kernel/scripts/build.sh 解体 (2026-04-18)**: Makefile を per-task
       ターゲットに分解。1 task 変更で ~6s (旧 ~71s)。disk.img /
-      disk-extra.img の 2 種。`make run-extra` は proper Make 依存に移行
+      disk-extra.img の 2 種。`make -C kernel run-extra` は proper Make
+      依存に移行
 - [x] **パイプ syscall (2026-04-18)**: sys_pipe (ecall 222) +
       sys_spawn_fds (ecall 219)。4 KB リングバッファ、-2 yield で
       非ブロッキング。sh が `|` で concurrent pipeline 実行
@@ -560,7 +561,7 @@ K7 解決の決め手 3 点:
       + 縦スクロール (`g_top_line`)
 - [x] **kern.conf 駆動 init (2026-04-22〜23)**: `kernel.tc` /
       `kernel_pico2.tc` の default seed を sh のみに絞り、
-      hello/hello2 demo は `tests/fixtures/kern_demo.conf` 経由に移動。
+      hello/hello2 demo は `kernel/tests/fixtures/kern_demo.conf` 経由に移動。
       `build/kernel/disk-demo.img` / `build/kernel/pico2_kernel_demo.uf2`
       で kern.conf 駆動 init を実機/qemu で検証
 - [x] **U8Array-as-String 片付け (2026-04-22〜23)**:
@@ -635,7 +636,7 @@ self-host loop が成立した。
   - [x] `/dev/fb` UART ダンプ用ブリングアップドライバ + `fbtest`
         タスク (2026-05-16、commit c33210e)。
   - [x] SPI1 + ILI9488 実ドライバ (2026-05-20、commit 8b84348、
-        `kernel/display_ili9488.tc`)。`/dev/fb` バックエンドを
+        `kernel/platform/pico2/display_ili9488.tc`)。`/dev/fb` バックエンドを
         `fb_backend_write` フックに分離 — pico2 = ILI9488、
         virt = UART ダンプ。実機未検証。
 - [x] **S4**: `/dev/fb` mode 2 — ILI9488 ハードウェア垂直スクロール
@@ -644,7 +645,7 @@ self-host loop が成立した。
   - [x] `/dev/kbd` UART-RX バックエンドのスタブ + `kbdump` タスク
         (2026-05-17、commit cc09e6e)。
   - [x] GPIO マトリクススキャナ実ドライバ (2026-05-20、
-        `kernel/keyboard_matrix.tc`)。2 フェーズスキャンで論理
+        `kernel/platform/pico2/keyboard_matrix.tc`)。2 フェーズスキャンで論理
         12×5=60 キー。`kbd_backend_read` フック。実機未検証、keymap
         は要編集。
 - [x] **S6**: `/bin/console` — userspace ターミナルエミュレータ +
@@ -686,7 +687,7 @@ self-host loop が成立した。
         console_scroll / console_landscape で回帰確認
 - [x] **S7**: kern.conf で `init=/bin/console` を seed して LCD
       コンソールを boot 時に自動起動 (2026-05-17、commit cda9ca9)。
-      `tests/fixtures/kern_console.conf` + Makefile `disk-console.img`
+      `kernel/tests/fixtures/kern_console.conf` + Makefile `disk-console.img`
       ターゲット。virt で boot→console 自動起動→/dev/fb 描画→
       クリーン終了を確認、`test_os.sh` に console_init ケース追加
 
@@ -705,10 +706,10 @@ GPIO 割り当ては `docs/pico2_hardware.md`「GPIO 割り当て一覧」。
 
 | リスク | 対策 |
 |---|---|
-| インタプリタとコンパイラの挙動が一致しない | `tests/test_consistency.sh` / `tests/test_gen3.sh` で常に両方を比較する。Gen2==Gen3 の BC/ASM 一致は CI で検証済み |
+| インタプリタとコンパイラの挙動が一致しない | `compiler/tests/test_consistency.sh` / `compiler/tests/test_gen3.sh` で常に両方を比較する。Gen2==Gen3 の BC/ASM 一致は CI で検証済み |
 | LL(1)で表現できない構文が欲しくなる | 文法制約を文書化し、設計段階で確認 |
 | メモリ不足（520KB SRAM） | **Phase 1 + 2 + 3 + 4 + 5 完了**: sigscan/tcheck/asm-pass1/asm-pass2 の 4 本を新設 + codegen/bc2asm の in-place shrink + asm-pass1 の label pool 半減 + asm-pass2 の stream-emit 化で全ステージを劇的に縮小。旧 (parse 14 KB / typecheck 717 KB / codegen 303 KB / bc2asm 1.4 MB / asm 9.5 MB) → 新 (parse 14 KB / sigscan 10 KB / tcheck ≈ 75-252 KB / codegen ≈ 80-252 KB / bc2asm ≈ 126 KB / asm-pass1 ≈ 227-268 KB / asm-pass2 ≈ 260-280 KB)。全ステージが Pico 2 の 480 KB kernel arena に余裕で収まる。詳細は `docs/task/pipeline_100kb.md` |
 | gp 相対 `la` の 12-bit 制約 | hello レベルでは余裕。将来必要なら 12 byte 形式 (`lui+addi+add gp`) に拡張 |
-| QEMUと実機の挙動差異 | bring-up 時に standalone hello を実機検証、以降はカーネル込みの kernel/platform_pico2.s に集約。test_pico2.sh が Debug Probe 経由で継続検証 |
+| QEMUと実機の挙動差異 | bring-up 時に standalone hello を実機検証、以降はカーネル込みの kernel/platform/pico2/platform_pico2.s に集約。kernel/tests/test_pico2.sh が Debug Probe 経由で継続検証 |
 | Flash書き込みが遅い・壊れやすい | picotool UF2 経由の書き込みのみ使用。書き換え頻度は開発サイクルで問題ないレベル |
 | デバッグが困難 | UART 出力 (Linux: syscall、virt: 16550、Pico 2: PL011) を `do_write` で統一。`asm.tc` のエラーは `asm:<line>: <msg>\n at: <source line>` 形式で現在行を示す。typecheck のエラーは直前 comment ノード (元ソース行) を `near:` で表示 |

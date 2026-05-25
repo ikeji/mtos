@@ -43,7 +43,7 @@ redraw でカバー (#37 PIO 化が動けば 5-10× 高速化見込み)。
 
 ### 37. PIO2 で LCD SPI を駆動できない (bug、2026-05-24)
 
-`kernel/display_ili9488.tc` の SCK (GP40) / MOSI (GP41) bit-bang を
+`kernel/platform/pico2/display_ili9488.tc` の SCK (GP40) / MOSI (GP41) bit-bang を
 PIO2 SM0 にオフロードする実装を入れたが、LCD に画像が出ない (画面
 真っ白)。`g_lcd_use_pio` フラグで切替可、デフォルトは 0 (bit-bang) で
 退避。実装は in-tree に残してある。
@@ -85,7 +85,7 @@ PIO 側で確認できたこと (`/tmp/pio_*.sh` の GDB probe より):
 理論 ~20x 高速化 (clkdiv=4 で 18.75 MHz)。スクロールは現状 diff
 redraw + per-cell fill 戦略で実用範囲内。
 
-参考: `kernel/display_ili9488.tc` の `pio_lcd_init`、in-tree。GDB
+参考: `kernel/platform/pico2/display_ili9488.tc` の `pio_lcd_init`、in-tree。GDB
 session 例は session log 参照。
 
 ### 36. `var X: StringLiteral = "..."` で literal が `.word 0` に落ちる (bug、2026-05-23)
@@ -114,10 +114,10 @@ var b: u8 = get(keymap(), i);
 ```
 
 関数の return path だと literal が .rodata に正しく置かれ、ポインタ
-も returnable。実機で確認済 (commit XXX、`kernel/keyboard_matrix.tc`
+も returnable。実機で確認済 (commit XXX、`kernel/platform/pico2/keyboard_matrix.tc`
 の KBD_KEYMAP)。
 
-根本治療: codegen の var_decl + str init 経路を直す。`compiler/codegen.tc`
+根本治療: codegen の var_decl + str init 経路を直す。`compiler/src/codegen.tc`
 の cg_var_decl まわり。
 
 ### 5. Gen2 typecheck のエラーメッセージ: 段階 2 (AST line info) のみ残 (ergonomics)
@@ -128,7 +128,7 @@ var b: u8 = get(keymap(), i);
 
 ### 10. tcheck の fntab サイズ上限 (limitation)
 
-`compiler/tcheck.tc` の fntab は `U32Array(512)` で、1 ファイル中の
+`compiler/src/tcheck.tc` の fntab は `U32Array(512)` で、1 ファイル中の
 関数が 512 を超えるとコンパイル失敗。256 → 512 に暫定拡大済
 (2026-04-17)。
 
@@ -235,12 +235,12 @@ parse → sigscan → tcheck → codegen → bc2asm → asm_pass2 → asm_pass3
 
 ### 30. tmpfs に unlink が無い (limitation)
 
-`kernel/vfs.tc::vfs_unlink` は `is_sd_path` (FATFS) しか扱わず、
+`kernel/src/vfs.tc::vfs_unlink` は `is_sd_path` (FATFS) しか扱わず、
 tmpfs / mtfs / procfs では `-1` を返す。`rm /tmp/x` を実行すると
 "cannot remove" が出る。rm タスク自体は正常で kernel 側に
 `tmpfs_unlink` が無いだけ。
 
-対処: `kernel/tmpfs.tc` に `tmpfs_unlink(name_addr, nlen)` を追加、
+対処: `kernel/src/tmpfs.tc` に `tmpfs_unlink(name_addr, nlen)` を追加、
 `vfs_unlink` が `is_tmp_path` ブランチで呼び出す。mtfs は read-only
 なので -1 のままで良い。
 
