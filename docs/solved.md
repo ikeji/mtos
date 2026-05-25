@@ -59,7 +59,7 @@ Phase 5 (commit 426f51e, 2026-04-16) で **asm_pass3 から g_code を
 のオプトインから常時 ON へ。`compile-gen2.sh` 経路 (ホスト + デバイス
 self_replicate) では dead code を自動で除去し、kernel.bin で
 **290 KB → 264 KB** (~9%)、guest task では **53 KB → 24 KB** (~半減)
-程度の縮小。`compiler/asm_pass2.tc` から `--strip` フラグ、
+程度の縮小。`compiler/src/asm_pass2.tc` から `--strip` フラグ、
 `asm_common.tc` から `g_ds_strip` / `asm_dead_strip_set_strip` /
 `asm_dead_strip_get_strip` を撤去、`asm_dead_strip.tc` から
 opt-in 分岐 (`ds_print_compact_analysis`) を削除、`compile-gen2.sh`
@@ -67,7 +67,7 @@ opt-in 分岐 (`ds_print_compact_analysis`) を削除、`compile-gen2.sh`
 
 **併せて発覚した alias label バグ** (commit b7d8b4d 同梱):
 
-既定 ON にしてはじめて踏んだ。`kernel/tasks/task_crt0.s` は
+既定 ON にしてはじめて踏んだ。`compiler/runtime/mtos/task_crt0.s` は
 `do_openat__String / do_openat__StringLiteral` のように **同一バイト
 オフセットに 2 個の `.globl`** を置く (String / StringLiteral
 オーバーロード) パターンを多用している。dead-strip Phase B の BFS は
@@ -191,7 +191,7 @@ pico2 実機の sh-only / console-init 両構成で boot 確認。
 )。GDB attach で `PC が kbd_settle に landing` していたのは sh が
 M-mode で何度も sys_read を retry していた症状そのもの。
 
-参考: `kernel/kernel_common.tc::sched_yield_read`、commit 895ec6a。
+参考: `kernel/src/kernel_common.tc::sched_yield_read`、commit 895ec6a。
 
 ### K19. bucket carve によるヒープ断片化 → two-ended allocator — 完了 (2026-05-15)
 
@@ -216,7 +216,7 @@ OOM run は `[389124, 57168]` (大ブロック下位)。splitter (2 つの free
 いた — 13-input は最初が `cat` (小タスク) で splitter 低位、17-input は
 最初が `asm_pass1` (RAM ~389 KB) で splitter 高位。
 
-**根本原因**: `compiler/runtime.tc` の allocator 設計。bucket 確保
+**根本原因**: `compiler/src/runtime.tc` の allocator 設計。bucket 確保
 (≤ 2048 byte) は bucket free list が空のとき `large_alloc` で large
 heap から個別 carve するが、`kfree` は bucket free list に push する
 だけで **large heap には二度と戻らない**。large_free の隣接結合の
@@ -259,14 +259,14 @@ steady-state ~12 KB と小さく bounded。
 共有だが、メモリ配置が変わるだけで出力バイト不変、gen3 self-host
 byte-exact 込みで回帰なし)。
 
-副産物: `tools/mkfs.tc` の OOB バグ修正 (commit 8402f87) — file data
+副産物: `kernel/tools-src/mkfs.tc` の OOB バグ修正 (commit 8402f87) — file data
 が末尾 truncation 領域に正当に straddle すると `set` OOB していた。
 buffer を full `total_blocks * BLOCK_SIZE` で alloc、出力は g_out_size
 で truncate して mkfs.py との byte-exact を維持。
 
 ### K12. fatfs LFN + サブディレクトリ + mkdir — 完了 (2026-05-14)
 
-`kernel/fatfs.tc` を VFAT LFN (Long File Name) + 任意階層 +
+`kernel/src/fatfs.tc` を VFAT LFN (Long File Name) + 任意階層 +
 ランタイム mkdir 対応に拡張。`/sd/` 配下を 8.3 制約から開放。
 
 **LFN 読み書き** (commit e0693a4):
@@ -313,7 +313,7 @@ pico2 self-host bench も本来名に revert (commit 後続) —
 
 ### K16. kernel arena fragmentation 完全消滅 + 1-boot self_replicate — 完了 (2026-05-13)
 
-K15 仕上げ後、pico2 実機で `tests/test_pico2_bench.sh` を走らせると
+K15 仕上げ後、pico2 実機で `kernel/tests/test_pico2_bench.sh` を走らせると
 Hello World end-to-end で kernel arena が断片化し、asm_pass2 起動時
 OOM ([20484,12132,24408,32748,310320] = 5 ブロック、最大 303 KB に
 対し 336 KB 要求)。2-boot に分けないと完走しないという問題があった。
@@ -374,7 +374,7 @@ FATFS close slot 0      ← slot 0 close、slot 1 は close されない
 (以降 alloc は slot 1 を skip して slot 2, 3, ...)
 ```
 
-root cause: **`compiler/tcheck.tc` Phase 3 の fd_t leak**。tcheck は
+root cause: **`compiler/src/tcheck.tc` Phase 3 の fd_t leak**。tcheck は
 3 つの SourceReader を順次 open する設計だが、最後の fd_t (tgt_path
 読み込み) のみ明示的 do_close が抜けていた:
 
@@ -392,8 +392,8 @@ root cause: **`compiler/tcheck.tc` Phase 3 の fd_t leak**。tcheck は
 - cleanup ブロックで `if fd_t >= 0 { do_close(fd_t); }`
 
 加えて K17 調査中に整備した道具立て (commit a5752c2):
-- `rm -f` flag (`kernel/tasks/rm/rm.tc`)、missing file で abort しない
-- `tests/fixtures/pico2_cleanup_sd.sh` を ~150 entry 分の `rm -f` に
+- `rm -f` flag (`userland/bin/rm/rm.tc`)、missing file で abort しない
+- `integration/fixtures/pico2_cleanup_sd.sh` を ~150 entry 分の `rm -f` に
 - `tests/pico2_self_replicate.sh` に `CLEAN_SD=1` option
 
 **実機検証** (`CLEAN_SD=1 REFRESH_KERN_MODS=1 NORESET=1`):
@@ -515,7 +515,7 @@ md5 が「偶然一致」して見える、というやっかいな状態:
 
 **根本原因** (2 つ重なっていた):
 
-1. **tcheck forward-reference bug** (`compiler/asm_pass3_lib.tc`):
+1. **tcheck forward-reference bug** (`compiler/src/asm_pass3_lib.tc`):
    `parse_reloc_into_pending` (line ~534) が `g_lab_cur` を読むが、
    宣言は line ~712 にあった。tcheck の型推論は `g_lab_cur` を `?`
    (型不明) と判定し
@@ -537,7 +537,7 @@ device で task が起動すると `main(argv)` から `run_pass3(...)` を
 
 **修正** (commit 2325004):
 
-1. `compiler/asm_pass3_lib.tc`: `var g_lab_int: i32 = 0;` /
+1. `compiler/src/asm_pass3_lib.tc`: `var g_lab_int: i32 = 0;` /
    `var g_lab_cur: i32 = 0;` を `parse_reloc_into_pending` より
    前のグローバル領域に移動。tcheck が forward 参照を含む型推論
    を諦めないですむ位置に置く。
@@ -603,7 +603,7 @@ Q1 の表参照)。
 実機 pico2 で `REFRESH_KERN_MODS=1 tests/pico2_self_replicate.sh` が
 per-file pre-encode + `asm_pass2` 経路で完走し、生成された
 `/sd/k.bin` と `/sd/k.uf2` の md5 が host build
-(`compile-gen2.sh kernel/kernel_pico2.tc`) と byte-exact 一致。
+(`compile-gen2.sh kernel/src/kernel_pico2.tc`) と byte-exact 一致。
 walked-source モードはこの時点で退役 (commit dddbf8b)。
 
 - host k.bin md5: `8929f2b12694514f9f5490533fd51595`
@@ -631,7 +631,7 @@ walked-source モードはこの時点で退役 (commit dddbf8b)。
      `struct Task` (19 fields) で 17th 以降 overflow
    - Gen1 (bootstrap C runtime) は set/get の bound check で abort →
      host parse output が 1024 byte で truncate
-   - Gen2 (compiler/runtime.tc) は `bc2asm.tc::emit_inline_set` が
+   - Gen2 (compiler/src/runtime.tc) は `bc2asm.tc::emit_inline_set` が
      bound check を skip して inline → silent corrupt
    - 結果: virt+device は corrupt AST から「自己整合的だが host と違う」
      k.bin を生成
@@ -659,7 +659,7 @@ host=1024 byte で truncate していることが判明。原因は parse.tc の
 可能性があったので、両 inline path に 2-insn (lw + bltu) の bound
 check + OOB 時に `__array_oob_{set,get}__i32__i32` への jump を
 追加した。Gen1 (`bootstrap/runtime_syscall.c`) と Gen2/3
-(`compiler/runtime.tc`) の両 runtime に対応する OOB handler を追加。
+(`compiler/src/runtime.tc`) の両 runtime に対応する OOB handler を追加。
 
 詳細は `docs/scaling.md` の self_replicate byte-exact 検証節と、
 commits 119fac1 / 0a57e15 / d2543e5 / f2d6ce0 / 4fe14d7 / 8501f6d
@@ -667,19 +667,19 @@ commits 119fac1 / 0a57e15 / d2543e5 / f2d6ce0 / 4fe14d7 / 8501f6d
 
 ### K13. Pico 2 が自分の UF2 を byte-exact に self-replicate — 完了 (2026-05-06; 2026-05-09 platform fixture 追加)
 
-**2026-05-09 追補**: K13 完成後に compile pipeline が `kernel/platform_pico2.tc` を
+**2026-05-09 追補**: K13 完成後に compile pipeline が `kernel/platform/pico2/platform_pico2.tc` を
 新設して `do_uart_*` / `do_write` / `do_read` を asm から TC に移行
 したため、self_replicate の REFRESH 経路で `/sd/pp.s` (TC-compiled
 platform) が生成されないと on-device link で
 `undefined label do_write__i32__u32__i32` が出る状態になっていた。
-`tests/fixtures/pico2_compile_platform.sh` を新設し orchestrator に
+`integration/fixtures/pico2_compile_platform.sh` を新設し orchestrator に
 step 0d として組み込んだ (commit 37b791b)。実機検証: kernel.bin md5
 `1ec465d27a1137c66d9554b07e840295` / kernel.uf2 md5
 `fb7645d1d735a5c0cfce9f740f3c8cb3` が host build と完全一致、
 total ~29 min (REFRESH 込み)。
 
 また step 2 を per-file pre-encode + `asm_pass2` に移行
-(`tests/fixtures/pico2_self_step2.sh`)。host compile-gen2.sh と同じ
+(`integration/fixtures/pico2_self_step2.sh`)。host compile-gen2.sh と同じ
 `asm_pass1 per .s + asm_pass2` の shape で .lab を生成する。
 host での同パイプライン再現で byte-exact 確認、device 側の byte-exact
 動作は K14 完了時 (2026-05-11) に確認、walked-source モードは退役した
@@ -729,10 +729,10 @@ device /sd/k.uf2 md5:  4a639e26b7fbd057654ec5ac63fbf09a
 
 決め手の実装:
 
-- **`bin2uf2` task** (`kernel/tasks/bin2uf2/bin2uf2.tc`):
+- **`bin2uf2` task** (`userland/bin/bin2uf2/bin2uf2.tc`):
   `tools/bin2uf2.py` の TC port、qemu virt で 6 KB fixture を
   byte-exact verify 済 (commit b9067cd)
-- **`.incbin SIZE "path"` directive** (`compiler/asm_common.tc`):
+- **`.incbin SIZE "path"` directive** (`compiler/src/asm_common.tc`):
   bin2s.sh の `.byte` 列挙の代わりに binary file を直接埋め込み、
   巨大な mtfs blob を XIP flash に低コストで載せる (commit 5958574)
 - **bin2s_incbin.sh / bin2s.sh の `_mtfs_image_size_value` helper**:
@@ -788,14 +788,14 @@ parse → sigscan → cat → tcheck → codegen → bc2asm → cat
 決め手は 3 点の組み合わせ:
 
 1. **SD カード SPI ストレージ** (commit 37c99c7)
-   `kernel/block_sd.tc` + MBR 対応 `kernel/fatfs.tc`。`/sd/<path>`
+   `kernel/platform/pico2/block_sd.tc` + MBR 対応 `kernel/src/fatfs.tc`。`/sd/<path>`
    経由で SD に読み書きできるようになり、中間ファイル
    (1.ast / 2.tast / 3.bc / 4.s / full.s / lab.s / p2.in / HW) を
    全部 SD に流せるようになった。これで 480 KB SRAM tmpfs 縛りが
    外れ、phase 7 の I/O 量が無制限に。
 
 2. **PLL_SYS bring-up で CPU を 150 MHz 化** (commit cf22718)
-   それまで `kernel/platform_pico2.s` は PLL 未使用で clk_sys ≈ 12 MHz。
+   それまで `kernel/platform/pico2/platform_pico2.s` は PLL 未使用で clk_sys ≈ 12 MHz。
    asm_pass2 単独で 310 秒もかかっていた (CPU バウンド)。XOSC 12 MHz
    × FBDIV(125) → POSTDIV(5,2) で clk_sys 150 MHz に切替えた結果、
    同じ asm_pass2 が 27 秒に短縮 (11.5×)。clk_peri は XOSC 直 12 MHz
@@ -821,11 +821,11 @@ parse → sigscan → cat → tcheck → codegen → bc2asm → cat
 タスクバイナリの先頭 8 バイトに `.word arena_size; .word stack_size`
 の header を埋め込む仕組みで完了。
 
-- `kernel/build.sh` が per-task で header.s を emit し task_crt0.s の
+- `kernel/scripts/build.sh` が per-task で header.s を emit し task_crt0.s の
   前にリンク。`task_arena_size()` / `task_stack_size()` の 2 つの
   bash 関数に per-task 値が載っている (hello 8 KB ... asm_pass3 512
   KB)。
-- `kernel/loader.tc::load_fd` が img 先頭 8 バイトから peek32 で
+- `kernel/src/loader.tc::load_fd` が img 先頭 8 バイトから peek32 で
   arena / stack を取り、`make_task(img + 8, arena, stack)` を呼ぶ。
 - kernel.tc / kernel_pico2.tc / sys_exec_handler / sys_spawn_handler
   から固定 16 MB / 16 KB を撲滅。`load_task` の引数も
@@ -844,18 +844,18 @@ header 値も調整する仕組みがない (固定 32 KB)。
   + 自己実行。sh の `<` / `>` リダイレクトと絶対パス実行、tmpfs による
   中間ファイル経由のパイプライン、runtime.tc の per-task ピークメモリ
   計測、`task_crt0.s` の `fn main()` / `fn main(argv)` 両対応フォールバック
-  スタブ、`kernel/build.sh` の `/prelude.s` 事前連結など。tests/
+  スタブ、`kernel/scripts/build.sh` の `/prelude.s` 事前連結など。tests/
   test_phase7.sh に 2 ステージのテストあり (`make test` 非同梱)
 
 - **パイプライン 100 KB 計画 Phase 1 + 2 + 3 完了 (2026-04-15)**: 計画
   `docs/task/pipeline_100kb.md`、commit log は #49〜#64。元の 717 KB /
   303 KB / 1.4 MB / 9.5 MB の各ステージを劇的に縮小:
-  - Phase 1: `compiler/sigscan.tc` + `compiler/tcheck.tc` を新設。
+  - Phase 1: `compiler/src/sigscan.tc` + `compiler/src/tcheck.tc` を新設。
     拡張 .th (`(imports)(self)(program)` wrapper) で typecheck を
     per-function streaming 化。tcheck は per-fn strtab rollback +
     per-fn kmalloc fntab で 717 KB → **75〜251 KB** (~9x)
-  - Phase 2: `compiler/asm_common.tc` + `compiler/asm_pass2.tc` +
-    `compiler/asm_pass3.tc` を新設。`.lab` 中間ファイル (`docs/
+  - Phase 2: `compiler/src/asm_common.tc` + `compiler/src/asm_pass2.tc` +
+    `compiler/src/asm_pass3.tc` を新設。`.lab` 中間ファイル (`docs/
     lab_format.md`) で 2 プロセス分離、g_lines 4 MB を廃止。
     asm-pass1 **~430 KB** (~22x)、asm-pass2 **~4.6 MB** (g_code 残
     件は問題 #7 に移動)
@@ -864,12 +864,12 @@ header 値も調整する仕組みがない (固定 32 KB)。
     1.4 MB → **120〜126 KB** (~11x)
   - Cleanup (#61 partial): `compiler/extract_sigs.tc` 削除 (unused)、
     `typecheck.tc` / `asm.tc` に deprecation header
-  - tests/test_phase7.sh: sigscan + tcheck + asm_pass2 + asm_pass3 の
+  - integration/test_phase7.sh: sigscan + tcheck + asm_pass2 + asm_pass3 の
     full split pipeline で OS 上 Hello World 完走
 
 - **Gen2 toolchain migration 完了 (2026-04-15)**: Phase 1+2+3 の後半
-  cleanup。compile-gen2.sh / compile-gen3.sh / kernel/build.sh /
-  tests/test_common.sh / tests/test_gen3.sh / tc_run.sh を新パイプ
+  cleanup。compile-gen2.sh / compile-gen3.sh / kernel/scripts/build.sh /
+  tests/test_common.sh / compiler/tests/test_gen3.sh / tc_run.sh を新パイプ
   ライン (sigscan + tcheck + asm_pass2 + asm_pass3) に切り替え、
   `compiler/typecheck.tc` / `compiler/asm.tc` (+ kernel/tasks/
   typecheck/, kernel/tasks/asm/, tc_asm.sh, tests/test_split.sh)

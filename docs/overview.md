@@ -8,9 +8,10 @@ RP2350 (RISC-V モード) と qemu virt 上で動作する小規模 OS と独自
 
 ## 対象プラットフォーム
 
-共通 ISA は RV32IMA。2 ターゲット同一コードベース (`kernel/*.tc`)
-で動く。platform 固有コードは `kernel/platform_*.s` と
-`kernel/kernel.tc` / `kernel/kernel_pico2.tc` に分離。
+共通 ISA は RV32IMA。2 ターゲット同一コードベース (`kernel/src/*.tc`)
+で動く。platform 固有コードは `kernel/platform/{virt,pico2}/` 配下
+(`platform_*.s` / `block_*.tc` / `crt0_*_data.s` 等) に分離、
+プラットフォーム main は `kernel/src/kernel.tc` / `kernel/src/kernel_pico2.tc`。
 
 | ターゲット | 用途 | メモリ |
 |---|---|---|
@@ -19,7 +20,7 @@ RP2350 (RISC-V モード) と qemu virt 上で動作する小規模 OS と独自
 
 ## コンポーネント一覧
 
-### OS (`kernel/`)
+### OS (`kernel/` + `userland/`)
 
 | コンポーネント | 概要 |
 |---|---|
@@ -29,13 +30,13 @@ RP2350 (RISC-V モード) と qemu virt 上で動作する小規模 OS と独自
 | ファイルシステム | VFS + mtfs (read-only、Flash に埋め込み) + tmpfs (RAM) + procfs (virtual) + FAT (SD、bring-up 中) |
 | ローダ | ELF は使わず raw binary + 8 byte header (arena_size / stack_size)。XIP 可能なら flash 直実行 |
 | シェル (`sh`) | `< > |` リダイレクト / パイプ、tab 補完、history 8 件、絶対パス対応 |
-| coreutils | cat, ls, wc, head, cp, du, echo, rm, grep, neofetch, vi, mx/mr (UART mux) 等 |
+| coreutils | cat, ls, wc, head, cp, du, echo, rm, grep, neofetch, vi, mx/mr (UART mux) 等 (詳細 `userland/bin/`) |
 
 ### コンパイラツールチェーン (`compiler/`)
 
-Gen1 (C、`bootstrap/`) でブートし、Gen2 (TC、`compiler/`) を生成。
-Gen2 が自分自身をコンパイルしたものが Gen3 (Gen2 == Gen3 で自己ホスト
-達成済)。
+Gen1 (C、`compiler/bootstrap/`) でブートし、Gen2 (TC、`compiler/src/`) を
+生成。Gen2 が自分自身をコンパイルしたものが Gen3 (Gen2 == Gen3 で
+自己ホスト達成済)。
 
 | ツール | 入力 → 出力 | 備考 |
 |---|---|---|
