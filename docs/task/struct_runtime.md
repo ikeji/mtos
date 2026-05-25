@@ -182,11 +182,11 @@ parse の import 展開は import 先の struct 宣言も AST に入れる。
 | ファイル | 変更内容 |
 |---|---|
 | `bootstrap/parser.c` | ① import した struct に `imported` マーカを付ける<br>② 一次宣言の struct から合成関数 AST を生成して program に追加 |
-| `compiler/parse.tc` | 同上 |
+| `compiler/src/parse.tc` | 同上 |
 | `bootstrap/typecheck.c` | 参照型 ↔ 参照型 / 参照型 ↔ u32 の `as` キャストを許可 |
 | `compiler/typecheck.tc` | 同上。`collect_struct` に getter/setter/`PointArray` の fntab 登録を追加 |
 | `bootstrap/codegen.c` | 参照型キャストは BC 命令を emit しない |
-| `compiler/codegen.tc` | 同上 |
+| `compiler/src/codegen.tc` | 同上 |
 | `bcrun.c` / `bc2asm.c` / `runtime.c` / `interp.c` | **変更なし** |
 
 ## テスト

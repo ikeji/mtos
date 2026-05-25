@@ -331,7 +331,7 @@ __pools_ready: .space 4
 __arena:      .space 262144  # 256 KB
 ```
 
-注: `compiler/runtime.tc` の `NPOOLS` も Pico 2 用ビルドでは 7 にする必要がある。
+注: `compiler/src/runtime.tc` の `NPOOLS` も Pico 2 用ビルドでは 7 にする必要がある。
 プールサイズが減るので `runtime_pico2.tc` を別ファイルにするか、`runtime.tc` の
 NPOOLS を変更可能にするか決める必要がある (後述)。
 
@@ -348,7 +348,7 @@ NPOOLS を変更可能にするか決める必要がある (後述)。
 
 CRT0=pico2/crt0_pico2.s
 CRT0_DATA=pico2/crt0_pico2_data.s
-RUNTIME_TC=compiler/runtime.tc
+RUNTIME_TC=compiler/src/runtime.tc
 
 # ... import 解決, 各 .tc → .s ...
 
@@ -519,7 +519,7 @@ data + bss の全ラベルが ±2KB に収まる限り、gp 相対 `la` は常�
 
 ### NPOOLS の差し替え方法
 
-`compiler/runtime.tc` の `NPOOLS = 16` (asm.tc の `__pool_sizes` 定義に合わせている) を
+`compiler/src/runtime.tc` の `NPOOLS = 16` (asm.tc の `__pool_sizes` 定義に合わせている) を
 Pico 2 用には 7 に変えたい。選択肢:
 
 - (a) `runtime_pico2.tc` を新規作成し、compile-pico2.sh で差し替え
@@ -543,7 +543,7 @@ Flash → SRAM の data コピーが不要。
 ## 関連ファイル (完了後の実配置)
 
 - `compiler/asm.tc` — 常時 PIC + セクション並べ替えリンカ + gp 相対 la + 自動 `__global_pointer$`
-- `compiler/runtime.tc` — pool_init が count=0 プールをスキップ
+- `compiler/src/runtime.tc` — pool_init が count=0 プールをスキップ
 - `compiler/crt0_tc.s` / `compiler/crt0_tc_data.s` — Linux/virt 用 crt0 (gp 初期化, sp は Linux カーネル任せ)
 - `compile-gen2.sh` / `compile-gen3.sh` — `CRT0` / `CRT0_DATA` / `ASM_PROLOGUE` 環境変数対応
 - `compile-pico2.sh` — Pico 2 向け compile-gen2.sh 薄ラッパ + bin2uf2.py 呼び出し

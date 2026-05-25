@@ -6,7 +6,7 @@ Pico 2 (RP2350、SRAM 520 KB) で自分自身を再コンパイルできるよ�
 phase 7 M6 で qemu virt 上のセルフコンパイルは達成したが、実測ピークが
 asm ≈ 9.5 MB、bc2asm ≈ 1.4 MB で、どちらも pico2 では到底載らない。
 各ステージのデータセグメント (BSS + heap) を **100 KB 前後** に抑えるのが
-目標。達成できれば 256 KB task RAM (kernel/loader.tc) の枠に余裕で収まる。
+目標。達成できれば 256 KB task RAM (kernel/src/loader.tc) の枠に余裕で収まる。
 
 理想は **1 パス + ストリーム処理**。どうしても forward reference が外せない
 ステージは、**プロセス分割 + 中間ファイル経由**で逃がす。
@@ -76,7 +76,7 @@ asm ≈ 9.5 MB、bc2asm ≈ 1.4 MB で、どちらも pico2 では到底載ら�
 1 ステージずつ独立に動作するので、同時に乗る心配はない。
 
 ※ 実測値は **2026-04-15 / commit 5ee10a4** 時点。Gen3 tools を
-   compile-gen2.sh で build (= compiler/runtime.tc を実 link) し、
+   compile-gen2.sh で build (= compiler/src/runtime.tc を実 link) し、
    `km_dump_peak` を qemu-riscv32 で 14 個の compiler/*.tc に対して
    走らせた結果。詳細な per-input テーブルは下の「ステージ別実測表」
    を参照。
@@ -114,7 +114,7 @@ bcrun.tc::vm_run が引っかかって compile 不可 (`get: 128 out of bounds`)
 
 ### 1.5. sigscan (新規 → 10 KB) ✓ 完了
 
-`compiler/sigscan.tc` (#50, #62)。`extract_sigs.tc` を雛形にして拡張 .th
+`compiler/src/sigscan.tc` (#50, #62)。`extract_sigs.tc` を雛形にして拡張 .th
 を吐く。phase 7 経路 (compile-gen2.sh + tcheck) でしか使われないので、
 host (compile-gen1.sh) と既存 typecheck.tc には影響を与えない。
 
@@ -134,20 +134,20 @@ host (compile-gen1.sh) と既存 typecheck.tc には影響を与えない。
 
 | 入力 | km peak |
 |---|---:|
-| compiler/asm_pass2.tc      |  **8692 B** |
-| compiler/asm_pass3.tc      |   9100 B |
-| compiler/runtime.tc        |   9228 B |
-| compiler/strlib.tc         |   9236 B |
-| compiler/string_buffer.tc  |   9236 B |
-| compiler/asm_common.tc     |   9636 B |
-| compiler/codegen.tc        |   9636 B |
-| compiler/source_reader.tc  |   9644 B |
-| compiler/sigscan.tc        |   9372 B |
-| compiler/tcheck.tc         |   9772 B |
-| compiler/ast_node.tc       |   9780 B |
-| compiler/parse.tc          |  10044 B |
-| compiler/bc2asm.tc         |  10052 B |
-| **compiler/bcrun.tc**      | **11548 B** |
+| compiler/src/asm_pass2.tc      |  **8692 B** |
+| compiler/src/asm_pass3.tc      |   9100 B |
+| compiler/src/runtime.tc        |   9228 B |
+| compiler/src/strlib.tc         |   9236 B |
+| compiler/src/string_buffer.tc  |   9236 B |
+| compiler/src/asm_common.tc     |   9636 B |
+| compiler/src/codegen.tc        |   9636 B |
+| compiler/src/source_reader.tc  |   9644 B |
+| compiler/src/sigscan.tc        |   9372 B |
+| compiler/src/tcheck.tc         |   9772 B |
+| compiler/src/ast_node.tc       |   9780 B |
+| compiler/src/parse.tc          |  10044 B |
+| compiler/src/bc2asm.tc         |  10052 B |
+| **compiler/src/bcrun.tc**      | **11548 B** |
 
 入力ファイルにかかわらず 9〜11 KB で頭打ち。fixed buffers の内訳:
 
@@ -220,10 +220,10 @@ tcheck 側の挙動 (stdin 3 段ラッパー):
 
 #### 内部実装 (#50 / #51 / #62 / #63 完了済)
 
-- **sigscan** (`compiler/sigscan.tc`, #50): per-top-level reset で 1 個
+- **sigscan** (`compiler/src/sigscan.tc`, #50): per-top-level reset で 1 個
   ずつ stream read。should_keep() でブロック / フィールド / 式を skip。
   詳細は §1.5
-- **tcheck** (`compiler/tcheck.tc`, #51): typecheck.tc を雛形に refactor。
+- **tcheck** (`compiler/src/tcheck.tc`, #51): typecheck.tc を雛形に refactor。
   ラッパー parser (`read_open_kind` / `read_close_paren` /
   `read_imports_wrapper` / `read_self_wrapper`) を追加し、main を
   4 phase 化 (imports → self → program 開く → stream loop → 閉じる)。
@@ -251,20 +251,20 @@ Gen3 tcheck (compile-gen2.sh で build、実 runtime.tc link) を 14 個の
 
 | 入力 | km peak |
 |---|---:|
-| compiler/strlib.tc        |  **75316 B** |
-| compiler/ast_node.tc      |  79352 B |
-| compiler/asm_pass2.tc     |  80412 B |
-| compiler/string_buffer.tc |  82624 B |
-| compiler/source_reader.tc |  82808 B |
-| compiler/runtime.tc       |  89968 B |
-| compiler/asm_pass3.tc     |  94256 B |
-| compiler/sigscan.tc       | 106820 B |
-| compiler/tcheck.tc        | 119608 B |
-| compiler/codegen.tc       | 134804 B |
-| compiler/parse.tc         | 149836 B |
-| compiler/bc2asm.tc        | 189652 B |
-| compiler/asm_common.tc    | 191040 B |
-| **compiler/bcrun.tc**     | **249808 B** (~244 KB) |
+| compiler/src/strlib.tc        |  **75316 B** |
+| compiler/src/ast_node.tc      |  79352 B |
+| compiler/src/asm_pass2.tc     |  80412 B |
+| compiler/src/string_buffer.tc |  82624 B |
+| compiler/src/source_reader.tc |  82808 B |
+| compiler/src/runtime.tc       |  89968 B |
+| compiler/src/asm_pass3.tc     |  94256 B |
+| compiler/src/sigscan.tc       | 106820 B |
+| compiler/src/tcheck.tc        | 119608 B |
+| compiler/src/codegen.tc       | 134804 B |
+| compiler/src/parse.tc         | 149836 B |
+| compiler/src/bc2asm.tc        | 189652 B |
+| compiler/src/asm_common.tc    | 191040 B |
+| **compiler/src/bcrun.tc**     | **249808 B** (~244 KB) |
 
 実装上の固定 buffer:
 
@@ -402,7 +402,7 @@ kmalloc する 1024 個程度の薄いハンドル列のみ。
 
 - pass 1 / pass 2 の論理は **そのまま**。今 1 つのプロセスでループ 2 回
   回している部分を、別バイナリの main に切り出す。共通ロジックは
-  `compiler/asm_common.tc` に括り出して両者から import。
+  `compiler/src/asm_common.tc` に括り出して両者から import。
 - ELF 出力ヘルパー (`write_elf` 相当) は asm-pass2 のみで使う。
 - pass1 が `.lab` をテキストフォーマットで出すと debug が楽。
   例: `__main_strobj0:R:0x18` のような行。
@@ -414,7 +414,7 @@ kmalloc する 1024 個程度の薄いハンドル列のみ。
 in_path, out_path)` の argv が 1 要素以上を取れる必要がある。
 
 → phase 7 で kernel 側 `sys_spawn_handler` が argv を StringArray clone
-する仕組みは既にある (`kernel/loader.tc` の clone_argv)。sh.tc の
+する仕組みは既にある (`kernel/src/loader.tc` の clone_argv)。sh.tc の
 parser を「コマンド名 + 残り token を argv に積む」に拡張すれば対応可。
 これは **本計画の subtask "sh argv 化"** として独立に進められる。
 
@@ -583,7 +583,7 @@ OS 上でも test_phase7.sh の full split pipeline が通る。Pico 2 の
   すると header 4 B + bucket round-up で実コストが膨らむ。現 kmalloc は
   最小 4 B bucket なので、6 文字の識別子 = 6+4 → 16 B bucket = 20 B
   使う。1000 識別子 = 20 KB。許容範囲。bucket 配置の効率は
-  `compiler/runtime.tc` の `kmalloc` 算出をベンチして、必要なら 8/16 B
+  `compiler/src/runtime.tc` の `kmalloc` 算出をベンチして、必要なら 8/16 B
   の専用 small allocator を追加する。
 - **symbol table が 256 entry で足りるか**: コンパイラ自身の最大ファイル
   (parse.tc / asm.tc / typecheck.tc) で実測する必要あり。先に Gen1 で
@@ -643,7 +643,7 @@ pico2 (256 KB) で全ステージが走るようになれば、**phase 2.5 (pico
 
 ## ステージ別実測表 (**2026-04-15 / commit 5ee10a4**)
 
-Gen3 tools を compile-gen2.sh で build し (=compiler/runtime.tc を
+Gen3 tools を compile-gen2.sh で build し (=compiler/src/runtime.tc を
 link)、qemu-riscv32 で compiler/*.tc (14 ファイル) を各ステージに
 食わせた peak メモリ (バイト単位)。host 側の tool 本体が `km_dump_peak`
 を呼んで stderr に `[kmem peak=N live=M]` を出すので、そこから回収
@@ -653,20 +653,20 @@ link)、qemu-riscv32 で compiler/*.tc (14 ファイル) を各ステージに
 
 | 入力 | km peak |
 |---|---:|
-| compiler/strlib.tc        |  **80352 B** |
-| compiler/ast_node.tc      |  81664 B |
-| compiler/asm_pass2.tc     |  84656 B |
-| compiler/source_reader.tc |  86396 B |
-| compiler/string_buffer.tc |  87216 B |
-| compiler/runtime.tc       |  91716 B |
-| compiler/asm_pass3.tc     |  97688 B |
-| compiler/sigscan.tc       | 107888 B |
-| compiler/tcheck.tc        | 116380 B |
-| compiler/bc2asm.tc        | 189276 B |
-| compiler/codegen.tc       | 134740 B |
-| compiler/parse.tc         | 149996 B |
-| compiler/asm_common.tc    | 192148 B |
-| **compiler/bcrun.tc**     | **252068 B** (~246 KB) |
+| compiler/src/strlib.tc        |  **80352 B** |
+| compiler/src/ast_node.tc      |  81664 B |
+| compiler/src/asm_pass2.tc     |  84656 B |
+| compiler/src/source_reader.tc |  86396 B |
+| compiler/src/string_buffer.tc |  87216 B |
+| compiler/src/runtime.tc       |  91716 B |
+| compiler/src/asm_pass3.tc     |  97688 B |
+| compiler/src/sigscan.tc       | 107888 B |
+| compiler/src/tcheck.tc        | 116380 B |
+| compiler/src/bc2asm.tc        | 189276 B |
+| compiler/src/codegen.tc       | 134740 B |
+| compiler/src/parse.tc         | 149996 B |
+| compiler/src/asm_common.tc    | 192148 B |
+| **compiler/src/bcrun.tc**     | **252068 B** (~246 KB) |
 
 ### bc2asm
 
@@ -675,19 +675,19 @@ peak が入力にほぼ無関係なのが特徴 (1 関数ずつ emit してリ�
 
 | 入力 | km peak |
 |---|---:|
-| compiler/asm_pass2.tc     | **120296 B** |
-| compiler/asm_pass3.tc     | 120636 B |
-| compiler/sigscan.tc       | 121180 B |
-| compiler/codegen.tc       | 122056 B |
-| compiler/string_buffer.tc | 122200 B |
-| compiler/source_reader.tc | 122336 B |
-| compiler/ast_node.tc      | 123356 B |
-| compiler/bcrun.tc         | 123756 B |
-| compiler/parse.tc         | 124640 B |
-| compiler/asm_common.tc    | 124640 B |
-| compiler/tcheck.tc        | 125056 B |
-| compiler/bc2asm.tc        | 126008 B |
-| compiler/runtime.tc       | **126476 B** |
+| compiler/src/asm_pass2.tc     | **120296 B** |
+| compiler/src/asm_pass3.tc     | 120636 B |
+| compiler/src/sigscan.tc       | 121180 B |
+| compiler/src/codegen.tc       | 122056 B |
+| compiler/src/string_buffer.tc | 122200 B |
+| compiler/src/source_reader.tc | 122336 B |
+| compiler/src/ast_node.tc      | 123356 B |
+| compiler/src/bcrun.tc         | 123756 B |
+| compiler/src/parse.tc         | 124640 B |
+| compiler/src/asm_common.tc    | 124640 B |
+| compiler/src/tcheck.tc        | 125056 B |
+| compiler/src/bc2asm.tc        | 126008 B |
+| compiler/src/runtime.tc       | **126476 B** |
 
 ### asm_pass2
 
@@ -697,15 +697,15 @@ full.s** (crt0 + runtime + 各 user .s + crt0_data)。2026-04-16 時点
 
 | コンパイル対象 | asm_pass2 peak |
 |---|---:|
-| compiler/runtime.tc       | **226924 B** |
-| compiler/strlib.tc        | 410196 B (以前の測定、現在は未再測)  |
-| compiler/codegen.tc       | 250468 B |
-| compiler/bcrun.tc         | 253188 B |
-| compiler/parse.tc         | 253672 B |
-| compiler/tcheck.tc        | 255400 B |
-| compiler/bc2asm.tc        | 255912 B |
-| compiler/asm_pass2.tc     | 263992 B |
-| **compiler/asm_pass3.tc** | **267448 B** (~261 KB) |
+| compiler/src/runtime.tc       | **226924 B** |
+| compiler/src/strlib.tc        | 410196 B (以前の測定、現在は未再測)  |
+| compiler/src/codegen.tc       | 250468 B |
+| compiler/src/bcrun.tc         | 253188 B |
+| compiler/src/parse.tc         | 253672 B |
+| compiler/src/tcheck.tc        | 255400 B |
+| compiler/src/bc2asm.tc        | 255912 B |
+| compiler/src/asm_pass2.tc     | 263992 B |
+| **compiler/src/asm_pass3.tc** | **267448 B** (~261 KB) |
 
 #### なぜ asm_pass2 がこれだけメモリを食うのか
 
@@ -756,13 +756,13 @@ pass は無い。
 
 | コンパイル対象 | asm_pass3 peak |
 |---|---:|
-| compiler/codegen.tc       | **262672 B** |
-| compiler/bcrun.tc         | 265392 B |
-| compiler/parse.tc         | 265876 B |
-| compiler/tcheck.tc        | 267604 B |
-| compiler/bc2asm.tc        | 268000 B |
-| compiler/asm_pass2.tc     | 276208 B |
-| **compiler/asm_pass3.tc** | **279664 B** (~273 KB) |
+| compiler/src/codegen.tc       | **262672 B** |
+| compiler/src/bcrun.tc         | 265392 B |
+| compiler/src/parse.tc         | 265876 B |
+| compiler/src/tcheck.tc        | 267604 B |
+| compiler/src/bc2asm.tc        | 268000 B |
+| compiler/src/asm_pass2.tc     | 276208 B |
+| **compiler/src/asm_pass3.tc** | **279664 B** (~273 KB) |
 
 #### 3 世代の asm_pass3 peak
 

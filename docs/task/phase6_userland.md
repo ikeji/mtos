@@ -119,7 +119,7 @@ Step 6.2 の時点では「カーネル自身がループで `/bin/*` を列挙�
 
 #### 6.3.2: ローダ
 
-新規モジュール `kernel/loader.tc`:
+新規モジュール `kernel/src/loader.tc`:
 
 ```tinyc
 // path のファイルを load し、新しいタスクフレームを返す。

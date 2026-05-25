@@ -7,8 +7,8 @@
 K7 (pico2 phase 7 self-host) も達成済 (`docs/solved.md`)。
 
 実装ファイル:
-- `kernel/block_sd.tc` — SPI0 + GP4-7 経由の SD カードドライバ
-- `kernel/fatfs.tc` — MBR / superfloppy 両対応 FAT32
+- `kernel/platform/pico2/block_sd.tc` — SPI0 + GP4-7 経由の SD カードドライバ
+- `kernel/src/fatfs.tc` — MBR / superfloppy 両対応 FAT32
 - `tests/test_pico2_sd.sh` — 永続性検証 (Phase A: write/read、Phase B:
   reset 後の persistence)
 - `tests/test_pico2_phase7_sd.sh` — phase 7 self-host 統合テスト
@@ -166,7 +166,7 @@ FAT テーブル自体は SD 上にあるので SRAM に載せない。
 - `sd_cs_low()` / `sd_cs_high()`: CS 制御
 - 初期化後に SCK を数 MHz に上げる
 
-### Step 2: SD カードドライバ (kernel/block_sd.tc)
+### Step 2: SD カードドライバ (kernel/platform/pico2/block_sd.tc)
 
 SPI モードでの SD カード初期化と読み書き:
 
@@ -181,7 +181,7 @@ SPI モードでの SD カード初期化と読み書き:
 - セクタ write: CMD24 (WRITE_BLOCK)
 - SDHC/SDXC はセクタアドレス、SD はバイトアドレス
 
-### Step 3: FAT32 ドライバ (kernel/fatfs.tc)
+### Step 3: FAT32 ドライバ (kernel/src/fatfs.tc)
 
 - `fatfs_mount()`: MBR → パーティション → BPB 読み込み、パラメータ保存
 - `fatfs_open(path, flags)`: ディレクトリエントリ検索/作成

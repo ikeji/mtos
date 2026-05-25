@@ -134,7 +134,7 @@ stdin から読むので、使い方は:
 ```bash
 riscv64-unknown-elf-gcc -S -march=rv32im -mabi=ilp32 -O2 \
     bootstrap/runtime_syscall.c -o /tmp/runtime.s
-cat bootstrap/crt0.s /tmp/runtime.s user.s | ./tc_run.sh bcrun compiler/asm.tc > output.elf
+cat compiler/bootstrap/crt0.s /tmp/runtime.s user.s | ./tc_run.sh bcrun compiler/asm.tc > output.elf
 qemu-riscv32 output.elf
 ```
 

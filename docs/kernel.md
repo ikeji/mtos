@@ -6,7 +6,7 @@
 - プリエンプティブ round-robin スケジューリング (mtime タイマ割り込み)
 - virt と pico2 の両 platform で同一 `kernel/*.tc` が動き、platform
   固有コードは `kernel/platform_{virt,pico2}.s` と
-  `kernel/kernel.tc` / `kernel/kernel_pico2.tc` にだけ入れる
+  `kernel/src/kernel.tc` / `kernel/src/kernel_pico2.tc` にだけ入れる
 - `ecall` で Linux 互換番号のシステムコール (write=64, read=63,
   openat=56, close=57, unlink=87, readdir=89, exit=93, nanosleep=101,
   spawn_fds=219, spawn=220, execve=221, pipe=222, mux_enable=250,
@@ -18,7 +18,7 @@
 
 - qemu-system-riscv32 -M virt, `-bios none`, `-m 128`
 - 16550 UART (0x10000000) / CLINT mtime 10 MHz / SiFive test finisher
-- kernel arena = 96 MB の `__arena .space` (`kernel/crt0_data.s`)。
+- kernel arena = 96 MB の `__arena .space` (`kernel/platform/virt/crt0_data.s`)。
   phase 7 に必要な peak は 500 KB 程度で、拡大の余地は大きい
 - ブロックデバイス: `-drive file=disk.img,if=none,id=drv0 -device
   virtio-blk-device,drive=drv0` で mtfs / FAT ディスクを接続
@@ -51,7 +51,7 @@ pico2:
   `.word arena_size; .word stack_size` ヘッダが入っており、
   `loader.tc::load_fd` がそれを読んで `make_task(entry+8, arena,
   stack)` を呼ぶ。`task_arena_size()` / `task_stack_size()` を
-  `kernel/build.sh` が per-task で header.s として emit、task_crt0.s
+  `kernel/scripts/build.sh` が per-task で header.s として emit、task_crt0.s
   の前にリンクしている
 - XIP 可能な backend (pico2 の flash) では `vfs_xip_addr` が非 0 を
   返す。`load_fd` が RAM コピーを skip して Flash 上の entry を直接
@@ -59,7 +59,7 @@ pico2:
 
 ## メモリ管理
 
-### kmalloc / kfree (`compiler/runtime.tc`)
+### kmalloc / kfree (`compiler/src/runtime.tc`)
 
 - 単一 arena の bump アロケータ + 小ブロック free-list
 - `km_dump_peak` / `km_live_count` で peak / live の計測
@@ -109,7 +109,7 @@ struct Task {
 
 ## ファイルシステム (VFS)
 
-`kernel/vfs.tc` が 1 段の dispatch レイヤ:
+`kernel/src/vfs.tc` が 1 段の dispatch レイヤ:
 
 | prefix | 実装 | 特性 |
 |---|---|---|
@@ -149,7 +149,7 @@ count + bytes)** を直接渡す。`task_crt0.s` の stub は
 `do_openat__i32__String__i32` と `do_openat__i32__StringLiteral__i32`
 を同一本体に alias、kernel 側は `peek32(addr)` で count を読む。
 
-## ローダ (`kernel/loader.tc`)
+## ローダ (`kernel/src/loader.tc`)
 
 1. `load_task(path)` が VFS で path を open
 2. `load_fd(fd)` が先頭 8 バイトを read し `.word arena; .word stack`

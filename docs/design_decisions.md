@@ -118,7 +118,7 @@ public API である」と宣言するのと同じ。後で表現を変えると
 
 - `docs/language.md` の「struct のプライベートフィールド」節
 - `docs/task/multi_file.md` (import の全体挙動)
-- `tests/test_import.sh` の "export forward decl exposes synthetic fn"
+- `compiler/compiler/tests/test_import.sh` の "export forward decl exposes synthetic fn"
   ケース (この挙動の回帰テスト)
 
 ---
@@ -348,7 +348,7 @@ peek / poke は以下の用途で、そもそも「境界」が適用できな�
   }
   ```
 
-  既存例: `DEVFS_MAX_FDS = 8` (kernel/devfs.tc — デバイス数)、
+  既存例: `DEVFS_MAX_FDS = 8` (kernel/src/devfs.tc — デバイス数)、
   `MAX_INPUTS = 32` (compiler/asm_pass2.tc — CLI、loud error 付き)、
   `EXTRAS_CAP = 48` (asm_common.tc — 緊急に固定値を引き上げた
   ケース。本当は伸長にすべきだったが、loud error をペアで入れて
@@ -358,8 +358,8 @@ peek / poke は以下の用途で、そもそも「境界」が適用できな�
 
 - `docs/problem.md` #33 — EXTRAS_CAP の silent-drop バグ。
   固定キャップ + silent drop の組合せが踏まれた実例。
-- 伸長の実装パターン: `compiler/asm_common.tc::ds_dr_grow`、
-  `compiler/string_buffer.tc`、`compiler/ast_node.tc`。
+- 伸長の実装パターン: `compiler/src/asm_common.tc::ds_dr_grow`、
+  `compiler/src/string_buffer.tc`、`compiler/src/ast_node.tc`。
 - loud-error の必要性は本章 §「なぜ」最後を参照。
 
 ---

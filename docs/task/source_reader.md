@@ -147,7 +147,7 @@ fn pars_struct_decl(src: SourceReader, ...) {
 
 ## 実装順
 
-1. `compiler/source_reader.tc` を作成
+1. `compiler/src/source_reader.tc` を作成
    - SourceReader struct
    - SourceReader_new, close
    - peek, next, at_eof, line_num
@@ -176,9 +176,9 @@ source_reader.tc → string_buffer.tc の再帰的 import を解決するため�
 
 ## 影響範囲
 
-- `compiler/source_reader.tc` — 新規ファイル
-- `compiler/string_buffer.tc` — `reset()` 関数を追加（line_buf_reset 用）
-- `compiler/parse.tc` — lexer + emit_stmt_comment + main
+- `compiler/src/source_reader.tc` — 新規ファイル
+- `compiler/src/string_buffer.tc` — `reset()` 関数を追加（line_buf_reset 用）
+- `compiler/src/parse.tc` — lexer + emit_stmt_comment + main
 - `tests/test_common.sh` — RISCV_FLAGS 配列化、collect_imports 再帰化
 - C版 `bootstrap/parser.c` — 変更不要
 - テスト — golden 更新（コメント内容が部分行になる差分あり）

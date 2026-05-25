@@ -623,7 +623,7 @@ self-host loop が成立した。
       UART をデバイスファイル化 (2026-05-16、commit 8053144)。
       virt で動作確認、`test_os.sh` の fs_virtio に devfs ケース追加
 - [x] **S2**: `/dev/rtc` — read で "YYYY-MM-DD HH:MM:SS"、write で
-      時刻設定 (2026-05-16、commit fa34500)。`kernel/rtc.tc` が秒
+      時刻設定 (2026-05-16、commit fa34500)。`kernel/src/rtc.tc` が秒
       <-> カレンダー変換、virt は goldfish-rtc (0x101000) で実装。
       virt で read/write ラウンドトリップを確認、fs_virtio に rtc
       ケース追加。

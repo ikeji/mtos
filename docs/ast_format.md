@@ -142,7 +142,7 @@ import 先のモジュールに公開する API のみ。
 
 ### 拡張 .th (top-level 全部)
 
-`compiler/sigscan.tc` の出力。tcheck (= typecheck の per-function
+`compiler/src/sigscan.tc` の出力。tcheck (= typecheck の per-function
 streaming 版) が **自分自身の forward 参照を解決するため**に消費する。
 旧 .th の strict superset:
 

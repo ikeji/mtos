@@ -282,7 +282,7 @@ riscv-gcc -march=rv32im -mabi=ilp32 -static -nostdlib -lgcc \
 
 ### Step 6: parse.tc での import 処理（自己ホスト版）
 
-- Step 1〜4 と同じロジックを `compiler/parse.tc` に実装
+- Step 1〜4 と同じロジックを `compiler/src/parse.tc` に実装
 - ファイルI/Oのシステムコール（open, read, close）を TinyC から呼べるようにする
 
 ### Step 7: tc_run.sh / tc_build.sh の対応

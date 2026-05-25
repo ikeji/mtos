@@ -15,8 +15,8 @@ encode する処理。**prelude は kernel build 時点で固定**なので、
 ```
 [kernel build (host)]
 ─────────────────────────────────────────────────────────────
-compiler/runtime.tc   ──[Gen2 compile]──▶ runtime.s     (~234 KB)
-compiler/libtc.tc     ──[Gen2 compile]──▶ libtc.s
+compiler/src/runtime.tc   ──[Gen2 compile]──▶ runtime.s     (~234 KB)
+userland/lib/libtc/libtc.tc     ──[Gen2 compile]──▶ libtc.s
 kernel/tasks/task_crt0.s                                ┐
 kernel/tasks/task_data.s                                │
                                                         ▼
@@ -224,7 +224,7 @@ asm_pass3 が `prelude.{text,rodata,data}.bin` + `/sd/u.strip` の
 
 **Step 7 の状態 (2026-05-03)**:
 
-- `tests/test_phase7.sh` (legacy stdin pipeline): **stage 1 +
+- `integration/test_phase7.sh` (legacy stdin pipeline): **stage 1 +
   stage 2 PASS** (Hello, World! + M7-minimal 経由の OS 上
   string_buffer.tc コンパイル)
 - 新パイプライン (`asm_pass2 --add <idx>... --lab-out + asm_pass3

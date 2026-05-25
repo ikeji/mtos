@@ -28,7 +28,7 @@ ARM Cortex-M33 デュアルコアモードと RISC-V Hazard3 デュアルコア�
 - **clk_sys = 150 MHz** (XOSC 12 MHz × 125 / (5 × 2))
 - **clk_peri = 12 MHz** (XOSC 直、UART/SPI baud 計算を維持)
 
-`kernel/platform_pico2.s` の `_start` で XOSC 安定後に PLL_SYS bring-up
+`kernel/platform/pico2/platform_pico2.s` の `_start` で XOSC 安定後に PLL_SYS bring-up
 (REFDIV=1, FBDIV=125, POSTDIV1=5/POSTDIV2=2) → CLK_SYS の SRC を
 AUX = PLL_SYS に glitchless 切替。phase 7 の compiler pipeline で
 asm_pass2 単独実行が **310s → 27s (11.5×)** に短縮された。
@@ -83,7 +83,7 @@ UART は **クロス接続** (TX → RX) になることに注意。Debug Probe 
 2026-05-21 の新基板 (48-GPIO 版 RP2350B、QFN-80) で全 48 ピンを使い
 切る構成に再設計した。**SPI0 / SPI1 のハードウェア関数順と物理配線
 の順序が一致しないため、SD と LCD は bit-bang SPI で駆動**する
-(`kernel/block_sd.tc` と `kernel/display_ili9488.tc` 参照)。RTC は
+(`kernel/platform/pico2/block_sd.tc` と `kernel/platform/pico2/display_ili9488.tc` 参照)。RTC は
 GP32/33 に I2C0 のハードウェア関数がそのまま出ているのでハードウェア
 I2C0 を使う。
 
@@ -144,13 +144,13 @@ I2C0 を使う。
   ペリフェラルを使わず SIO で軟件駆動する。SD は ~1-2 MB/s 程度、
   LCD は書き込み専用なので速度低下が体感に出にくい。
 - **RTC は外付け DS3231** (GP32/33、I2C0、アドレス 0x68)。
-  `kernel/rtc_ds3231.tc` が RP2350 I2C0 ハードウェアブロックで
+  `kernel/platform/pico2/rtc_ds3231.tc` が RP2350 I2C0 ハードウェアブロックで
   DS3231 の BCD カレンダーレジスタを読み書きし `/dev/rtc` を駆動する。
 - **キーボードは論理 12 列 × 5 行 = 60 キー**。物理線は行 5 本 + 列 6
   本の計 11 本だけ。新基板では行/列の GPIO 番号がスクランブルされて
   いる (ROW0=GP2 / ROW1=GP1 / ROW2=GP4 / ROW3=GP3 / ROW4=GP6 と、
   COL0=GP5 / COL1=GP8 / COL2=GP7 / COL3=GP10 / COL4=GP9 / COL5=GP12)。
-  ドライバ `kernel/keyboard_matrix.tc` は GP 番号を配列で持ち、マスク
+  ドライバ `kernel/platform/pico2/keyboard_matrix.tc` は GP 番号を配列で持ち、マスク
   を init 時に動的に組み立てる。**左半分と右半分でダイオードの向きが
   逆**になっており、2 フェーズでスキャンする:
   - フェーズ A: 行を駆動し列を読む → 一方の半分 (例: 左 6 列) を検出。
@@ -167,9 +167,9 @@ I2C0 を使う。
 
 ### SD カード (SPI0、実装済み 2026-04-29)
 
-実装は `kernel/block_sd.tc` (CMD0/CMD8/ACMD41/CMD58 init + CMD17/CMD24
-read/write) + `kernel/fatfs.tc` (MBR / superfloppy 対応 FAT32) で完成。
-`/sd/<path>` で OS から読み書き可能。`tests/test_pico2_sd.sh` が永続性
+実装は `kernel/platform/pico2/block_sd.tc` (CMD0/CMD8/ACMD41/CMD58 init + CMD17/CMD24
+read/write) + `kernel/src/fatfs.tc` (MBR / superfloppy 対応 FAT32) で完成。
+`/sd/<path>` で OS から読み書き可能。`kernel/kernel/tests/test_pico2_sd.sh` が永続性
 を検証。詳細は `docs/solved.md` の K7 エントリ。
 
 ### SD カード フォーマット注意
@@ -322,7 +322,7 @@ sudo usermod -aG dialout "$USER"
 3. `_start` にジャンプ。ペリフェラルはすべてリセット状態 (XOSC /
    PLL / UART / GPIO 全部 off)
 
-本プロジェクトの IMAGE_DEF は `kernel/platform_pico2.s` 先頭で
+本プロジェクトの IMAGE_DEF は `kernel/platform/pico2/platform_pico2.s` 先頭で
 RISC-V + EXE フラグ付きの 32 byte ブロックとして埋め込んでいる。
 
 ### XIP Flash と SRAM
@@ -332,7 +332,7 @@ RISC-V + EXE フラグ付きの 32 byte ブロックとして埋め込んでい�
               IMAGE_DEF ブロック (32 B)
               kernel text + rodata
               + 埋め込み mtfs image (タスク binary 群、/etc/kern.conf 等)
-                ↑ kernel/build.sh が `_mtfs_image_addr` 経由で参照
+                ↑ kernel/scripts/build.sh が `_mtfs_image_addr` 経由で参照
 0x10400000 ── Flash 末尾
 
 0x20000000 ── SRAM (520 KB) ──
@@ -344,7 +344,7 @@ RISC-V + EXE フラグ付きの 32 byte ブロックとして埋め込んでい�
 
 - text と rodata は Flash の XIP で実行 (SRAM 消費ゼロ)
 - data / bss / stack のみ SRAM
-- kernel arena は `kernel/crt0_pico2_data.s` の `__arena .space` で
+- kernel arena は `kernel/platform/pico2/crt0_pico2_data.s` の `__arena .space` で
   480 KB に固定。タスクの (arena, stack) はこの中から `make_task`
   が切り出す
 - 動的 spawn したタスクは一旦 SRAM に image をコピー…ではなく、
@@ -426,7 +426,7 @@ make run-pico2
 - ボーレート: **115200 8N1**
 - ホスト側デバイス: `/dev/ttyACM0` (Debug Probe の CDC-ACM)
 - 物理層: PL011 UART0 (Pico 2 内蔵)、kernel 側ドライバは
-  `kernel/platform_pico2.s` + `kernel/kernel_pico2.tc`
+  `kernel/platform/pico2/platform_pico2.s` + `kernel/src/kernel_pico2.tc`
 
 stty で raw モードに固定:
 
@@ -455,7 +455,7 @@ timeout 5 cat /dev/ttyACM0
 ```
 
 シェルが直接 stty を踏むと前回の echo 設定が残ることがあるので、
-`tests/test_pico2.sh` のように都度 `stty raw -echo` を打ち直す。
+`kernel/kernel/tests/test_pico2.sh` のように都度 `stty raw -echo` を打ち直す。
 
 ### UART 多重化 (任意)
 
@@ -479,11 +479,11 @@ python3 tests/uart_demux.py < /dev/ttyACM0
 
 | スクリプト | 内容 |
 |---|---|
-| `tests/test_pico2.sh` | flash → sh ↔ catfile / launcher / quit を UART で対話検証 (~98 秒) |
+| `kernel/kernel/tests/test_pico2.sh` | flash → sh ↔ catfile / launcher / quit を UART で対話検証 (~98 秒) |
 | `tests/pico2_verify.sh` | compile 7 段の中間ファイルを Gen2 ホスト参照と byte-exact 比較 (link 段は K7 で UART hang のため skip) |
-| `tests/test_pico2_hw.sh` | UART pipeline driver 経由の end-to-end コンパイル |
+| `kernel/kernel/tests/test_pico2_hw.sh` | UART pipeline driver 経由の end-to-end コンパイル |
 
-すべて `GEN2_DIR=build/gen2 ./tests/test_pico2.sh` のように起動。
+すべて `GEN2_DIR=build/gen2 ./kernel/tests/test_pico2.sh` のように起動。
 SKIP 条件: `GEN2_DIR` 未設定 / `openocd` 未存在 / `/dev/ttyACM0`
 未存在 (Debug Probe を抜くと自動 SKIP)。
 

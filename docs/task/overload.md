@@ -358,7 +358,7 @@ pipeline)
 
 ---
 
-### Step 9: compiler/codegen.tc — call 命令の型リスト出力
+### Step 9: compiler/src/codegen.tc — call 命令の型リスト出力
 
 Step 2 の変更を TinyC で実装。
 各引数の type_annot を読んで `call NAME TYPE1 TYPE2...` を出力する。
@@ -374,7 +374,7 @@ Step 5 の変更を TinyC で実装。
 
 ---
 
-### Step 11: compiler/bcrun.tc — .fn マングルと call ルックアップ
+### Step 11: compiler/src/bcrun.tc — .fn マングルと call ルックアップ
 
 Step 4 の変更を TinyC で実装。
 
@@ -410,9 +410,9 @@ make test
 | 6 | テスト追加 | no_coercion.tc, negative test | 小 |
 | 7 | `compiler/typecheck.tc` | 新規作成（AST 読み書き + 型チェック） | **大** |
 | 8 | `tc_run.sh` | pipeline に typecheck.tc | 小 |
-| 9 | `compiler/codegen.tc` | call: 型リスト出力 | 小 |
+| 9 | `compiler/src/codegen.tc` | call: 型リスト出力 | 小 |
 | 10 | `compiler/bc2asm.tc` | call マングル | 中 |
-| 11 | `compiler/bcrun.tc` | .fn マングル + call マングルルックアップ | 中 |
+| 11 | `compiler/src/bcrun.tc` | .fn マングル + call マングルルックアップ | 中 |
 | 12 | テストスクリプト更新 | typecheck.tc を pipeline に | 小 |
 | 13 | docs + golden 更新 | bc_format.md + make update-golden | 小 |
 

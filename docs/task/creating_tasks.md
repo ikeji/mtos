@@ -122,7 +122,7 @@ fn main() -> i32 {
 
 ## libtc (ユーザー空間ライブラリ)
 
-`kernel/tasks/libtc/libtc.tc` をインポートすると便利関数が使える:
+`userland/lib/libtc/libtc.tc` をインポートすると便利関数が使える:
 
 ```tc
 import "../libtc/libtc.tc";
@@ -146,7 +146,7 @@ fn main() -> i32 {
 
 ### 1. タスクリストに追加
 
-`kernel/build.sh` の `TASKS` 変数にタスク名を追加:
+`kernel/scripts/build.sh` の `TASKS` 変数にタスク名を追加:
 
 ```bash
 TASKS="hello hello2 catfile sh tmpdemo echo launcher cat <name>"

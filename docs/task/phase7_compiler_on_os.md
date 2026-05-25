@@ -73,21 +73,21 @@ Gen3 を再ビルド) まで持っていきたい。
 - parser が `StringLiteralArray` を合成するか? `StringLiteral` は
   primitive 型 (struct じゃない) なので、現在の struct synthetic fn
   生成ロジックがトリガされないかもしれない
-- **合成されない場合の fallback**: `compiler/runtime.tc` 側に手書きで
+- **合成されない場合の fallback**: `compiler/src/runtime.tc` 側に手書きで
   `export fn StringLiteralArray(n: u32) -> StringLiteralArray` を足す。
   内部は U32Array の wrapper で、要素は raw pointer (u32) を保持、
   `get(arr, i) -> StringLiteral` で pointer → StringLiteral 変換を返す
 - どちらでも main 側の使用感は変わらない
 
 **kernel と task でのレイアウト一致**:
-- kernel も task も同じ `compiler/runtime.tc` を使ってビルドされる
+- kernel も task も同じ `compiler/src/runtime.tc` を使ってビルドされる
   (compile-gen2.sh 経由) ので、StringLiteralArray / StringLiteral の
   メモリレイアウトは自動的に一致する。心配なし
 
 **実装範囲**:
-- `compiler/runtime.tc` — StringLiteralArray を fallback で足す (必要なら)
-- `kernel/loader.tc` — sys_spawn_handler / sys_exec_handler の argv 対応
-- `kernel/kernel_common.tc` — struct Task に argv フィールド追加、
+- `compiler/src/runtime.tc` — StringLiteralArray を fallback で足す (必要なら)
+- `kernel/src/loader.tc` — sys_spawn_handler / sys_exec_handler の argv 対応
+- `kernel/src/kernel_common.tc` — struct Task に argv フィールド追加、
   make_task / slot_capture_last / slot_free_allocs を拡張
 - `kernel/trap_common.s` — sys_spawn / sys_exec 各 handler の引数配線
   (a0=path, a1=argv_ptr)
@@ -97,7 +97,7 @@ Gen3 を再ビルド) まで持っていきたい。
   を構築、sys_spawn に渡す
 - `kernel/tasks/catfile/catfile.tc` — len(argv)>1 なら argv[1] を
   open (現状 hardcode `/hello.txt`)
-- `tests/test_os.sh` — `catfile /hello.txt` 引数渡しのシナリオ追加
+- `kernel/tests/test_os.sh` — `catfile /hello.txt` 引数渡しのシナリオ追加
 
 **検証**:
 - `/bin/catfile /hello.txt` のように引数付きで起動し、出力が変わる
@@ -111,7 +111,7 @@ Gen3 を再ビルド) まで持っていきたい。
 置く場所が必要。`mtfs` は read-only なので書けない。
 
 **実装範囲**:
-- `kernel/tmpfs.tc` を新設。`/tmp` にマウント
+- `kernel/src/tmpfs.tc` を新設。`/tmp` にマウント
 - inode 構造: ファイル名 + データバッファ (`U8Array`) + サイズ。
   ディレクトリはまずフラットで十分 (`/tmp/foo` のみ、サブディレクトリ
   なし)
@@ -178,7 +178,7 @@ D と同時にテスト (`echo foo > /tmp/a; cat < /tmp/a`)。
   obe 経由に
 - `compiler/asm.tc` — `asm_err_begin` / `asm_err_end` を obe を使う
   形に変更
-- `compiler/parse.tc` / `compiler/codegen.tc` / `compiler/bc2asm.tc` —
+- `compiler/src/parse.tc` / `compiler/src/codegen.tc` / `compiler/src/bc2asm.tc` —
   エラーを吐く箇所があれば同様に obe 化
 - 各ツールの main — 最後に obe の中身を sys_write(2) に流す
 - **OS 側は何も変更しない**。fd=2 は sys_write の fd<3 経路で UART に
@@ -208,7 +208,7 @@ sys_write を呼んでいる箇所 (境界エラーメッセージなど) も fd
   (後で E-step3 で正式なメカニズムに置き換える)
 
 **E-step2: 実使用量を計測**
-- `compiler/runtime.tc` には既に `km_dump_stats` があり peak 値を
+- `compiler/src/runtime.tc` には既に `km_dump_stats` があり peak 値を
   出せる
 - 各コンパイラツール (parse / typecheck / codegen / bc2asm / asm) の
   main 末尾で `km_dump_stats` を stderr (= obe / fd=2) に出すよう
@@ -225,9 +225,9 @@ sys_write を呼んでいる箇所 (境界エラーメッセージなど) も fd
   `[arena_size, stack_size]` を導入
   - 案 C の詳細:
     - `task_crt0.s` 先頭に `.word` 2 個を置く、entry は +8 のラベル
-    - `kernel/build.sh` に arena_size / stack_size の指定オプション
+    - `kernel/scripts/build.sh` に arena_size / stack_size の指定オプション
       追加
-    - `kernel/loader.tc` が先頭 8 バイトを読んで kmalloc サイズを決定
+    - `kernel/src/loader.tc` が先頭 8 バイトを読んで kmalloc サイズを決定
 
 **実装順序**: E-step1 → M4 相当 (コンパイラを 1 段だけ OS 上で動かす)
 → E-step2 (計測) → E-step3 (必要なら)
@@ -263,7 +263,7 @@ asm.tc は #7 (9MB 静的バッファ) が未解決なので、qemu virt
 - 初期の tmpfs に `/tmp/hello.tc` のようなテスト入力を seed する
   (mtfs にテスト入力を入れて、sh で `cat /hello.tc > /tmp/hello.tc`
   するでも良い)
-- テスト: `tests/test_os.sh` にパイプラインシナリオを追加
+- テスト: `kernel/tests/test_os.sh` にパイプラインシナリオを追加
 
 ### C-2. 真のパイプ (`|`)
 
@@ -300,17 +300,17 @@ Pico 2 実機なら中期/長期案を入れてから、という条件付き。
 
 ## 触る既存ファイルの一覧
 
-- `kernel/loader.tc` — sys_exec_handler / sys_spawn_handler を argv 対応に
-- `kernel/vfs.tc` — open flags、write 経路、dup2、mount テーブル拡張
-- `kernel/tmpfs.tc` — 新規
-- `kernel/kernel.tc` / `kernel/kernel_pico2.tc` — /tmp mount
+- `kernel/src/loader.tc` — sys_exec_handler / sys_spawn_handler を argv 対応に
+- `kernel/src/vfs.tc` — open flags、write 経路、dup2、mount テーブル拡張
+- `kernel/src/tmpfs.tc` — 新規
+- `kernel/src/kernel.tc` / `kernel/src/kernel_pico2.tc` — /tmp mount
 - `kernel/trap_common.s` — dup3 などの新 syscall ディスパッチ
 - `kernel/tasks/task_crt0.s` — argc/argv 受け渡し、E 案の header 対応
 - `kernel/tasks/sh/sh.tc` — コマンド行パーサ拡張、`<` / `>` / 引数
 - `kernel/tasks/echo/echo.tc` — 新規 (リダイレクトテスト用)
-- `kernel/build.sh` — コンパイラタスクの arena/stack 指定
-- `tests/test_os.sh` — パイプラインシナリオ追加
-- `compiler/runtime.tc` — 必要なら argv/read-file ヘルパ追加
+- `kernel/scripts/build.sh` — コンパイラタスクの arena/stack 指定
+- `kernel/tests/test_os.sh` — パイプラインシナリオ追加
+- `compiler/src/runtime.tc` — 必要なら argv/read-file ヘルパ追加
 - `docs/filesystem.md` — tmpfs / mount 表更新
 
 ## 関連ドキュメント

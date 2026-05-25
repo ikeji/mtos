@@ -46,7 +46,7 @@ ELF 実行ファイル / raw binary
 ./asm_pass3 --lab foo.lab --out foo.elf
 
 # パイプで一括実行 (ラップは compile-gen2.sh / compile-gen3.sh)
-GEN2_DIR=/tmp/gen2 ./compile-gen2.sh -o foo foo.tc
+GEN2_DIR=/tmp/gen2 ./compiler/scripts/compile-gen2.sh -o foo foo.tc
 ```
 
 ## レキサ / パーサ
@@ -192,16 +192,16 @@ emit するため、中間 code buffer を持たずに済む)。
 
 ```bash
 # Gen1 (C) ツールで .tc → RV32 ELF (Gen2 生成用)
-./compile-gen1.sh -o output file.tc
+./compiler/scripts/compile-gen1.sh -o output file.tc
 
 # Gen2 (TC 自己ホスト) ツールで .tc → RV32 ELF (Gen3 生成 / kernel 用)
-GEN2_DIR=/path/to/gen2 ./compile-gen2.sh -o output file.tc
+GEN2_DIR=/path/to/gen2 ./compiler/scripts/compile-gen2.sh -o output file.tc
 
 # Gen3 検証用
-GEN3_DIR=/path/to/gen3 ./compile-gen3.sh -o output file.tc
+GEN3_DIR=/path/to/gen3 ./compiler/scripts/compile-gen3.sh -o output file.tc
 ```
 
-`compile-gen2.sh` の環境変数:
+`compiler/scripts/compile-gen2.sh` の環境変数:
 
 - `CRT0` — `.s` パス。既定 `compiler/crt0_tc.s` (Linux ELF 用)
 - `CRT0_DATA` — `.s` パス。既定 `compiler/crt0_tc_data.s`
@@ -210,16 +210,16 @@ GEN3_DIR=/path/to/gen3 ./compile-gen3.sh -o output file.tc
   bc2asm / asm_pass2 / asm_pass3) の置き場所
 
 kernel タスクのビルドでは `ASM_PROLOGUE='; raw'` + `CRT0=task_crt0.s`
-+ `CRT0_DATA=task_data.s` で呼ぶ。詳細は `kernel/build.sh` と
++ `CRT0_DATA=task_data.s` で呼ぶ。詳細は `kernel/scripts/build.sh` と
 Makefile を参照。
 
 ## 世代の定義
 
 - **Gen1**: `bootstrap/*.c` を GCC で x86_64 にビルドしたもの
 - **Gen2**: `compiler/*.tc` を Gen1 で RV32 ELF にビルドしたもの
-  (`compile-gen1.sh`)
+  (`compiler/scripts/compile-gen1.sh`)
 - **Gen3**: `compiler/*.tc` を Gen2 で RV32 ELF にビルドしたもの
-  (`compile-gen2.sh`)
+  (`compiler/scripts/compile-gen2.sh`)
 
 自己ホスト確認は Gen2 == Gen3 の BC/ASM 一致を
-`tests/test_gen3.sh` が CI で検証。
+`compiler/compiler/tests/test_gen3.sh` が CI で検証。

@@ -24,7 +24,7 @@
 
 syscall (openat, readdir, unlink, exec, spawn, spawn_fds) が受け取る
 パスを String / StringLiteral layout (4 バイト count + bytes) に揃えた。
-- kernel/vfs.tc の path 入口は `peek32` でカウントを読み、以降は
+- kernel/src/vfs.tc の path 入口は `peek32` でカウントを読み、以降は
   `addr+4` のデータ部を従来どおり処理
 - `libtc.tc` の `to_cstr` / `strlen` は削除 (`eq` は長さ引数を
   取る形に変更)
@@ -45,9 +45,9 @@ kernel 内部の `task_set_name` は依然 U8Array NUL 終端で動いている
 | `kernel/tasks/sh/sh.tc:106` | `erase_line(buf: U8Array, count: i32)` (count はターミナル幅、String 化とは別問題) |
 | `kernel/tasks/cat/cat.tc:20` | `scan_eot(buf: U8Array, n: i32)` |
 | `kernel/tasks/wc/wc.tc:14` | `count_fd(..., lines, words, bytes: U8Array)` (= 4 バイトの out-parameter 代用。String 化ではなく別問題) |
-| `compiler/parse.tc:417` | `wrap_binop(left_buf, left_len, right_buf, right_len)` |
-| `compiler/parse.tc:1137-1255` | `emit_type / emit_param / emit_ret / emit_cast_var_tbuf` (型名スライス) |
-| `compiler/asm_common.tc:229-350` ほか | `lab_name_eq / lab_hash_name / find_label / define_label` (ラベル名スライス) |
+| `compiler/src/parse.tc:417` | `wrap_binop(left_buf, left_len, right_buf, right_len)` |
+| `compiler/src/parse.tc:1137-1255` | `emit_type / emit_param / emit_ret / emit_cast_var_tbuf` (型名スライス) |
+| `compiler/src/asm_common.tc:229-350` ほか | `lab_name_eq / lab_hash_name / find_label / define_label` (ラベル名スライス) |
 | `compiler/asm_pass3.tc:130` | `name: U8Array` + `name_len: i32` (`.lab` 読み出しラベル名) |
 
 **回避可能か**: 個々は String 化できる。ただし (4) の strtab
@@ -56,7 +56,7 @@ kernel 内部の `task_set_name` は依然 U8Array NUL 終端で動いている
 
 ### (4) 文字列アリーナ + `(ss: i32, sl: i32)` インデックス — 設計上の選択
 
-`compiler/tcheck.tc`, `bcrun.tc`, `codegen.tc`, `parse.tc` は
+`compiler/src/tcheck.tc`, `bcrun.tc`, `codegen.tc`, `parse.tc` は
 多数の識別子を一つの `strtab: U8Array` に packed 詰めして、
 `(ss, sl)` = (開始オフセット, 長さ) のペアで参照する。
 `String` に置き換えると小アロケーションが 1 関数あたり数百〜数千回
@@ -94,7 +94,7 @@ type より dimension の問題 (`String` が欲しいわけではない)。
 
 ### (6) スクラッチ / バイナリバッファ — U8Array が正しい
 
-- `compiler/string_buffer.tc` `StringBuffer` — 伸長バッファ (位置管理別)。意図通り
+- `compiler/src/string_buffer.tc` `StringBuffer` — 伸長バッファ (位置管理別)。意図通り
 - `compiler/asm_*.tc` の out_buf / g_lab_names — バイナリ/packed プール。意図通り
 - `kernel/tasks/vi/vi.tc:959-961` `g_undo_buf` — バッファコピー保存
 
@@ -123,4 +123,4 @@ strtab と同類。g_lab_names プールに紐づくスライスなので現状�
 
 - `wc.tc` の out-parameter 代用 U8Array(4) — i32 を参照渡しする手段がない言語仕様由来
 - `vi.tc:g_tut_kmap / g_tut_vo` — 漢字テーブル、バイナリ blob
-- `compiler/bcrun.tc:357` `heap_new_str` — ヒープ上の String 生成専用 (strtab から String オブジェクトを作る正規経路)
+- `compiler/src/bcrun.tc:357` `heap_new_str` — ヒープ上の String 生成専用 (strtab から String オブジェクトを作る正規経路)

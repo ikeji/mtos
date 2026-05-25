@@ -18,14 +18,14 @@
   trap_common.s  (ecall ハンドラを TC 呼び出しにブリッジ)
        │
        ▼  vfs_open / vfs_read / vfs_write / vfs_close / vfs_xip_addr
-  kernel/vfs.tc                   ← mount table + fd table + ディスパッチ
+  kernel/src/vfs.tc                   ← mount table + fd table + ディスパッチ
        │
        ▼  mtfs_open / mtfs_read      tmpfs_* / devfs_* / procfs_*
-  kernel/mtfs.tc                  kernel/tmpfs.tc / devfs.tc / procfs.tc
+  kernel/src/mtfs.tc                  kernel/src/tmpfs.tc / devfs.tc / procfs.tc
        │
        ▼  block_read(sector, buf)
-  kernel/block_virtio.tc          (qemu virt)
-  kernel/block_flash.tc           (Pico 2)
+  kernel/platform/virt/block_virtio.tc          (qemu virt)
+  kernel/platform/pico2/block_flash.tc           (Pico 2)
        │
        ▼  MMIO
   virtio-blk @ 0x10001000〜       or   XIP Flash @ 0x10100000〜
@@ -229,7 +229,7 @@ export fn mtfs_xip_addr(fd: i32) -> u32;               // Flash の場合のみ�
 ## ブロック層
 
 ```tinyc
-// kernel/block.tc — signature only (platform ごとに別ファイルで実装)
+// kernel/block.tc — signature only (現存しない。実体は kernel/platform/{virt,pico2}/block_*.tc)
 export fn block_init() -> i32;             // 0 = OK, -1 = device not found
 export fn block_sector_size() -> i32;      // 512 固定
 export fn block_count() -> u32;            // 総セクタ数
@@ -237,9 +237,9 @@ export fn block_read(sector: u32, buf: U8Array) -> i32;   // 512B 読み込み
 export fn block_write(sector: u32, buf: U8Array) -> i32;  // Flash では未実装
 ```
 
-- qemu virt 用: `kernel/block_virtio.tc`（virtio-mmio スキャン、legacy
+- qemu virt 用: `kernel/platform/virt/block_virtio.tc`（virtio-mmio スキャン、legacy
   mode polling）。
-- Pico 2 用: `kernel/block_flash.tc`（XIP アドレスから memcpy 相当）。
+- Pico 2 用: `kernel/platform/pico2/block_flash.tc`（XIP アドレスから memcpy 相当）。
 
 ### virtio-blk 最小ドライバ計画（qemu virt）
 
@@ -369,7 +369,7 @@ syscall はバッファを `U8Array + len` で受け渡すので、カーネル�
 
 > **Status:** フェーズ5 は step 1〜9 まで完了。続くフェーズ6 で mtfs 上に
 > `/bin/hello`, `/bin/hello2`, `/bin/catfile`, `/bin/sh` 等のゲストタスク
-> を配置し、`kernel/loader.tc` + `vfs_xip_addr` 経由で起動する形になった。
+> を配置し、`kernel/src/loader.tc` + `vfs_xip_addr` 経由で起動する形になった。
 > 以下は当時の計画メモを残してある。
 
 ### スコープ
@@ -386,29 +386,29 @@ syscall はバッファを `U8Array + len` で受け渡すので、カーネル�
 | # | 内容 | 成果物 |
 |---|---|---|
 | 1 | 設計ドキュメント統合（本書） | docs/filesystem.md |
-| 2 | virtio-mmio スキャン | kernel/block_virtio.tc（MagicValue/DeviceID 検出、block_init が TX/RX しない状態で 0 を返す） |
-| 3 | virtio-blk queue 初期化 + sector 0 read | kernel/block_virtio.tc 完成、kernel main で sector 0 先頭 16B を hex 出力 |
-| 4 | test_fs.sh で qemu に `-drive` を渡して sector 0 出力を golden 比較 | tests/test_fs.sh |
+| 2 | virtio-mmio スキャン | kernel/platform/virt/block_virtio.tc（MagicValue/DeviceID 検出、block_init が TX/RX しない状態で 0 を返す） |
+| 3 | virtio-blk queue 初期化 + sector 0 read | kernel/platform/virt/block_virtio.tc 完成、kernel main で sector 0 先頭 16B を hex 出力 |
+| 4 | test_fs.sh で qemu に `-drive` を渡して sector 0 出力を golden 比較 | kernel/tests/test_fs.sh |
 | 5 | tools/mkfs.py + mtfs superblock/inode 作成 | tools/mkfs.py |
-| 6 | kernel/mtfs.tc: mount + lookup + read | inode 線形スキャン、root 直下のみ |
-| 7 | kernel/vfs.tc + syscall 追加（openat/close + read/write 経路差し替え） | ecall ハンドラ拡張 |
-| 8 | kernel/tasks/catfile: `/hello.txt` を読んで UART 出力 | 実動テスト |
-| 9 | Pico 2 向け block_flash.tc（XIP memcpy）に差し替え | kernel/block_flash.tc、build.sh で backend 選択 |
+| 6 | kernel/src/mtfs.tc: mount + lookup + read | inode 線形スキャン、root 直下のみ |
+| 7 | kernel/src/vfs.tc + syscall 追加（openat/close + read/write 経路差し替え） | ecall ハンドラ拡張 |
+| 8 | userland/bin/catfile: `/hello.txt` を読んで UART 出力 | 実動テスト |
+| 9 | Pico 2 向け block_flash.tc（XIP memcpy）に差し替え | kernel/platform/pico2/block_flash.tc、build.sh で backend 選択 |
 
 各ステップ完了で `make test` / 必要に応じて `make full-test` を走らせる。
 
 ### 追加・変更ファイル一覧（予定）
 
 ```
-kernel/block_virtio.tc   (新規)
-kernel/block_flash.tc    (新規、step 9)
-kernel/mtfs.tc           (新規)
-kernel/vfs.tc            (新規)
-kernel/kernel.tc         (main から vfs_init / block_init 呼び出し)
+kernel/platform/virt/block_virtio.tc   (新規)
+kernel/platform/pico2/block_flash.tc    (新規、step 9)
+kernel/src/mtfs.tc           (新規)
+kernel/src/vfs.tc            (新規)
+kernel/src/kernel.tc         (main から vfs_init / block_init 呼び出し)
 kernel/trap_common.s     (ecall で sys_openat/close/read/write → VFS)
-kernel/build.sh          (新しい TC ファイルを投入)
+kernel/scripts/build.sh          (新しい TC ファイルを投入)
 tools/mkfs.py            (新規)
-tests/test_fs.sh         (新規)
+kernel/tests/test_fs.sh         (新規)
 tests/golden/test_fs/    (出力 golden)
 docs/roadmap.md          (フェーズ5 チェック)
 ```
@@ -417,13 +417,13 @@ docs/roadmap.md          (フェーズ5 チェック)
 
 - virtio-blk + mtfs は qemu-system-riscv32 起動が必要で数百 ms〜かかる。
 - `make test` は 60 秒上限を維持したいので、当面は `FULL_TEST=1` 限定に
-  して `tests/test_os.sh` 的な扱いにする。安定したら `make test` 側への
+  して `kernel/kernel/tests/test_os.sh` 的な扱いにする。安定したら `make test` 側への
   移動を検討。
 
 #### test_fs.sh の手順
 
 1. `python3 tools/mkfs.py $TMP/disk.img hello.txt greet.txt` でイメージ作成
-2. `kernel/build.sh --target virt -o $TMP/kernel_fs.bin`
+2. `kernel/scripts/build.sh --target virt -o $TMP/kernel_fs.bin`
 3. `qemu-system-riscv32 ... -drive file=$TMP/disk.img,format=raw,if=none,id=blk0 -device virtio-blk-device,drive=blk0`
 4. kernel がブート時に mount → `/hello.txt` を読んで UART 出力
 5. 期待文字列を grep で確認

@@ -46,10 +46,10 @@ tinyc は自己ホスト達成済みの小型言語。
 
 ```bash
 # Gen1 ツール (GCC リンカ) で .tc → RV32 ELF
-./compile-gen1.sh -o output file.tc
+./compiler/scripts/compile-gen1.sh -o output file.tc
 
 # Gen2 ツール (qemu 経由 + asm.tc リンカ) で .tc → RV32 ELF
-GEN2_DIR=/path/to/gen2 ./compile-gen2.sh -o output file.tc
+GEN2_DIR=/path/to/gen2 ./compiler/scripts/compile-gen2.sh -o output file.tc
 ```
 
 ### 複数ファイル
@@ -57,7 +57,7 @@ GEN2_DIR=/path/to/gen2 ./compile-gen2.sh -o output file.tc
 ```bash
 # import "lib.tc"; を再帰的に解決
 ./tc_build.sh -o prog main.tc          # 単一ファイルでも import OK
-GEN2_DIR=/path/to/gen2 ./compile-gen2.sh -o prog main.tc  # 同上
+GEN2_DIR=/path/to/gen2 ./compiler/scripts/compile-gen2.sh -o prog main.tc  # 同上
 ```
 
 ---
@@ -359,9 +359,12 @@ fn poke32(addr: u32, val: u32) -> void
 ## テスト実行
 
 ```bash
-make test          # 約50秒、上限60秒
-make full-test     # consistency + kmalloc/kernel1 含む全テスト (約63秒)
-make update-golden-and-run-test
+make test                        # 148 tests 集約 (~50秒、上限60秒)
+make full-test                   # 上 + integration + FULL_TEST=1
+make -C compiler test            # compiler 140 tests のみ (~60s)
+make -C kernel test              # kernel 8 tests のみ (~10s)
+make -C userland test            # userland smoke (~0.07s warm)
+make -C compiler update-golden && make test  # golden 再生成 → test 連続
 ```
 
 詳細は `tests/test_all.sh` 参照。

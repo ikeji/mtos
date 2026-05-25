@@ -7,7 +7,7 @@ K7 達成 (2026-04-29) で pico2 実機上での Hello World self-host が
 
 ## 実測ベースライン (Hello World)
 
-`tests/phase7_hello_world.tc` (366 byte ソース) を pico2 実機で
+`integration/inputs/phase7_hello_world.tc` (366 byte ソース) を pico2 実機で
 完走させた値:
 
 | 段 | task arena (decl) | task peak (実測) | 所要時間 |
@@ -99,7 +99,7 @@ constant。
 K7 時代の上記モデル (asm_pass2 が prelude.s を walk、asm_pass3 が 3
 回 walk) は **完全に古い**。現在の pipeline は:
 
-- prelude は `kernel/build.sh` が **`prelude.{idx,tx,ro,dt,rl}`** に
+- prelude は `kernel/scripts/build.sh` が **`prelude.{idx,tx,ro,dt,rl}`** に
   pre-encode 済 (`docs/task/asm_pre_encode.md`)。`.tx` は ~50 KB の
   text bin に縮小。
 - asm_pass2 は prelude.idx (~30 KB) を読んで label table を merge
@@ -110,7 +110,7 @@ K7 時代の上記モデル (asm_pass2 が prelude.s を walk、asm_pass3 が 3
 - dead-strip default-on (commit b7d8b4d、2026-05-13) で text セクション
   は ~290 KB → ~264 KB (~9 %)、task .bin は 53 KB → 24 KB に縮小。
 
-**実機 pico2 で `tests/test_pico2_bench.sh` 計測 (Hello World、
+**実機 pico2 で `kernel/kernel/tests/test_pico2_bench.sh` 計測 (Hello World、
 PLL_SYS 150 MHz、msh /pico2_bench_idx.sh 駆動、1 boot 完走)**:
 
 | stage | K7 (2026-04-29) | 現在 (2026-05-13) | 比 |
@@ -248,7 +248,7 @@ K7 時代の「合計 約 3 時間」は固定費 120 s × 50 = 6000 s が支配
 
 asm_pass3 の peak (298 KB) は label 数 + name pool に支配される。
 ソース毎に label 数が大きく変わるので peak も伸びるが、
-MAX_LABELS = 4096, MAX_NAME_POOL = 128 KB の cap がある (`compiler/asm_common.tc`)。
+MAX_LABELS = 4096, MAX_NAME_POOL = 128 KB の cap がある (`compiler/src/asm_common.tc`)。
 通常の OS ソースなら 320 KB の task arena 内に収まる見込み。
 
 逆に **kernel arena (480 KB) のほうが先に問題化する**: sh + asm_pass3
@@ -322,7 +322,7 @@ Hello World でも 100〜300 KB peak になる理由。OS 全体コンパイル�
 
 ## Q3: ドライバ `tcc` (退役、2026-05-11)
 
-K13 期の `kernel/tasks/tcc/tcc.tc` は asm_pass2 walked-source +
+K13 期の `userland/bin/tcc/tcc.tc` は asm_pass2 walked-source +
 asm_pass3 stdin-pipe を前提に組まれていた。walked-source 退役と
 同時にこの driver も削除された。以下は当時の計測値で、sh-driven
 vs tcc-driven の slowdown 比較が必要になったときに再実装するための
@@ -382,14 +382,14 @@ OOM: 327684                 ← tcheck spawn 失敗
    段目は別途処理を要する (chain).
 
 現状の `tcc.tc` は **タイミング測定のリファレンス実装**として残す。
-本番の self-host は sh-driven (`tests/test_pico2_phase7_sd.sh` 又は
+本番の self-host は sh-driven (`kernel/kernel/tests/test_pico2_phase7_sd.sh` 又は
 manually) で。
 
 ## Q4: `/prelude.s` とは
 
 OS 内 mtfs に `/prelude.s` として埋め込まれている定型 asm 文字列。
 **タスクバイナリの「先頭ボイラープレート」を一切プリビルド** しておく
-ためのもので、`kernel/build.sh` (Step 0 / Step 7) が各 task の build
+ためのもので、`kernel/scripts/build.sh` (Step 0 / Step 7) が各 task の build
 前に下記を 1 度だけ生成して mtfs にステージ:
 
 ```
@@ -397,7 +397,7 @@ OS 内 mtfs に `/prelude.s` として埋め込まれている定型 asm 文字�
              + '.word 32768\n.word 8192' ← /sd/HW のタスクヘッダ
                                           (arena=32 KB, stack=8 KB)
              + task_crt0.s               ← ecall stub + peek/poke + main 呼び出し
-             + cached runtime.s          ← compiler/runtime.tc のプリコンパイル
+             + cached runtime.s          ← compiler/src/runtime.tc のプリコンパイル
 
 /prelude_tail.s = task_data.s            ← .bss .space (32 KB の __arena)
 ```
@@ -412,11 +412,11 @@ crt0 + runtime + bss を貼って一つの完結アセンブリに仕立てる�
 いる。`runtime.s` を Flash XIP の rodata にしてアドレス渡しできれば
 劇的に速くなるはず (将来課題)。
 
-詳細は `kernel/build.sh` の Step 0 と Step 7 を参照。
+詳細は `kernel/scripts/build.sh` の Step 0 と Step 7 を参照。
 
 ## Q5: `tcc` の必要メモリ量
 
-### 静的宣言 (`kernel/tasks/tcc/task.mk`)
+### 静的宣言 (`userland/bin/tcc/task.mk`)
 
 ```
 TASK_ARENA_tcc := 16384   # 16 KB
@@ -572,7 +572,7 @@ arena 縮小を実装 (commit 後述) して tcc-driven をリトライ:
    後の `wc /sd/a.out` ができなくなる)。
 2. **cat / asm_pass2 の異常遅延** (14〜140 倍): tcc が kernel arena
    中央に 25 KB 居座ることで、alloc/free が free list を長く歩く
-   症状と推測。`compiler/runtime.tc::large_alloc` は first-fit + 隣接
+   症状と推測。`compiler/src/runtime.tc::large_alloc` は first-fit + 隣接
    merge だが、tcc が中央にあると merge できない。
 
 → **やはり「tcc を sh の組み込みコマンド化」が筋が良い**。tcc 自体
@@ -616,7 +616,7 @@ sh-driven, with PLL_SYS @ 150 MHz: 123 sec (K7 era 127 sec)
 tcc-driven 検証時の数字か、あるいは PLL_SYS 150 MHz 化前の旧値。
 sh/msh から起動した tiny task の spawn コストは無視できる範囲。
 
-`tests/test_pico2_bench.sh` の最新結果より:
+`kernel/kernel/tests/test_pico2_bench.sh` の最新結果より:
 - `echo BENCH_DONE` = 0.010 s
 - `parse < /hw.tc > /sd/1.ast` (6-line input) = 0.21 s (処理含む)
 - `sigscan < /sd/1.ast > /sd/1.th` = 0.11 s
@@ -767,8 +767,8 @@ md5sum ~152 sec で計 ~4 min が観測値。step 4 (bin2uf2 + md5sum)
 も同様。全体は 2026-05-09 計測の ~34 min から 4 min ほど縮んだ
 (主に 0a-0e refresh のコンパイラ自体が高速化)。
 
-入力 disk-extra 経路の変更: orchestrator が host 側 `kernel/bin2s.sh`
-(disk を `.byte ASCII` で 26 MB に展開) ではなく `kernel/bin2s_incbin.sh`
+入力 disk-extra 経路の変更: orchestrator が host 側 `kernel/scripts/bin2s.sh`
+(disk を `.byte ASCII` で 26 MB に展開) ではなく `kernel/scripts/bin2s_incbin.sh`
 を使い、blob path として `dx.img` (basename only) を渡す。compile-gen2 の
 intermediate dir に sibling `dx.img` を copy で staging すると、
 device 側の `/sd/dx.img` と path 解決が対称になる。Makefile の
@@ -832,7 +832,7 @@ step 2 (pre-encode + link) を host (qemu-riscv32) で計測すると:
 
 ### 解決: defer to asm_pass3 memcpy
 
-`compiler/asm_common.tc` の `.incbin` ハンドラを変更し、section の
+`compiler/src/asm_common.tc` の `.incbin` ハンドラを変更し、section の
 先頭 (`intra_off == 0`) にある `.incbin` は materialize せず:
 
 1. asm_pass1 が `(sec, intra_off, size, path)` を idx に
@@ -919,7 +919,7 @@ pt.idx のバイナリを取り出すと、device 側の pt.idx には
 
 ### 根本原因: pass 1 の `intra_now` が g_sec_base[]の未初期化値に依存
 
-`compiler/asm_common.tc` の `.incbin SIZE "path"` ハンドラが
+`compiler/src/asm_common.tc` の `.incbin SIZE "path"` ハンドラが
 section 先頭判定に使っていた:
 
 ```

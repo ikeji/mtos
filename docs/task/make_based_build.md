@@ -11,7 +11,7 @@
 ゴール:
 
 - `make test` が 2 回目以降は Gen2 ツール再ビルドをスキップする
-- `kernel/*.tc` の 1 ファイル編集で、そのファイルに依存する kernel
+- `kernel/src/*.tc + kernel/platform/{virt,pico2}/*` の 1 ファイル編集で、そのファイルに依存する kernel
   バイナリだけが再生成される (全タスク再ビルドは起こらない)
 - `compiler/*.tc` の 1 ファイル編集で、それを使う Gen2 ツール 1 本
   だけが再生成される
@@ -101,7 +101,7 @@ build/
   gen3/                 # Gen3 ツール (compile-gen2.sh 出力、kernel build 本番)
     parse sigscan tcheck codegen bc2asm bcrun asm_pass2 asm_pass3
   compiler/             # compiler/*.tc ソースのミラー位置
-    runtime.s           # compiler/runtime.tc → 1 回だけ
+    runtime.s           # compiler/src/runtime.tc → 1 回だけ
   kernel/
     tasks/libtc/
       libtc.s           # kernel/tasks/libtc/libtc.tc → 1 回だけ
@@ -126,7 +126,7 @@ build/
 
 要点:
 
-- **ソースのミラー位置**: `compiler/runtime.tc` → `build/compiler/runtime.s`、
+- **ソースのミラー位置**: `compiler/src/runtime.tc` → `build/compiler/runtime.s`、
   `kernel/tasks/libtc/libtc.tc` → `build/kernel/tasks/libtc/libtc.s` の
   ようにソース階層をそのまま映す。`build/cache/` のような平置きは廃止
 - **task は plat 共通**: `build/kernel/root/bin/<task>` に 1 本だけ置き、
@@ -167,7 +167,7 @@ seed task の選定 (pico2 は slot 2 が launcher、virt は slot 2 が sh)
 
 ```makefile
 # build/gen2/parse の recipe 末尾で:
-./tools/collect_imports.sh compiler/parse.tc \
+./compiler/scripts/collect_imports.sh compiler/src/parse.tc \
     > build/gen2/parse.d
 
 # Makefile 先頭:
@@ -177,12 +177,12 @@ seed task の選定 (pico2 は slot 2 が launcher、virt は slot 2 が sh)
 `.d` の中身は:
 
 ```
-build/gen2/parse: compiler/parse.tc compiler/strlib.tc \
-    compiler/string_buffer.tc compiler/source_reader.tc
+build/gen2/parse: compiler/src/parse.tc compiler/src/strlib.tc \
+    compiler/src/string_buffer.tc compiler/src/source_reader.tc
 ```
 
 Gen2 ツール + task 全部 + kernel 本体で使う。Make 標準の `-include`
-パターンなので追加ツールは要らない (tools/collect_imports.sh 1 本)。
+パターンなので追加ツールは要らない (compiler/scripts/collect_imports.sh 1 本)。
 
 既存の `compile-gen1.sh` / `compile-gen2.sh` の `_collect_imports`
 bash 関数をほぼそのまま使える。依存リストを stdout に出すモード
@@ -209,7 +209,7 @@ $(eval $(call define_task,hello,32768,8192))
 # kernel/tasks/tasks.mk (共通マクロ、top から include 済みとする)
 define define_task
 build/kernel/root/bin/$(1): kernel/tasks/$(1)/$(1).tc \
-    $$(shell tools/collect_imports.sh kernel/tasks/$(1)/$(1).tc) \
+    $$(shell compiler/scripts/collect_imports.sh kernel/tasks/$(1)/$(1).tc) \
     build/compiler/runtime.s build/kernel/tasks/libtc/libtc.s \
     $$(GEN2_TOOLS)
 	./compile-gen2.sh --task --arena $(2) --stack $(3) \
@@ -262,7 +262,7 @@ kernel を qemu に食わせる」だけのフェーズに変える。
 
 ### D5: 依存抽出ツール
 
-`tools/collect_imports.sh <file.tc>`:
+`compiler/scripts/collect_imports.sh <file.tc>`:
 
 ```bash
 #!/bin/bash
@@ -288,7 +288,7 @@ _collect() {
 target="$1"
 tc="$2"
 echo -n "$target: "
-tools/collect_imports.sh "$tc" | tr '\n' ' '
+compiler/scripts/collect_imports.sh "$tc" | tr '\n' ' '
 echo
 ```
 
@@ -305,7 +305,7 @@ build/gen3/<tool>                      depends on
     compiler/<tool>.tc + transitive imports + $(GEN2_TOOLS)
 
 build/compiler/runtime.s               depends on
-    compiler/runtime.tc + $(GEN2_TOOLS) (or Gen3)
+    compiler/src/runtime.tc + $(GEN2_TOOLS) (or Gen3)
 
 build/kernel/tasks/libtc/libtc.s       depends on
     kernel/tasks/libtc/libtc.tc + $(GEN2_TOOLS)
@@ -323,7 +323,7 @@ build/kernel/disk.img                  depends on
     (plat 非依存、virt と pico2 の両方から参照)
 
 build/kernel/virt_kernel.bin           depends on
-    kernel/kernel.tc + kernel/kernel_common.tc + kernel/*.tc
+    kernel/src/kernel.tc + kernel/src/kernel_common.tc + kernel/src/*.tc + kernel/platform/{virt,pico2}/*
     + kernel/platform_virt.s + kernel/trap_common.s
     + kernel/crt0_data.s
     + build/compiler/runtime.s
@@ -331,7 +331,7 @@ build/kernel/virt_kernel.bin           depends on
     + $(GEN2_TOOLS)  (本番 Gen3 後は $(GEN3_TOOLS))
 
 build/kernel/pico2_kernel.bin          depends on
-    kernel/kernel_pico2.tc + kernel/kernel_common.tc + kernel/*.tc
+    kernel/src/kernel_pico2.tc + kernel/src/kernel_common.tc + kernel/src/*.tc + kernel/platform/{virt,pico2}/*
     + kernel/platform_pico2.s + kernel/trap_common.s
     + kernel/crt0_pico2_data.s
     + build/compiler/runtime.s
@@ -363,7 +363,7 @@ compiler/ 以下を触らないときは 1 本もリビルドしない
 
 ### Phase B: 依存抽出と `.d` 導入 (中)
 
-- `tools/collect_imports.sh` / `tools/tc_deps_to_d.sh` を新設
+- `compiler/scripts/collect_imports.sh` / `tools/tc_deps_to_d.sh` を新設
 - Phase A の Gen2 ビルドルールに `.d` 生成を追加
 - Makefile で `-include build/gen2/*.d` する
 - compiler/\*.tc を 1 つ編集して対応する Gen2 ツールだけがビルド

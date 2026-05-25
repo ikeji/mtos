@@ -22,7 +22,7 @@ Pico 2 に RTC・SPI ディスプレイ (ILI9488)・GPIO マトリクスキー�
 
 SD カードとディスプレイは **別の SPI モジュールに分ける**。
 
-- SD カード → SPI0 (既存、`kernel/block_sd.tc`)
+- SD カード → SPI0 (既存、`kernel/platform/pico2/block_sd.tc`)
 - ディスプレイ → SPI1 (新規)
 
 共有も技術的には可能 (CS 別 + トランザクションごとに baud 切り替え)
@@ -248,19 +248,19 @@ GUI を作る場合も**カーネル側のプランは変わらない**。
 
 ### S1. `/dev` ルーティング + `/dev/uart`
 
-- 新規 `kernel/devfs.tc` — `procfs.tc` (~240 行) を雛形に。
+- 新規 `kernel/src/devfs.tc` — `procfs.tc` (~240 行) を雛形に。
 - `vfs.tc` — `is_devfs_path()` 追加、`/dev/` を devfs に振る。
   `devfs_readdir` で `ls /dev` 対応。
 - `devfs.tc` — `/dev/uart` の open/read/write/close を既存
   `do_uart_*` に転送。
-- `kernel/build.sh` のカーネルモジュールリストに `devfs.tc` を追加。
+- `kernel/scripts/build.sh` のカーネルモジュールリストに `devfs.tc` を追加。
 - テスト: virt。`cat /dev/uart` / echo to `/dev/uart` / `ls /dev`。
   `test_os.sh` に 1 ケース追加。
 - リスク: 低 / 依存: なし
 
 ### S2. `/dev/rtc`
 
-- [x] `kernel/rtc.tc` — datetime 整形/解析 + civil↔Unix 変換
+- [x] `kernel/src/rtc.tc` — datetime 整形/解析 + civil↔Unix 変換
   (Hinnant)。platform は `rtc_read_secs` / `rtc_set_secs` を提供。
 - [x] virt backend = goldfish-rtc (`kernel.tc`、MMIO 0x101000)。
 - [x] `devfs.tc` `/dev/rtc` — read = datetime 整形、write = 解析
@@ -292,7 +292,7 @@ GUI を作る場合も**カーネル側のプランは変わらない**。
 
 ### S5. キーボードドライバ + `/dev/kbd` — [x] 2026-05-20
 
-- [x] `kernel/keyboard_matrix.tc` (pico2 専用)。GP16-26 を SIO に
+- [x] `kernel/platform/pico2/keyboard_matrix.tc` (pico2 専用)。GP16-26 を SIO に
   funcsel + プルアップ。
 - [x] **2 フェーズスキャン**: 物理線は行 5 + 列 6 = 11 本。左右半分で
   ダイオードの向きが逆なので、フェーズ A (行駆動/列読み) +

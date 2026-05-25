@@ -291,7 +291,7 @@ with open("hello.bin", "rb") as f:
 
 ### Phase 1: 出力多重化 (kernel → host)
 
-1. `kernel/kernel_common.tc` に:
+1. `kernel/src/kernel_common.tc` に:
    - `uart_emit_frame(tag: StringLiteral, buf: U8Array, len: i32)` 新設
    - `do_uart_write_raw` (現在の do_uart_write をリネーム)
    - `do_uart_write(buf, len)` を「KERN タグで raw emit する wrapper」に
@@ -334,7 +334,7 @@ with open("hello.bin", "rb") as f:
 
 ## 参考
 
-- 現状 scheduler tracer: `kernel/kernel_common.tc::kdbg_*`
+- 現状 scheduler tracer: `kernel/src/kernel_common.tc::kdbg_*`
 - UART driver: `kernel/platform_pico2.s::do_uart_write / do_uart_read`
-- task VFS write: `kernel/vfs.tc::vfs_write`
+- task VFS write: `kernel/src/vfs.tc::vfs_write`
 - 前代の line-based design はバイナリ不可で採用見送り (commit efb90f8)

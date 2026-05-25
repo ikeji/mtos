@@ -16,7 +16,7 @@ World の user .s が実際に呼ぶシンボルは `print__StringLiteral` の
 1 個だけ。残り 200+ KB は **dead code** として linker (asm_pass2/2)
 にそのまま通し、コードサイズと SD I/O 時間を浪費している。
 
-実機 pipeline の per-stage timing (`tests/test_pico2_bench.sh` の
+実機 pipeline の per-stage timing (`kernel/kernel/tests/test_pico2_bench.sh` の
 2026-04-30 baseline):
 
 | 段 | 所要 | 主な作業 |
@@ -409,7 +409,7 @@ OS 全体コンパイル時 (バイナリ毎に異なる live set):
 ### Phase 5: テスト
 
 - `tests/bench_pipeline.sh` で peak が目標下になるか確認
-- `tests/test_pico2_phase7_sd.sh` (実機) で full pipeline が完走
+- `kernel/kernel/tests/test_pico2_phase7_sd.sh` (実機) で full pipeline が完走
 - `make test` ホスト側で全 task / kernel build がリンク変化なし
   (= 同じ ELF が出力される — section size / address は変わって OK、
    実行結果が同じなら良い)
