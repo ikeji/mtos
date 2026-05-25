@@ -38,12 +38,12 @@ tcheck)、`pico2_dumper_test.sh`、`pico2_dir_grow_test{,2}.sh`、
 # integration の自動可能部分 (qemu virt のみ)
 make full-test
 # または個別:
-GEN2_DIR=$(pwd)/build/gen2 ./integration/test_phase7.sh
+GEN2_DIR=$(pwd)/compiler/build/gen2 ./integration/test_phase7.sh
 python3 integration/phase3_verify.py
 python3 integration/qemu_mr_scale.py
 
 # 実機が必要なもの (Debug Probe + openocd-rpi が前提)
-GEN2_DIR=$(pwd)/build/gen2 ./integration/pico2_self_replicate.sh
+GEN2_DIR=$(pwd)/compiler/build/gen2 ./integration/pico2_self_replicate.sh
 ```
 
 詳細設計は `../docs/task/subproject_split.md`。

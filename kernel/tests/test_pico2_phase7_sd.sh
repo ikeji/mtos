@@ -19,7 +19,7 @@
 # the final /sd/hw binary prints "Hello, World!".
 #
 # Usage:
-#   GEN2_DIR=build/gen2 tests/test_pico2_phase7_sd.sh
+#   GEN2_DIR=compiler/build/gen2 tests/test_pico2_phase7_sd.sh
 
 set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

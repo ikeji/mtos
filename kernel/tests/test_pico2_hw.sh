@@ -23,7 +23,7 @@
 # Requires a Pico 2 + Debug Probe + /dev/ttyACM0, same as test_pico2.sh.
 # Not part of `make test`; run manually:
 #
-#   GEN2_DIR=build/gen2 tests/test_pico2_hw.sh
+#   GEN2_DIR=compiler/build/gen2 tests/test_pico2_hw.sh
 
 set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

@@ -39,7 +39,7 @@ set -e
 # asm_pass3 silently exited in 46ms instead of producing /sd/k.bin.
 set -o pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-PARSE="$ROOT_DIR/build/gen1/parse"
+PARSE="$ROOT_DIR/compiler/build/gen1/parse"
 QEMU="${QEMU:-qemu-riscv32}"
 CRT0="${CRT0:-$ROOT_DIR/compiler/runtime/linux/crt0_tc.s}"
 CRT0_DATA="${CRT0_DATA:-$ROOT_DIR/compiler/runtime/linux/crt0_tc_data.s}"

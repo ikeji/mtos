@@ -54,14 +54,14 @@ cp "$TMP/disk-extra.img" "$HOST_LAB_DIR/dx.img"
 # (p.tx, kc.tx, pp.tx, bf.tx, ...) so the resulting .lab is byte-
 # identical between host and device.
 CRT0="$TMP/host_crt0.s" CRT0_DATA="$TMP/host_data.s" ASM_PROLOGUE="; raw" \
-    GEN2_DIR="$ROOT/build/gen2" \
+    GEN2_DIR="$ROOT/compiler/build/gen2" \
     CACHED_S_DIR="$ROOT/build/kernel/shared" \
     PRELUDE_NAME="p" \
     INPUT_NAMES="kc pp bf bs ff mf tf pf vf ld kp pt" \
     "$ROOT/compiler/scripts/compile-gen2.sh" -o "$TMP/host_k.bin" \
     "$ROOT/kernel/src/kernel_pico2.tc" 2>/dev/null
 # Phase 8: TC port runs via qemu-riscv32 instead of python3.
-qemu-riscv32 "$ROOT/build/gen2/bin2uf2" "$TMP/host_k.bin" "$TMP/host_k.uf2" >/dev/null
+qemu-riscv32 "$ROOT/compiler/build/gen2/bin2uf2" "$TMP/host_k.bin" "$TMP/host_k.uf2" >/dev/null
 HOST_BIN_MD5=$(md5sum "$TMP/host_k.bin" | awk '{print $1}')
 HOST_UF2_MD5=$(md5sum "$TMP/host_k.uf2" | awk '{print $1}')
 echo "frozen host kernel.bin md5: $HOST_BIN_MD5" >&2

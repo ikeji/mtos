@@ -112,7 +112,7 @@ emit_task_header() {
 }
 
 QEMU="${QEMU:-qemu-riscv32}"
-PARSE="$ROOT_DIR/build/gen1/parse"
+PARSE="$ROOT_DIR/compiler/build/gen1/parse"
 
 # --- Step 0: Pre-compile runtime.tc and libtc.tc once ---
 # compile-gen2.sh compiles runtime.tc inside every task/kernel build.
@@ -255,7 +255,7 @@ cp "$TASK_DATA" "$ROOT_DIR_TREE/prelude_tail.s"
 # prelude source walk (~95 s on pico2 phase 7); the OS-side asm_pass3
 # memcpies the .bin straight into the output instead of re-tokenising
 # the ~10000-line prelude (original 56 s → ~15 s win).
-GEN2_ASM_PASS1_TOOL="${GEN2_DIR:-build/gen2}/asm_pass1"
+GEN2_ASM_PASS1_TOOL="${GEN2_DIR:-compiler/build/gen2}/asm_pass1"
 if [ -x "$GEN2_ASM_PASS1_TOOL" ] && command -v qemu-riscv32 >/dev/null 2>&1; then
     qemu-riscv32 "$GEN2_ASM_PASS1_TOOL" \
         "$ROOT_DIR_TREE/prelude.s" \
@@ -316,11 +316,11 @@ if [ -n "$EXTRA_TASKS" ]; then
     echo "M7: staged /src/*.tc" >&2
 fi
 
-if [ ! -x "$ROOT_DIR/build/gen2/mkfs" ]; then
-    echo "kernel/build.sh: build/gen2/mkfs missing — run 'make build/gen2/mkfs' first" >&2
+if [ ! -x "$ROOT_DIR/compiler/build/gen2/mkfs" ]; then
+    echo "kernel/build.sh: compiler/build/gen2/mkfs missing — run 'make compiler/build/gen2/mkfs' first" >&2
     exit 1
 fi
-qemu-riscv32 "$ROOT_DIR/build/gen2/mkfs" "$TMP/mtfs.img" "$ROOT_DIR_TREE" >&2
+qemu-riscv32 "$ROOT_DIR/compiler/build/gen2/mkfs" "$TMP/mtfs.img" "$ROOT_DIR_TREE" >&2
 
 # Optional: copy the mtfs image out for callers that need it (e.g.
 # tests/test_os.sh passes it to qemu via -drive).
@@ -385,13 +385,13 @@ case "$TARGET" in
         ;;
     pico2)
         # Phase 8: bin2uf2 ported to TC at tools/bin2uf2.tc, built to
-        # build/gen2/bin2uf2 (RV32 ELF) and run via qemu-riscv32.
+        # compiler/build/gen2/bin2uf2 (RV32 ELF) and run via qemu-riscv32.
         # tools/bin2uf2.py has been retired.
-        if [ ! -x "$ROOT_DIR/build/gen2/bin2uf2" ]; then
-            echo "kernel/build.sh: build/gen2/bin2uf2 missing — run 'make build/gen2/bin2uf2' first" >&2
+        if [ ! -x "$ROOT_DIR/compiler/build/gen2/bin2uf2" ]; then
+            echo "kernel/build.sh: compiler/build/gen2/bin2uf2 missing — run 'make compiler/build/gen2/bin2uf2' first" >&2
             exit 1
         fi
-        qemu-riscv32 "$ROOT_DIR/build/gen2/bin2uf2" "$TMP/kernel.bin" "$OUTFILE"
+        qemu-riscv32 "$ROOT_DIR/compiler/build/gen2/bin2uf2" "$TMP/kernel.bin" "$OUTFILE"
         ;;
 esac
 

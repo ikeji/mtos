@@ -5,7 +5,7 @@
 # SD card with a single FAT partition (MBR or superfloppy).
 #
 # Usage:
-#   GEN2_DIR=build/gen2 tests/test_pico2_sd.sh
+#   GEN2_DIR=compiler/build/gen2 tests/test_pico2_sd.sh
 #
 # Two-phase test:
 #   Phase A: flash a fresh kernel, write /sd/T.TXT, read back via cat.

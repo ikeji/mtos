@@ -4,36 +4,36 @@ CFLAGS = -Wall -Wextra -g -I compiler/bootstrap
 SRCS = compiler/bootstrap/lexer.c compiler/bootstrap/ast.c compiler/bootstrap/parser.c compiler/bootstrap/typecheck.c compiler/bootstrap/interp.c compiler/bootstrap/codegen.c
 OBJS = $(SRCS:.c=.o)
 
-# Gen1 ツール (C 製、build/gen1/ 固定。repo 直下には置かない)
+# Gen1 ツール (C 製、compiler/build/gen1/ 固定。repo 直下には置かない)
 GEN1_NAMES = parse typecheck interp codegen bcrun bc2asm
-GEN1_TOOLS = $(addprefix build/gen1/,$(GEN1_NAMES))
+GEN1_TOOLS = $(addprefix compiler/build/gen1/,$(GEN1_NAMES))
 
 # Gen2 ツール (compile-gen1.sh で compiler/*.tc を RV32 ELF に。
-# build/gen2/ 固定にして make test 2 回目以降は再ビルドを避ける)
+# compiler/build/gen2/ 固定にして make test 2 回目以降は再ビルドを避ける)
 GEN2_NAMES = parse sigscan tcheck codegen bc2asm bcrun asm_pass1 asm_pass2 asm_pass3
-GEN2_TOOLS = $(addprefix build/gen2/,$(GEN2_NAMES))
+GEN2_TOOLS = $(addprefix compiler/build/gen2/,$(GEN2_NAMES))
 
 all: $(GEN1_TOOLS)
 
-build/gen1:
+compiler/build/gen1:
 	mkdir -p $@
 
-build/gen1/parse: $(OBJS) compiler/bootstrap/parse_main.o | build/gen1
+compiler/build/gen1/parse: $(OBJS) compiler/bootstrap/parse_main.o | compiler/build/gen1
 	$(CC) -o $@ $^
 
-build/gen1/typecheck: $(OBJS) compiler/bootstrap/typecheck_main.o | build/gen1
+compiler/build/gen1/typecheck: $(OBJS) compiler/bootstrap/typecheck_main.o | compiler/build/gen1
 	$(CC) -o $@ $^
 
-build/gen1/interp: $(OBJS) compiler/bootstrap/interp_main.o | build/gen1
+compiler/build/gen1/interp: $(OBJS) compiler/bootstrap/interp_main.o | compiler/build/gen1
 	$(CC) -o $@ $^
 
-build/gen1/codegen: $(OBJS) compiler/bootstrap/codegen_main.o | build/gen1
+compiler/build/gen1/codegen: $(OBJS) compiler/bootstrap/codegen_main.o | compiler/build/gen1
 	$(CC) -o $@ $^
 
-build/gen1/bcrun: compiler/bootstrap/bcrun.c | build/gen1
+compiler/build/gen1/bcrun: compiler/bootstrap/bcrun.c | compiler/build/gen1
 	$(CC) $(CFLAGS) -o $@ compiler/bootstrap/bcrun.c
 
-build/gen1/bc2asm: compiler/bootstrap/bc2asm.c | build/gen1
+compiler/build/gen1/bc2asm: compiler/bootstrap/bc2asm.c | compiler/build/gen1
 	$(CC) $(CFLAGS) -o $@ compiler/bootstrap/bc2asm.c
 
 %.o: %.c
@@ -43,10 +43,10 @@ build/gen1/bc2asm: compiler/bootstrap/bc2asm.c | build/gen1
 # recipe 末尾で `compiler/scripts/tc_deps_to_d.sh` が .d を書き出し、top Makefile
 # が `-include` で取り込む (Phase B)。2 回目以降の make test はこの .d
 # で「触っていない .tc 経由のツール」を正しくスキップできる。
-build/gen2:
+compiler/build/gen2:
 	mkdir -p $@
 
-build/gen2/%: compiler/src/%.tc $(GEN1_TOOLS) compiler/scripts/collect_imports.sh compiler/scripts/tc_deps_to_d.sh | build/gen2
+compiler/build/gen2/%: compiler/src/%.tc $(GEN1_TOOLS) compiler/scripts/collect_imports.sh compiler/scripts/tc_deps_to_d.sh | compiler/build/gen2
 	./compiler/scripts/compile-gen1.sh -o $@ $<
 	./compiler/scripts/tc_deps_to_d.sh $@ $< > $@.d
 
@@ -54,7 +54,7 @@ build/gen2/%: compiler/src/%.tc $(GEN1_TOOLS) compiler/scripts/collect_imports.s
 # the same way Gen2 tools are. Produces an RV32 ELF run via
 # qemu-riscv32 — replaces the python3 tools/bin2uf2.py invocation in
 # the kernel build path.
-build/gen2/bin2uf2: kernel/tools-src/bin2uf2.tc $(GEN1_TOOLS) compiler/scripts/collect_imports.sh compiler/scripts/tc_deps_to_d.sh compiler/bootstrap/crt0.s compiler/bootstrap/runtime_syscall.c | build/gen2
+compiler/build/gen2/bin2uf2: kernel/tools-src/bin2uf2.tc $(GEN1_TOOLS) compiler/scripts/collect_imports.sh compiler/scripts/tc_deps_to_d.sh compiler/bootstrap/crt0.s compiler/bootstrap/runtime_syscall.c | compiler/build/gen2
 	./compiler/scripts/compile-gen1.sh -o $@ $<
 	./compiler/scripts/tc_deps_to_d.sh $@ $< > $@.d
 
@@ -63,7 +63,7 @@ build/gen2/bin2uf2: kernel/tools-src/bin2uf2.tc $(GEN1_TOOLS) compiler/scripts/c
 # (including its 4-byte-per-real-inode tail truncation so existing
 # md5 fixtures still match). Uses statx (291) for path stat — qemu
 # RISC-V user mode doesn't implement fstat (80) or newfstatat (79).
-build/gen2/mkfs: kernel/tools-src/mkfs.tc $(GEN1_TOOLS) compiler/scripts/collect_imports.sh compiler/scripts/tc_deps_to_d.sh compiler/bootstrap/crt0.s compiler/bootstrap/runtime_syscall.c | build/gen2
+compiler/build/gen2/mkfs: kernel/tools-src/mkfs.tc $(GEN1_TOOLS) compiler/scripts/collect_imports.sh compiler/scripts/tc_deps_to_d.sh compiler/bootstrap/crt0.s compiler/bootstrap/runtime_syscall.c | compiler/build/gen2
 	./compiler/scripts/compile-gen1.sh -o $@ $<
 	./compiler/scripts/tc_deps_to_d.sh $@ $< > $@.d
 
@@ -77,16 +77,16 @@ gen2-tools: $(GEN2_TOOLS)
 #
 # Gen3 は Gen2 ツール (Gen1 で build した TC 製ツール) を使って
 # compiler/*.tc を再 build したもの。自己ホスト確認 (Gen2==Gen3)
-# と、kernel build の本番経路候補に使う。build/gen2/ と同じ流れで
+# と、kernel build の本番経路候補に使う。compiler/build/gen2/ と同じ流れで
 # `.d` による transitive import 追跡を入れる。
 GEN3_NAMES = $(GEN2_NAMES)
-GEN3_TOOLS = $(addprefix build/gen3/,$(GEN3_NAMES))
+GEN3_TOOLS = $(addprefix compiler/build/gen3/,$(GEN3_NAMES))
 
-build/gen3:
+compiler/build/gen3:
 	mkdir -p $@
 
-build/gen3/%: compiler/src/%.tc $(GEN2_TOOLS) compiler/scripts/collect_imports.sh compiler/scripts/tc_deps_to_d.sh | build/gen3
-	GEN2_DIR=build/gen2 ./compiler/scripts/compile-gen2.sh -o $@ $< 2>/dev/null
+compiler/build/gen3/%: compiler/src/%.tc $(GEN2_TOOLS) compiler/scripts/collect_imports.sh compiler/scripts/tc_deps_to_d.sh | compiler/build/gen3
+	GEN2_DIR=compiler/build/gen2 ./compiler/scripts/compile-gen2.sh -o $@ $< 2>/dev/null
 	./compiler/scripts/tc_deps_to_d.sh $@ $< > $@.d
 
 gen3-tools: $(GEN3_TOOLS)
@@ -157,23 +157,23 @@ build/kernel/shared:
 build/kernel/shared/runtime.s: compiler/src/runtime.tc $(RUNTIME_DEPS) $(GEN2_TOOLS) | build/kernel/shared
 	@echo "Pre-compiling runtime.tc" >&2
 	@_ast=$$(mktemp) && _th=$$(mktemp) && \
-	build/gen1/parse $< > "$$_ast" && \
-	$(QEMU_USER) build/gen2/sigscan < "$$_ast" > "$$_th" && \
+	compiler/build/gen1/parse $< > "$$_ast" && \
+	$(QEMU_USER) compiler/build/gen2/sigscan < "$$_ast" > "$$_th" && \
 	{ printf '(imports)\n(self\n'; cat "$$_th"; printf ')\n'; cat "$$_ast"; } \
-	    | $(QEMU_USER) build/gen2/tcheck \
-	    | $(QEMU_USER) build/gen2/codegen \
-	    | $(QEMU_USER) build/gen2/bc2asm > $@ && \
+	    | $(QEMU_USER) compiler/build/gen2/tcheck \
+	    | $(QEMU_USER) compiler/build/gen2/codegen \
+	    | $(QEMU_USER) compiler/build/gen2/bc2asm > $@ && \
 	rm -f "$$_ast" "$$_th"
 
 build/kernel/shared/libtc.s: userland/lib/libtc/libtc.tc $(LIBTC_DEPS) $(GEN2_TOOLS) | build/kernel/shared
 	@echo "Pre-compiling libtc.tc" >&2
 	@_ast=$$(mktemp) && _th=$$(mktemp) && \
-	build/gen1/parse $< > "$$_ast" && \
-	$(QEMU_USER) build/gen2/sigscan < "$$_ast" > "$$_th" && \
+	compiler/build/gen1/parse $< > "$$_ast" && \
+	$(QEMU_USER) compiler/build/gen2/sigscan < "$$_ast" > "$$_th" && \
 	{ printf '(imports)\n(self\n'; cat "$$_th"; printf ')\n'; cat "$$_ast"; } \
-	    | $(QEMU_USER) build/gen2/tcheck \
-	    | $(QEMU_USER) build/gen2/codegen \
-	    | $(QEMU_USER) build/gen2/bc2asm > $@ && \
+	    | $(QEMU_USER) compiler/build/gen2/tcheck \
+	    | $(QEMU_USER) compiler/build/gen2/codegen \
+	    | $(QEMU_USER) compiler/build/gen2/bc2asm > $@ && \
 	rm -f "$$_ast" "$$_th"
 
 SHARED_S := build/kernel/shared/runtime.s build/kernel/shared/libtc.s
@@ -199,7 +199,7 @@ build/kernel/tasks/%.bin: $(SHARED_S) $(GEN2_TOOLS) \
 	printf '    .text\n    .word %s\n    .word %s\n' "$$_arena" "$$_stack" > "$$_tmp/hdr.s" && \
 	CRT0="$$_tmp/hdr.s compiler/runtime/mtos/task_crt0.s" \
 	    CRT0_DATA=compiler/runtime/mtos/task_data.s \
-	    ASM_PROLOGUE="; raw" GEN2_DIR=build/gen2 \
+	    ASM_PROLOGUE="; raw" GEN2_DIR=compiler/build/gen2 \
 	    CACHED_S_DIR=build/kernel/shared \
 	    EXTRA_S="$(TASK_EXTRA_S_$*)" \
 	    ./compiler/scripts/compile-gen2.sh -o $@ userland/bin/$*/$*.tc 2>/dev/null && \
@@ -219,7 +219,7 @@ ALL_TASK_BINS    := $(GUEST_TASK_BINS) $(EXTRA_TASK_BINS)
 
 DISK_STATIC_DEPS := integration/inputs/phase7_hello.tc integration/inputs/phase7_min.tc \
     integration/inputs/phase7_hello_world.tc compiler/runtime/mtos/task_crt0.s \
-    compiler/runtime/mtos/task_data.s build/gen2/mkfs
+    compiler/runtime/mtos/task_data.s compiler/build/gen2/mkfs
 
 # disk.img は kernel/kern.conf があれば /etc/kern.conf としてステージする
 # (なければカーネル側のハードコード init にフォールバック)。
@@ -264,7 +264,7 @@ build/kernel/tasks/console.bin: build/kernel/jpfont_inc.s
 # idx emit + concat + lab build + bin/reloc emit in a single
 # invocation. `_r` is the staging dir set by the disk-image recipe.
 define PRELUDE_PRE_ENCODE
-    qemu-riscv32 build/gen2/asm_pass1 \
+    qemu-riscv32 compiler/build/gen2/asm_pass1 \
         "$$_r/prelude.s" "$$_r/prelude_tail.s" \
         --idx-out    "$$_r/prelude.idx" \
         --text-bin   "$$_r/prelude.tx" \
@@ -277,7 +277,7 @@ define PRELUDE_PRE_ENCODE
               "$$_r/prelude.rl"
 endef
 
-build/kernel/disk.img build/kernel/disk-demo.img build/kernel/disk-console.img build/kernel/disk-console-land.img: $(GUEST_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) build/gen2/asm_pass1 build/gen2/asm_pass2 build/gen2/asm_pass3 | build/kernel
+build/kernel/disk.img build/kernel/disk-demo.img build/kernel/disk-console.img build/kernel/disk-console-land.img: $(GUEST_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) compiler/build/gen2/asm_pass1 compiler/build/gen2/asm_pass2 compiler/build/gen2/asm_pass3 | build/kernel
 	@echo "Building disk image: $@" >&2
 	@_tmp=$$(mktemp -d) && _r="$$_tmp/root" && \
 	mkdir -p "$$_r/bin" && \
@@ -303,7 +303,7 @@ build/kernel/disk.img build/kernel/disk-demo.img build/kernel/disk-console.img b
 	if [ -n "$(DISK_KERN_CONF)" ] && [ -f "$(DISK_KERN_CONF)" ]; then \
 	    mkdir -p "$$_r/etc" && cp "$(DISK_KERN_CONF)" "$$_r/etc/kern.conf"; \
 	fi && \
-	qemu-riscv32 build/gen2/mkfs $@ "$$_r" >&2 && \
+	qemu-riscv32 compiler/build/gen2/mkfs $@ "$$_r" >&2 && \
 	rm -rf "$$_tmp"
 
 build/kernel/disk.img build/kernel/disk-demo.img build/kernel/disk-console.img build/kernel/disk-console-land.img: kernel/tests/fixtures/msh_smoke.sh kernel/tests/fixtures/msh_abort.sh integration/fixtures/pico2_bench_idx.sh
@@ -323,7 +323,7 @@ EXTRA_SRC_DEPS := compiler/src/string_buffer.tc compiler/src/source_reader.tc \
     kernel/platform/pico2/platform_pico2.tc \
     kernel/platform/pico2/platform_pico2.s kernel/src/trap_common.s kernel/platform/pico2/crt0_pico2_data.s
 
-build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(EXTRA_SRC_DEPS) build/gen2/asm_pass1 build/gen2/asm_pass2 build/gen2/asm_pass3 kernel/tests/fixtures/msh_smoke.sh kernel/tests/fixtures/msh_abort.sh integration/fixtures/pico2_bench_idx.sh integration/fixtures/pico2_compile_sb.sh integration/fixtures/pico2_compile_parse.sh integration/fixtures/pico2_compile_sigscan.sh integration/fixtures/pico2_compile_tcheck.sh integration/fixtures/pico2_compile_codegen.sh integration/fixtures/pico2_compile_bc2asm.sh integration/fixtures/pico2_compile_asm_pass1.sh integration/fixtures/pico2_compile_asm_pass2.sh integration/fixtures/pico2_compile_asm_pass3.sh integration/fixtures/pico2_compile_runtime.sh integration/fixtures/pico2_compile_libtc.sh integration/fixtures/pico2_compile_kern.sh integration/fixtures/pico2_compile_platform.sh integration/fixtures/pico2_compile_kern2.sh integration/fixtures/pico2_run_parse.sh integration/fixtures/pico2_md5_test.sh integration/fixtures/pico2_cleanup_sd.sh integration/fixtures/pico2_dir_grow_test.sh integration/fixtures/pico2_dir_grow_test2.sh kernel/scripts/bin2s_incbin.sh build/kernel/disk.img | build/kernel
+build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(EXTRA_SRC_DEPS) compiler/build/gen2/asm_pass1 compiler/build/gen2/asm_pass2 compiler/build/gen2/asm_pass3 kernel/tests/fixtures/msh_smoke.sh kernel/tests/fixtures/msh_abort.sh integration/fixtures/pico2_bench_idx.sh integration/fixtures/pico2_compile_sb.sh integration/fixtures/pico2_compile_parse.sh integration/fixtures/pico2_compile_sigscan.sh integration/fixtures/pico2_compile_tcheck.sh integration/fixtures/pico2_compile_codegen.sh integration/fixtures/pico2_compile_bc2asm.sh integration/fixtures/pico2_compile_asm_pass1.sh integration/fixtures/pico2_compile_asm_pass2.sh integration/fixtures/pico2_compile_asm_pass3.sh integration/fixtures/pico2_compile_runtime.sh integration/fixtures/pico2_compile_libtc.sh integration/fixtures/pico2_compile_kern.sh integration/fixtures/pico2_compile_platform.sh integration/fixtures/pico2_compile_kern2.sh integration/fixtures/pico2_run_parse.sh integration/fixtures/pico2_md5_test.sh integration/fixtures/pico2_cleanup_sd.sh integration/fixtures/pico2_dir_grow_test.sh integration/fixtures/pico2_dir_grow_test2.sh kernel/scripts/bin2s_incbin.sh build/kernel/disk.img | build/kernel
 	@echo "Building disk image (extra): $@" >&2
 	@_tmp=$$(mktemp -d) && _r="$$_tmp/root" && \
 	mkdir -p "$$_r/bin" && \
@@ -406,7 +406,7 @@ build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(
 	{ cp integration/fixtures/pico2_self_step3.sh "$$_r/pico2_self_step3.sh" 2>/dev/null || true; } && \
 	{ cp integration/fixtures/pico2_self_step4.sh "$$_r/pico2_self_step4.sh" 2>/dev/null || true; } && \
 	{ cp integration/fixtures/pico2_compile_compilers.sh "$$_r/pico2_compile_compilers.sh" 2>/dev/null || true; } && \
-	qemu-riscv32 build/gen2/mkfs $@ "$$_r" >&2 && \
+	qemu-riscv32 compiler/build/gen2/mkfs $@ "$$_r" >&2 && \
 	rm -rf "$$_tmp"
 
 # ----- Kernel binary -----
@@ -420,7 +420,7 @@ build/kernel/virt_kernel.bin: $(KERNEL_COMPILE_DEPS) | build/kernel
 	@echo "Building kernel: virt" >&2
 	@CRT0="kernel/platform/virt/platform_virt.s kernel/src/trap_common.s" \
 	    CRT0_DATA=kernel/platform/virt/crt0_data.s \
-	    ASM_PROLOGUE="; raw" GEN2_DIR=build/gen2 \
+	    ASM_PROLOGUE="; raw" GEN2_DIR=compiler/build/gen2 \
 	    CACHED_S_DIR=build/kernel/shared \
 	    ./compiler/scripts/compile-gen2.sh -o $@ kernel/src/kernel.tc 2>/dev/null
 
@@ -440,23 +440,23 @@ define PICO2_KERNEL_RECIPE
 	kernel/scripts/bin2s_incbin.sh $(PICO2_DISK) _mtfs_image dx.img > "$$_tmp/mtfs_image.s" && \
 	CRT0="kernel/platform/pico2/platform_pico2.s kernel/src/trap_common.s" \
 	    CRT0_DATA="kernel/platform/pico2/crt0_pico2_data.s $$_tmp/mtfs_image.s" \
-	    ASM_PROLOGUE="; raw" GEN2_DIR=build/gen2 \
+	    ASM_PROLOGUE="; raw" GEN2_DIR=compiler/build/gen2 \
 	    CACHED_S_DIR=build/kernel/shared \
 	    ./compiler/scripts/compile-gen2.sh -o "$$_tmp/kernel.bin" kernel/src/kernel_pico2.tc 2>/dev/null && \
 	_ksz=$$(wc -c < "$$_tmp/kernel.bin") && \
 	_dsz=$$(wc -c < $(PICO2_DISK)) && \
 	printf '  kernel.bin: %s bytes, disk: %s bytes\n' "$$_ksz" "$$_dsz" >&2 && \
-	qemu-riscv32 build/gen2/bin2uf2 "$$_tmp/kernel.bin" $@ && \
+	qemu-riscv32 compiler/build/gen2/bin2uf2 "$$_tmp/kernel.bin" $@ && \
 	rm -rf "$$_tmp"
 endef
 
 build/kernel/pico2_kernel.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk.img \
-    kernel/scripts/bin2s_incbin.sh build/gen2/bin2uf2 | build/kernel
+    kernel/scripts/bin2s_incbin.sh compiler/build/gen2/bin2uf2 | build/kernel
 	$(PICO2_KERNEL_RECIPE)
 
 build/kernel/pico2_kernel_extra.uf2: PICO2_DISK := build/kernel/disk-extra.img
 build/kernel/pico2_kernel_extra.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk-extra.img \
-    kernel/scripts/bin2s_incbin.sh build/gen2/bin2uf2 | build/kernel
+    kernel/scripts/bin2s_incbin.sh compiler/build/gen2/bin2uf2 | build/kernel
 	$(PICO2_KERNEL_RECIPE)
 
 # demo UF2: disk-demo.img の /etc/kern.conf で hello + hello2 + sh を
@@ -464,7 +464,7 @@ build/kernel/pico2_kernel_extra.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk-ex
 # 動くことを確認できる。
 build/kernel/pico2_kernel_demo.uf2: PICO2_DISK := build/kernel/disk-demo.img
 build/kernel/pico2_kernel_demo.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk-demo.img \
-    kernel/scripts/bin2s_incbin.sh build/gen2/bin2uf2 | build/kernel
+    kernel/scripts/bin2s_incbin.sh compiler/build/gen2/bin2uf2 | build/kernel
 	$(PICO2_KERNEL_RECIPE)
 
 # console UF2: disk-console.img の /etc/kern.conf で /bin/console を
@@ -472,13 +472,13 @@ build/kernel/pico2_kernel_demo.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk-dem
 # 起動時から立ち上げる経路。`make run-pico2-console` で実機起動。
 build/kernel/pico2_kernel_console.uf2: PICO2_DISK := build/kernel/disk-console.img
 build/kernel/pico2_kernel_console.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk-console.img \
-    kernel/scripts/bin2s_incbin.sh build/gen2/bin2uf2 | build/kernel
+    kernel/scripts/bin2s_incbin.sh compiler/build/gen2/bin2uf2 | build/kernel
 	$(PICO2_KERNEL_RECIPE)
 
 # console-land UF2: 横向き (`/bin/console -l`)、software scroll。
 build/kernel/pico2_kernel_console_land.uf2: PICO2_DISK := build/kernel/disk-console-land.img
 build/kernel/pico2_kernel_console_land.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk-console-land.img \
-    kernel/scripts/bin2s_incbin.sh build/gen2/bin2uf2 | build/kernel
+    kernel/scripts/bin2s_incbin.sh compiler/build/gen2/bin2uf2 | build/kernel
 	$(PICO2_KERNEL_RECIPE)
 
 # NOTE: ユーザー向け alias (virt-kernel, pico2-kernel, ...) は kernel/Makefile
@@ -509,17 +509,17 @@ build/test/asm:
 TEST_ASM_DEPS := compiler/tests/virt_crt0.s $(RUNTIME_DEPS) $(GEN2_TOOLS) compiler/scripts/compile-gen2.sh
 
 build/test/asm/hello2_virt.bin: compiler/tests/hello2.tc $(TEST_ASM_DEPS) | build/test/asm
-	CRT0=compiler/tests/virt_crt0.s ASM_PROLOGUE='; raw' GEN2_DIR=build/gen2 \
+	CRT0=compiler/tests/virt_crt0.s ASM_PROLOGUE='; raw' GEN2_DIR=compiler/build/gen2 \
 	    ./compiler/scripts/compile-gen2.sh -o $@ $< 2>/dev/null
 
 build/test/asm/test_timer.bin: compiler/tests/test_timer.tc $(TEST_ASM_DEPS) compiler/runtime/linux/crt0_tc_data.s | build/test/asm
 	CRT0=compiler/tests/virt_crt0.s CRT0_DATA=compiler/runtime/linux/crt0_tc_data.s ASM_PROLOGUE='; raw' \
-	    GEN2_DIR=build/gen2 UNIFIED_PRELUDE=0 \
+	    GEN2_DIR=compiler/build/gen2 UNIFIED_PRELUDE=0 \
 	    ./compiler/scripts/compile-gen2.sh -o $@ $< 2>/dev/null
 
 build/test/asm/test_echo.bin: compiler/tests/test_echo.tc $(TEST_ASM_DEPS) compiler/runtime/linux/crt0_tc_data.s | build/test/asm
 	CRT0=compiler/tests/virt_crt0.s CRT0_DATA=compiler/runtime/linux/crt0_tc_data.s ASM_PROLOGUE='; raw' \
-	    GEN2_DIR=build/gen2 \
+	    GEN2_DIR=compiler/build/gen2 \
 	    ./compiler/scripts/compile-gen2.sh -o $@ $< 2>/dev/null
 
 TEST_ASM_BINS := build/test/asm/hello2_virt.bin \
@@ -562,7 +562,7 @@ full-test: test integration-test
 integration-test:
 	@echo "=== integration: test_phase7.sh ===" >&2
 	@if [ -z "$$GEN2_DIR" ]; then \
-	    GEN2_DIR=$(CURDIR)/build/gen2 ./integration/test_phase7.sh; \
+	    GEN2_DIR=$(CURDIR)/compiler/build/gen2 ./integration/test_phase7.sh; \
 	else \
 	    ./integration/test_phase7.sh; \
 	fi

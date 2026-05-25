@@ -15,7 +15,7 @@ GOLDEN_DIR="$SCRIPT_DIR/golden"
 TC_DIR="$ROOT_DIR/compiler/src"
 COMPILER_DIR="$ROOT_DIR/compiler/bootstrap"
 
-GEN1_DIR="$ROOT_DIR/build/gen1"
+GEN1_DIR="$ROOT_DIR/compiler/build/gen1"
 INTERP="$GEN1_DIR/interp"
 PARSE="$GEN1_DIR/parse"
 TYPECHECK="$GEN1_DIR/typecheck"

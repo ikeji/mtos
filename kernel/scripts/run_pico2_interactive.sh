@@ -10,7 +10,7 @@
 # Requires:
 #   - ~/opt/openocd-rpi/bin/openocd (Raspberry Pi fork with RP2350 support)
 #   - Debug Probe on /dev/ttyACM0
-#   - GEN2_DIR set (or build/gen2 present) when building
+#   - GEN2_DIR set (or compiler/build/gen2 present) when building
 
 set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -33,7 +33,7 @@ done
 
 # Build (unless the caller provides their own UF2).
 if [ "$BUILD" = "1" ]; then
-    : "${GEN2_DIR:=$ROOT_DIR/build/gen2}"
+    : "${GEN2_DIR:=$ROOT_DIR/compiler/build/gen2}"
     export GEN2_DIR
     UF2="$ROOT_DIR/build/kernel/pico2_kernel.uf2"
     if [ "$USE_EXTRA" = "1" ]; then

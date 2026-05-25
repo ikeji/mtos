@@ -10,7 +10,7 @@
 // Usage:
 //   mkfs <output> <rootdir>
 //
-// Built by compile-gen1.sh into build/gen2/mkfs (RV32 ELF) and run
+// Built by compile-gen1.sh into compiler/build/gen2/mkfs (RV32 ELF) and run
 // via qemu-riscv32 from the kernel build path. Linux syscalls used:
 // openat, read, write, close, getdents64, newfstatat (61, 79).
 

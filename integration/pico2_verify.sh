@@ -16,7 +16,7 @@
 # Requires: GEN2_DIR, Pico 2 + Debug Probe, /dev/ttyACM0. Not part of
 # `make test`; run manually:
 #
-#   GEN2_DIR=build/gen2 tests/pico2_verify.sh
+#   GEN2_DIR=compiler/build/gen2 tests/pico2_verify.sh
 
 set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -62,12 +62,12 @@ fi
 # Step 2: Generate Gen2 host references (compile + link).
 # ---------------------------------------------------------------------
 echo "[refs] generating Gen2 references under $REFS"
-qemu-riscv32 "$ROOT_DIR/build/gen2/parse"   < "$INPUT_TC"      > "$REFS/1.ast"
-qemu-riscv32 "$ROOT_DIR/build/gen2/sigscan" < "$REFS/1.ast"    > "$REFS/1.th"
+qemu-riscv32 "$ROOT_DIR/compiler/build/gen2/parse"   < "$INPUT_TC"      > "$REFS/1.ast"
+qemu-riscv32 "$ROOT_DIR/compiler/build/gen2/sigscan" < "$REFS/1.ast"    > "$REFS/1.th"
 { printf '(imports)\n(self\n'; cat "$REFS/1.th"; printf ')\n'; cat "$REFS/1.ast"; } > "$REFS/1.wrap"
-qemu-riscv32 "$ROOT_DIR/build/gen2/tcheck"  < "$REFS/1.wrap"   > "$REFS/2.tast"
-qemu-riscv32 "$ROOT_DIR/build/gen2/codegen" < "$REFS/2.tast"   > "$REFS/3.bc"
-qemu-riscv32 "$ROOT_DIR/build/gen2/bc2asm"  < "$REFS/3.bc"     > "$REFS/4.s"
+qemu-riscv32 "$ROOT_DIR/compiler/build/gen2/tcheck"  < "$REFS/1.wrap"   > "$REFS/2.tast"
+qemu-riscv32 "$ROOT_DIR/compiler/build/gen2/codegen" < "$REFS/2.tast"   > "$REFS/3.bc"
+qemu-riscv32 "$ROOT_DIR/compiler/build/gen2/bc2asm"  < "$REFS/3.bc"     > "$REFS/4.s"
 cat "$REFS/prelude.s" "$REFS/4.s" "$REFS/prelude_tail.s"       > "$REFS/full.s"
 # full.s is the host-side reference for the concatenation the driver
 # doesn't even ask pico2 to build (the OS doesn't have room for it in

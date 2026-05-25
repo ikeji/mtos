@@ -7,8 +7,8 @@
 # Output (single line, Makefile-friendly):
 #   <make_target>: file.tc imported1.tc imported2.tc ...
 #
-# This is what `-include build/gen2/*.d` picks up so that editing
-# e.g. compiler/string_buffer.tc triggers build/gen2/parse to
+# This is what `-include compiler/build/gen2/*.d` picks up so that editing
+# e.g. compiler/string_buffer.tc triggers compiler/build/gen2/parse to
 # rebuild (and only that one Gen2 tool).
 
 set -e

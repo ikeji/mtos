@@ -7,7 +7,7 @@ Flow:
   1. Build a virt kernel with EXTRA_TASKS (mx + compiler tasks) and
      export /prelude.s / /prelude_tail.s via PRELUDE_OUT_DIR so host
      references can replay the exact linker glue used on the OS.
-  2. Generate reference files on the host with build/gen2/* under
+  2. Generate reference files on the host with compiler/build/gen2/* under
      qemu-riscv32 — same binaries the OS runs, so byte-exact
      comparison is a true self-hosting check.
   3. Boot qemu-system-riscv32 and drive msh (no prompt echo) to run
@@ -52,9 +52,9 @@ def gen_references_compile():
     single-line (params) emission)."""
     os.makedirs(REFS, exist_ok=True)
     with open(INPUT_TC, "rb") as i, open(f"{REFS}/1.ast", "wb") as out:
-        run(["qemu-riscv32", f"{ROOT}/build/gen2/parse"], stdin=i, stdout=out)
+        run(["qemu-riscv32", f"{ROOT}/compiler/build/gen2/parse"], stdin=i, stdout=out)
     with open(f"{REFS}/1.ast", "rb") as i, open(f"{REFS}/1.th", "wb") as o:
-        run(["qemu-riscv32", f"{ROOT}/build/gen2/sigscan"], stdin=i, stdout=o)
+        run(["qemu-riscv32", f"{ROOT}/compiler/build/gen2/sigscan"], stdin=i, stdout=o)
     # wrap: (imports)(self .th)(program .ast)
     with open(f"{REFS}/1.wrap", "wb") as w:
         w.write(b"(imports)\n(self\n")
@@ -68,7 +68,7 @@ def gen_references_compile():
     ]:
         with open(f"{REFS}/{prev}", "rb") as i, \
              open(f"{REFS}/{out_ext}", "wb") as o:
-            run(["qemu-riscv32", f"{ROOT}/build/gen2/{step}"],
+            run(["qemu-riscv32", f"{ROOT}/compiler/build/gen2/{step}"],
                 stdin=i, stdout=o)
 
 
@@ -84,7 +84,7 @@ def gen_references_link():
         o.write(open(f"{REFS}/4.s", "rb").read())
         o.write(open(f"{REFS}/prelude_tail.s", "rb").read())
     qemu = ["qemu-riscv32"]
-    gen2 = f"{ROOT}/build/gen2"
+    gen2 = f"{ROOT}/compiler/build/gen2"
     # Pre-encode user.s via asm_pass1 → idx + per-section .bin + reloc.
     run(qemu + [f"{gen2}/asm_pass1", f"{REFS}/u.s",
                 "--idx-out",    f"{REFS}/u.idx",
@@ -109,7 +109,7 @@ def build_kernel_with_extras():
     env = dict(os.environ)
     env["EXTRA_TASKS"] = ("parse sigscan tcheck codegen bc2asm "
                          "asm_pass2 asm_pass3 cat mx mr muxon muxoff")
-    env["GEN2_DIR"] = os.path.join(ROOT, "build/gen2")
+    env["GEN2_DIR"] = os.path.join(ROOT, "compiler/build/gen2")
     # Stage prelude.s / prelude_tail.s into REFS/ for the link-stage
     # reference generator. (Same bytes mkfs.py put under /prelude.s
     # and /prelude_tail.s in mtfs.)

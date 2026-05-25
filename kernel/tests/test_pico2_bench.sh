@@ -20,7 +20,7 @@
 # pico2 hardware. Same env vars as test_pico2_phase7_sd.sh.
 #
 # Usage:
-#   GEN2_DIR=build/gen2 tests/test_pico2_bench.sh
+#   GEN2_DIR=compiler/build/gen2 tests/test_pico2_bench.sh
 #
 #   To skip the kernel rebuild + flash (e.g. iterating on the bench
 #   script itself), set SKIP_FLASH=1.

@@ -16,16 +16,16 @@ ROOT := $(realpath $(CURDIR)/..)
 # Default: gen2 を build (compiler のメイン成果物)
 all build: gen2
 
-# Gen1: C 製ツール (build/gen1/)
+# Gen1: C 製ツール (compiler/build/gen1/)
 gen1:
-	$(MAKE) -C $(ROOT) build/gen1/parse build/gen1/typecheck build/gen1/interp \
-	    build/gen1/codegen build/gen1/bcrun build/gen1/bc2asm
+	$(MAKE) -C $(ROOT) compiler/build/gen1/parse compiler/build/gen1/typecheck compiler/build/gen1/interp \
+	    compiler/build/gen1/codegen compiler/build/gen1/bcrun compiler/build/gen1/bc2asm
 
-# Gen2: TC 製 RV32 ELF (build/gen2/) — Gen1 を使う
+# Gen2: TC 製 RV32 ELF (compiler/build/gen2/) — Gen1 を使う
 gen2:
 	$(MAKE) -C $(ROOT) gen2-tools
 
-# Gen3: Gen2 で自己ホスト確認用 (build/gen3/)
+# Gen3: Gen2 で自己ホスト確認用 (compiler/build/gen3/)
 gen3:
 	$(MAKE) -C $(ROOT) gen3-tools
 
@@ -56,5 +56,5 @@ update-golden: gen1
 	$(ROOT)/compiler/tests/update_golden.sh
 
 clean:
-	rm -rf $(ROOT)/build/gen1 $(ROOT)/build/gen2 $(ROOT)/build/gen3
+	rm -rf $(ROOT)/compiler/build/gen1 $(ROOT)/compiler/build/gen2 $(ROOT)/compiler/build/gen3
 	rm -f $(ROOT)/compiler/bootstrap/*.o
