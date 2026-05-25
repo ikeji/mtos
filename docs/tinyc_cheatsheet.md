@@ -25,21 +25,21 @@ tinyc は自己ホスト達成済みの小型言語。
 
 ```bash
 # 直接実行（インタープリタ経由、最速）
-./tc_run.sh interp tests/fib.tc
+./compiler/scripts/tc_run.sh interp tests/fib.tc
 
 # C実装ツールでコンパイル→バイトコード実行
-./tc_run.sh bcrun tests/fib.tc
+./compiler/scripts/tc_run.sh bcrun tests/fib.tc
 
 # RISC-V クロスコンパイル + qemu 実行
-./tc_run.sh rv32 tests/fib.tc
+./compiler/scripts/tc_run.sh rv32 tests/fib.tc
 
 # 自己ホスト版 (Gen2) でコンパイル
-./tc_run.sh pipeline  tests/fib.tc
-./tc_run.sh bc2asm_tc tests/fib.tc
+./compiler/scripts/tc_run.sh pipeline  tests/fib.tc
+./compiler/scripts/tc_run.sh bc2asm_tc tests/fib.tc
 
 # stdin を渡す場合
-./tc_run.sh bcrun tests/calc.tc "12 + 34 * 56"
-./tc_run.sh bcrun tests/calc.tc @input.txt
+./compiler/scripts/tc_run.sh bcrun tests/calc.tc "12 + 34 * 56"
+./compiler/scripts/tc_run.sh bcrun tests/calc.tc @input.txt
 ```
 
 ### コンパイルスクリプト (RV32 ELF 生成)
@@ -56,7 +56,7 @@ GEN2_DIR=/path/to/gen2 ./compiler/scripts/compile-gen2.sh -o output file.tc
 
 ```bash
 # import "lib.tc"; を再帰的に解決
-./tc_build.sh -o prog main.tc          # 単一ファイルでも import OK
+./compiler/scripts/tc_build.sh -o prog main.tc          # 単一ファイルでも import OK
 GEN2_DIR=/path/to/gen2 ./compiler/scripts/compile-gen2.sh -o prog main.tc  # 同上
 ```
 
@@ -367,4 +367,4 @@ make -C userland test            # userland smoke (~0.07s warm)
 make -C compiler update-golden && make test  # golden 再生成 → test 連続
 ```
 
-詳細は `tests/test_all.sh` 参照。
+詳細は (削除済 — root Makefile が直接 sub-Makefile に委譲) 参照。

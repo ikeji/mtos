@@ -7,7 +7,6 @@ compiler/   サブプロジェクト 1: TinyC コンパイラ (ホスト + MTOS 
 userland/   サブプロジェクト 2: MTOS ユーザータスク
 kernel/     サブプロジェクト 3: OS カーネル (virt / pico2 両プラットフォーム)
 integration/  3 サブプロジェクトをまたぐテスト
-tests/      共有テストインフラ (test_all.sh, test_common.sh)
 docs/       ドキュメント
 build/      生成物 (gitignored)
 ```
@@ -325,14 +324,15 @@ qemu-riscv32 経由で呼ぶ。
 | `fixtures/pico2_*.sh` | pico2 実機 fixture (self_step1-4、dumper test 等) |
 | `fixtures/calib.sh` | キャリブレーション fixture |
 
----
+## 共有テストインフラ
 
-## 共有テストインフラ `tests/`
+`compiler/tests/test_common.sh` がすべてのサブプロジェクトテスト
+スクリプトが source する共通ヘルパ (paths, counters, build_gen2_tool,
+ensure_gen2_tools, report_pass/fail)。kernel/tests/test_os.sh は
+`../../compiler/tests/test_common.sh` 経由で source する。
 
-| ファイル | 説明 |
-|---|---|
-| `test_all.sh` | 全 suite を順に呼ぶ集約スクリプト (root `make test` から呼ばれる) |
-| `test_common.sh` | 全テスト script が source する共通ヘルパ (paths, counters, build_gen2_tool, ensure_gen2_tools, report_pass/fail) |
+集約 (`make test`) は root Makefile が直接 `$(MAKE) -C compiler/kernel/
+userland test` を順に呼ぶ。stamp file なし。
 
 ---
 

@@ -55,15 +55,11 @@ alias は撤去)。`make` 単独はルート Makefile (gen1 build + test 集約�
 
 ```
 make test
-  └── tests/test_all.sh              ← メインエントリポイント
-        ├── compiler/tests/test_unit.sh             ← Gen1 単体テスト
-        ├── compiler/tests/test_pipeline.sh         ← Gen2 パイプラインテスト (qemu rv32)
-        ├── compiler/tests/test_consistency.sh      ← tc_run_all 全メソッド一致
-        ├── compiler/tests/test_golden_examples.sh  ← サンプル .tc の golden テスト
-        ├── compiler/tests/test_gen3.sh             ← Gen2 vs golden + Gen2 == Gen3
-        ├── compiler/tests/test_import.sh           ← import/export テスト
-        ├── compiler/tests/test_asm.sh              ← TC → qemu virt end-to-end
-        └── kernel/tests/test_os.sh               ← kernel + tmpfs + argv + redirect
+  ├── make -C compiler test     ← compiler 全 7 suite (test_unit /
+  │     test_pipeline / test_consistency / test_golden_examples /
+  │     test_gen3 / test_import / test_asm) を順に実行 = 140 tests
+  ├── make -C kernel test       ← kernel/tests/test_os.sh = 8 tests
+  └── make -C userland test     ← 40 タスク build smoke
 
 make -C compiler update-golden
   └── compiler/tests/update_golden.sh  ← Golden ファイル再生成
@@ -82,7 +78,7 @@ integration/phase3_verify.py           ← virt 上で 9 段 byte-exact
 integration/qemu_mr_scale.py           ← K11 (mr UART) qemu 再現
 ```
 
-`tests/test_common.sh` は共通ライブラリ (`source` で読み込む)。
+`compiler/tests/test_common.sh` は共通ライブラリ (`source` で読み込む)。
 ツールパス、カウンタ、report 関数、`compile_tc_to_bc`、Gen2 ツール
 ビルド等を提供。
 
@@ -97,9 +93,9 @@ integration/qemu_mr_scale.py           ← K11 (mr UART) qemu 再現
 | `compiler/scripts/compile-gen1.sh` | Gen1 (C) ツールで .tc → RV32 ELF (x86 ホスト上で GCC リンク) | `./compiler/scripts/compile-gen1.sh -o out file.tc` |
 | `compiler/scripts/compile-gen2.sh` | Gen2 (TC) ツールで .tc → RV32 ELF (qemu 経由、asm_pass2/pass2 リンク) | `GEN2_DIR=... ./compiler/scripts/compile-gen2.sh -o out file.tc` |
 | `compiler/scripts/compile-gen3.sh` | Gen3 (= Gen2 自身が吐いた Gen2) で同じ処理 | `GEN3_DIR=... ./compiler/scripts/compile-gen3.sh -o out file.tc` |
-| `tc_run.sh` | .tc を指定メソッドで実行 | `./tc_run.sh <method> <file.tc> [stdin]` |
-| `tc_run_all.sh` | 全 5 メソッドで実行し出力一致を確認 | `./tc_run_all.sh <file.tc> [stdin]` |
-| `tc_build.sh` | 複数 .tc をコンパイル + リンクして RISC-V ELF に | `./tc_build.sh -o prog main.tc lib.tc` |
+| `compiler/scripts/tc_run.sh` | .tc を指定メソッドで実行 | `./compiler/scripts/tc_run.sh <method> <file.tc> [stdin]` |
+| `compiler/scripts/tc_run_all.sh` | 全 5 メソッドで実行し出力一致を確認 | `./compiler/scripts/tc_run_all.sh <file.tc> [stdin]` |
+| `compiler/scripts/tc_build.sh` | 複数 .tc をコンパイル + リンクして RISC-V ELF に | `./compiler/scripts/tc_build.sh -o prog main.tc lib.tc` |
 
 #### tc_run.sh のメソッド
 

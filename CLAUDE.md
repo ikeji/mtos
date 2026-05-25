@@ -141,10 +141,6 @@ integration/  3 サブプロジェクトをまたぐテスト (`make full-test` 
   fixtures/    pico2_*.sh (実機 fixture: self_step1-4, dumper test, 各
                compile_* fixture 等) + calib.sh
 
-tests/      共有テストインフラ (3 サブプロジェクトすべてが使う)
-  test_all.sh    全 suite を順に呼ぶ root 集約スクリプト
-  test_common.sh 共通ヘルパ (paths, counters, report_pass/fail, build_gen2_tool)
-
 docs/       仕様・設計ドキュメント (詳細は ls docs/)
   task/subproject_split.md  サブプロジェクト分割設計 (このリファクタの根拠)
 
@@ -228,7 +224,7 @@ Ctrl-a x で終了 (qemu と同じ escape)。
 `OPENOCD` / `UART_PORT` 環境変数で上書き可。
 
 `make test` は時間短縮のため一部テストをスキップする (FULL_TEST=1 で有効化)。
-詳細は `tests/test_all.sh` 参照。
+詳細は (削除済 — root Makefile が直接 sub-Makefile に委譲) 参照。
 
 ## Pico 2 (RP2350 RISC-V) ビルド
 
@@ -322,20 +318,20 @@ imports (他モジュール) の .th は Gen1 `extract-sigs` が生成し、self
 ## .tcファイルの実行方法
 
 ```bash
-./tc_run.sh interp    foo.tc          # ASTインタープリタで直接実行（速い）
-./tc_run.sh bcrun     foo.tc          # Cコード生成→バイトコード実行
-./tc_run.sh rv32      foo.tc          # Cコード生成→RISC-V→qemu実行
-./tc_run.sh pipeline  foo.tc          # 自己ホスト版(parse.tc+sigscan.tc+tcheck.tc+codegen.tc on bcrun)
-./tc_run.sh bc2asm_tc foo.tc          # 自己ホスト版bc2asm→RISC-V→qemu実行
+./compiler/scripts/tc_run.sh interp    foo.tc          # ASTインタープリタで直接実行（速い）
+./compiler/scripts/tc_run.sh bcrun     foo.tc          # Cコード生成→バイトコード実行
+./compiler/scripts/tc_run.sh rv32      foo.tc          # Cコード生成→RISC-V→qemu実行
+./compiler/scripts/tc_run.sh pipeline  foo.tc          # 自己ホスト版(parse.tc+sigscan.tc+tcheck.tc+codegen.tc on bcrun)
+./compiler/scripts/tc_run.sh bc2asm_tc foo.tc          # 自己ホスト版bc2asm→RISC-V→qemu実行
 # stdinを渡す場合
-./tc_run.sh bcrun     calc.tc "1 + 2"
-./tc_run.sh bcrun     calc.tc @input.txt
+./compiler/scripts/tc_run.sh bcrun     calc.tc "1 + 2"
+./compiler/scripts/tc_run.sh bcrun     calc.tc @input.txt
 ```
 
 ## 複数ファイルのコンパイル
 
 ```bash
-./tc_build.sh -o prog main.tc lib.tc  # 複数 .tc ファイルをコンパイル＋リンク
+./compiler/scripts/tc_build.sh -o prog main.tc lib.tc  # 複数 .tc ファイルをコンパイル＋リンク
 ```
 
 `import "lib.tc";` で他ファイルの `export fn` を呼べる。struct は**型名として**
