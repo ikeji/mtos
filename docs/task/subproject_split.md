@@ -603,51 +603,100 @@ compiler だけを再ビルドしたいときに kernel/userland を絶対に汚
 
 リファクタは何回かに分けて、各段階で `make test` が通る状態を保つ。
 
-### Phase 0: 設計凍結 (このドキュメント)
-- このドキュメントをレビュー、approve
-- (オプション) いくつかの open question を解決
+### Phase 0: 設計凍結 (このドキュメント) — **完了** ✅
+- 決定事項 8 件を確定 (下記 "決定事項" 節)
 
-### Phase 1: ディレクトリ移動 — 機械的
-- `compiler/*.tc` → `compiler/src/*.tc`
-- `compile-gen{1,2,3}.sh` → `compiler/scripts/` (ルートからは削除)
-- `compiler/crt0_tc{,_data}.s` → `compiler/runtime/linux/`
-- `kernel/tasks/task_crt0.s`, `task_data.s` → `compiler/runtime/mtos/`
-  (MTOS bin の crt0 は userland と compiler-on-MTOS 共用、所有は compiler)
-- `tools/{mkfs,bin2uf2}.tc` → `kernel/tools-src/`
-  (TC で書かれているが用途は完全に kernel image 生成のためなので kernel 所有)
-- `kernel/tasks/{libtc,sh,ls,...}` → `userland/bin/` または `userland/lib/`
-  (compiler/ への symlink は **撤去**、後で fs-spec で参照する形に置換)
-- `kernel/{kernel*.tc,vfs.tc,...}` → `kernel/src/`
-- `kernel/{platform_*.s,crt0_*_data.s,block_*}` → `kernel/platform/{virt,pico2}/`
-- `kernel/build.sh` 等 → `kernel/scripts/`
+### Phase 1: ディレクトリ移動 — 機械的 — **完了** ✅ (2026-05-25、9 commits)
+- ✅ `compiler/*.tc` → `compiler/src/*.tc`
+- ✅ `compile-gen{1,2,3}.sh` → `compiler/scripts/` (ルートからは削除)
+- ✅ `compiler/crt0_tc{,_data}.s` → `compiler/runtime/linux/`
+- ✅ `kernel/tasks/task_crt0.s`, `task_data.s` → `compiler/runtime/mtos/`
+- ✅ `tools/{mkfs,bin2uf2}.tc` → `kernel/tools-src/`
+- ✅ `kernel/tasks/{libtc,sh,ls,...}` → `userland/{lib,bin}/`
+  (compiler symlink は維持 — fs-spec 化は Phase 2 の future work)
+- ✅ `kernel/{kernel*.tc,vfs.tc,...}` → `kernel/src/`
+- ✅ `kernel/{platform_*.s,crt0_*_data.s,block_*}` → `kernel/platform/{virt,pico2}/`
+- ✅ `kernel/build.sh` 等 → `kernel/scripts/`
 
-この段階では Makefile は **単一ルート Makefile のまま** にして、
-パスの書き換えだけで完結させる。各サブプロジェクトに独立 Makefile を
-入れるのは Phase 2 で行う。
+完了時点で `make test` 148 PASS。詳細 commit: a3d8f8e, 14f20d0, 27789be,
+b55173b, 97c1b2d, 0628374, 206fef4, ab1c484, ad21c8a。
 
-### Phase 2: サブプロジェクト Makefile 分離
-- `compiler/Makefile` を作って `build/{host,mtos}/*` を生成
-- `userland/Makefile` を作って `build/mtos/*` を生成
-- `kernel/Makefile` を作って `build/{virt,pico2}/*` を生成
-- ルート Makefile は coordinator に縮める
-- `kernel/scripts/build.sh` の `EXTRA_TASKS` 廃止、`FS_SPEC` 駆動に置換
+### Phase 2: サブプロジェクト Makefile 分離 — **完了** ✅ (2026-05-25、1 commit)
+- ✅ `compiler/Makefile` 新設 (test scope: 140 tests)
+- ✅ `userland/Makefile` 新設 (smoke: 40 builds)
+- ✅ `kernel/Makefile` 新設 (test scope: 8 tests)
+- ⚠ build recipe の物理移動は **未完了**。current は root Makefile が
+  recipe を持ち、サブ Makefile が delegate する coordinator パターン。
+  本格分離は将来のフェーズで実施。
+- ⚠ `EXTRA_TASKS` → `FS_SPEC` 化は **未完了**。current は EXTRA_GUEST_TASKS
+  経由 (userland/bin/*/task.mk の宣言)。
 
-### Phase 3: テスト再配置
-- `tests/test_unit.sh` の compiler 部分 → `compiler/tests/`
-- `tests/test_os.sh` 等 kernel 検証 → `kernel/tests/`
-- `tests/test_phase7.sh`, `pico2_self_replicate.sh` → `integration/`
-- `tests/test_all.sh` は ルート Makefile から各サブ test を呼ぶだけに
+完了 commit: 18c32a7。
 
-### Phase 4: 仕上げ
-- `docs/sources.md` 更新
-- `CLAUDE.md` 更新
-- README をルートと各サブプロジェクトに書く
-- **互換性 alias は導入しない** — 旧 `make virt-kernel` / `make pico2-kernel`
-  / `make gen2-tools` 等のターゲットや、旧 `./compile-gen1.sh` 等のルート
-  スクリプトはすべて削除する。新呼び出し (`make -C kernel TARGET=pico2` /
-  `compiler/scripts/compile-gen1.sh` 等) に揃える。
+### Phase 3: テスト再配置 — **完了** ✅ (2026-05-25、4 commits)
+- ✅ compiler tests → `compiler/tests/` (test_unit, test_pipeline,
+  test_consistency, test_golden_examples, test_gen3, test_import, test_asm
+  + 入力 .tc + golden/ + virt_crt0.s + update_golden.sh + bench_pipeline.sh
+  + qemu_bin2uf2_test.py)
+- ✅ kernel tests → `kernel/tests/` (test_os, test_pico2*, fb_render.py,
+  fixtures/kern_*.conf, fixtures/msh_*.sh)
+- ✅ integration tests → `integration/` (test_phase7, pico2_self_replicate,
+  pico2_verify, phase3_verify.py, qemu_mr_scale.py, pico2_*.py,
+  inputs/phase7_*.tc, fixtures/pico2_*.sh)
+- ✅ Root Makefile: `integration-test` ターゲット追加、`full-test` が
+  integration を起動
 
-各 Phase 終了時に `make test` (warm) と `make full-test` を通すこと。
+完了 commit: c085b73, f85077d, a1208df, 67b1106。
+
+### Phase 4: 仕上げ — **完了** ✅ (2026-05-25 〜 2026-05-26、5 commits)
+- ✅ `docs/sources.md` 全面リライト
+- ✅ `CLAUDE.md` ディレクトリ構成 / ビルド＆実行 / テスト構造を更新
+- ✅ ルート + 各サブプロジェクト README.md 新設
+- ✅ **互換性 alias 完全撤去** (Phase 4b、decision 6):
+  - `make virt-kernel` / `make pico2-kernel*` / `make run*` / `make gen2-tools`
+    / `make gen3-tools` / `make test-asm-bins` / `make update-golden` /
+    `make update-golden-and-run-test` を root から削除
+  - 新 API は `make -C compiler {gen1/gen2/gen3/test/test-warm/test-asm-bins/
+    update-golden}`、`make -C kernel {virt/pico2{,-extra,-demo,-console{,-land}}/
+    run{,-extra,-pico2{,-extra,-console{,-land}}}/flash/test}`、
+    `make -C userland {test/test-quick}`
+  - run/run-pico2 系の qemu/openocd 呼び出し recipe は `kernel/Makefile` に物理移動
+- ✅ 全 30+ ドキュメント (docs/*.md + docs/task/*.md) の path refs を一斉更新
+- ✅ ルート整理: `tasks.md`, `hardware-check/`, `console.bmp`, `os/`,
+  `tmp/{convert,gen_jis_unicode}.rb` 削除
+- ✅ `tc_run.sh` / `tc_run_all.sh` / `tc_build.sh` → `compiler/scripts/`
+- ✅ `tests/test_common.sh` → `compiler/tests/test_common.sh`
+- ✅ `tests/test_all.sh` 削除、root Makefile が直接 sub-Makefile に委譲
+- ✅ `tests/` ディレクトリ消滅
+
+完了 commit: 1a59a7d (docs + READMEs), d52e0e7 (alias 撤去), f40ab94
+(整合性 cleanup), 8cd4f52 (problem/roadmap update), 6b3f71f
+(solved/overview update), 51d5716 (残り全 doc update), 801d611
+(root cleanup), 3c27115 (tests/ 解体), d55cd89 (最終 doc cleanup)。
+
+最終状態: ルートに `CLAUDE.md`, `Makefile`, `README.md` + 7 サブ
+ディレクトリ (compiler, userland, kernel, integration, docs, build,
+tmp) のみ。`make test` 148 PASS 維持。
+
+---
+
+## 残件 (本リファクタの範囲外)
+
+Phase 2 が conservative に止めた以下は別フェーズで実施:
+
+- **build recipe の物理移動**: 現状 root Makefile が `build/gen{1,2,3}/*`,
+  `build/kernel/*.{bin,uf2,img}`, `build/kernel/tasks/*.bin` の recipe を
+  持ち、サブ Makefile が `$(MAKE) -C $(ROOT) <target>` で delegate する。
+  本格分離 (recipe を各サブ Makefile に移動、root を真の coordinator に)
+  は別途。
+- **`EXTRA_GUEST_TASKS` → `FS_SPEC` 駆動**: 設計ドキュメントの fs-spec
+  方式に置き換える。現状は task.mk の `GUEST_TASKS` / `EXTRA_GUEST_TASKS`
+  宣言経由。
+- **`build/` ディレクトリの per-subproject 分離**: 設計上は
+  `compiler/build/`, `userland/build/`, `kernel/build/` だが、現状は
+  ルート `build/` を全サブプロジェクトが共有。
+- **テスト境界の strace ベース isolation check**: 設計の境界保証
+  メカニズムで言及した自動チェッカー。
 
 ---
 
