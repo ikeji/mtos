@@ -26,7 +26,7 @@ test:
 	$(MAKE) -C $(ROOT) build/kernel/disk-demo.img
 	$(MAKE) -C $(ROOT) build/kernel/disk-console.img
 	$(MAKE) -C $(ROOT) build/kernel/disk-console-land.img
-	@cd $(ROOT) && $(ROOT)/tests/test_os.sh
+	@cd $(ROOT) && $(ROOT)/kernel/tests/test_os.sh
 
 clean:
 	rm -rf $(ROOT)/build/kernel

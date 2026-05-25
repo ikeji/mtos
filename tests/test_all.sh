@@ -82,7 +82,7 @@ run_suite "$ROOT_DIR/compiler/tests/test_golden_examples.sh"
 run_suite "$ROOT_DIR/compiler/tests/test_gen3.sh"
 run_suite "$ROOT_DIR/compiler/tests/test_import.sh"
 run_suite "$ROOT_DIR/compiler/tests/test_asm.sh"
-run_suite "$SCRIPT_DIR/test_os.sh"
+run_suite "$ROOT_DIR/kernel/tests/test_os.sh"
 
 ELAPSED=$(( $(time_ms) - SUITE_TIME_START ))
 

@@ -3,7 +3,7 @@
 # FULL_TEST=1: also runs kmalloc and kernel1 (cooperative) tests
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/test_common.sh"
+source "$(dirname "$SCRIPT_DIR")/../tests/test_common.sh"
 
 echo "=== OS Component Tests ==="
 
@@ -22,7 +22,7 @@ if [ "${FULL_TEST:-0}" = "1" ]; then
     t0=$(time_ms)
     GEN2_DIR="$_GEN2_TMP" \
         "$ROOT_DIR/compiler/scripts/compile-gen2.sh" -o "$TMP/test_kmalloc" \
-        "$SCRIPT_DIR/test_kmalloc.tc" 2>/dev/null
+        "$ROOT_DIR/compiler/tests/test_kmalloc.tc" 2>/dev/null
     if [ -x "$TMP/test_kmalloc" ]; then
         out=$("$QEMU" "$TMP/test_kmalloc" 2>/dev/null)
         ex=$?
@@ -40,13 +40,13 @@ fi
 
 # --- kernel1: cooperative task (FULL_TEST only) ---
 if [ "${FULL_TEST:-0}" = "1" ] && command -v qemu-system-riscv32 >/dev/null 2>&1; then
-    VIRT_CRT0="$SCRIPT_DIR/virt_crt0.s"
+    VIRT_CRT0="$ROOT_DIR/compiler/tests/virt_crt0.s"
     t0=$(time_ms)
     CRT0="$VIRT_CRT0" \
     ASM_PROLOGUE="; raw" \
     GEN2_DIR="$_GEN2_TMP" \
         "$ROOT_DIR/compiler/scripts/compile-gen2.sh" -o "$TMP/test_kernel1" \
-        "$SCRIPT_DIR/test_kernel1.tc" 2>/dev/null
+        "$ROOT_DIR/compiler/tests/test_kernel1.tc" 2>/dev/null
     if [ -s "$TMP/test_kernel1" ]; then
         k1_out=$(timeout 5 qemu-system-riscv32 -smp 1 -nographic \
             -serial mon:stdio --no-reboot -m 128 \
@@ -82,7 +82,7 @@ KERNEL_BIN="$ROOT_DIR/build/kernel/virt_kernel.bin"
 KERNEL_DISK="$ROOT_DIR/build/kernel/disk-demo.img"
 if [ ! -s "$KERNEL_BIN" ] || [ ! -s "$KERNEL_DISK" ]; then
     if command -v qemu-system-riscv32 >/dev/null 2>&1; then
-        KERN_CONFIG="$ROOT_DIR/tests/fixtures/kern_demo.conf" \
+        KERN_CONFIG="$ROOT_DIR/kernel/tests/fixtures/kern_demo.conf" \
         GEN2_DIR="$_GEN2_TMP" \
             "$ROOT_DIR/kernel/scripts/build.sh" --target virt \
             -o "$TMP/kernel_virt" --disk-out "$TMP/disk.img" 2>/dev/null
