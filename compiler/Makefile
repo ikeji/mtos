@@ -21,19 +21,19 @@ all build:
 # gen2 tools をビルドさせてから、compiler 固有テストだけを直接呼ぶ。
 # test_os と integration は含めない。
 test: build
-	@cd $(ROOT) && $(ROOT)/tests/test_unit.sh
-	@cd $(ROOT) && $(ROOT)/tests/test_pipeline.sh
-	@cd $(ROOT) && $(ROOT)/tests/test_consistency.sh
-	@cd $(ROOT) && $(ROOT)/tests/test_golden_examples.sh
-	@cd $(ROOT) && $(ROOT)/tests/test_gen3.sh
-	@cd $(ROOT) && $(ROOT)/tests/test_import.sh
-	@cd $(ROOT) && $(ROOT)/tests/test_asm.sh
+	@cd $(ROOT) && $(ROOT)/compiler/tests/test_unit.sh
+	@cd $(ROOT) && $(ROOT)/compiler/tests/test_pipeline.sh
+	@cd $(ROOT) && $(ROOT)/compiler/tests/test_consistency.sh
+	@cd $(ROOT) && $(ROOT)/compiler/tests/test_golden_examples.sh
+	@cd $(ROOT) && $(ROOT)/compiler/tests/test_gen3.sh
+	@cd $(ROOT) && $(ROOT)/compiler/tests/test_import.sh
+	@cd $(ROOT) && $(ROOT)/compiler/tests/test_asm.sh
 
 # 高速版: golden / gen3 / consistency を skip。warm dev loop 用。
 test-warm: build
-	@cd $(ROOT) && $(ROOT)/tests/test_unit.sh
-	@cd $(ROOT) && $(ROOT)/tests/test_pipeline.sh
-	@cd $(ROOT) && $(ROOT)/tests/test_import.sh
+	@cd $(ROOT) && $(ROOT)/compiler/tests/test_unit.sh
+	@cd $(ROOT) && $(ROOT)/compiler/tests/test_pipeline.sh
+	@cd $(ROOT) && $(ROOT)/compiler/tests/test_import.sh
 
 clean:
 	rm -rf $(ROOT)/build/gen1 $(ROOT)/build/gen2 $(ROOT)/build/gen3

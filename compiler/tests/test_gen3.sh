@@ -4,7 +4,7 @@
 # Tests: Gen1 output vs golden, Gen2 AST/BC/ASM vs Gen1, Gen2==Gen3 BC
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/test_common.sh"
+source "$(dirname "$SCRIPT_DIR")/../tests/test_common.sh"
 require_tools parse codegen bc2asm
 
 # Build Gen2 tools

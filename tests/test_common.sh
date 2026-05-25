@@ -3,10 +3,14 @@
 # Usage: source this file from test scripts.
 
 # ===== Paths =====
+# Compute ROOT_DIR from this file's own location (tests/test_common.sh
+# → ROOT_DIR is one level up). SCRIPT_DIR is the caller's directory and
+# may live anywhere under ROOT_DIR (e.g. compiler/tests, kernel/tests).
+_COMMON_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(dirname "$_COMMON_DIR")"
 if [ -z "$SCRIPT_DIR" ]; then
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[1]}")" && pwd)"
 fi
-ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 GOLDEN_DIR="$SCRIPT_DIR/golden"
 TC_DIR="$ROOT_DIR/compiler/src"
 COMPILER_DIR="$ROOT_DIR/compiler/bootstrap"

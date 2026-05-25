@@ -2,7 +2,7 @@
 # update_golden.sh — regenerate golden files using Gen1 (C) tools only
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/test_common.sh"
+source "$(dirname "$SCRIPT_DIR")/../tests/test_common.sh"
 require_tools parse codegen bcrun bc2asm
 
 echo "Updating golden files in $GOLDEN_DIR..."

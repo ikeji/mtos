@@ -4,7 +4,7 @@
 # Tests: each .tc file run via all 5 methods, output must match
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/test_common.sh"
+source "$(dirname "$SCRIPT_DIR")/../tests/test_common.sh"
 require_tools parse codegen bcrun bc2asm interp
 
 echo "=== Consistency Tests (all 5 methods must agree via tc_run_all.sh) ==="

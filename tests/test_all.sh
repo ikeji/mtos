@@ -72,16 +72,16 @@ run_suite() {
     echo ""
 }
 
-run_suite "$SCRIPT_DIR/test_unit.sh"
-run_suite "$SCRIPT_DIR/test_pipeline.sh"
+run_suite "$ROOT_DIR/compiler/tests/test_unit.sh"
+run_suite "$ROOT_DIR/compiler/tests/test_pipeline.sh"
 # Phase E: consistency is now part of the default run. It adds ~12 s
 # but the warm make test budget (with kernel / Gen2 tools cached) is
 # well under 60 s so we include it unconditionally.
-run_suite "$SCRIPT_DIR/test_consistency.sh"
-run_suite "$SCRIPT_DIR/test_golden_examples.sh"
-run_suite "$SCRIPT_DIR/test_gen3.sh"
-run_suite "$SCRIPT_DIR/test_import.sh"
-run_suite "$SCRIPT_DIR/test_asm.sh"
+run_suite "$ROOT_DIR/compiler/tests/test_consistency.sh"
+run_suite "$ROOT_DIR/compiler/tests/test_golden_examples.sh"
+run_suite "$ROOT_DIR/compiler/tests/test_gen3.sh"
+run_suite "$ROOT_DIR/compiler/tests/test_import.sh"
+run_suite "$ROOT_DIR/compiler/tests/test_asm.sh"
 run_suite "$SCRIPT_DIR/test_os.sh"
 
 ELAPSED=$(( $(time_ms) - SUITE_TIME_START ))

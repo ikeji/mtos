@@ -13,7 +13,7 @@
 #   - runtime.tc pool allocator on bare metal (no ecall)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/test_common.sh"
+source "$(dirname "$SCRIPT_DIR")/../tests/test_common.sh"
 
 ensure_gen2_tools
 if [ "$USE_NATIVE" != true ]; then

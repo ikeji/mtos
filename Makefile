@@ -547,19 +547,19 @@ run-pico2-console-land: build/kernel/pico2_kernel_console_land.uf2
 build/test/asm:
 	mkdir -p $@
 
-TEST_ASM_DEPS := tests/virt_crt0.s $(RUNTIME_DEPS) $(GEN2_TOOLS) compiler/scripts/compile-gen2.sh
+TEST_ASM_DEPS := compiler/tests/virt_crt0.s $(RUNTIME_DEPS) $(GEN2_TOOLS) compiler/scripts/compile-gen2.sh
 
-build/test/asm/hello2_virt.bin: tests/hello2.tc $(TEST_ASM_DEPS) | build/test/asm
-	CRT0=tests/virt_crt0.s ASM_PROLOGUE='; raw' GEN2_DIR=build/gen2 \
+build/test/asm/hello2_virt.bin: compiler/tests/hello2.tc $(TEST_ASM_DEPS) | build/test/asm
+	CRT0=compiler/tests/virt_crt0.s ASM_PROLOGUE='; raw' GEN2_DIR=build/gen2 \
 	    ./compiler/scripts/compile-gen2.sh -o $@ $< 2>/dev/null
 
-build/test/asm/test_timer.bin: tests/test_timer.tc $(TEST_ASM_DEPS) compiler/runtime/linux/crt0_tc_data.s | build/test/asm
-	CRT0=tests/virt_crt0.s CRT0_DATA=compiler/runtime/linux/crt0_tc_data.s ASM_PROLOGUE='; raw' \
+build/test/asm/test_timer.bin: compiler/tests/test_timer.tc $(TEST_ASM_DEPS) compiler/runtime/linux/crt0_tc_data.s | build/test/asm
+	CRT0=compiler/tests/virt_crt0.s CRT0_DATA=compiler/runtime/linux/crt0_tc_data.s ASM_PROLOGUE='; raw' \
 	    GEN2_DIR=build/gen2 UNIFIED_PRELUDE=0 \
 	    ./compiler/scripts/compile-gen2.sh -o $@ $< 2>/dev/null
 
-build/test/asm/test_echo.bin: tests/test_echo.tc $(TEST_ASM_DEPS) compiler/runtime/linux/crt0_tc_data.s | build/test/asm
-	CRT0=tests/virt_crt0.s CRT0_DATA=compiler/runtime/linux/crt0_tc_data.s ASM_PROLOGUE='; raw' \
+build/test/asm/test_echo.bin: compiler/tests/test_echo.tc $(TEST_ASM_DEPS) compiler/runtime/linux/crt0_tc_data.s | build/test/asm
+	CRT0=compiler/tests/virt_crt0.s CRT0_DATA=compiler/runtime/linux/crt0_tc_data.s ASM_PROLOGUE='; raw' \
 	    GEN2_DIR=build/gen2 \
 	    ./compiler/scripts/compile-gen2.sh -o $@ $< 2>/dev/null
 
@@ -581,8 +581,8 @@ BUILD_DEPS := $(GEN1_TOOLS) $(GEN2_TOOLS) build/kernel/virt_kernel.bin \
               $(TEST_ASM_BINS)
 
 TEST_SCRIPTS := $(wildcard tests/*.sh)
-TEST_INPUTS  := $(wildcard tests/*.tc) $(wildcard tests/import/*.tc)
-TEST_GOLDEN  := $(wildcard tests/golden/*) $(wildcard tests/golden/tc/*)
+TEST_INPUTS  := $(wildcard compiler/tests/*.tc) $(wildcard compiler/tests/import/*.tc)
+TEST_GOLDEN  := $(wildcard compiler/tests/golden/*) $(wildcard compiler/tests/golden/tc/*)
 TEST_SUPPORT := tc_run.sh tc_run_all.sh compiler/scripts/compile-gen1.sh compiler/scripts/compile-gen2.sh compiler/scripts/compile-gen3.sh
 
 ALL_TEST_DEPS := $(BUILD_DEPS) $(TEST_SCRIPTS) $(TEST_INPUTS) $(TEST_GOLDEN) $(TEST_SUPPORT)
@@ -603,10 +603,10 @@ test: build/tests/test.ok
 full-test: build/tests/full-test.ok
 
 update-golden: all
-	./tests/update_golden.sh
+	./compiler/tests/update_golden.sh
 
 update-golden-and-run-test: $(BUILD_DEPS)
-	./tests/update_golden.sh
+	./compiler/tests/update_golden.sh
 	rm -f build/tests/test.ok
 	$(MAKE) test
 
