@@ -46,7 +46,7 @@ build、UART 多重化 + msh、coreutils (ls/wc/head/cp/du/grep/rm/cat
 縦スクロール)、kern.conf 駆動 init、非ブロッキング UART stdin、パイプ
 syscall (`sys_pipe` + `sys_spawn_fds` で concurrent pipeline)、U8Array-
 as-String 片付け (`path: String` syscall ABI)、フェーズ 8 部分着手
-(`tools/bin2uf2.tc` + `tools/mkfs.tc` + `kernel/platform_*.tc` TC port、
+(`kernel/tools-src/{bin2uf2,mkfs}.tc` + `kernel/platform/*/platform_*.tc` TC port、
 `.incbin SIZE "path"` + asm_pass1 incbin-defer で kernel build
 6.9× speedup) — 詳細は `docs/roadmap.md` の各 milestone と
 `docs/solved.md` の K* / 数字 entry を参照。
@@ -79,305 +79,132 @@ as-String 片付け (`path: String` syscall ABI)、フェーズ 8 部分着手
 
 ## ディレクトリ構成
 
+3 サブプロジェクト + 共有インフラ。詳細ファイル一覧は `docs/sources.md`、
+分割設計は `docs/task/subproject_split.md` を参照。
+
 ```
-bootstrap/  C実装のコンパイラ（ブートストラップ用、Gen1）
-  crt0.s             GCCリンク用スタートアップ
-  runtime_syscall.c  Cランタイム（プールアロケータ、syscallスタブ）
-  extract_sigs.c     .th ヘッダ抽出ツール（AST → export シグネチャ）
-  codegen_main.c     codegen エントリポイント（parse+typecheck+codegen 一体）
-  typecheck_main.c   typecheck エントリポイント
-  parse_main.c       parse エントリポイント
-  lexer.c parser.c ast.c typecheck.c codegen.c interp.c  共有ライブラリ
-  bcrun.c            バイトコードインタープリタ
-  bc2asm.c           バイトコード→RISC-V asm 変換
-compiler/   自作TinyC製の自己ホスト型コンパイラ（Gen2/Gen3）
-  parse.tc           レキサー＋パーサー（ソース → AST .ast）
-  sigscan.tc         拡張 .th 抽出器。AST を stream 読みして top-level
-                     全部 (export / 非 export / struct / グローバル変数)
-                     を .th に吐く。tcheck の前段 (~10 KB peak)
-  tcheck.tc          Streaming type checker。stdin に
-                     `(imports) (self) (program)` ラッパーを受けて
-                     per-function check + .tast emit。per-fn strtab
-                     rollback + per-fn kmalloc fntab で 75〜252 KB peak
-  codegen.tc         コード生成（型付きAST → バイトコード .bc、per-top-level
-                     strtab rollback 済）
-  bc2asm.tc          バイトコード → RISC-V asm .s 変換 (per-function
-                     emission 済。`--unit` 無しで動き、string literal
-                     label は first fn name を使う)
-  ast_node.tc        AST ノードプール共有モジュール (struct AstNode +
-                     AstNodeArray + n_* wrappers、codegen/sigscan/
-                     tcheck が import)
-  string_buffer.tc   伸長バッファライブラリ（emit_string/emit_nl/emit_int 等）
-  source_reader.tc   ストリーミング入力リーダー（4KBバッファ）
-  strlib.tc          共通ユーティリティ（is_digit, is_alpha, streq, cmp 等）
-  bcrun.tc           バイトコードインタープリタ（TC版）
-  asm_common.tc      asm_pass1 / asm_pass2 の共通 encoder/parser core。
-                     process_line / enc_r/i/s/b/u/j / operand parser /
-                     label table / section state 全部ここに。asm_pass1/2
-                     が import
-  asm_pass1.tc       Label collector。`.s` を 1 度読んで `.lab`
-                     (docs/lab_format.md) を吐く (~250 KB peak、
-                     MAX_LABELS 4096 + MAX_NAME_POOL 128 KB)
-  asm_pass2.tc       Encoder。Phase 5 の stream-emit: stdin は
-                     `(lab ...)` + source × 3 (text/rodata/data 各
-                     1 copy ずつ)、source を 3 回再読み込みして
-                     target section を 4 KB out_buf 経由 stdout に
-                     直接 emit。peak ~260〜280 KB (旧 4.6 MB 比
-                     ~16x 削減)
-  runtime.tc         TinyC製ランタイム（kmalloc/kfree 等、compile-gen2/3.sh で使用）
-  crt0_tc.s          asm_pass1/2 リンク用 Linux crt0（_start, syscall stub, peek/poke）
-  crt0_tc_data.s     asm_pass1/2 リンク用プールメタデータ (`.data` + `.bss` + __arena)
-tests/      テストスイート
-  golden/            Gen1 の基準出力（.ast .bc .s .out .exit）
-  golden/tc/         compiler/ ソースの基準出力
-  test_all.sh        全テストスイートのエントリポイント
-  test_common.sh     共通ライブラリ（パス、カウンタ、Gen2 ツールビルド等）
-  test_unit.sh       単体テスト（parse/typecheck/codegen/interp/bcrun/rv32）
-  test_pipeline.sh   Gen2 パイプラインテスト（qemu rv32）
-  test_consistency.sh  tc_run_all 全メソッド一致テスト
-  test_golden_examples.sh  サンプル .tc の golden テスト
-  test_gen3.sh       Gen1 vs golden、Gen2 AST比較、Gen2 vs Gen3 自己ホスト確認
-  test_import.sh     複数ファイル import/export のテスト
-  test_asm.sh        hello2.tc を virt crt0 でビルドして qemu-system-riscv32 で実行
-  test_os.sh         kernel + tmpfs + argv + redirect の virt 上 end-to-end
-  test_phase7.sh     phase 7 self-hosted pipeline (compile → link → run
-                     on OS)。sigscan + tcheck + asm_pass1 + asm_pass2
-                     full split pipeline で Hello World を完走させる。
-                     `make test` 非同梱、手動実行のみ
-  phase3_verify.py   virt 上で全 9 段 (parse→asm_pass2) + Hello World
-                     実行を Gen2 ホスト参照とバイト完全一致検証
-  pico2_verify.sh    pico2 実機で compile 7 段をバイト完全一致検証
-  pico2_hw_driver.py pico2 UART pipeline driver (compile + optional link)
-  pico2_tty.py       pico2 双方向 raw UART フォワーダー (Ctrl-a x 終了)
-  uart_demux.py      UART mux 0x1F フレームパーサー
-  phase7_hello.tc    parse 入力: `fn main() -> i32 { return 42; }`
-  phase7_min.tc      parse 段階的縮小用の最小入力
-  phase7_hello_world.tc Hello World ソース (M6 のゴール)
-  virt_crt0.s        qemu-system-riscv32 -M virt 用 crt0（16550 UART + SiFive test 終了）
-  fixtures/          テスト用設定ファイル
-    kern_demo.conf   init=/bin/hello + hello2 + sh な kern.conf。
-                     Makefile の `build/kernel/disk-demo.img` /
-                     `build/kernel/pico2_kernel_demo.uf2` がこれを
-                     /etc/kern.conf としてステージする
-docs/       仕様・設計ドキュメント
-  ast_format.md      AST ファイルフォーマット（.ast/.tast/.th）
-  bc_format.md       バイトコード形式仕様
-  language.md        TinyC言語仕様
-  tinyc_cheatsheet.md  TinyC構文チートシート
-  filesystem.md      VFS + MyTinyFS 設計 + フェーズ5 実装計画
-  design_decisions.md 意図的に残している挙動の設計判断集
-                     (struct 合成 fn の private 化 + export 前方宣言
-                     による opt-out、String/StringLiteral 分離、
-                     peek/poke の no-bounds-check、2D array 非対応、
-                     固定キャップ vs 伸長の使い分け基準)
-  problem.md         既知の未解決バグ / limitation / ergonomics リスト
-  sources.md         ソースファイル一覧
-  task/              タスク計画・デバッグノート
-kernel/     カーネル（プリエンプティブマルチタスク、virt + Pico 2 で動作）
-  kernel_common.tc    共通 TC: kputs / make_task / scheduler。スロット
-                      状態 (ready/done/unused/waiting) + sched_spawn /
-                      sched_wait + phase 7 debug トレース
-                      (`[sw from>to]` / `[x slot=code]` /
-                      `[TRAP c=.. e=.. s=N]`) を持つ。trap_handler は
-                      非タイマー trap でタスクを殺して sched_task_exit 経由
-                      で次へ切り替える。forward-decl で vfs_close を
-                      参照するだけで import はしない (循環回避)
-  kernel.tc           virt 用 main + rearm_timer + mtfs マウント/read デモ。
-                      TIMER_INTERVAL は 10_000_000 (1 秒 @ 10 MHz) に
-                      落として phase 7 debug マーカーを読みやすく
-  kernel_pico2.tc     Pico 2 用 main + rearm_timer (SIO MTIME) +
-                      `dump_mtfs_to_sd()`: 起動時に `_mtfs_image_*` を
-                      /sd/dx.img + /sd/wrap.s (`.incbin` wrapper +
-                      `_mtfs_image_size_value` helper) として吐く。
-                      サイズ + 先頭 1 KB 内容照合で skip 判定し idempotent。
-                      self-replicate パイプラインから K11 (mr UART
-                      upload hang) を完全迂回するための仕組み
-  block_virtio.tc     virtio-mmio (legacy v1) block デバイスドライバ (virt)
-  block_flash.tc      XIP flash block デバイスドライバ (pico2、_mtfs_image_addr 経由)
-  mtfs.tc             MyTinyFS read-only ドライバ (mount/lookup/open/read/close)
-  tmpfs.tc            /tmp 用 RAM backed FS (kmalloc backed, 16 files /
-                      8 fds, grow-on-write, O_CREAT / O_TRUNC 対応、
-                      phase 7 A)
-  procfs.tc           read-only virtual FS (/proc)。/proc/tasks が
-                      スロット状態一覧 (slot/state/frame/wait/ram/stack/
-                      name)。/proc/meminfo (peak/used)、/proc/cpuinfo
-                      (rv32ima)、/proc/uptime (mtime hex) も提供。
-                      procfs_readdir で `ls /proc` にも対応
-  vfs.tc              VFS 層 (fd テーブル, vfs_open/read/write/close/size/
-                      readdir, /bin/hello のような多階層パス, /tmp/ は
-                      tmpfs, /proc/ は procfs, それ以外は mtfs)。
-                      fd 0 / 1 は current task の stdin_fd / stdout_fd を
-                      参照してリダイレクトに対応 (phase 7 D)、fd 2 は常に
-                      UART 直行。UART mux on のとき fd=0 は per-task
-                      in_buf 経由、fd=1 は uart_emit_tty_frame 経由
-  loader.tc           tmpfs / mtfs からタスクバイナリを読み込み make_task で
-                      フレーム化する起動時ローダ (load_task)。
-                      vfs_xip_addr が非0なら RAM コピーせず flash 直実行。
-                      sys_exec_handler (ecall 221) / sys_spawn_handler (220)
-                      は 4 引数 ABI (path, argv, in_path, out_path) で
-                      kernel 側が redirect ファイルを open し argv を
-                      StringArray clone してからスロットを作成。
-                      sys_spawn_fds_handler (219) は fd ベースの spawn
-                      (パイプ fd を子タスクに直接渡す)。
-                      K3 案C: タスクバイナリの先頭 8 バイトに
-                      `.word arena_size; .word stack_size` の header が
-                      あり、`load_fd` がそれを読んで `make_task(entry+8,
-                      arena, stack)` を呼ぶ (ram_size / stack_size の
-                      固定値は撲滅済み)。
-                      sys_wait_handler (260) は呼び出し元を waiting に
-  trap_common.s       共通 asm: trap entry/exit, ecall dispatch (write64 /
-                      read63 / openat56 / close57 / readdir89 / exit93 / pipe222 /
-                      spawn_fds219 / spawn220 / exec221 / mux_enable250 /
-                      wait260), sched_start, kern_run_task。read/write
-                      は -2 yield 対応 (pipe backpressure / UART empty)
-  platform_virt.s     virt 固有: _start, 16550 UART, _set_kern_gp via la。
-                      `__runtime_init` に渡す arena_size は 100_663_296
-                      (96 MB) — crt0_data.s の .space と必ず一致させる
-  platform_pico2.s    Pico 2 固有: IMAGE_DEF, XOSC, PL011, .data コピー, _set_kern_gp via li
-  crt0_data.s         virt 用 BSS (__arena .space 96 MB — phase 7 で
-                      大きめに取っているが asm_pass2 peak 441 KB なので
-                      実際は数 MB で足りる)
-  crt0_pico2_data.s   Pico 2 用 BSS (256KB __arena)
-  build.sh            統一ビルド: --target virt|pico2 [-o output]
-                      [--disk-out path] + `EXTRA_TASKS` 環境変数で
-                      phase 7 のコンパイラタスク (parse/sigscan/
-                      tcheck/...) を追加可能。Step 0 で runtime.s /
-                      libtc.s を事前コンパイル + `/prelude.s` (=
-                      `; raw` + task_crt0.s + runtime.s) と
-                      `/prelude_tail.s` (= task_data.s) を mtfs に
-                      staging。tcheck の wrap 入力 (`(imports)` /
-                      `(self` / `)` の 3 つの小ヘルパ) も
-                      `/empty_imports.txt` / `/self_open.txt` /
-                      `/wrap_close.txt` として staging — sh 側で
-                      cat して tcheck の wrap 入力を組み立てる。
-                      `KEEP_TMP=1` でカーネルビルド中間 tmp dir を残せる
-  bin2s.sh            raw バイナリ → .s データ変換 (PREFIX_addr 関数 +
-                      PREFIX_size_value helper を生成)
-  bin2s_incbin.sh     bin2s.sh の `.incbin` 版。size を Make 段階で
-                      `wc -c` で測り `.incbin SIZE "path"` を含む .s を
-                      emit。kernel build で disk-extra.img を埋め込む
-                      経路と self-replicate dumper の wrap.s が同一
-                      フォーマット
-  run_pico2.sh        Pico 2 実機書き込み + UART キャプチャ (openocd 経由)
-  run_pico2_interactive.sh  build + flash + 双方向 UART コンソール
-                      (`make run-pico2` が呼ぶ、Ctrl-a x で終了)
-  tasks/              ゲストタスク (両プラットフォーム共通)
-    task_crt0.s       タスク用 crt0 (ecall syscall + .data コピー、
-                      a2 を s2 で保存して main に argv として渡す、
-                      main__StringArray と main の両方を fallback スタブ
-                      として定義、exit 前に `km_dump_peak` を呼んで
-                      `[kmem peak=.. live=..]` を stderr に出す)
-    task_data.s       タスク用最小 BSS
-    hello/hello.tc    タスク1 ("A" 出力、seed)
-    hello2/hello2.tc  タスク2 ("B" 出力、seed)
-    catfile/catfile.tc タスク3 (argv[1] または "/hello.txt" を開いて
-                      `CAT[argc]:` 付きで出力)
-    launcher/launcher.tc タスク4 (pico2 slot 2、do_exec(path, 0, 0, 0) で
-                      /bin/catfile を exec)
-    sh/sh.tc          対話シェル (sys_spawn + sys_wait + `<` / `>` +
-                      `|` パイプ (sys_pipe + sys_spawn_fds で concurrent
-                      実行、max 4 pipes) + 絶対パス対応 + TAB 補完
-                      (/bin コマンド + readdir パス + `|` 後のコマンド
-                      補完、共通プレフィックス自動補完) + コマンド
-                      ヒストリ (上下矢印、8 件) + echo-back + backspace。
-                      quit で終了、virt slot 2)
-    msh/msh.tc        プログラム操作用 silent sh (プロンプト/echo なし、
-                      UART mux driver 用)
-    libtc/libtc.tc    ユーザ空間ライブラリ (puts/eputs/putchar/print/
-                      string_from_bytes/eq)。path-taking do_* syscall
-                      stub の forward decl (String / StringLiteral
-                      overload) も集約し、タスクは `import` だけで全部
-                      見える
-    tmpdemo/tmpdemo.tc /tmp/demo を O_WRONLY|O_CREAT で書いて読み返す
-                      phase 7 A 回帰テスト
-    echo/echo.tc      argv[1..] を space 区切り + \n で stdout に出す
-    cat/cat.tc        argv[1..] のファイルを順に stdout に流す。存在
-                      しないファイルは stderr にエラー + exit 1
-    ls/ls.tc          ディレクトリ一覧 (sys_readdir ecall 89)
-    wc/wc.tc          行数・バイト数カウント
-    head/head.tc      先頭 N 行表示
-    cp/cp.tc          ファイルコピー
-    du/du.tc          ディレクトリ使用量
-    mkdir/mkdir.tc    ディレクトリ作成 (ecall 34、/sd/ 専用)
-    rmdir/rmdir.tc    空ディレクトリ削除 (ecall 40、/sd/ 専用)
-    neofetch/neofetch.tc  ASCII banner + /proc/tasks stats
-    vi/vi.tc          最小 vi エディタ (normal/insert/cmdline、ANSI 描画)
-    mx/mx.tc          stdin → length-prefix framed stdout (UART 転送用)
-    mr/mr.tc          mx の逆: framed stdin → raw stdout
-    muxon/muxon.tc    UART mux 有効化 (ecall 250)
-    muxoff/muxoff.tc  UART mux 無効化
-    bin2uf2/bin2uf2.tc raw bin → UF2 コンバータ (TC port of
-                      tools/bin2uf2.py、RP2350 RISC-V family_id
-                      0xE48BFF5A、256 B payload / 512 B block)。
-                      fatfs に rewind がないので 2 pass (count + emit)。
-                      self-replicate step 4 で /sd/k.bin → /sd/k.uf2
-    parse/parse.tc       → compiler/parse.tc (symlink)
-    sigscan/sigscan.tc   → compiler/sigscan.tc (symlink)
-    tcheck/tcheck.tc     → compiler/tcheck.tc (symlink)
-    codegen/codegen.tc   → compiler/codegen.tc (symlink)
-    bc2asm/bc2asm.tc     → compiler/bc2asm.tc (symlink)
-    asm_pass1/asm_pass1.tc → compiler/asm_pass1.tc (symlink)
-    asm_pass2/asm_pass2.tc → compiler/asm_pass2.tc (symlink)
-                      上は `EXTRA_TASKS="parse sigscan tcheck codegen
-                      bc2asm asm_pass1 asm_pass2 cat"` を渡したときだけ
-                      ビルドされ `/bin/<name>` として mtfs に入る
-                      (test_phase7.sh が参照)。compile-gen2.sh が
-                      TC_FILE の symlink を readlink で解決するので
-                      import (string_buffer.tc 等) が正しく compiler/
-                      配下から引ける
-tools/      ホスト側ツール
-  mkfs.tc             MyTinyFS (mtfs) ディスクイメージ生成。フェーズ 8
-                      (2026-05-06) で `tools/mkfs.py` を TC port。
-                      `build/gen2/mkfs` (RV32 ELF) を qemu-riscv32 経由で
-                      kernel build が呼ぶ。Python の inode-pack 60 byte
-                      バグ込みで byte-exact。statx (291) で path stat。
-                      `mkfs <output> <rootdir>` でディレクトリを再帰的に
-                      取り込み、1 階層のサブディレクトリを dir inode 化
-  bin2uf2.tc          raw bin → UF2 (family_id=0xe48bff5a) コンバータ。
-                      フェーズ 8 (2026-05-06) で `tools/bin2uf2.py` を TC port。
-                      `build/gen2/bin2uf2` (RV32 ELF) を `qemu-riscv32` 経由で
-                      呼び、kernel/build.sh / Makefile / self-replicate /
-                      qemu_bin2uf2_test の全経路で byte-exact 一致を確認済み
+compiler/   サブプロジェクト 1: TinyC コンパイラ
+  bootstrap/   Gen1: C 製コンパイラ (x86 native) — parse, codegen, bc2asm 等
+  src/         Gen2/3: TC 製コンパイラ — parse.tc, sigscan.tc, tcheck.tc,
+               codegen.tc, bc2asm.tc, asm_pass{1,2,3}.tc, ast_node.tc,
+               string_buffer.tc, source_reader.tc, strlib.tc, runtime.tc,
+               bcrun.tc, asm_common.tc + lib/dead_strip
+  runtime/
+    linux/     compile-gen2/3.sh が使う crt0 (Linux ELF + qemu-riscv32)
+    mtos/      task_crt0.s, task_data.s (MTOS bin 用、userland 共用)
+  scripts/     compile-gen{1,2,3}.sh + collect_imports.sh + tc_deps_to_d.sh
+  tests/       compiler 単体テスト (test_unit, test_pipeline, test_consistency,
+               test_golden_examples, test_gen3, test_import, test_asm) +
+               golden/ + 入力 .tc (hello, hello2, fib, fizzbuzz, calc, ...) +
+               import/ + virt_crt0.s + update_golden.sh + bench_pipeline.sh
+  Makefile     `make -C compiler test` で 140 tests scoped 実行
+
+userland/   サブプロジェクト 2: MTOS ユーザータスク
+  lib/libtc/   共通ユーザライブラリ (puts/eputs/print/syscall stub forward decl)
+  bin/<task>/  各タスク (40 個) + task.mk (GUEST_TASKS / EXTRA_GUEST_TASKS 宣言)
+    sh, msh, ls, cat, echo, wc, head, cp, du, grep, rm, mkdir, rmdir, rot13,
+    md5sum, vi, neofetch, console, fbtest, count, seq, mx, mr, muxon, muxoff,
+    sdprobe, kbdump, tcc, bin2uf2, launcher, hello, hello2, catfile, tmpdemo
+    parse/, sigscan/, tcheck/, codegen/, bc2asm/, asm_pass{1,2,3}/
+      → compiler/src/<name>.tc への symlink (compiler-on-MTOS)。
+        EXTRA_GUEST_TASKS なので default ビルドには含まれない
+  Makefile     `make -C userland test` で全 40 タスク build smoke
+
+kernel/     サブプロジェクト 3: OS カーネル (virt + pico2)
+  src/         kernel core (両 platform 共通)
+    kernel.tc, kernel_pico2.tc, kernel_common.tc — main + scheduler
+    vfs.tc, tmpfs.tc, procfs.tc, mtfs.tc, fatfs.tc, devfs.tc, loader.tc,
+    rtc.tc, trap_common.s
+  platform/
+    virt/       platform_virt.{s,tc}, crt0_data.s, block_virtio.tc,
+                block_fat_virtio.tc, block_fat_stub.tc, dev_backend_virt.tc
+    pico2/      platform_pico2.{s,tc}, crt0_pico2_data.s, block_flash.tc,
+                block_sd.tc, display_ili9488.tc, keyboard_matrix.tc,
+                rtc_ds3231.tc
+  scripts/     build.sh + run_pico2{,_interactive}.sh + bin2s{,_incbin}.sh +
+               genjpfont.py
+  tools-src/   TC で書かれた kernel build 用 host ツール
+    mkfs.tc    mtfs ディスクイメージ生成 (qemu-riscv32 で実行)
+    bin2uf2.tc raw bin → UF2 コンバータ
+  tests/       kernel 単体テスト
+    test_os.sh, test_pico2*.sh, fb_render.py
+    fixtures/  kern_demo.conf, kern_console{,_land}.conf, msh_smoke.sh,
+               msh_abort.sh
+  Makefile     `make -C kernel test` で 8 tests scoped 実行
+
+integration/  3 サブプロジェクトをまたぐテスト (`make full-test` で実行)
+  test_phase7.sh, pico2_self_replicate.sh, pico2_verify.sh,
+  pico2_test_compile_parse.sh, phase3_verify.py, qemu_mr_scale.py,
+  pico2_{drive,hw_driver,k11_reproduce,pipeline_drive,tty,upload}.py,
+  uart_demux.py
+  inputs/      phase7_hello{,_world,_min}.tc
+  fixtures/    pico2_*.sh (実機 fixture: self_step1-4, dumper test, 各
+               compile_* fixture 等) + calib.sh
+
+tests/      共有テストインフラ (3 サブプロジェクトすべてが使う)
+  test_all.sh    全 suite を順に呼ぶ root 集約スクリプト
+  test_common.sh 共通ヘルパ (paths, counters, report_pass/fail, build_gen2_tool)
+
+docs/       仕様・設計ドキュメント (詳細は ls docs/)
+  task/subproject_split.md  サブプロジェクト分割設計 (このリファクタの根拠)
+
+build/      生成物 (gitignored)
+  gen1/      Gen1 バイナリ (x86)
+  gen2/      Gen2 バイナリ (RV32 ELF + qemu-riscv32 経由)
+  gen3/      Gen3 (Gen2 == Gen3 byte-exact 検証用)
+  kernel/    kernel.bin, disk*.img, tasks/*.bin
+  intermediate/ asm pipeline 中間ファイル (.idx, .lab 等)
 ```
 
 ## ビルド＆実行
 
+### サブプロジェクト別 (主目的: テストスコープを編集箇所に限定)
+
+| 編集対象 | コマンド | 内容 |
+|---|---|---|
+| `compiler/src/*.tc` | `make -C compiler test` | compiler 140 tests (~60s) |
+| `userland/bin/<task>/*.tc` | `make -C userland test` | 40 タスク build smoke (~0.07s warm) |
+| `kernel/src/*.tc`, `kernel/platform/*` | `make -C kernel test` | test_os 8 tests (~10s) |
+| integration | `make full-test` | 上記 + test_phase7 等 |
+| 全部統合 | `make test` (root) | 148 tests (~50s warm) |
+
+### ルート Makefile
+
 ```bash
-make                              # Gen1 バイナリを build/gen1/ にビルド（parse, codegen, bc2asm, typecheck, extract-sigs 等）
-make test                         # テスト実行（warm ~33s, cold ~78s、上限 60 秒 warm）
-make full-test                    # kmalloc / kernel1 (FULL_TEST=1) 含む全テスト
-make update-golden                # goldenファイルを再生成
-make update-golden-and-run-test   # golden 再生成してからテスト実行
-make gen2-tools                   # build/gen2/* のみビルド (incremental)
-make gen3-tools                   # build/gen3/* のみビルド (自己ホスト確認用)
+make                              # Gen1 バイナリを build/gen1/ にビルド
+make test                         # 148 tests 集約レポート (test_all.sh 経由)
+make full-test                    # + integration + FULL_TEST=1 (kmalloc/kernel1)
+make update-golden                # compiler/tests/golden/ を再生成
+make update-golden-and-run-test   # 再生成 → test 連続実行
+make gen2-tools                   # build/gen2/* のみ
+make gen3-tools                   # build/gen3/* (自己ホスト確認用)
 make virt-kernel                  # build/kernel/virt_kernel.bin のみ
 make pico2-kernel                 # build/kernel/pico2_kernel.uf2 のみ
-make pico2-kernel-extra           # + EXTRA_TASKS 込みの UF2
-make pico2-kernel-demo            # + disk-demo.img (kern.conf 駆動 init) 込み
-# DROP_TASKS="vi neofetch" のように tasks を除外できる knob あり。
-# self-replicate 用 disk-extra.img を 4 MiB flash に収めるのに使う
-# (例: DROP_TASKS="vi neofetch grep cp du head" make pico2-kernel-extra)
+make pico2-kernel-extra           # + EXTRA_GUEST_TASKS 込み
+make pico2-kernel-demo            # + disk-demo.img (kern_demo.conf 駆動 init)
+make pico2-kernel-console{,-land} # + LCD console 込み
+# DROP_TASKS="vi neofetch" 等で除外可。pico2 4 MiB flash に収める用
 make test-asm-bins                # build/test/asm/*.bin (test_asm プリビルド)
 make run                          # virt kernel を対話起動 (qemu stdio serial)
-make run-extra                    # 同上 + EXTRA_TASKS (parse/…/asm_pass2/muxon/mx 等) 込み
-make run-pico2                    # pico2 kernel をビルド→flash→対話 UART
-make run-pico2-extra              # 同上 + EXTRA_TASKS 込み
-make clean                        # Gen1 + build/ まとめて消す
+make run-extra                    # 同上 + EXTRA_GUEST_TASKS
+make run-pico2                    # pico2 kernel → flash → 対話 UART
+make run-pico2-extra              # 同上 + EXTRA_GUEST_TASKS
+make clean                        # Gen1 + build/ 全消去
 #
-# ディスクイメージ 3 種:
-#   build/kernel/disk.img       標準 (kern.conf 省略 → kernel の default
-#                               seed = sh only)
-#   build/kernel/disk-extra.img + EXTRA_GUEST_TASKS
-#   build/kernel/disk-demo.img  + tests/fixtures/kern_demo.conf を
-#                               /etc/kern.conf としてステージ
-#                               (test_os.sh が使用)
+# ディスクイメージ 4 種:
+#   build/kernel/disk.img           標準 (kern.conf 省略 → seed = sh only)
+#   build/kernel/disk-extra.img     + EXTRA_GUEST_TASKS (parse/sigscan/...)
+#   build/kernel/disk-demo.img      + kernel/tests/fixtures/kern_demo.conf
+#                                   (test_os.sh が使用)
+#   build/kernel/disk-console.img   + console 起動
+#   build/kernel/disk-console-land.img  + console (landscape)
 ```
 
 `make run` は `qemu-system-riscv32 -machine virt` に標準入出力を繋いで
 sh と対話できる。Ctrl-a x で抜ける。Ctrl-a c で qemu モニタ。
 
 `make run-pico2` は Debug Probe 経由で pico2 をフラッシュし、
-`tests/pico2_tty.py` による双方向 UART コンソールを開く。
+`integration/pico2_tty.py` による双方向 UART コンソールを開く。
 Ctrl-a x で終了 (qemu と同じ escape)。
 `OPENOCD` / `UART_PORT` 環境変数で上書き可。
 
@@ -386,11 +213,11 @@ Ctrl-a x で終了 (qemu と同じ escape)。
 
 ## Pico 2 (RP2350 RISC-V) ビルド
 
-カーネルを Pico 2 向けにビルドするには `kernel/build.sh --target pico2`
+カーネルを Pico 2 向けにビルドするには `kernel/scripts/build.sh --target pico2`
 を使う。「カーネル / 統一ビルド」節 (後述) を参照。
-`tools/bin2uf2.tc` (フェーズ 8 で TC port、2026-05-06) が raw bin → UF2
-(family_id=0xe48bff5a) 変換を担当し、`build/gen2/bin2uf2` (RV32 ELF) を
-`qemu-riscv32` 経由でカーネルビルドが呼ぶ。
+`kernel/tools-src/bin2uf2.tc` (フェーズ 8 で TC port、2026-05-06) が raw
+bin → UF2 (family_id=0xe48bff5a) 変換を担当し、`build/gen2/bin2uf2`
+(RV32 ELF) を `qemu-riscv32` 経由でカーネルビルドが呼ぶ。
 
 bring-up 当初は `pico2/hello.tc` というカーネル抜きの standalone hello
 world と専用の `compile-pico2.sh` / `pico2/crt0_pico2.s` を持っていたが、
@@ -399,27 +226,29 @@ world と専用の `compile-pico2.sh` / `pico2/crt0_pico2.s` を持っていた�
 
 ## 世代の定義
 
-- **Gen1**: `bootstrap/` の C コードを GCC で x86_64 にコンパイルしたもの
-- **Gen2**: `compiler/` の TC コードを Gen1 でコンパイルし RV32 ELF にしたもの（`compile-gen1.sh`）
-- **Gen3**: `compiler/` の TC コードを Gen2 でコンパイルし RV32 ELF にしたもの（`compile-gen2.sh`）
+- **Gen1**: `compiler/bootstrap/` の C コードを GCC で x86_64 にコンパイルしたもの
+- **Gen2**: `compiler/src/` の TC コードを Gen1 でコンパイルし RV32 ELF にしたもの (`compile-gen1.sh`)
+- **Gen3**: `compiler/src/` の TC コードを Gen2 でコンパイルし RV32 ELF にしたもの (`compile-gen2.sh`)
 
 ## コンパイルスクリプト
 
+スクリプトは `compiler/scripts/` に集約済。
+
 ```bash
-# Gen1 ツール（C版）で .tc → RV32 ELF（Gen2 ツールの生成に使う）
-./compile-gen1.sh -o output file.tc
+# Gen1 ツール (C 版) で .tc → RV32 ELF (Gen2 ツールの生成に使う)
+./compiler/scripts/compile-gen1.sh -o output file.tc
 
-# Gen2 ツール（qemu経由）で .tc → RV32 ELF（Gen3 ツールの生成に使う）
-GEN2_DIR=/path/to/gen2 ./compile-gen2.sh -o output file.tc
+# Gen2 ツール (qemu 経由) で .tc → RV32 ELF (Gen3 ツールの生成に使う)
+GEN2_DIR=/path/to/gen2 ./compiler/scripts/compile-gen2.sh -o output file.tc
 
-# Gen3 ツール（qemu経由）で .tc → RV32 ELF（Gen2==Gen3 の確認に使う）
-GEN3_DIR=/path/to/gen3 ./compile-gen3.sh -o output file.tc
+# Gen3 ツール (qemu 経由) で .tc → RV32 ELF (Gen2==Gen3 の確認に使う)
+GEN3_DIR=/path/to/gen3 ./compiler/scripts/compile-gen3.sh -o output file.tc
 ```
 
 compile-gen1.sh パイプライン:
 1. import 先の .tc を再帰的に収集
 2. 各 .tc を個別にコンパイル → .s
-3. 全 .s を GCC でリンク（crt0.s + runtime_syscall.c）
+3. 全 .s を GCC でリンク (compiler/bootstrap/crt0.s + runtime_syscall.c)
 
 compile-gen2/gen3.sh パイプライン:
 1. import 先の .tc を再帰的に収集
@@ -495,74 +324,79 @@ imports (他モジュール) の .th は Gen1 `extract-sigs` が生成し、self
 **デフォルトでは** import 先から呼べない (private field の代替機構)。
 必要なら `export fn` のラッパーを定義するか、ライブラリ側で合成 fn と
 同じシグネチャの `export fn` 前方宣言を書いて opt-in で export 化する
-(`compiler/ast_node.tc` 参照)。詳細は `docs/design_decisions.md` #1 と
+(`compiler/src/ast_node.tc` 参照)。詳細は `docs/design_decisions.md` #1 と
 `docs/task/multi_file.md`。
 
 ## テスト構造
 
-### テストスクリプト構成
-- `tests/test_all.sh` — 全スイートのエントリポイント（`make test`）
-- `tests/test_unit.sh` — Gen1 単体テスト（parse/typecheck/codegen/interp/bcrun/rv32）
-- `tests/test_pipeline.sh` — Gen2 パイプラインテスト（qemu rv32 native）
-- `tests/test_consistency.sh` — tc_run_all 全メソッド一致テスト
-- `tests/test_golden_examples.sh` — サンプル .tc ファイルの golden テスト
-- `tests/test_gen3.sh` — Gen1 vs golden、Gen2 AST vs Gen1 AST、Gen2==Gen3 BC
-- `tests/test_import.sh` — 複数ファイル import/export のテスト
-- `tests/test_asm.sh` — hello2.tc / test_timer.tc を `; raw` モードで compile-gen2.sh にかけ、
-  qemu-system-riscv32 -M virt で実行（CSR エンコード、タイマ割り込み検証含む）
-- `tests/test_os.sh` — OS コンポーネントテスト。`make test` では
-  fs_virtio を実行: `build/kernel/disk-demo.img` (=
-  `tests/fixtures/kern_demo.conf` で `init=/bin/hello` +
-  `/bin/hello2` + `/bin/sh` を seed した disk) でブートし、
-  kern.conf 駆動 init (A/B preempt 可視化) + tmpfs 書き戻し (tmpdemo)
-  + catfile argv + `>` リダイレクト + spawn/wait leak canary
-  (`KERN: live=...`) を同時に検証。`FULL_TEST=1` で kmalloc と
-  kernel1 協調タスクも追加
-- `tests/test_pico2.sh` — Pico 2 実機テスト。`make test` には含まれない。
-  Debug Probe + openocd-rpi が接続された状態で
-  `GEN2_DIR=/tmp/gen2 tests/test_pico2.sh` と起動すると、pico2 カーネルを
-  ビルドして SWD フラッシュ、/dev/ttyACM0 の UART 出力から
-  `BLOCK: flash backend ready / MTFS: mounted / CAT:hello, mtfs / all tasks done`
-  を grep して検証する。環境変数 `OPENOCD` / `UART_PORT` で上書き可。
-- `tests/test_phase7.sh` — phase 7 自己ホスト実行テスト。`make test` に
-  は含まれない。`GEN2_DIR=/tmp/gen2 tests/test_phase7.sh` と起動すると、
-  `EXTRA_TASKS="parse sigscan tcheck codegen bc2asm asm_pass1 asm_pass2 cat"`
-  でカーネルをビルドし、2 ステージを qemu virt で検証する:
-  stage 1 は `parse → sigscan → cat wrap → tcheck → codegen → bc2asm`
-  パイプラインで `.s` を生成 (`[w slot:len]` + `[x slot=0]` マーカー
-  で検証)、stage 2 は prelude を cat して asm_pass1/pass2 に通して
-  `/tmp/hw` を作り、sh の絶対パス実行で "Hello, World!" が UART に
-  出ることを確認する
-- `tests/phase7_hello.tc` / `phase7_min.tc` / `phase7_hello_world.tc` —
-  phase 7 のテスト入力。それぞれ kernel/build.sh が `/phase7.tc` /
+Phase 3 で 3 サブプロジェクトに物理分離済。各 Makefile が test target を
+持ち、編集箇所に応じて scoped 実行する。詳細は `docs/task/subproject_split.md`。
+
+### compiler test (`compiler/tests/`, `make -C compiler test`)
+- `test_unit.sh` — Gen1 単体 (parse/typecheck/codegen/interp/bcrun/rv32)
+- `test_pipeline.sh` — Gen2 パイプライン (qemu rv32 native)
+- `test_consistency.sh` — tc_run_all 全 5 メソッド一致
+- `test_golden_examples.sh` — サンプル .tc の golden 比較
+- `test_gen3.sh` — Gen1 vs golden、Gen2 AST vs Gen1 AST、Gen2==Gen3 BC
+- `test_import.sh` — 複数ファイル import/export
+- `test_asm.sh` — hello2.tc / test_timer.tc を `; raw` で compile-gen2.sh
+  にかけ、qemu-system-riscv32 -M virt で実行 (CSR / タイマ割り込み検証含む)
+- `update_golden.sh` / `bench_pipeline.sh` / `qemu_bin2uf2_test.py` — ツール
+- `golden/`, `import/`, `*.tc` (hello, fib, fizzbuzz, calc, struct_*, ...)
+- `virt_crt0.s` — qemu virt 用 crt0 (test_asm 専用)
+
+### kernel test (`kernel/tests/`, `make -C kernel test`)
+- `test_os.sh` — OS コンポーネントテスト。`build/kernel/disk-demo.img`
+  (= `kernel/tests/fixtures/kern_demo.conf` で init=/bin/hello + hello2
+  + sh を seed) でブートし、kern.conf 駆動 init (A/B preempt 可視化) +
+  tmpfs 書き戻し (tmpdemo) + catfile argv + `>` リダイレクト +
+  spawn/wait leak canary (`KERN: live=...`) を同時に検証。`FULL_TEST=1`
+  で kmalloc と kernel1 協調タスク (compiler/tests/test_kmalloc.tc /
+  test_kernel1.tc を入力に使う) も追加
+- `test_pico2*.sh` — Pico 2 実機テスト (`make test` 非同梱)。Debug Probe
+  + openocd-rpi が接続された状態で `GEN2_DIR=/tmp/gen2 kernel/tests/test_pico2.sh`
+  と起動すると、pico2 カーネルをビルドして SWD フラッシュ、/dev/ttyACM0
+  の UART から `BLOCK: flash backend ready / MTFS: mounted / CAT:hello,
+  mtfs / all tasks done` を grep 検証
+- `fb_render.py` — /dev/fb framed-blit dump を BMP に変換 (test_os が使用)
+- `fixtures/` — kern_*.conf + msh_*.sh
+
+### userland test (`userland/Makefile`, `make -C userland test`)
+全 40 タスクの build smoke のみ (タスクごとの単体テストは未整備)。
+
+### integration test (`integration/`, `make full-test` または手動)
+- `test_phase7.sh` — phase 7 自己ホスト実行テスト。`make full-test` から
+  起動される。`EXTRA_GUEST_TASKS` 込みでカーネルをビルドし、2 ステージを
+  qemu virt で検証する: stage 1 は `parse → sigscan → cat wrap → tcheck
+  → codegen → bc2asm` パイプラインで `.s` を生成、stage 2 は prelude を
+  cat して asm_pass1/2/3 に通して `/tmp/hw` を作り、sh の絶対パス実行で
+  "Hello, World!" が UART に出ることを確認する
+- `inputs/phase7_hello.tc` / `phase7_min.tc` / `phase7_hello_world.tc` —
+  phase 7 入力。それぞれ kernel/scripts/build.sh が `/phase7.tc` /
   `/phase7_min.tc` / `/hw.tc` として mtfs に staging する
-- `tests/pico2_self_replicate.sh` — Pico 2 self-replicate orchestrator。
-  `make test` には含まれない。`[REFRESH_KERN_MODS=1] GEN2_DIR=/tmp/gen2
-  tests/pico2_self_replicate.sh` で 9 ステップ (step 0a〜0e で
-  runtime / libtc / kern 9 モジュール / platform .s を /sd に staging、
-  step 1 で /sd/full.s 連結、step 2 で per-file pre-encode + link
-  (asm_pass1 × 13 + asm_pass2 → /sd/full.lab)、step 3 で
-  asm_pass3 → /sd/k.bin、step 4 で bin2uf2 → /sd/k.uf2) を openocd
-  reset で挟みながら自動実行し、生成 kernel.bin / kernel.uf2 が
-  host gen2 build と md5 完全一致することを検証する。所要時間
-  **~30 min** (REFRESH + 全 step、UART overhead 込み) / ~12 min
-  (no REFRESH)。orchestrator は `PRELUDE_NAME=p` /
-  `INPUT_NAMES="kc pp bf bs ff mf tf pf vf ld kp pt"` を
-  `compile-gen2.sh` に渡して host 側中間ファイル名を device 側の
-  fixture と揃え、`.lab` の `src raw <basename>` 行が host/device で
-  byte-exact 一致する
-- `tests/qemu_mr_scale.py` — K11 (mr 経由 UART upload hang) 再現を
-  qemu virt で試す regression test。`-serial stdio` (Ctrl-A escape
-  なし、`-monitor null` 併用) を使う点に注意 — `-serial mon:stdio` だと
-  qemu モニタが Ctrl-A を吸収しフレーム化バイトが消える
-- `tests/test_common.sh` — 共通ライブラリ（パス、カウンタ、Gen2 ツールビルド等）
+- `pico2_self_replicate.sh` — Pico 2 self-replicate orchestrator (実機必要)。
+  9 ステップで kernel + 全コンパイラを実機再生成し host gen2 と md5 一致
+  検証 (~30 min REFRESH 込み)。`PRELUDE_NAME=p` / `INPUT_NAMES="kc pp bf
+  bs ff mf tf pf vf ld kp pt"` を `compile-gen2.sh` に渡して host/device
+  中間ファイル名を揃える
+- `pico2_verify.sh` / `pico2_test_compile_parse.sh` — pico2 実機 byte-exact
+  検証
+- `phase3_verify.py` — virt 上で 9 段全部走らせて byte-exact 検証
+- `qemu_mr_scale.py` — K11 (mr UART upload hang) qemu 再現 (`-serial stdio`
+  + `-monitor null`、`-serial mon:stdio` だと qemu モニタが Ctrl-A 吸収)
+- `pico2_*.py` — pico2 UART driver / utility
+- `fixtures/pico2_*.sh` — pico2 実機 fixture (self_step{1-4}, compile_* 等)
+
+### 共有 (`tests/`)
+- `test_all.sh` — 全 suite を順に呼ぶ集約スクリプト (`make test` のバック)
+- `test_common.sh` — 共通ヘルパ (paths, counters, build_gen2_tool 等)
 
 ### Gen2 ツールのビルド
-- `build_gen2_tool` は `compile-gen1.sh` を使用（GCC リンカ + runtime_syscall.c）
-- `ensure_gen2_tools` は qemu-riscv32 + riscv-gcc が必要。parse /
-  sigscan / tcheck / codegen / bc2asm / bcrun / asm_pass1 / asm_pass2
-  を Gen2 として一式ビルドする。
-- `tests/test_asm.sh` は追加で qemu-system-riscv32 が必要（無ければ SKIP）。
+- `build_gen2_tool` は `compile-gen1.sh` を使用 (GCC リンカ + runtime_syscall.c)
+- `ensure_gen2_tools` は qemu-riscv32 + riscv-gcc が必要。parse / sigscan /
+  tcheck / codegen / bc2asm / bcrun / asm_pass1 / asm_pass2 / asm_pass3 を
+  Gen2 として一式ビルドする
+- `compiler/tests/test_asm.sh` は追加で qemu-system-riscv32 が必要 (無ければ SKIP)
 
 ### テスト内容
 - Gen1 出力 vs golden ファイル（AST, BC, ASM）
@@ -627,9 +461,9 @@ imports (他モジュール) の .th は Gen1 `extract-sigs` が生成し、self
 デフォルトは Linux ELF 用の crt0 だが、以下を設定すると別ターゲット
 （qemu virt, Pico 2 等）向けにビルドできる:
 - `CRT0` — `.s` ファイルパスの **空白区切りリスト**。各ファイルが
-  個別に asm_pass1 にかかる。デフォルト `compiler/crt0_tc.s`
+  個別に asm_pass1 にかかる。デフォルト `compiler/runtime/linux/crt0_tc.s`
 - `CRT0_DATA` — `.s` ファイルパスの空白区切りリスト (末尾 data
-  セクション)。デフォルト `compiler/crt0_tc_data.s`
+  セクション)。デフォルト `compiler/runtime/linux/crt0_tc_data.s`
 - `ASM_PROLOGUE` — asm 入力先頭の 1 行（例 `; raw`）。`PRELUDE_NAME.s`
   に書き出され単独 input になる (raw_mode を input[0] から拾うため)
 - `GEN2_DIR` — Gen2 ツール (parse/sigscan/tcheck/codegen/bc2asm/asm_pass1/asm_pass2)
@@ -641,30 +475,33 @@ imports (他モジュール) の .th は Gen1 `extract-sigs` が生成し、self
 
 ```bash
 # Gen2 ツールを事前にビルドしてから:
-GEN2_DIR=/path/to/gen2 ./kernel/build.sh --target virt  -o kernel.bin
-GEN2_DIR=/path/to/gen2 ./kernel/build.sh --target pico2 -o kernel.uf2
+GEN2_DIR=/path/to/gen2 ./kernel/scripts/build.sh --target virt  -o kernel.bin
+GEN2_DIR=/path/to/gen2 ./kernel/scripts/build.sh --target pico2 -o kernel.uf2
 ```
 
 ビルドフロー (両ターゲット共通):
-1. Step 0: `runtime.tc` と `libtc.tc` を 1 度だけコンパイルし `CACHED_S_DIR`
-   経由で各タスクビルドで共有 (phase 7 で導入、-8.8 s)
-2. ゲストタスク (kernel/tasks/*/task.mk が GUEST_TASKS に積む:
-   hello, hello2, catfile, sh, msh, tmpdemo, echo, cat, ls, wc, head,
-   cp, du, grep, rm, mkdir, rmdir, neofetch, vi, launcher, count, seq,
-   mx, mr, muxon, muxoff) を raw バイナリにコンパイル。各タスクには
+1. Step 0: `compiler/src/runtime.tc` と `userland/lib/libtc/libtc.tc` を 1 度
+   だけコンパイルし `CACHED_S_DIR` 経由で各タスクビルドで共有 (phase 7 で
+   導入、-8.8 s)
+2. ゲストタスク (`userland/bin/*/task.mk` が GUEST_TASKS に積む: hello,
+   hello2, catfile, sh, msh, tmpdemo, echo, cat, ls, wc, head, cp, du,
+   grep, rm, mkdir, rmdir, neofetch, vi, console, fbtest, launcher,
+   count, seq, mx, mr, muxon, muxoff, sdprobe, kbdump, tcc, md5sum,
+   bin2uf2, rot13) を raw バイナリにコンパイル。各タスクには
    `task_arena_size()` / `task_stack_size()` の値を `.word` 2 本の
    header として prepend する (K3 案C)。`EXTRA_TASKS="parse sigscan
-   tcheck codegen bc2asm asm_pass1 asm_pass2 cat"` を渡すと phase 7
-   のコンパイラタスク群を追加できる。起動時 seed task は現在 sh のみ
-   (hello/hello2 を足したいときは kern.conf 経由)
-3. `tools/mkfs.tc` (`build/gen2/mkfs` を qemu-riscv32) で `/bin/<task>` + `/hello.txt` + phase 7 の test 入力
+   tcheck codegen bc2asm asm_pass1 asm_pass2 asm_pass3 cat"` を渡すと
+   phase 7 のコンパイラタスク群を追加できる。起動時 seed task は現在
+   sh のみ (hello/hello2 を足したいときは kern.conf 経由)
+3. `kernel/tools-src/mkfs.tc` (`build/gen2/mkfs` を qemu-riscv32) で
+   `/bin/<task>` + `/hello.txt` + phase 7 の test 入力
    (`/phase7.tc` / `/hw.tc`) + OS 側 linker 用 `/prelude.s` (= `; raw` +
    `.word 32768; .word 8192` + task_crt0.s + cached runtime.s) +
    `/prelude_tail.s` (= task_data.s) を含む mtfs イメージを生成
 4. virt は `--disk-out` でイメージを出力し、qemu の `-drive` から読む。
    pico2 は `bin2s.sh _mtfs_image` で .rodata に埋め込み、XIP 経由で読む
-5. platform_*.s + trap_common.s + crt0_*_data.s + kernel*.tc (+pico2 は mtfs image)
-   を各々個別に asm_pass1 にかけ asm_pass2/pass3 でリンク
+5. platform_*.s + trap_common.s + crt0_*_data.s + kernel*.tc (+pico2 は mtfs
+   image) を各々個別に asm_pass1 にかけ asm_pass2/pass3 でリンク
    (CRT0 = "platform.s trap_common.s"、CRT0_DATA = "crt0_data.s
    [mtfs_image.s]" を空白区切りで compile-gen2.sh に渡す)
 6. 起動時にカーネルの `loader.tc` (`load_task`) が `/bin/*` を VFS で開き、
@@ -684,7 +521,7 @@ qemu-system-riscv32 -smp 1 -nographic -serial mon:stdio --no-reboot -m 128 \
 
 Pico 2 実機で実行 (Debug Probe + openocd-rpi):
 ```bash
-./kernel/run_pico2.sh kernel/kernel_pico2.uf2
+./kernel/scripts/run_pico2.sh build/kernel/pico2_kernel.uf2
 # → openocd で SWD 経由フラッシュ → /dev/ttyACM0 で UART キャプチャ
 ```
 
@@ -700,10 +537,10 @@ a7=250 mux_enable, a7=260 wait4)。mkdir / rmdir は path 1 引数のみ
 同一本体に alias、kernel vfs_open は `peek32(addr)` で長さを読む。
 read/write のバッファは従来どおり `(buf: U8Array, len)` ペア。
 カーネルの ecall handler (trap_common.s) がアセンブリでディスパッチし、
-read/write/openat/close は `kernel/vfs.tc` 経由で mtfs / UART に振り分け、
-exec は `kernel/loader.tc` の `sys_exec_handler` が呼び出し元の
+read/write/openat/close は `kernel/src/vfs.tc` 経由で mtfs / UART に振り分け、
+exec は `kernel/src/loader.tc` の `sys_exec_handler` が呼び出し元の
 スケジューラスロットを新バイナリに置き換える。
-タイマ割り込みで TC の trap_handler (kernel_common.tc) がラウンドロビン
+タイマ割り込みで TC の trap_handler (kernel/src/kernel_common.tc) がラウンドロビン
 スケジューリングを実行。詳細は `docs/task/kernel_design.md`、
 `docs/task/kernel_platform_split.md`、`docs/task/phase6_userland.md`、
 `docs/filesystem.md` を参照。
