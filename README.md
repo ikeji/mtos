@@ -24,8 +24,8 @@ Pico 2 実機で kernel + 全コンパイラを byte-exact に self-replicate
 ```bash
 make                    # Gen1 を build
 make test               # 148 tests (~50s warm)
-make run                # qemu virt で kernel 対話起動
-make run-pico2          # Pico 2 実機を flash + UART 対話
+make -C kernel run      # qemu virt で kernel 対話起動
+make -C kernel run-pico2 # Pico 2 実機を flash + UART 対話
 ```
 
 ## テストスコープ限定

@@ -168,30 +168,49 @@ build/      生成物 (gitignored)
 | integration | `make full-test` | 上記 + test_phase7 等 |
 | 全部統合 | `make test` (root) | 148 tests (~50s warm) |
 
-### ルート Makefile
+### サブプロジェクト Makefile (ユーザー向け API)
+
+ユーザー向けターゲットは各サブ Makefile が所有 (decision 6 で旧 root alias は撤去済)。
 
 ```bash
-make                              # Gen1 バイナリを build/gen1/ にビルド
+# 全体
+make                              # Gen1 (build/gen1/) のみ build
 make test                         # 148 tests 集約レポート (test_all.sh 経由)
 make full-test                    # + integration + FULL_TEST=1 (kmalloc/kernel1)
-make update-golden                # compiler/tests/golden/ を再生成
-make update-golden-and-run-test   # 再生成 → test 連続実行
-make gen2-tools                   # build/gen2/* のみ
-make gen3-tools                   # build/gen3/* (自己ホスト確認用)
-make virt-kernel                  # build/kernel/virt_kernel.bin のみ
-make pico2-kernel                 # build/kernel/pico2_kernel.uf2 のみ
-make pico2-kernel-extra           # + EXTRA_GUEST_TASKS 込み
-make pico2-kernel-demo            # + disk-demo.img (kern_demo.conf 駆動 init)
-make pico2-kernel-console{,-land} # + LCD console 込み
-# DROP_TASKS="vi neofetch" 等で除外可。pico2 4 MiB flash に収める用
-make test-asm-bins                # build/test/asm/*.bin (test_asm プリビルド)
-make run                          # virt kernel を対話起動 (qemu stdio serial)
-make run-extra                    # 同上 + EXTRA_GUEST_TASKS
-make run-pico2                    # pico2 kernel → flash → 対話 UART
-make run-pico2-extra              # 同上 + EXTRA_GUEST_TASKS
 make clean                        # Gen1 + build/ 全消去
+
+# compiler サブプロジェクト
+make -C compiler gen1             # Gen1 (C) — build/gen1/
+make -C compiler gen2             # Gen2 (TC, RV32 ELF) — build/gen2/
+make -C compiler gen3             # Gen3 (Gen2 == Gen3 検証) — build/gen3/
+make -C compiler test             # 140 tests
+make -C compiler test-warm        # 高速版 (golden/gen3/consistency 抜き)
+make -C compiler test-asm-bins    # build/test/asm/*.bin プリビルド
+make -C compiler update-golden    # compiler/tests/golden/ 再生成
+
+# kernel サブプロジェクト
+make -C kernel virt               # build/kernel/virt_kernel.bin
+make -C kernel pico2              # build/kernel/pico2_kernel.uf2
+make -C kernel pico2-extra        # + EXTRA_GUEST_TASKS 込み
+make -C kernel pico2-demo         # + disk-demo.img (kern_demo.conf 駆動 init)
+make -C kernel pico2-console      # + LCD console
+make -C kernel pico2-console-land # + LCD console (landscape)
+make -C kernel test               # test_os 8 tests
+make -C kernel run                # virt kernel を対話起動 (qemu stdio serial)
+make -C kernel run-extra          # 同上 + EXTRA_GUEST_TASKS
+make -C kernel run-pico2          # pico2 kernel → flash → 対話 UART
+make -C kernel run-pico2-extra    # 同上 + EXTRA_GUEST_TASKS
+make -C kernel run-pico2-console{,-land}  # console 起動
+make -C kernel flash              # 既存 UF2 を再 flash (build 無し)
+
+# userland サブプロジェクト
+make -C userland                  # 全 40 タスク build
+make -C userland test             # smoke (build OK 確認)
+make -C userland test-quick       # GUEST_TASKS のみ (compiler symlink 除外)
+
+# DROP_TASKS="vi neofetch" 等で除外可。pico2 4 MiB flash に収める用
 #
-# ディスクイメージ 4 種:
+# ディスクイメージ 4 種 (kernel build が自動生成):
 #   build/kernel/disk.img           標準 (kern.conf 省略 → seed = sh only)
 #   build/kernel/disk-extra.img     + EXTRA_GUEST_TASKS (parse/sigscan/...)
 #   build/kernel/disk-demo.img      + kernel/tests/fixtures/kern_demo.conf
@@ -200,10 +219,10 @@ make clean                        # Gen1 + build/ 全消去
 #   build/kernel/disk-console-land.img  + console (landscape)
 ```
 
-`make run` は `qemu-system-riscv32 -machine virt` に標準入出力を繋いで
-sh と対話できる。Ctrl-a x で抜ける。Ctrl-a c で qemu モニタ。
+`make -C kernel run` は `qemu-system-riscv32 -machine virt` に標準入出力を
+繋いで sh と対話できる。Ctrl-a x で抜ける。Ctrl-a c で qemu モニタ。
 
-`make run-pico2` は Debug Probe 経由で pico2 をフラッシュし、
+`make -C kernel run-pico2` は Debug Probe 経由で pico2 をフラッシュし、
 `integration/pico2_tty.py` による双方向 UART コンソールを開く。
 Ctrl-a x で終了 (qemu と同じ escape)。
 `OPENOCD` / `UART_PORT` 環境変数で上書き可。

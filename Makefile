@@ -481,12 +481,11 @@ build/kernel/pico2_kernel_console_land.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/
     kernel/scripts/bin2s_incbin.sh build/gen2/bin2uf2 | build/kernel
 	$(PICO2_KERNEL_RECIPE)
 
-virt-kernel:  build/kernel/virt_kernel.bin
-pico2-kernel: build/kernel/pico2_kernel.uf2
-pico2-kernel-extra: build/kernel/pico2_kernel_extra.uf2
-pico2-kernel-demo: build/kernel/pico2_kernel_demo.uf2
-pico2-kernel-console: build/kernel/pico2_kernel_console.uf2
-pico2-kernel-console-land: build/kernel/pico2_kernel_console_land.uf2
+# NOTE: ユーザー向け alias (virt-kernel, pico2-kernel, ...) は kernel/Makefile
+# に移動済。`make -C kernel virt` / `make -C kernel pico2` / `make -C kernel
+# pico2-{extra,demo,console{,-land}}` を使ってください。実 recipe (`build/kernel/
+# *.bin`, `build/kernel/*.uf2`) は引き続きこの root Makefile で定義し、
+# サブ Makefile が delegate する形。
 
 # ----- FAT32 disk image (second virtio-blk drive) -----
 # mkfs.fat may live in /sbin (not in PATH by default)
@@ -498,49 +497,9 @@ build/kernel/fat.img: | build/kernel
 	$(MKFS_FAT) -F 32 $@ >/dev/null && \
 	printf 'hello from SD\n' | mcopy -i $@ - ::HELLO.TXT
 
-# ===== make run — interactive virt boot =====
-
-QEMU_SYSTEM := qemu-system-riscv32
-QEMU_DISK   := build/kernel/disk.img
-QEMU_FAT    := build/kernel/fat.img
-QEMU_ARGS    = -smp 1 -nographic -serial mon:stdio --no-reboot -m 128 \
-               -machine virt,aclint=on -bios none \
-               -drive file=$(QEMU_FAT),format=raw,if=none,id=blk1 \
-               -device virtio-blk-device,drive=blk1 \
-               -drive file=$(QEMU_DISK),format=raw,if=none,id=blk0 \
-               -device virtio-blk-device,drive=blk0 \
-               -device loader,file=build/kernel/virt_kernel.bin,addr=0x80000000 \
-               -device loader,addr=0x80000000,cpu-num=0
-
-run: build/kernel/virt_kernel.bin build/kernel/disk.img build/kernel/fat.img
-	@echo "[qemu] Ctrl-a x to quit, Ctrl-a c for monitor"
-	$(QEMU_SYSTEM) $(QEMU_ARGS)
-
-# run-extra は disk-extra.img (GUEST + EXTRA タスク全部入り) を使う。
-# Make が依存を追跡するので強制リビルド不要。
-run-extra: QEMU_DISK := build/kernel/disk-extra.img
-run-extra: build/kernel/virt_kernel.bin build/kernel/disk-extra.img build/kernel/fat.img
-	@echo "[qemu] Ctrl-a x to quit, Ctrl-a c for monitor"
-	$(QEMU_SYSTEM) $(QEMU_ARGS)
-
-# Pico 2 counterparts. Make builds the UF2, then run_pico2_interactive.sh
-# flashes and opens the UART console.
-.PHONY: run-pico2 run-pico2-extra run-pico2-console run-pico2-console-land
-run-pico2: build/kernel/pico2_kernel.uf2
-	@echo "[pico2] flash + interactive UART (Ctrl-a x to quit)"
-	UF2=build/kernel/pico2_kernel.uf2 ./kernel/scripts/run_pico2_interactive.sh --no-build
-
-run-pico2-extra: build/kernel/pico2_kernel_extra.uf2
-	@echo "[pico2] flash + interactive UART (Ctrl-a x to quit)"
-	UF2=build/kernel/pico2_kernel_extra.uf2 ./kernel/scripts/run_pico2_interactive.sh --no-build
-
-run-pico2-console: build/kernel/pico2_kernel_console.uf2
-	@echo "[pico2] flash + interactive UART (Ctrl-a x to quit)"
-	UF2=build/kernel/pico2_kernel_console.uf2 ./kernel/scripts/run_pico2_interactive.sh --no-build
-
-run-pico2-console-land: build/kernel/pico2_kernel_console_land.uf2
-	@echo "[pico2] flash + interactive UART (Ctrl-a x to quit)"
-	UF2=build/kernel/pico2_kernel_console_land.uf2 ./kernel/scripts/run_pico2_interactive.sh --no-build
+# NOTE: ユーザー向け `make run` / `make run-pico2*` は kernel/Makefile に
+# 移動済。`make -C kernel run` / `make -C kernel run-pico2{,-extra,-console}` 等
+# を使ってください。
 
 # ===== test_asm prebuilt binaries (Phase D) =====
 
@@ -567,7 +526,8 @@ TEST_ASM_BINS := build/test/asm/hello2_virt.bin \
                  build/test/asm/test_timer.bin \
                  build/test/asm/test_echo.bin
 
-test-asm-bins: $(TEST_ASM_BINS)
+# NOTE: `make test-asm-bins` は `make -C compiler test-asm-bins` に移動済。
+# $(TEST_ASM_BINS) は ALL_TEST_DEPS 経由で test target が引っぱる。
 
 clean:
 	rm -f $(OBJS) compiler/bootstrap/parse_main.o compiler/bootstrap/typecheck_main.o compiler/bootstrap/interp_main.o compiler/bootstrap/codegen_main.o
@@ -615,20 +575,10 @@ integration-test:
 	    ./integration/test_phase7.sh; \
 	fi
 
-update-golden: all
-	./compiler/tests/update_golden.sh
-
-update-golden-and-run-test: $(BUILD_DEPS)
-	./compiler/tests/update_golden.sh
-	rm -f build/tests/test.ok
-	$(MAKE) test
+# NOTE: `make update-golden` は `make -C compiler update-golden` に移動済。
 
 # 並列ビルド禁止: compile-gen2.sh の CACHED_S_DIR / qemu state が race
 # するのを避ける。ログも読みやすくなる。
 .NOTPARALLEL:
 
-.PHONY: all clean test full-test update-golden update-golden-and-run-test \
-        gen2-tools gen3-tools virt-kernel pico2-kernel pico2-kernel-extra \
-        pico2-kernel-demo pico2-kernel-console pico2-kernel-console-land \
-        test-asm-bins run run-extra run-pico2 run-pico2-extra \
-        run-pico2-console run-pico2-console-land
+.PHONY: all clean test full-test gen2-tools gen3-tools

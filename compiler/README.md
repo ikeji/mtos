@@ -14,19 +14,15 @@ Gen2/3 (TC 自己ホスト) で RV32 ELF + MTOS raw bin を生成する。
 
 ## ビルド
 
-ルート Makefile を経由するのが標準。
-
 ```bash
-make gen2-tools     # build/gen2/* (RV32 ELF)
-make gen3-tools     # build/gen3/* (Gen2==Gen3 検証用)
-```
-
-`compiler/Makefile` 単独でも:
-
-```bash
-make -C compiler         # gen2-tools 相当
-make -C compiler test    # compiler テストのみ (~60s, 140 tests)
-make -C compiler test-warm  # golden/gen3 抜き高速版
+make -C compiler           # gen2 (default)
+make -C compiler gen1      # build/gen1/ (C 製 Gen1)
+make -C compiler gen2      # build/gen2/ (RV32 ELF + qemu-riscv32)
+make -C compiler gen3      # build/gen3/ (Gen2 == Gen3 検証用)
+make -C compiler test      # 140 tests (~60s)
+make -C compiler test-warm # golden/gen3/consistency 抜き高速版
+make -C compiler test-asm-bins  # build/test/asm/*.bin プリビルド
+make -C compiler update-golden  # compiler/tests/golden/ 再生成
 ```
 
 ## 出力 (build/ 配下)

@@ -21,11 +21,11 @@ MTOS で動くユーザータスク (40 個)。
 
 ## ビルド
 
-ルート Makefile を経由するのが標準。GUEST_TASKS は `make`/`make virt-kernel`
-等に自動的に組み込まれる。EXTRA_GUEST_TASKS (compiler/cat) は
-`make pico2-kernel-extra` 等で disk-extra.img に組み込まれる。
+GUEST_TASKS は `make -C kernel virt` / `make -C kernel pico2` の依存として
+自動的に組み込まれる。EXTRA_GUEST_TASKS (compiler/cat) は
+`make -C kernel pico2-extra` 等で disk-extra.img に組み込まれる。
 
-`userland/Makefile` 単独でも:
+サブ Makefile 経由でも:
 
 ```bash
 make -C userland         # 全 40 タスク build (warm <0.1s)

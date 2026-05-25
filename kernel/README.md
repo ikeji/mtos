@@ -21,21 +21,16 @@ OS カーネル。qemu virt (`-M virt`) と Raspberry Pi Pico 2 (RP2350 RISC-V)
 
 ## ビルド
 
-ルート Makefile を経由するのが標準。
-
 ```bash
-make virt-kernel              # build/kernel/virt_kernel.bin
-make pico2-kernel             # build/kernel/pico2_kernel.uf2
-make pico2-kernel-extra       # + EXTRA_GUEST_TASKS (parse/sigscan/...)
-make pico2-kernel-demo        # + disk-demo.img (kern_demo.conf 駆動 init)
-make run                      # virt kernel を対話起動 (qemu)
-make run-pico2                # pico2 kernel を flash + UART
-```
-
-`kernel/Makefile` 単独でも:
-
-```bash
-make -C kernel              # virt + pico2 両方 build
+make -C kernel              # virt + pico2 両方 build (default)
+make -C kernel virt         # build/kernel/virt_kernel.bin のみ
+make -C kernel pico2        # build/kernel/pico2_kernel.uf2 のみ
+make -C kernel pico2-extra  # + EXTRA_GUEST_TASKS (parse/sigscan/...)
+make -C kernel pico2-demo   # + disk-demo.img (kern_demo.conf 駆動 init)
+make -C kernel pico2-console{,-land}  # LCD console 込み
+make -C kernel run          # virt kernel を対話起動 (qemu)
+make -C kernel run-pico2    # pico2 kernel を flash + UART
+make -C kernel flash        # 既存 UF2 を再 flash (build 無し)
 make -C kernel test         # test_os のみ (~10s, 8 tests)
 ```
 
