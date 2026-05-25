@@ -116,8 +116,8 @@ def build_kernel_with_extras():
     os.makedirs(REFS, exist_ok=True)
     env["PRELUDE_OUT_DIR"] = REFS
     run([f"{ROOT}/kernel/build.sh", "--target", "virt",
-         "-o", f"{ROOT}/build/kernel/virt_kernel.bin",
-         "--disk-out", f"{ROOT}/build/kernel/disk.img"], env=env)
+         "-o", f"{ROOT}/kernel/build/virt_kernel.bin",
+         "--disk-out", f"{ROOT}/kernel/build/disk.img"], env=env)
 
 
 # ---------- UART mux frame parser (matches tests/uart_demux.py) ----------
@@ -221,9 +221,9 @@ def run_pipeline_on_virt():
         "qemu-system-riscv32", "-smp", "1", "-nographic",
         "-serial", "mon:stdio", "--no-reboot", "-m", "128",
         "-machine", "virt,aclint=on", "-bios", "none",
-        "-drive", f"file={ROOT}/build/kernel/disk.img,format=raw,if=none,id=blk0",
+        "-drive", f"file={ROOT}/kernel/build/disk.img,format=raw,if=none,id=blk0",
         "-device", "virtio-blk-device,drive=blk0",
-        "-device", f"loader,file={ROOT}/build/kernel/virt_kernel.bin,addr=0x80000000",
+        "-device", f"loader,file={ROOT}/kernel/build/virt_kernel.bin,addr=0x80000000",
         "-device", "loader,addr=0x80000000,cpu-num=0",
     ], input=stdin, capture_output=True, timeout=600)
     return proc.stdout

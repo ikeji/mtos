@@ -11,9 +11,9 @@ both sides and compare."""
 import hashlib, os, struct, subprocess, sys, time, fcntl
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-KERNEL = os.path.join(ROOT, "build/kernel/virt_kernel.bin")
-DISK = os.path.join(ROOT, "build/kernel/disk-extra.img")
-FAT = os.path.join(ROOT, "build/kernel/fat.img")
+KERNEL = os.path.join(ROOT, "kernel/build/virt_kernel.bin")
+DISK = os.path.join(ROOT, "kernel/build/disk-extra.img")
+FAT = os.path.join(ROOT, "kernel/build/fat.img")
 
 # Use a fixture small enough to upload + readback fast (~6 KB so
 # ~24 UF2 blocks of 512 bytes each).

@@ -7,7 +7,7 @@
 
 set -e
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-KERNEL_UF2="${KERNEL_UF2:-$ROOT/build/kernel/pico2_kernel_extra.uf2}"
+KERNEL_UF2="${KERNEL_UF2:-$ROOT/kernel/build/pico2_kernel_extra.uf2}"
 OPENOCD="${OPENOCD:-$HOME/opt/openocd-rpi/bin/openocd}"
 OPENOCD_SCRIPTS="${OPENOCD_SCRIPTS:-$HOME/opt/openocd-rpi/share/openocd/scripts}"
 UART_PORT="${UART_PORT:-/dev/ttyACM0}"
@@ -30,13 +30,13 @@ open(sys.argv[2], "wb").write(out)
 PY
 
 # Freeze the host reference at orchestrator start: copy the current
-# build/kernel/disk-extra.img + rebuild kernel.bin from current
+# kernel/build/disk-extra.img + rebuild kernel.bin from current
 # sources. The host disk-extra.img must match the one embedded in
 # $KERNEL_UF2 (and therefore the /sd/dx.img the device dumps).
 # That's true unless someone rebuilds the disk between flashing
 # the UF2 and running this orchestrator — make sure your tree is
 # clean before kicking it off.
-cp "$ROOT/build/kernel/disk-extra.img" "$TMP/disk-extra.img"
+cp "$ROOT/kernel/build/disk-extra.img" "$TMP/disk-extra.img"
 # Use bin2s_incbin.sh (matches the on-device dumper's wrap.s shape)
 # with `dx.img` as the literal incbin path. asm_pass2 emits the
 # basename to the .lab, asm_pass3 resolves relative to the .lab's

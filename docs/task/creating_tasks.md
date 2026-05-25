@@ -169,7 +169,7 @@ TASK_STACK_<name> := 8192     # 8 KB (大半のタスクはこれで十分)
 ```
 
 Makefile が `kernel/tasks/*/task.mk` を自動 include し、
-`build/kernel/task_sizes.sh` を生成して kernel/build.sh に渡す。
+`kernel/build/task_sizes.sh` を生成して kernel/build.sh に渡す。
 kernel/build.sh や Makefile 本体を編集する必要はない。
 
 compiler タスク (phase 7 用) は `EXTRA_GUEST_TASKS +=` を使う。
@@ -190,9 +190,9 @@ make virt-kernel
 # qemu で起動して sh から実行
 qemu-system-riscv32 -smp 1 -nographic -serial mon:stdio --no-reboot -m 128 \
     -machine virt,aclint=on -bios none \
-    -drive "file=build/kernel/disk.img,format=raw,if=none,id=blk0" \
+    -drive "file=kernel/build/disk.img,format=raw,if=none,id=blk0" \
     -device "virtio-blk-device,drive=blk0" \
-    -device "loader,file=build/kernel/virt_kernel.bin,addr=0x80000000" \
+    -device "loader,file=kernel/build/virt_kernel.bin,addr=0x80000000" \
     -device "loader,addr=0x80000000,cpu-num=0"
 
 # sh プロンプトが出たらタスク名を入力

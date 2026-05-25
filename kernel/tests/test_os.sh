@@ -70,7 +70,7 @@ if [ "${FULL_TEST:-0}" = "1" ] && command -v qemu-system-riscv32 >/dev/null 2>&1
 fi
 
 # --- Kernel + mtfs disk image: the Make build owns these now
-#     (build/kernel/virt_kernel.bin + build/kernel/disk-demo.img).
+#     (kernel/build/virt_kernel.bin + kernel/build/disk-demo.img).
 #     disk-demo.img stages tests/fixtures/kern_demo.conf so init tasks
 #     are driven by /etc/kern.conf (hello + hello2 + sh), exercising
 #     both the kern.conf loader and the A/B preemption demo. The
@@ -78,8 +78,8 @@ fi
 #     via `make test`, which ensures both are built.
 #     When someone invokes this script standalone without the Make
 #     wrapper, fall back to building into a local tmp directory. ---
-KERNEL_BIN="$ROOT_DIR/build/kernel/virt_kernel.bin"
-KERNEL_DISK="$ROOT_DIR/build/kernel/disk-demo.img"
+KERNEL_BIN="$ROOT_DIR/kernel/build/virt_kernel.bin"
+KERNEL_DISK="$ROOT_DIR/kernel/build/disk-demo.img"
 if [ ! -s "$KERNEL_BIN" ] || [ ! -s "$KERNEL_DISK" ]; then
     if command -v qemu-system-riscv32 >/dev/null 2>&1; then
         KERN_CONFIG="$ROOT_DIR/kernel/tests/fixtures/kern_demo.conf" \
@@ -210,7 +210,7 @@ fi
 #     up at boot (not spawned by a shell), opens a nested /bin/sh over
 #     a pipe with stdin=/dev/kbd, renders that shell's output to
 #     /dev/fb, and exits cleanly when the shell quits. ---
-KERNEL_CONSOLE_DISK="$ROOT_DIR/build/kernel/disk-console.img"
+KERNEL_CONSOLE_DISK="$ROOT_DIR/kernel/build/disk-console.img"
 if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     && [ -s "$KERNEL_BIN" ] && [ -s "$KERNEL_CONSOLE_DISK" ]; then
     t0=$(time_ms)
@@ -252,7 +252,7 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     if command -v python3 >/dev/null 2>&1; then
         t0=$(time_ms)
         printf '%s' "$ci_out" > "$TMP/fb_dump.txt"
-        bmp="$ROOT_DIR/build/kernel/console.bmp"
+        bmp="$ROOT_DIR/kernel/build/console.bmp"
         rm -f "$bmp"
         if python3 "$SCRIPT_DIR/fb_render.py" "$TMP/fb_dump.txt" "$bmp" 2>/dev/null \
             && [ -s "$bmp" ] && [ "$(head -c2 "$bmp")" = "BM" ]; then
@@ -336,7 +336,7 @@ fi
 #     init lines can carry arguments — console must come up landscape
 #     (software scroll) purely from the boot config, with no shell to
 #     pass argv. Confirms the cfg tokenizer + init-task argv packing. ---
-KERNEL_CONSOLE_LAND_DISK="$ROOT_DIR/build/kernel/disk-console-land.img"
+KERNEL_CONSOLE_LAND_DISK="$ROOT_DIR/kernel/build/disk-console-land.img"
 if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     && [ -s "$KERNEL_BIN" ] && [ -s "$KERNEL_CONSOLE_LAND_DISK" ]; then
     t0=$(time_ms)

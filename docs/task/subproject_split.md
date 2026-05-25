@@ -103,11 +103,11 @@ riscv/
                               │         │
             compile-gen1.sh   │         │ compile-gen2.sh (with kernel/ 用 CRT0)
             (host artifact)   ▼         ▼ (mtos artifact)
-                  build/gen2/{parse,sigscan,...}  build/kernel/disk-extra.img 内 /bin/*
+                  build/gen2/{parse,sigscan,...}  kernel/build/disk-extra.img 内 /bin/*
                           │                                      │
                           │ ← kernel build もこれを使う ←        │
                           ▼                                      │
-                 kernel/build.sh ─→ build/kernel/*.bin / *.uf2  ◄┘
+                 kernel/build.sh ─→ kernel/build/*.bin / *.uf2  ◄┘
                           ▲
                           │
                    kernel/tasks/*/*.tc, kernel/*.tc, platform_*.s
@@ -685,7 +685,7 @@ tmp) のみ。`make test` 148 PASS 維持。
 Phase 2 が conservative に止めた以下は別フェーズで実施:
 
 - **build recipe の物理移動**: 現状 root Makefile が `build/gen{1,2,3}/*`,
-  `build/kernel/*.{bin,uf2,img}`, `build/kernel/tasks/*.bin` の recipe を
+  `kernel/build/*.{bin,uf2,img}`, `kernel/build/tasks/*.bin` の recipe を
   持ち、サブ Makefile が `$(MAKE) -C $(ROOT) <target>` で delegate する。
   本格分離 (recipe を各サブ Makefile に移動、root を真の coordinator に)
   は別途。

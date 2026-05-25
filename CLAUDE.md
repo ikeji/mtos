@@ -17,7 +17,7 @@ pico2 実機が parse / sigscan / tcheck / codegen / bc2asm / asm_pass1
 が成立。
 
 実機での self-build 経路 (commit `d59e9c0`、各コンパイラ 5〜21 min):
-`/sd/<name>.bin` md5 を `build/kernel/tasks/<name>.bin` と比較して
+`/sd/<name>.bin` md5 を `kernel/build/tasks/<name>.bin` と比較して
 完全一致を確認済。詳細は `docs/solved.md` の K18 entry。
 
 完了済の前段マイルストーン:
@@ -185,8 +185,8 @@ make -C compiler test-asm-bins    # build/test/asm/*.bin プリビルド
 make -C compiler update-golden    # compiler/tests/golden/ 再生成
 
 # kernel サブプロジェクト
-make -C kernel virt               # build/kernel/virt_kernel.bin
-make -C kernel pico2              # build/kernel/pico2_kernel.uf2
+make -C kernel virt               # kernel/build/virt_kernel.bin
+make -C kernel pico2              # kernel/build/pico2_kernel.uf2
 make -C kernel pico2-extra        # + EXTRA_GUEST_TASKS 込み
 make -C kernel pico2-demo         # + disk-demo.img (kern_demo.conf 駆動 init)
 make -C kernel pico2-console      # + LCD console
@@ -207,12 +207,12 @@ make -C userland test-quick       # GUEST_TASKS のみ (compiler symlink 除外)
 # DROP_TASKS="vi neofetch" 等で除外可。pico2 4 MiB flash に収める用
 #
 # ディスクイメージ 4 種 (kernel build が自動生成):
-#   build/kernel/disk.img           標準 (kern.conf 省略 → seed = sh only)
-#   build/kernel/disk-extra.img     + EXTRA_GUEST_TASKS (parse/sigscan/...)
-#   build/kernel/disk-demo.img      + kernel/tests/fixtures/kern_demo.conf
+#   kernel/build/disk.img           標準 (kern.conf 省略 → seed = sh only)
+#   kernel/build/disk-extra.img     + EXTRA_GUEST_TASKS (parse/sigscan/...)
+#   kernel/build/disk-demo.img      + kernel/tests/fixtures/kern_demo.conf
 #                                   (test_os.sh が使用)
-#   build/kernel/disk-console.img   + console 起動
-#   build/kernel/disk-console-land.img  + console (landscape)
+#   kernel/build/disk-console.img   + console 起動
+#   kernel/build/disk-console-land.img  + console (landscape)
 ```
 
 `make -C kernel run` は `qemu-system-riscv32 -machine virt` に標準入出力を
@@ -361,7 +361,7 @@ Phase 3 で 3 サブプロジェクトに物理分離済。各 Makefile が test
 - `virt_crt0.s` — qemu virt 用 crt0 (test_asm 専用)
 
 ### kernel test (`kernel/tests/`, `make -C kernel test`)
-- `test_os.sh` — OS コンポーネントテスト。`build/kernel/disk-demo.img`
+- `test_os.sh` — OS コンポーネントテスト。`kernel/build/disk-demo.img`
   (= `kernel/tests/fixtures/kern_demo.conf` で init=/bin/hello + hello2
   + sh を seed) でブートし、kern.conf 駆動 init (A/B preempt 可視化) +
   tmpfs 書き戻し (tmpdemo) + catfile argv + `>` リダイレクト +
@@ -536,7 +536,7 @@ qemu-system-riscv32 -smp 1 -nographic -serial mon:stdio --no-reboot -m 128 \
 
 Pico 2 実機で実行 (Debug Probe + openocd-rpi):
 ```bash
-./kernel/scripts/run_pico2.sh build/kernel/pico2_kernel.uf2
+./kernel/scripts/run_pico2.sh kernel/build/pico2_kernel.uf2
 # → openocd で SWD 経由フラッシュ → /dev/ttyACM0 で UART キャプチャ
 ```
 

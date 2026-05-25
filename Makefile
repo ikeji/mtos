@@ -126,7 +126,7 @@ ALL_TASK_NAMES := $(GUEST_TASKS) $(EXTRA_GUEST_TASKS)
 TASK_MK_FILES := $(wildcard userland/bin/*/task.mk)
 QEMU_USER := qemu-riscv32
 
-build/kernel:
+kernel/build:
 	mkdir -p $@
 
 # `)` を Makefile 内で安全に使うためのヘルパー変数
@@ -134,7 +134,7 @@ close_paren := )
 
 # task_sizes.sh: per-task arena/stack サイズを bash 関数で提供。
 # kernel/build.sh (後方互換) と per-task ビルドレシピが source する。
-userland/build/task_sizes.sh: $(TASK_MK_FILES) Makefile | build/kernel
+userland/build/task_sizes.sh: $(TASK_MK_FILES) Makefile | kernel/build
 	@printf '%s\n' \
 	    '# auto-generated from userland/bin/*/task.mk' \
 	    'TASKS="$(GUEST_TASKS)"' \
@@ -225,10 +225,10 @@ DISK_STATIC_DEPS := integration/inputs/phase7_hello.tc integration/inputs/phase7
 # (なければカーネル側のハードコード init にフォールバック)。
 # disk-demo.img は tests/fixtures/kern_demo.conf を強制ステージして、
 # test_os.sh が kern.conf 駆動の init を検証できるようにする。
-build/kernel/disk.img:              DISK_KERN_CONF := $(wildcard kernel/kern.conf)
-build/kernel/disk-demo.img:         DISK_KERN_CONF := kernel/tests/fixtures/kern_demo.conf
-build/kernel/disk-console.img:      DISK_KERN_CONF := kernel/tests/fixtures/kern_console.conf
-build/kernel/disk-console-land.img: DISK_KERN_CONF := kernel/tests/fixtures/kern_console_land.conf
+kernel/build/disk.img:              DISK_KERN_CONF := $(wildcard kernel/kern.conf)
+kernel/build/disk-demo.img:         DISK_KERN_CONF := kernel/tests/fixtures/kern_demo.conf
+kernel/build/disk-console.img:      DISK_KERN_CONF := kernel/tests/fixtures/kern_console.conf
+kernel/build/disk-console-land.img: DISK_KERN_CONF := kernel/tests/fixtures/kern_console_land.conf
 
 # Japanese font: tmp/font.bmp (np21w PC-98 font, user-supplied, never
 # committed) is converted by genjpfont.py into jpfont.dat, then
@@ -238,21 +238,21 @@ build/kernel/disk-console-land.img: DISK_KERN_CONF := kernel/tests/fixtures/kern
 # /bin/console cannot be built.
 FONT_BMP := $(wildcard tmp/font.bmp)
 ifeq ($(FONT_BMP),)
-build/kernel/jpfont_inc.s:
+kernel/build/jpfont_inc.s:
 	@echo 'Error: tmp/font.bmp is required to build /bin/console.' >&2
 	@echo '  Download the np21w PC-98 font from:' >&2
 	@echo '  https://simk98.github.io/np21w/download.html' >&2
 	@echo '  and place font.bmp at tmp/font.bmp' >&2
 	@false
 else
-build/kernel/jpfont.dat: $(FONT_BMP) kernel/scripts/genjpfont.py | build/kernel
+kernel/build/jpfont.dat: $(FONT_BMP) kernel/scripts/genjpfont.py | kernel/build
 	@python3 kernel/scripts/genjpfont.py $(FONT_BMP) $@
-build/kernel/jpfont_inc.s: build/kernel/jpfont.dat kernel/scripts/bin2s_incbin.sh | build/kernel
-	@kernel/scripts/bin2s_incbin.sh build/kernel/jpfont.dat jpfont build/kernel/jpfont.dat > $@
+kernel/build/jpfont_inc.s: kernel/build/jpfont.dat kernel/scripts/bin2s_incbin.sh | kernel/build
+	@kernel/scripts/bin2s_incbin.sh kernel/build/jpfont.dat jpfont kernel/build/jpfont.dat > $@
 endif
 
-TASK_EXTRA_S_console := build/kernel/jpfont_inc.s
-userland/build/tasks/console.bin: build/kernel/jpfont_inc.s
+TASK_EXTRA_S_console := kernel/build/jpfont_inc.s
+userland/build/tasks/console.bin: kernel/build/jpfont_inc.s
 
 # Pre-encode the prelude (Step 5 of pre-encode, docs/task/asm_pre_encode.md):
 # at kernel-build time we pre-encode the concatenation of prelude.s +
@@ -277,7 +277,7 @@ define PRELUDE_PRE_ENCODE
               "$$_r/prelude.rl"
 endef
 
-build/kernel/disk.img build/kernel/disk-demo.img build/kernel/disk-console.img build/kernel/disk-console-land.img: $(GUEST_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) compiler/build/gen2/asm_pass1 compiler/build/gen2/asm_pass2 compiler/build/gen2/asm_pass3 | build/kernel
+kernel/build/disk.img kernel/build/disk-demo.img kernel/build/disk-console.img kernel/build/disk-console-land.img: $(GUEST_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) compiler/build/gen2/asm_pass1 compiler/build/gen2/asm_pass2 compiler/build/gen2/asm_pass3 | kernel/build
 	@echo "Building disk image: $@" >&2
 	@_tmp=$$(mktemp -d) && _r="$$_tmp/root" && \
 	mkdir -p "$$_r/bin" && \
@@ -306,10 +306,10 @@ build/kernel/disk.img build/kernel/disk-demo.img build/kernel/disk-console.img b
 	qemu-riscv32 compiler/build/gen2/mkfs $@ "$$_r" >&2 && \
 	rm -rf "$$_tmp"
 
-build/kernel/disk.img build/kernel/disk-demo.img build/kernel/disk-console.img build/kernel/disk-console-land.img: kernel/tests/fixtures/msh_smoke.sh kernel/tests/fixtures/msh_abort.sh integration/fixtures/pico2_bench_idx.sh
-build/kernel/disk-demo.img:         kernel/tests/fixtures/kern_demo.conf
-build/kernel/disk-console.img:      kernel/tests/fixtures/kern_console.conf
-build/kernel/disk-console-land.img: kernel/tests/fixtures/kern_console_land.conf
+kernel/build/disk.img kernel/build/disk-demo.img kernel/build/disk-console.img kernel/build/disk-console-land.img: kernel/tests/fixtures/msh_smoke.sh kernel/tests/fixtures/msh_abort.sh integration/fixtures/pico2_bench_idx.sh
+kernel/build/disk-demo.img:         kernel/tests/fixtures/kern_demo.conf
+kernel/build/disk-console.img:      kernel/tests/fixtures/kern_console.conf
+kernel/build/disk-console-land.img: kernel/tests/fixtures/kern_console_land.conf
 
 EXTRA_SRC_DEPS := compiler/src/string_buffer.tc compiler/src/source_reader.tc \
     compiler/src/strlib.tc compiler/src/ast_node.tc compiler/src/asm_common.tc \
@@ -323,7 +323,7 @@ EXTRA_SRC_DEPS := compiler/src/string_buffer.tc compiler/src/source_reader.tc \
     kernel/platform/pico2/platform_pico2.tc \
     kernel/platform/pico2/platform_pico2.s kernel/src/trap_common.s kernel/platform/pico2/crt0_pico2_data.s
 
-build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(EXTRA_SRC_DEPS) compiler/build/gen2/asm_pass1 compiler/build/gen2/asm_pass2 compiler/build/gen2/asm_pass3 kernel/tests/fixtures/msh_smoke.sh kernel/tests/fixtures/msh_abort.sh integration/fixtures/pico2_bench_idx.sh integration/fixtures/pico2_compile_sb.sh integration/fixtures/pico2_compile_parse.sh integration/fixtures/pico2_compile_sigscan.sh integration/fixtures/pico2_compile_tcheck.sh integration/fixtures/pico2_compile_codegen.sh integration/fixtures/pico2_compile_bc2asm.sh integration/fixtures/pico2_compile_asm_pass1.sh integration/fixtures/pico2_compile_asm_pass2.sh integration/fixtures/pico2_compile_asm_pass3.sh integration/fixtures/pico2_compile_runtime.sh integration/fixtures/pico2_compile_libtc.sh integration/fixtures/pico2_compile_kern.sh integration/fixtures/pico2_compile_platform.sh integration/fixtures/pico2_compile_kern2.sh integration/fixtures/pico2_run_parse.sh integration/fixtures/pico2_md5_test.sh integration/fixtures/pico2_cleanup_sd.sh integration/fixtures/pico2_dir_grow_test.sh integration/fixtures/pico2_dir_grow_test2.sh kernel/scripts/bin2s_incbin.sh build/kernel/disk.img | build/kernel
+kernel/build/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(EXTRA_SRC_DEPS) compiler/build/gen2/asm_pass1 compiler/build/gen2/asm_pass2 compiler/build/gen2/asm_pass3 kernel/tests/fixtures/msh_smoke.sh kernel/tests/fixtures/msh_abort.sh integration/fixtures/pico2_bench_idx.sh integration/fixtures/pico2_compile_sb.sh integration/fixtures/pico2_compile_parse.sh integration/fixtures/pico2_compile_sigscan.sh integration/fixtures/pico2_compile_tcheck.sh integration/fixtures/pico2_compile_codegen.sh integration/fixtures/pico2_compile_bc2asm.sh integration/fixtures/pico2_compile_asm_pass1.sh integration/fixtures/pico2_compile_asm_pass2.sh integration/fixtures/pico2_compile_asm_pass3.sh integration/fixtures/pico2_compile_runtime.sh integration/fixtures/pico2_compile_libtc.sh integration/fixtures/pico2_compile_kern.sh integration/fixtures/pico2_compile_platform.sh integration/fixtures/pico2_compile_kern2.sh integration/fixtures/pico2_run_parse.sh integration/fixtures/pico2_md5_test.sh integration/fixtures/pico2_cleanup_sd.sh integration/fixtures/pico2_dir_grow_test.sh integration/fixtures/pico2_dir_grow_test2.sh kernel/scripts/bin2s_incbin.sh kernel/build/disk.img | kernel/build
 	@echo "Building disk image (extra): $@" >&2
 	@_tmp=$$(mktemp -d) && _r="$$_tmp/root" && \
 	mkdir -p "$$_r/bin" && \
@@ -416,7 +416,7 @@ build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(
 KERNEL_COMPILE_DEPS := $(KERNEL_TC_SOURCES) $(KERNEL_S_SOURCES) \
     $(SHARED_S) $(GEN2_TOOLS) compiler/scripts/compile-gen2.sh
 
-build/kernel/virt_kernel.bin: $(KERNEL_COMPILE_DEPS) | build/kernel
+kernel/build/virt_kernel.bin: $(KERNEL_COMPILE_DEPS) | kernel/build
 	@echo "Building kernel: virt" >&2
 	@CRT0="kernel/platform/virt/platform_virt.s kernel/src/trap_common.s" \
 	    CRT0_DATA=kernel/platform/virt/crt0_data.s \
@@ -424,7 +424,7 @@ build/kernel/virt_kernel.bin: $(KERNEL_COMPILE_DEPS) | build/kernel
 	    CACHED_S_DIR=userland/build/shared \
 	    ./compiler/scripts/compile-gen2.sh -o $@ kernel/src/kernel.tc 2>/dev/null
 
-PICO2_DISK = build/kernel/disk.img
+PICO2_DISK = kernel/build/disk.img
 # Recipe shared by pico2_kernel.uf2 and pico2_kernel_extra.uf2.
 # `dx.img` as the incbin BLOB_PATH matches the on-device dumper's
 # wrap.s shape — asm_pass2 then emits a basename-only `src raw dx.img`
@@ -450,48 +450,48 @@ define PICO2_KERNEL_RECIPE
 	rm -rf "$$_tmp"
 endef
 
-build/kernel/pico2_kernel.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk.img \
-    kernel/scripts/bin2s_incbin.sh compiler/build/gen2/bin2uf2 | build/kernel
+kernel/build/pico2_kernel.uf2: $(KERNEL_COMPILE_DEPS) kernel/build/disk.img \
+    kernel/scripts/bin2s_incbin.sh compiler/build/gen2/bin2uf2 | kernel/build
 	$(PICO2_KERNEL_RECIPE)
 
-build/kernel/pico2_kernel_extra.uf2: PICO2_DISK := build/kernel/disk-extra.img
-build/kernel/pico2_kernel_extra.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk-extra.img \
-    kernel/scripts/bin2s_incbin.sh compiler/build/gen2/bin2uf2 | build/kernel
+kernel/build/pico2_kernel_extra.uf2: PICO2_DISK := kernel/build/disk-extra.img
+kernel/build/pico2_kernel_extra.uf2: $(KERNEL_COMPILE_DEPS) kernel/build/disk-extra.img \
+    kernel/scripts/bin2s_incbin.sh compiler/build/gen2/bin2uf2 | kernel/build
 	$(PICO2_KERNEL_RECIPE)
 
 # demo UF2: disk-demo.img の /etc/kern.conf で hello + hello2 + sh を
 # seed する。`make run-pico2-demo` で kern.conf 駆動 init が実機で
 # 動くことを確認できる。
-build/kernel/pico2_kernel_demo.uf2: PICO2_DISK := build/kernel/disk-demo.img
-build/kernel/pico2_kernel_demo.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk-demo.img \
-    kernel/scripts/bin2s_incbin.sh compiler/build/gen2/bin2uf2 | build/kernel
+kernel/build/pico2_kernel_demo.uf2: PICO2_DISK := kernel/build/disk-demo.img
+kernel/build/pico2_kernel_demo.uf2: $(KERNEL_COMPILE_DEPS) kernel/build/disk-demo.img \
+    kernel/scripts/bin2s_incbin.sh compiler/build/gen2/bin2uf2 | kernel/build
 	$(PICO2_KERNEL_RECIPE)
 
 # console UF2: disk-console.img の /etc/kern.conf で /bin/console を
 # seed する (portrait, hardware scroll)。Pico 2 LCD コンソールを
 # 起動時から立ち上げる経路。`make run-pico2-console` で実機起動。
-build/kernel/pico2_kernel_console.uf2: PICO2_DISK := build/kernel/disk-console.img
-build/kernel/pico2_kernel_console.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk-console.img \
-    kernel/scripts/bin2s_incbin.sh compiler/build/gen2/bin2uf2 | build/kernel
+kernel/build/pico2_kernel_console.uf2: PICO2_DISK := kernel/build/disk-console.img
+kernel/build/pico2_kernel_console.uf2: $(KERNEL_COMPILE_DEPS) kernel/build/disk-console.img \
+    kernel/scripts/bin2s_incbin.sh compiler/build/gen2/bin2uf2 | kernel/build
 	$(PICO2_KERNEL_RECIPE)
 
 # console-land UF2: 横向き (`/bin/console -l`)、software scroll。
-build/kernel/pico2_kernel_console_land.uf2: PICO2_DISK := build/kernel/disk-console-land.img
-build/kernel/pico2_kernel_console_land.uf2: $(KERNEL_COMPILE_DEPS) build/kernel/disk-console-land.img \
-    kernel/scripts/bin2s_incbin.sh compiler/build/gen2/bin2uf2 | build/kernel
+kernel/build/pico2_kernel_console_land.uf2: PICO2_DISK := kernel/build/disk-console-land.img
+kernel/build/pico2_kernel_console_land.uf2: $(KERNEL_COMPILE_DEPS) kernel/build/disk-console-land.img \
+    kernel/scripts/bin2s_incbin.sh compiler/build/gen2/bin2uf2 | kernel/build
 	$(PICO2_KERNEL_RECIPE)
 
 # NOTE: ユーザー向け alias (virt-kernel, pico2-kernel, ...) は kernel/Makefile
 # に移動済。`make -C kernel virt` / `make -C kernel pico2` / `make -C kernel
-# pico2-{extra,demo,console{,-land}}` を使ってください。実 recipe (`build/kernel/
-# *.bin`, `build/kernel/*.uf2`) は引き続きこの root Makefile で定義し、
+# pico2-{extra,demo,console{,-land}}` を使ってください。実 recipe (`kernel/build/
+# *.bin`, `kernel/build/*.uf2`) は引き続きこの root Makefile で定義し、
 # サブ Makefile が delegate する形。
 
 # ----- FAT32 disk image (second virtio-blk drive) -----
 # mkfs.fat may live in /sbin (not in PATH by default)
 MKFS_FAT := $(shell which mkfs.fat 2>/dev/null || echo /sbin/mkfs.fat)
 
-build/kernel/fat.img: | build/kernel
+kernel/build/fat.img: | kernel/build
 	@echo "Creating FAT32 image: $@" >&2
 	@dd if=/dev/zero of=$@ bs=1M count=33 2>/dev/null && \
 	$(MKFS_FAT) -F 32 $@ >/dev/null && \
@@ -535,9 +535,9 @@ clean:
 
 # ===== test stamp files =====
 
-BUILD_DEPS := $(GEN1_TOOLS) $(GEN2_TOOLS) build/kernel/virt_kernel.bin \
-              build/kernel/disk.img build/kernel/disk-demo.img \
-              build/kernel/disk-console.img build/kernel/disk-console-land.img \
+BUILD_DEPS := $(GEN1_TOOLS) $(GEN2_TOOLS) kernel/build/virt_kernel.bin \
+              kernel/build/disk.img kernel/build/disk-demo.img \
+              kernel/build/disk-console.img kernel/build/disk-console-land.img \
               $(TEST_ASM_BINS)
 
 # `make test` はサブプロジェクト Makefile に委譲。集約は sub-Makefile

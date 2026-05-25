@@ -23,8 +23,8 @@ OS カーネル。qemu virt (`-M virt`) と Raspberry Pi Pico 2 (RP2350 RISC-V)
 
 ```bash
 make -C kernel              # virt + pico2 両方 build (default)
-make -C kernel virt         # build/kernel/virt_kernel.bin のみ
-make -C kernel pico2        # build/kernel/pico2_kernel.uf2 のみ
+make -C kernel virt         # kernel/build/virt_kernel.bin のみ
+make -C kernel pico2        # kernel/build/pico2_kernel.uf2 のみ
 make -C kernel pico2-extra  # + EXTRA_GUEST_TASKS (parse/sigscan/...)
 make -C kernel pico2-demo   # + disk-demo.img (kern_demo.conf 駆動 init)
 make -C kernel pico2-console{,-land}  # LCD console 込み

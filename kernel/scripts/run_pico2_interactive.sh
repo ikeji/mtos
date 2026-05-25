@@ -35,7 +35,7 @@ done
 if [ "$BUILD" = "1" ]; then
     : "${GEN2_DIR:=$ROOT_DIR/compiler/build/gen2}"
     export GEN2_DIR
-    UF2="$ROOT_DIR/build/kernel/pico2_kernel.uf2"
+    UF2="$ROOT_DIR/kernel/build/pico2_kernel.uf2"
     if [ "$USE_EXTRA" = "1" ]; then
         EXTRA_TASKS="$EXTRA_TASKS_DEFAULT" \
             "$SCRIPT_DIR/build.sh" --target pico2 -o "$UF2" >&2
@@ -44,7 +44,7 @@ if [ "$BUILD" = "1" ]; then
         (cd "$ROOT_DIR" && make pico2-kernel) >&2
     fi
 else
-    : "${UF2:=$ROOT_DIR/build/kernel/pico2_kernel.uf2}"
+    : "${UF2:=$ROOT_DIR/kernel/build/pico2_kernel.uf2}"
 fi
 
 if [ ! -s "$UF2" ]; then

@@ -127,17 +127,17 @@ build/
 要点:
 
 - **ソースのミラー位置**: `compiler/src/runtime.tc` → `build/compiler/runtime.s`、
-  `kernel/tasks/libtc/libtc.tc` → `build/kernel/tasks/libtc/libtc.s` の
+  `kernel/tasks/libtc/libtc.tc` → `kernel/build/tasks/libtc/libtc.s` の
   ようにソース階層をそのまま映す。`build/cache/` のような平置きは廃止
-- **task は plat 共通**: `build/kernel/root/bin/<task>` に 1 本だけ置き、
+- **task は plat 共通**: `kernel/build/root/bin/<task>` に 1 本だけ置き、
   virt と pico2 の両方から同じ binary を参照する。virt 限定 (sh/echo/
   tmpdemo) と pico2 限定 (launcher) はタスク一覧を統合して両 plat に
   入れる (→ 下記 "タスク一覧の統合")
-- **disk.img も plat 共通**: `build/kernel/disk.img` 1 本。pico2 では
+- **disk.img も plat 共通**: `kernel/build/disk.img` 1 本。pico2 では
   kernel build 時に `bin2s.sh _mtfs_image` でこれを .rodata に埋める
-- **kernel 本体は flat**: `build/kernel/virt_kernel.bin` /
-  `pico2_kernel.bin` / `pico2_kernel.uf2` を build/kernel/ 直下に置く
-  (`build/kernel/virt/` / `build/kernel/pico2/` のサブディレクトリを
+- **kernel 本体は flat**: `kernel/build/virt_kernel.bin` /
+  `pico2_kernel.bin` / `pico2_kernel.uf2` を kernel/build/ 直下に置く
+  (`kernel/build/virt/` / `kernel/build/pico2/` のサブディレクトリを
   廃止して見通しを良くする)
 
 これにより `make test` 2 回目は Make が mtime を見てスキップできる。
@@ -148,7 +148,7 @@ build/
 現状 `kernel/build.sh` は virt と pico2 で TASKS リストが違う
 (virt: hello/hello2/catfile/sh/tmpdemo/echo、pico2: hello/hello2/
 catfile/launcher)。task binary 自体は ecall syscall だけで動くので
-plat 非依存 → 両方に同じ一覧を入れて `build/kernel/root/` を 1 本に
+plat 非依存 → 両方に同じ一覧を入れて `kernel/build/root/` を 1 本に
 共有できる。統合後のタスク一覧:
 
 ```
@@ -208,13 +208,13 @@ $(eval $(call define_task,hello,32768,8192))
 
 # kernel/tasks/tasks.mk (共通マクロ、top から include 済みとする)
 define define_task
-build/kernel/root/bin/$(1): kernel/tasks/$(1)/$(1).tc \
+kernel/build/root/bin/$(1): kernel/tasks/$(1)/$(1).tc \
     $$(shell compiler/scripts/collect_imports.sh kernel/tasks/$(1)/$(1).tc) \
-    build/compiler/runtime.s build/kernel/tasks/libtc/libtc.s \
+    build/compiler/runtime.s kernel/build/tasks/libtc/libtc.s \
     $$(GEN2_TOOLS)
 	./compile-gen2.sh --task --arena $(2) --stack $(3) \
 	    -o $$@ $$<
-TASK_BINS += build/kernel/root/bin/$(1)
+TASK_BINS += kernel/build/root/bin/$(1)
 endef
 ```
 
@@ -231,7 +231,7 @@ kernel/build.sh に散らばっている `TASK_ARENA` テーブルが不要に�
 
 - `kernel/build.sh --task <name> --arena N --stack N -o <path>`:
   1 task の .bin だけを出力 (K3 header + crt0 + runtime.s + source)
-- `kernel/build.sh --disk <tasks...> -o build/kernel/disk.img`:
+- `kernel/build.sh --disk <tasks...> -o kernel/build/disk.img`:
   既存 task .bin を mkfs.py で disk image 化 (plat 非依存)
 - `kernel/build.sh --link <target> --disk <img> -o <kernel>`:
   kernel 本体を .bin/.uf2 に link。task は触らない
@@ -253,7 +253,7 @@ test-asm: $(GEN2_TOOLS) build/test/asm/hello2_virt.bin \
           build/test/asm/test_timer.bin build/test/asm/test_echo.bin
 	./tests/test_asm.sh --use-prebuilt build/test/asm
 
-test-os: $(GEN2_TOOLS) build/kernel/virt_kernel.bin build/kernel/disk.img
+test-os: $(GEN2_TOOLS) kernel/build/virt_kernel.bin kernel/build/disk.img
 	./tests/test_os.sh --use-prebuilt build/kernel
 ```
 
@@ -307,39 +307,39 @@ build/gen3/<tool>                      depends on
 build/compiler/runtime.s               depends on
     compiler/src/runtime.tc + $(GEN2_TOOLS) (or Gen3)
 
-build/kernel/tasks/libtc/libtc.s       depends on
+kernel/build/tasks/libtc/libtc.s       depends on
     kernel/tasks/libtc/libtc.tc + $(GEN2_TOOLS)
 
-build/kernel/root/bin/<task>           depends on
+kernel/build/root/bin/<task>           depends on
     kernel/tasks/<task>/<task>.tc + transitive imports
     + build/compiler/runtime.s
-    + build/kernel/tasks/libtc/libtc.s
+    + kernel/build/tasks/libtc/libtc.s
     + kernel/tasks/task_crt0.s + kernel/tasks/task_data.s
     + $(GEN2_TOOLS)  (kernel build 本番で Gen3 採用後は $(GEN3_TOOLS))
 
-build/kernel/disk.img                  depends on
+kernel/build/disk.img                  depends on
     全 task bin + tests/phase7_hello*.tc + prelude.s / prelude_tail.s
     + kernel/tasks/task_crt0.s + kernel/tasks/task_data.s
     (plat 非依存、virt と pico2 の両方から参照)
 
-build/kernel/virt_kernel.bin           depends on
+kernel/build/virt_kernel.bin           depends on
     kernel/src/kernel.tc + kernel/src/kernel_common.tc + kernel/src/*.tc + kernel/platform/{virt,pico2}/*
     + kernel/platform_virt.s + kernel/trap_common.s
     + kernel/crt0_data.s
     + build/compiler/runtime.s
-    + build/kernel/disk.img
+    + kernel/build/disk.img
     + $(GEN2_TOOLS)  (本番 Gen3 後は $(GEN3_TOOLS))
 
-build/kernel/pico2_kernel.bin          depends on
+kernel/build/pico2_kernel.bin          depends on
     kernel/src/kernel_pico2.tc + kernel/src/kernel_common.tc + kernel/src/*.tc + kernel/platform/{virt,pico2}/*
     + kernel/platform_pico2.s + kernel/trap_common.s
     + kernel/crt0_pico2_data.s
     + build/compiler/runtime.s
-    + build/kernel/disk.img  (pico2 は bin2s.sh で .rodata に埋める)
+    + kernel/build/disk.img  (pico2 は bin2s.sh で .rodata に埋める)
     + $(GEN2_TOOLS) / $(GEN3_TOOLS)
 
-build/kernel/pico2_kernel.uf2          depends on
-    build/kernel/pico2_kernel.bin + tools/bin2uf2.py
+kernel/build/pico2_kernel.uf2          depends on
+    kernel/build/pico2_kernel.bin + tools/bin2uf2.py
 ```
 
 ## 段階的移行計画
@@ -374,17 +374,17 @@ compiler/ 以下を触らないときは 1 本もリビルドしない
 
 ### Phase C: kernel/build.sh を --task / --disk / --link に分割 (大)
 
-- `build/compiler/runtime.s` / `build/kernel/tasks/libtc/libtc.s` を
+- `build/compiler/runtime.s` / `kernel/build/tasks/libtc/libtc.s` を
   Make ルール化 (ソース位置ミラー)
 - virt/pico2 のタスク一覧を統合 (D1b 参照) — `kernel/build.sh` の
   TASKS 定義を 1 本化し、両 plat で同じ一覧をビルドする
 - `kernel/tasks/<task>/task.mk` を各 task ディレクトリに新設。
   トップ Makefile で `include $(wildcard kernel/tasks/*/task.mk)`
 - `kernel/tasks/tasks.mk` に `define_task` 共通マクロを置き、
-  `build/kernel/root/bin/<task>` を生成する recipe を定義
-- `build/kernel/disk.img` を Make ルール化 (plat 非依存、全 task bin
+  `kernel/build/root/bin/<task>` を生成する recipe を定義
+- `kernel/build/disk.img` を Make ルール化 (plat 非依存、全 task bin
   + phase7 test input + prelude.s を mkfs.py)
-- `build/kernel/virt_kernel.bin` / `pico2_kernel.bin` /
+- `kernel/build/virt_kernel.bin` / `pico2_kernel.bin` /
   `pico2_kernel.uf2` を Make ルール化 (task は触らない、kernel 本体
   だけリンク)
 - `.NOTPARALLEL:` を top Makefile で宣言
@@ -438,12 +438,12 @@ $(GEN3_TOOLS) に切り替える (実測の上、「少し遅い」程度なら�
 ### Q4: pico2 テストは `.PHONY`
 
 実機を触るので時刻比較でスキップ判定はしない。`test-pico2` は
-`.PHONY` で、手動呼び出し時に `build/kernel/pico2_kernel.uf2` を
+`.PHONY` で、手動呼び出し時に `kernel/build/pico2_kernel.uf2` を
 依存として持たせる。
 
 ### Q5: disk.img の task 依存
 
-`build/kernel/disk.img` は全 task .bin + phase7 test input
+`kernel/build/disk.img` は全 task .bin + phase7 test input
 (`tests/phase7_hello*.tc` + `/hw.tc`) + prelude.s のどれかが変われば
 再生成。prelude の K3 header 値 (32 KB / 8 KB) も dependency に
 含める (実装は stamp ファイルを嚙ませる)。

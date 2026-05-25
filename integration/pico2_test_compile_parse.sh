@@ -11,7 +11,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OPENOCD="${OPENOCD:-$HOME/opt/openocd-rpi/bin/openocd}"
 OPENOCD_SCRIPTS="${OPENOCD_SCRIPTS:-$HOME/opt/openocd-rpi/share/openocd/scripts}"
 UART_PORT="${UART_PORT:-/dev/ttyACM0}"
-KERNEL_UF2="${KERNEL_UF2:-$ROOT/build/kernel/pico2_kernel_extra.uf2}"
+KERNEL_UF2="${KERNEL_UF2:-$ROOT/kernel/build/pico2_kernel_extra.uf2}"
 
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT

@@ -362,7 +362,7 @@ RISC-V + EXE フラグ付きの 32 byte ブロックとして埋め込んでい�
 1. Pico 2 を USB ケーブルで PC に繋ぐ前に **BOOTSEL ボタンを押下**
 2. 押したまま USB 接続。`RP2350` というマスストレージとして
    マウントされる
-3. `build/kernel/pico2_kernel.uf2` をドラッグ&ドロップ
+3. `kernel/build/pico2_kernel.uf2` をドラッグ&ドロップ
 4. Pico 2 が自動再起動。BOOTSEL マウントは消える
 
 UART を別経路 (Debug Probe 等) で開いていればログが見える。
@@ -371,7 +371,7 @@ UART を別経路 (Debug Probe 等) で開いていればログが見える。
 
 `make run-pico2` が一連を自動化する。内部では:
 
-1. `make pico2-kernel` で `build/kernel/pico2_kernel.uf2` をビルド
+1. `make pico2-kernel` で `kernel/build/pico2_kernel.uf2` をビルド
 2. UF2 → raw bin に変換 (`run_pico2_interactive.sh` 内 Python)
 3. openocd で `program $BIN 0x10000000 verify` → `reset run`
 4. `tests/pico2_tty.py` で `/dev/ttyACM0` に raw mode 双方向 UART

@@ -26,8 +26,8 @@ alias は撤去)。`make` 単独はルート Makefile (gen1 build + test 集約�
 | `make -C compiler test-warm` | golden/gen3/consistency 抜き高速版 |
 | `make -C compiler test-asm-bins` | `build/test/asm/*.bin` 事前ビルド |
 | `make -C compiler update-golden` | golden ファイル再生成 |
-| `make -C kernel virt` | `build/kernel/virt_kernel.bin` |
-| `make -C kernel pico2` | `build/kernel/pico2_kernel.uf2` |
+| `make -C kernel virt` | `kernel/build/virt_kernel.bin` |
+| `make -C kernel pico2` | `kernel/build/pico2_kernel.uf2` |
 | `make -C kernel pico2-extra` | 上 + EXTRA_GUEST_TASKS 込み |
 | `make -C kernel pico2-demo` | 上 + `kern_demo.conf` (init=/bin/hello) |
 | `make -C kernel pico2-console{,-land}` | 上 + LCD console |
@@ -44,12 +44,12 @@ alias は撤去)。`make` 単独はルート Makefile (gen1 build + test 集約�
 
 ディスクイメージは 5 種類が自動生成される:
 
-- `build/kernel/disk.img` — 既定、kern.conf 省略で default seed (sh のみ)
-- `build/kernel/disk-extra.img` — EXTRA_GUEST_TASKS 追加 (compiler 等)
-- `build/kernel/disk-demo.img` — `kernel/tests/fixtures/kern_demo.conf`
+- `kernel/build/disk.img` — 既定、kern.conf 省略で default seed (sh のみ)
+- `kernel/build/disk-extra.img` — EXTRA_GUEST_TASKS 追加 (compiler 等)
+- `kernel/build/disk-demo.img` — `kernel/tests/fixtures/kern_demo.conf`
   (init=/bin/hello) を `/etc/kern.conf` として staging (`test_os.sh` が使用)
-- `build/kernel/disk-console.img` — `kern_console.conf` staging
-- `build/kernel/disk-console-land.img` — landscape 版 console.conf
+- `kernel/build/disk-console.img` — `kern_console.conf` staging
+- `kernel/build/disk-console-land.img` — landscape 版 console.conf
 
 ## テスト呼び出しグラフ
 

@@ -21,7 +21,7 @@ kernel/tasks/task_crt0.s                                ┐
 kernel/tasks/task_data.s                                │
                                                         ▼
                               ┌──────────────────────────────┐
-                              │ build/kernel/disk-staging/   │
+                              │ kernel/build/disk-staging/   │
                               ├──────────────────────────────┤
                               │ prelude.s (= ; raw + crt0    │
                               │            + runtime.s)      │
@@ -33,7 +33,7 @@ kernel/tasks/task_data.s                                │
                               └──────────────────────────────┘
                                          │
                                          ▼ tools/mkfs.py
-                              build/kernel/disk-extra.img (mtfs)
+                              kernel/build/disk-extra.img (mtfs)
 
 
 [OS-side compile (pico2 / virt)]

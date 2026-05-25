@@ -347,7 +347,7 @@ K7 解決の決め手 3 点:
       `integration/fixtures/pico2_compile_<name>.sh` (parse, sigscan,
       tcheck, codegen, bc2asm, asm_pass1, asm_pass2, asm_pass3) を
       msh から実行すると、device の /sd/ に出力される `.bin` が
-      `build/kernel/tasks/<name>.bin` と md5 完全一致する。これで
+      `kernel/build/tasks/<name>.bin` と md5 完全一致する。これで
       Pico 2 が catalyst 抜きで compiler stack 全体を再生産できる
       完全な self-host loop が成立。
 
@@ -445,7 +445,7 @@ K7 解決の決め手 3 点:
         slim 化、kernel + dumper + bin2uf2 が 4 MiB flash に収まる
       - `tests/pico2_self_replicate.sh` orchestrator が
         `REFRESH_KERN_MODS=1` で /sd の .s 群を必ず最新版に揃え、
-        host reference は build/kernel/disk-extra.img + 現ソースから
+        host reference は kernel/build/disk-extra.img + 現ソースから
         compile-gen2.sh で同時生成して比較 (commit 2c648fb, 8a74fe6)
 - [x] **Pico 2 self-built kernel.uf2 (initial)** (2026-05-05):
       pico2 上で自前の kernel.uf2 完成 (~30 min、ただし kernel
@@ -562,7 +562,7 @@ K7 解決の決め手 3 点:
 - [x] **kern.conf 駆動 init (2026-04-22〜23)**: `kernel.tc` /
       `kernel_pico2.tc` の default seed を sh のみに絞り、
       hello/hello2 demo は `kernel/tests/fixtures/kern_demo.conf` 経由に移動。
-      `build/kernel/disk-demo.img` / `build/kernel/pico2_kernel_demo.uf2`
+      `kernel/build/disk-demo.img` / `kernel/build/pico2_kernel_demo.uf2`
       で kern.conf 駆動 init を実機/qemu で検証
 - [x] **U8Array-as-String 片付け (2026-04-22〜23)**:
       `docs/task/u8array_as_string.md` で監査し、2 段階で整理。
