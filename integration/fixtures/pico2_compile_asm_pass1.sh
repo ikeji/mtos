@@ -1,5 +1,5 @@
 # Self-build /sd/asm_pass1.bin on pico2 (Gen2 → Gen3, byte-exact vs
-# build/kernel/tasks/asm_pass1.bin). Per-file asm_pass1 pipeline
+# userland/build/tasks/asm_pass1.bin). Per-file asm_pass1 pipeline
 #
 # K12 (2026-05-14) で fatfs に LFN を入れたので、`/sd/asm_pass1.lab` /
 # `/sd/asm_pass1.bin` (13 chars) を直接使える。short alias 経由の

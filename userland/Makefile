@@ -6,7 +6,7 @@
 # を巻き込まず手早く確認できる。
 #
 # smoke の中身: 全 GUEST_TASKS バイナリが build できるかを Make の
-# dependency tracking 経由で検証 (root Makefile の build/kernel/tasks/*.bin
+# dependency tracking 経由で検証 (root Makefile の userland/build/tasks/*.bin
 # ルールに委譲)。kernel build は不要なので走らない。
 
 ROOT := $(realpath $(CURDIR)/..)
@@ -23,7 +23,7 @@ ALL_TASKS := $(GUEST_TASKS) $(EXTRA_GUEST_TASKS)
 # `make -C userland` 単独で全タスクを build (root に 1 回だけ delegate)
 .NOTPARALLEL: build all test test-quick
 all build:
-	$(MAKE) -C $(ROOT) $(addprefix build/kernel/tasks/,$(addsuffix .bin,$(ALL_TASKS)))
+	$(MAKE) -C $(ROOT) $(addprefix userland/build/tasks/,$(addsuffix .bin,$(ALL_TASKS)))
 
 # Smoke test: 全タスクが build できるなら PASS (warm: ~3 sec)
 test: build
@@ -31,8 +31,8 @@ test: build
 
 # 高速版: GUEST_TASKS のみ (compiler symlink タスクを除外)
 test-quick:
-	$(MAKE) -C $(ROOT) $(addprefix build/kernel/tasks/,$(addsuffix .bin,$(GUEST_TASKS)))
+	$(MAKE) -C $(ROOT) $(addprefix userland/build/tasks/,$(addsuffix .bin,$(GUEST_TASKS)))
 	@echo "userland test-quick: $(words $(GUEST_TASKS)) GUEST_TASKS built OK"
 
 clean:
-	rm -f $(ROOT)/build/kernel/tasks/*.bin
+	rm -f $(ROOT)/userland/build/tasks/*.bin

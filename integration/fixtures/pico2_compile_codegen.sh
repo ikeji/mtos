@@ -1,5 +1,5 @@
 # Self-build /sd/codegen.bin on pico2 (Gen2 → Gen3, byte-exact vs
-# build/kernel/tasks/codegen.bin). Per-file asm_pass1 pipeline matching
+# userland/build/tasks/codegen.bin). Per-file asm_pass1 pipeline matching
 # host kernel/build.sh + compile-gen2.sh.
 #
 # Imports of codegen.tc (compile-gen2.sh recursive collect order):

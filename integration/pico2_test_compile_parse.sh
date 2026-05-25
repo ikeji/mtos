@@ -4,7 +4,7 @@
 # (so /sd/runtime.s + libtc.s match host), then runs
 # pico2_compile_compilers.sh which parses + tchecks + codegens +
 # bc2asms + asm_pass1/2/3-links parse.tc on device, and md5sums the
-# resulting /sd/parse.bin. Compare against build/kernel/tasks/parse.bin.
+# resulting /sd/parse.bin. Compare against userland/build/tasks/parse.bin.
 set -e
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -17,7 +17,7 @@ TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
 # Compute expected host md5 of parse.bin (already built).
-HOST_PARSE_MD5=$(md5sum "$ROOT/build/kernel/tasks/parse.bin" | awk '{print $1}')
+HOST_PARSE_MD5=$(md5sum "$ROOT/userland/build/tasks/parse.bin" | awk '{print $1}')
 echo "host parse.bin md5: $HOST_PARSE_MD5" >&2
 
 # Extract UF2 -> raw bin for openocd.

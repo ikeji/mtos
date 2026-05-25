@@ -34,9 +34,9 @@ if [ -z "$GEN2_DIR" ]; then
 fi
 
 # Task binary 一覧と arena/stack サイズは kernel/tasks/*/task.mk から
-# Makefile が build/kernel/task_sizes.sh に自動生成する。
+# Makefile が userland/build/task_sizes.sh に自動生成する。
 # standalone 実行時 (make を経由しない場合) のためのフォールバックあり。
-TASK_SIZES="$ROOT_DIR/build/kernel/task_sizes.sh"
+TASK_SIZES="$ROOT_DIR/userland/build/task_sizes.sh"
 if [ -f "$TASK_SIZES" ]; then
     source "$TASK_SIZES"
 else

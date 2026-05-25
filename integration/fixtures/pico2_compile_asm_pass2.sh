@@ -1,5 +1,5 @@
 # Self-build /sd/asm_pass2.bin on pico2 (Gen2 → Gen3, byte-exact vs
-# build/kernel/tasks/asm_pass2.bin). Per-file asm_pass1 pipeline
+# userland/build/tasks/asm_pass2.bin). Per-file asm_pass1 pipeline
 # matching host kernel/build.sh + compile-gen2.sh.
 #
 # Imports of asm_pass2.tc (compile-gen2.sh recursive collect order):

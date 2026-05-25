@@ -1,5 +1,5 @@
 # Self-build /sd/sigscan.bin on pico2 (Gen2 → Gen3, byte-exact vs
-# build/kernel/tasks/sigscan.bin) using the per-file asm_pass1 pipeline
+# userland/build/tasks/sigscan.bin) using the per-file asm_pass1 pipeline
 # that matches host kernel/build.sh + compile-gen2.sh.
 #
 # Each .s feeds its own asm_pass1 invocation producing text/rodata/data

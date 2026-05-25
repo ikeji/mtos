@@ -134,7 +134,7 @@ close_paren := )
 
 # task_sizes.sh: per-task arena/stack サイズを bash 関数で提供。
 # kernel/build.sh (後方互換) と per-task ビルドレシピが source する。
-build/kernel/task_sizes.sh: $(TASK_MK_FILES) Makefile | build/kernel
+userland/build/task_sizes.sh: $(TASK_MK_FILES) Makefile | build/kernel
 	@printf '%s\n' \
 	    '# auto-generated from userland/bin/*/task.mk' \
 	    'TASKS="$(GUEST_TASKS)"' \
@@ -151,10 +151,10 @@ build/kernel/task_sizes.sh: $(TASK_MK_FILES) Makefile | build/kernel
 # runtime.tc と libtc.tc は全タスクが共有するので 1 度だけコンパイルし、
 # compile-gen2.sh の CACHED_S_DIR 経由で各タスクビルドに渡す。
 
-build/kernel/shared:
+userland/build/shared:
 	mkdir -p $@
 
-build/kernel/shared/runtime.s: compiler/src/runtime.tc $(RUNTIME_DEPS) $(GEN2_TOOLS) | build/kernel/shared
+userland/build/shared/runtime.s: compiler/src/runtime.tc $(RUNTIME_DEPS) $(GEN2_TOOLS) | userland/build/shared
 	@echo "Pre-compiling runtime.tc" >&2
 	@_ast=$$(mktemp) && _th=$$(mktemp) && \
 	compiler/build/gen1/parse $< > "$$_ast" && \
@@ -165,7 +165,7 @@ build/kernel/shared/runtime.s: compiler/src/runtime.tc $(RUNTIME_DEPS) $(GEN2_TO
 	    | $(QEMU_USER) compiler/build/gen2/bc2asm > $@ && \
 	rm -f "$$_ast" "$$_th"
 
-build/kernel/shared/libtc.s: userland/lib/libtc/libtc.tc $(LIBTC_DEPS) $(GEN2_TOOLS) | build/kernel/shared
+userland/build/shared/libtc.s: userland/lib/libtc/libtc.tc $(LIBTC_DEPS) $(GEN2_TOOLS) | userland/build/shared
 	@echo "Pre-compiling libtc.tc" >&2
 	@_ast=$$(mktemp) && _th=$$(mktemp) && \
 	compiler/build/gen1/parse $< > "$$_ast" && \
@@ -176,38 +176,38 @@ build/kernel/shared/libtc.s: userland/lib/libtc/libtc.tc $(LIBTC_DEPS) $(GEN2_TO
 	    | $(QEMU_USER) compiler/build/gen2/bc2asm > $@ && \
 	rm -f "$$_ast" "$$_th"
 
-SHARED_S := build/kernel/shared/runtime.s build/kernel/shared/libtc.s
+SHARED_S := userland/build/shared/runtime.s userland/build/shared/libtc.s
 
 # ----- Per-task binaries -----
 # 各タスクの .tc + transitive imports + 共有 .s + GEN2 ツールに依存。
 # 初回は pattern rule で起動し、.d ファイルで transitive import を追跡。
 
-build/kernel/tasks:
+userland/build/tasks:
 	mkdir -p $@
 
 # Pattern rule に kernel/tasks/%/%.tc を書けない (% は prereq 中 1 回のみ)。
 # .tc ファイル依存は .d ファイル (tc_deps_to_d.sh) が提供する。初回は
 # .bin が存在しないので無条件にビルドされ、.d が生成される。
-build/kernel/tasks/%.bin: $(SHARED_S) $(GEN2_TOOLS) \
-    compiler/runtime/mtos/task_crt0.s compiler/runtime/mtos/task_data.s build/kernel/task_sizes.sh \
-    compiler/scripts/compile-gen2.sh | build/kernel/tasks
+userland/build/tasks/%.bin: $(SHARED_S) $(GEN2_TOOLS) \
+    compiler/runtime/mtos/task_crt0.s compiler/runtime/mtos/task_data.s userland/build/task_sizes.sh \
+    compiler/scripts/compile-gen2.sh | userland/build/tasks
 	@echo "Building task: $*" >&2
 	@_tmp=$$(mktemp -d) && \
-	. build/kernel/task_sizes.sh && \
+	. userland/build/task_sizes.sh && \
 	_arena=$$(task_arena_size $*) && \
 	_stack=$$(task_stack_size $*) && \
 	printf '    .text\n    .word %s\n    .word %s\n' "$$_arena" "$$_stack" > "$$_tmp/hdr.s" && \
 	CRT0="$$_tmp/hdr.s compiler/runtime/mtos/task_crt0.s" \
 	    CRT0_DATA=compiler/runtime/mtos/task_data.s \
 	    ASM_PROLOGUE="; raw" GEN2_DIR=compiler/build/gen2 \
-	    CACHED_S_DIR=build/kernel/shared \
+	    CACHED_S_DIR=userland/build/shared \
 	    EXTRA_S="$(TASK_EXTRA_S_$*)" \
 	    ./compiler/scripts/compile-gen2.sh -o $@ userland/bin/$*/$*.tc 2>/dev/null && \
 	rm -rf "$$_tmp"
 	@compiler/scripts/tc_deps_to_d.sh $@ userland/bin/$*/$*.tc > $@.d
 
-GUEST_TASK_BINS  := $(foreach t,$(GUEST_TASKS),build/kernel/tasks/$(t).bin)
-EXTRA_TASK_BINS  := $(foreach t,$(EXTRA_GUEST_TASKS),build/kernel/tasks/$(t).bin)
+GUEST_TASK_BINS  := $(foreach t,$(GUEST_TASKS),userland/build/tasks/$(t).bin)
+EXTRA_TASK_BINS  := $(foreach t,$(EXTRA_GUEST_TASKS),userland/build/tasks/$(t).bin)
 ALL_TASK_BINS    := $(GUEST_TASK_BINS) $(EXTRA_TASK_BINS)
 
 -include $(addsuffix .d,$(ALL_TASK_BINS))
@@ -252,7 +252,7 @@ build/kernel/jpfont_inc.s: build/kernel/jpfont.dat kernel/scripts/bin2s_incbin.s
 endif
 
 TASK_EXTRA_S_console := build/kernel/jpfont_inc.s
-build/kernel/tasks/console.bin: build/kernel/jpfont_inc.s
+userland/build/tasks/console.bin: build/kernel/jpfont_inc.s
 
 # Pre-encode the prelude (Step 5 of pre-encode, docs/task/asm_pre_encode.md):
 # at kernel-build time we pre-encode the concatenation of prelude.s +
@@ -282,7 +282,7 @@ build/kernel/disk.img build/kernel/disk-demo.img build/kernel/disk-console.img b
 	@_tmp=$$(mktemp -d) && _r="$$_tmp/root" && \
 	mkdir -p "$$_r/bin" && \
 	for t in $(GUEST_TASKS); do \
-	    cp build/kernel/tasks/$$t.bin "$$_r/bin/$$t" || exit 1; \
+	    cp userland/build/tasks/$$t.bin "$$_r/bin/$$t" || exit 1; \
 	done && \
 	printf 'hello, mtfs\n' > "$$_r/hello.txt" && \
 	{ cp integration/inputs/phase7_hello.tc "$$_r/phase7.tc" 2>/dev/null || true; } && \
@@ -292,7 +292,7 @@ build/kernel/disk.img build/kernel/disk-demo.img build/kernel/disk-console.img b
 	{ cp kernel/tests/fixtures/msh_abort.sh "$$_r/msh_abort.sh" 2>/dev/null || true; } && \
 	{ cp integration/fixtures/pico2_bench_idx.sh "$$_r/pico2_bench_idx.sh" 2>/dev/null || true; } && \
 	{ printf '; raw\n'; printf '    .text\n    .word 65536\n    .word 8192\n'; \
-	  cat compiler/runtime/mtos/task_crt0.s; cat build/kernel/shared/runtime.s; \
+	  cat compiler/runtime/mtos/task_crt0.s; cat userland/build/shared/runtime.s; \
 	} > "$$_r/prelude.s" && \
 	cp compiler/runtime/mtos/task_data.s "$$_r/prelude_tail.s" && \
 	$(PRELUDE_PRE_ENCODE) && \
@@ -328,7 +328,7 @@ build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(
 	@_tmp=$$(mktemp -d) && _r="$$_tmp/root" && \
 	mkdir -p "$$_r/bin" && \
 	for t in $(GUEST_TASKS) $(EXTRA_GUEST_TASKS); do \
-	    cp build/kernel/tasks/$$t.bin "$$_r/bin/$$t" || exit 1; \
+	    cp userland/build/tasks/$$t.bin "$$_r/bin/$$t" || exit 1; \
 	done && \
 	printf 'hello, mtfs\n' > "$$_r/hello.txt" && \
 	{ cp integration/inputs/phase7_hello.tc "$$_r/phase7.tc" 2>/dev/null || true; } && \
@@ -355,7 +355,7 @@ build/kernel/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(
 	{ cp integration/fixtures/pico2_run_sb.sh "$$_r/pico2_run_sb.sh" 2>/dev/null || true; } && \
 	{ cp integration/fixtures/pico2_md5_test.sh "$$_r/pico2_md5_test.sh" 2>/dev/null || true; } && \
 	{ printf '; raw\n'; printf '    .text\n    .word 65536\n    .word 8192\n'; \
-	  cat compiler/runtime/mtos/task_crt0.s; cat build/kernel/shared/runtime.s; \
+	  cat compiler/runtime/mtos/task_crt0.s; cat userland/build/shared/runtime.s; \
 	} > "$$_r/prelude.s" && \
 	cp compiler/runtime/mtos/task_data.s "$$_r/prelude_tail.s" && \
 	$(PRELUDE_PRE_ENCODE) && \
@@ -421,7 +421,7 @@ build/kernel/virt_kernel.bin: $(KERNEL_COMPILE_DEPS) | build/kernel
 	@CRT0="kernel/platform/virt/platform_virt.s kernel/src/trap_common.s" \
 	    CRT0_DATA=kernel/platform/virt/crt0_data.s \
 	    ASM_PROLOGUE="; raw" GEN2_DIR=compiler/build/gen2 \
-	    CACHED_S_DIR=build/kernel/shared \
+	    CACHED_S_DIR=userland/build/shared \
 	    ./compiler/scripts/compile-gen2.sh -o $@ kernel/src/kernel.tc 2>/dev/null
 
 PICO2_DISK = build/kernel/disk.img
@@ -441,7 +441,7 @@ define PICO2_KERNEL_RECIPE
 	CRT0="kernel/platform/pico2/platform_pico2.s kernel/src/trap_common.s" \
 	    CRT0_DATA="kernel/platform/pico2/crt0_pico2_data.s $$_tmp/mtfs_image.s" \
 	    ASM_PROLOGUE="; raw" GEN2_DIR=compiler/build/gen2 \
-	    CACHED_S_DIR=build/kernel/shared \
+	    CACHED_S_DIR=userland/build/shared \
 	    ./compiler/scripts/compile-gen2.sh -o "$$_tmp/kernel.bin" kernel/src/kernel_pico2.tc 2>/dev/null && \
 	_ksz=$$(wc -c < "$$_tmp/kernel.bin") && \
 	_dsz=$$(wc -c < $(PICO2_DISK)) && \

@@ -1,5 +1,5 @@
 # Self-build /sd/bc2asm.bin on pico2 (Gen2 → Gen3, byte-exact vs
-# build/kernel/tasks/bc2asm.bin). Per-file asm_pass1 pipeline matching
+# userland/build/tasks/bc2asm.bin). Per-file asm_pass1 pipeline matching
 # host kernel/build.sh + compile-gen2.sh.
 #
 # Imports of bc2asm.tc (no ast_node since bc2asm walks bytecode, not AST):

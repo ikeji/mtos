@@ -55,7 +55,7 @@ cp "$TMP/disk-extra.img" "$HOST_LAB_DIR/dx.img"
 # identical between host and device.
 CRT0="$TMP/host_crt0.s" CRT0_DATA="$TMP/host_data.s" ASM_PROLOGUE="; raw" \
     GEN2_DIR="$ROOT/compiler/build/gen2" \
-    CACHED_S_DIR="$ROOT/build/kernel/shared" \
+    CACHED_S_DIR="$ROOT/userland/build/shared" \
     PRELUDE_NAME="p" \
     INPUT_NAMES="kc pp bf bs ff mf tf pf vf ld kp pt" \
     "$ROOT/compiler/scripts/compile-gen2.sh" -o "$TMP/host_k.bin" \

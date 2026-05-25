@@ -1,6 +1,6 @@
 # Self-build the compiler binaries (Gen3) on pico2 and md5sum each
 # /sd/<name>.bin so the orchestrator can compare against the host
-# build (build/kernel/tasks/<name>.bin). End goal: prove Pico 2 can
+# build (userland/build/tasks/<name>.bin). End goal: prove Pico 2 can
 # **byte-exact rebuild its own compiler binaries**, completing the
 # Gen2 → Gen3 self-host loop.
 #
