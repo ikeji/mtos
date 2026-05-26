@@ -202,21 +202,21 @@ printf 'hello, mtfs\n' > "$ROOT_DIR_TREE/hello.txt"
 # phase 7 test inputs: small .tc programs that compiler tasks can
 # consume from /phase7*.tc. Always staged so tests/test_phase7.sh can
 # use the same kernel build regardless of EXTRA_TASKS.
-if [ -f "$ROOT_DIR/tests/phase7_hello.tc" ]; then
-    cp "$ROOT_DIR/tests/phase7_hello.tc" "$ROOT_DIR_TREE/phase7.tc"
+if [ -f "$ROOT_DIR/integration/inputs/phase7_hello.tc" ]; then
+    cp "$ROOT_DIR/integration/inputs/phase7_hello.tc" "$ROOT_DIR_TREE/phase7.tc"
 fi
-if [ -f "$ROOT_DIR/tests/phase7_min.tc" ]; then
-    cp "$ROOT_DIR/tests/phase7_min.tc" "$ROOT_DIR_TREE/phase7_min.tc"
+if [ -f "$ROOT_DIR/integration/inputs/phase7_min.tc" ]; then
+    cp "$ROOT_DIR/integration/inputs/phase7_min.tc" "$ROOT_DIR_TREE/phase7_min.tc"
 fi
-if [ -f "$ROOT_DIR/tests/phase7_hello_world.tc" ]; then
-    cp "$ROOT_DIR/tests/phase7_hello_world.tc" "$ROOT_DIR_TREE/hw.tc"
+if [ -f "$ROOT_DIR/integration/inputs/phase7_hello_world.tc" ]; then
+    cp "$ROOT_DIR/integration/inputs/phase7_hello_world.tc" "$ROOT_DIR_TREE/hw.tc"
 fi
 # msh script-mode fixtures: smoke / abort tests + the per-stage
 # pipeline benchmark driven by tests/test_pico2_bench.sh. Always
 # staged so the same kernel build can be exercised without rebuilding.
 for f in msh_smoke.sh msh_abort.sh pico2_bench.sh pico2_pass1_phases.sh pico2_compile_sb.sh pico2_bench_idx.sh; do
-    if [ -f "$ROOT_DIR/tests/fixtures/$f" ]; then
-        cp "$ROOT_DIR/tests/fixtures/$f" "$ROOT_DIR_TREE/$f"
+    if [ -f "$ROOT_DIR/kernel/tests/fixtures/$f" ]; then
+        cp "$ROOT_DIR/kernel/tests/fixtures/$f" "$ROOT_DIR_TREE/$f"
     fi
 done
 # Phase 7 OS-side linker prelude: the task_crt0.s + runtime.s glue
