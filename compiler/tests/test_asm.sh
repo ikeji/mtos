@@ -114,7 +114,7 @@ fi
 
 VIRT_CRT0="$SCRIPT_DIR/virt_crt0.s"
 HELLO_TC="$SCRIPT_DIR/hello2.tc"
-PREBUILT_DIR="$ROOT_DIR/build/test/asm"
+PREBUILT_DIR="$ROOT_DIR/compiler/build/test_asm"
 BIN="$TMP/hello2_virt.bin"
 
 # Phase D: prefer Make-cached prebuilt binary when present; this skips

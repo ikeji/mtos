@@ -1,97 +1,47 @@
-CC = gcc
-CFLAGS = -Wall -Wextra -g -I compiler/bootstrap
-
-SRCS = compiler/bootstrap/lexer.c compiler/bootstrap/ast.c compiler/bootstrap/parser.c compiler/bootstrap/typecheck.c compiler/bootstrap/interp.c compiler/bootstrap/codegen.c
-OBJS = $(SRCS:.c=.o)
-
-# Gen1 ツール (C 製、compiler/build/gen1/ 固定。repo 直下には置かない)
-GEN1_NAMES = parse typecheck interp codegen bcrun bc2asm
-GEN1_TOOLS = $(addprefix compiler/build/gen1/,$(GEN1_NAMES))
-
-# Gen2 ツール (compile-gen1.sh で compiler/*.tc を RV32 ELF に。
-# compiler/build/gen2/ 固定にして make test 2 回目以降は再ビルドを避ける)
-GEN2_NAMES = parse sigscan tcheck codegen bc2asm bcrun asm_pass1 asm_pass2 asm_pass3
-GEN2_TOOLS = $(addprefix compiler/build/gen2/,$(GEN2_NAMES))
-
-all: $(GEN1_TOOLS)
-
-compiler/build/gen1:
-	mkdir -p $@
-
-compiler/build/gen1/parse: $(OBJS) compiler/bootstrap/parse_main.o | compiler/build/gen1
-	$(CC) -o $@ $^
-
-compiler/build/gen1/typecheck: $(OBJS) compiler/bootstrap/typecheck_main.o | compiler/build/gen1
-	$(CC) -o $@ $^
-
-compiler/build/gen1/interp: $(OBJS) compiler/bootstrap/interp_main.o | compiler/build/gen1
-	$(CC) -o $@ $^
-
-compiler/build/gen1/codegen: $(OBJS) compiler/bootstrap/codegen_main.o | compiler/build/gen1
-	$(CC) -o $@ $^
-
-compiler/build/gen1/bcrun: compiler/bootstrap/bcrun.c | compiler/build/gen1
-	$(CC) $(CFLAGS) -o $@ compiler/bootstrap/bcrun.c
-
-compiler/build/gen1/bc2asm: compiler/bootstrap/bc2asm.c | compiler/build/gen1
-	$(CC) $(CFLAGS) -o $@ compiler/bootstrap/bc2asm.c
-
-%.o: %.c
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-# Gen2 ツールを compile-gen1.sh で build。transitive import 追跡は
-# recipe 末尾で `compiler/scripts/tc_deps_to_d.sh` が .d を書き出し、top Makefile
-# が `-include` で取り込む (Phase B)。2 回目以降の make test はこの .d
-# で「触っていない .tc 経由のツール」を正しくスキップできる。
-compiler/build/gen2:
-	mkdir -p $@
-
-compiler/build/gen2/%: compiler/src/%.tc $(GEN1_TOOLS) compiler/scripts/collect_imports.sh compiler/scripts/tc_deps_to_d.sh | compiler/build/gen2
-	./compiler/scripts/compile-gen1.sh -o $@ $<
-	./compiler/scripts/tc_deps_to_d.sh $@ $< > $@.d
-
-# Phase 8: bin2uf2 host tool ported to TC. Built from kernel/tools-src/bin2uf2.tc
-# the same way Gen2 tools are. Produces an RV32 ELF run via
-# qemu-riscv32 — replaces the python3 tools/bin2uf2.py invocation in
-# the kernel build path.
-compiler/build/gen2/bin2uf2: kernel/tools-src/bin2uf2.tc $(GEN1_TOOLS) compiler/scripts/collect_imports.sh compiler/scripts/tc_deps_to_d.sh compiler/bootstrap/crt0.s compiler/bootstrap/runtime_syscall.c | compiler/build/gen2
-	./compiler/scripts/compile-gen1.sh -o $@ $<
-	./compiler/scripts/tc_deps_to_d.sh $@ $< > $@.d
-
-# Phase 8: mkfs host tool ported to TC. Reads a directory tree and
-# emits a flat MyTinyFS image, byte-exact with tools/mkfs.py
-# (including its 4-byte-per-real-inode tail truncation so existing
-# md5 fixtures still match). Uses statx (291) for path stat — qemu
-# RISC-V user mode doesn't implement fstat (80) or newfstatat (79).
-compiler/build/gen2/mkfs: kernel/tools-src/mkfs.tc $(GEN1_TOOLS) compiler/scripts/collect_imports.sh compiler/scripts/tc_deps_to_d.sh compiler/bootstrap/crt0.s compiler/bootstrap/runtime_syscall.c | compiler/build/gen2
-	./compiler/scripts/compile-gen1.sh -o $@ $<
-	./compiler/scripts/tc_deps_to_d.sh $@ $< > $@.d
-
-gen2-tools: $(GEN2_TOOLS)
-
-# .d の内容を取り込む。Phase B で導入。初回ビルドでは存在しないので
-# `-include` (エラーにしない) を使う
--include $(addsuffix .d,$(GEN2_TOOLS))
-
-# ===== Gen3 tools (Phase E) =====
+# ===== Compiler artifacts (recipes are in compiler/Makefile, Phase 4d) =====
 #
-# Gen3 は Gen2 ツール (Gen1 で build した TC 製ツール) を使って
-# compiler/*.tc を再 build したもの。自己ホスト確認 (Gen2==Gen3)
-# と、kernel build の本番経路候補に使う。compiler/build/gen2/ と同じ流れで
-# `.d` による transitive import 追跡を入れる。
-GEN3_NAMES = $(GEN2_NAMES)
-GEN3_TOOLS = $(addprefix compiler/build/gen3/,$(GEN3_NAMES))
+# Variables remain here so kernel/userland recipes can reference them as
+# Make dependencies. Actual build recipes live in compiler/Makefile.
+# Order-only dependencies on the .PHONY delegations ensure compiler is
+# built (via sub-make) when these artifacts are missing.
 
-compiler/build/gen3:
-	mkdir -p $@
+GEN1_NAMES := parse typecheck interp codegen bcrun bc2asm
+GEN1_TOOLS := $(addprefix compiler/build/gen1/,$(GEN1_NAMES))
 
-compiler/build/gen3/%: compiler/src/%.tc $(GEN2_TOOLS) compiler/scripts/collect_imports.sh compiler/scripts/tc_deps_to_d.sh | compiler/build/gen3
-	GEN2_DIR=compiler/build/gen2 ./compiler/scripts/compile-gen2.sh -o $@ $< 2>/dev/null
-	./compiler/scripts/tc_deps_to_d.sh $@ $< > $@.d
+GEN2_NAMES := parse sigscan tcheck codegen bc2asm bcrun asm_pass1 asm_pass2 asm_pass3
+GEN2_TOOLS := $(addprefix compiler/build/gen2/,$(GEN2_NAMES))
 
+GEN3_NAMES := $(GEN2_NAMES)
+GEN3_TOOLS := $(addprefix compiler/build/gen3/,$(GEN3_NAMES))
+
+KERN_TOOLS := compiler/build/gen2/mkfs compiler/build/gen2/bin2uf2
+
+# Top-level `make all` keeps building Gen1 as before (sub-make).
+all:
+	$(MAKE) -C compiler gen1
+
+# Delegating rule: any artifact under compiler/build/ that another
+# subproject's recipe depends on triggers `make -C compiler` to build it.
+# Marked .PHONY so make always re-considers (sub-make is cheap when warm).
+.PHONY: _compiler-gen1 _compiler-gen2 _compiler-gen3 _compiler-kern-tools
+_compiler-gen1:
+	$(MAKE) -C compiler gen1
+_compiler-gen2:
+	$(MAKE) -C compiler gen2
+_compiler-gen3:
+	$(MAKE) -C compiler gen3
+_compiler-kern-tools:
+	$(MAKE) -C compiler kern-tools
+
+$(GEN1_TOOLS): | _compiler-gen1
+$(GEN2_TOOLS): | _compiler-gen2
+$(GEN3_TOOLS): | _compiler-gen3
+$(KERN_TOOLS): | _compiler-kern-tools
+
+# 後方互換: gen2-tools / gen3-tools alias (sub-Makefile に未移行の
+# レシピがまだ参照する)
+gen2-tools: $(GEN2_TOOLS)
 gen3-tools: $(GEN3_TOOLS)
-
--include $(addsuffix .d,$(GEN3_TOOLS))
 
 # ===== kernel build (decomposed) =====
 #
@@ -501,44 +451,12 @@ kernel/build/fat.img: | kernel/build
 # 移動済。`make -C kernel run` / `make -C kernel run-pico2{,-extra,-console}` 等
 # を使ってください。
 
-# ===== test_asm prebuilt binaries (Phase D) =====
-
-build/test/asm:
-	mkdir -p $@
-
-TEST_ASM_DEPS := compiler/tests/virt_crt0.s $(RUNTIME_DEPS) $(GEN2_TOOLS) compiler/scripts/compile-gen2.sh
-
-build/test/asm/hello2_virt.bin: compiler/tests/hello2.tc $(TEST_ASM_DEPS) | build/test/asm
-	CRT0=compiler/tests/virt_crt0.s ASM_PROLOGUE='; raw' GEN2_DIR=compiler/build/gen2 \
-	    ./compiler/scripts/compile-gen2.sh -o $@ $< 2>/dev/null
-
-build/test/asm/test_timer.bin: compiler/tests/test_timer.tc $(TEST_ASM_DEPS) compiler/runtime/linux/crt0_tc_data.s | build/test/asm
-	CRT0=compiler/tests/virt_crt0.s CRT0_DATA=compiler/runtime/linux/crt0_tc_data.s ASM_PROLOGUE='; raw' \
-	    GEN2_DIR=compiler/build/gen2 UNIFIED_PRELUDE=0 \
-	    ./compiler/scripts/compile-gen2.sh -o $@ $< 2>/dev/null
-
-build/test/asm/test_echo.bin: compiler/tests/test_echo.tc $(TEST_ASM_DEPS) compiler/runtime/linux/crt0_tc_data.s | build/test/asm
-	CRT0=compiler/tests/virt_crt0.s CRT0_DATA=compiler/runtime/linux/crt0_tc_data.s ASM_PROLOGUE='; raw' \
-	    GEN2_DIR=compiler/build/gen2 \
-	    ./compiler/scripts/compile-gen2.sh -o $@ $< 2>/dev/null
-
-TEST_ASM_BINS := build/test/asm/hello2_virt.bin \
-                 build/test/asm/test_timer.bin \
-                 build/test/asm/test_echo.bin
-
-# NOTE: `make test-asm-bins` は `make -C compiler test-asm-bins` に移動済。
-# $(TEST_ASM_BINS) は ALL_TEST_DEPS 経由で test target が引っぱる。
+# test_asm prebuilt binaries は compiler/Makefile に移動済 (test-asm-bins target)。
+# 互換用 alias は不要 (compiler/tests/test_asm.sh がない場合のスキップ判定で十分)。
 
 clean:
-	rm -f $(OBJS) compiler/bootstrap/parse_main.o compiler/bootstrap/typecheck_main.o compiler/bootstrap/interp_main.o compiler/bootstrap/codegen_main.o
-	rm -rf build
-
-# ===== test stamp files =====
-
-BUILD_DEPS := $(GEN1_TOOLS) $(GEN2_TOOLS) kernel/build/virt_kernel.bin \
-              kernel/build/disk.img kernel/build/disk-demo.img \
-              kernel/build/disk-console.img kernel/build/disk-console-land.img \
-              $(TEST_ASM_BINS)
+	$(MAKE) -C compiler clean
+	rm -rf build kernel/build userland/build
 
 # `make test` はサブプロジェクト Makefile に委譲。集約は sub-Makefile
 # の "Results: N passed, M failed" 行で確認できる。stamp file は使わない
