@@ -23,5 +23,16 @@ TC_FILE="$2"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-deps=$("$SCRIPT_DIR/collect_imports.sh" "$TC_FILE" | tr '\n' ' ')
-printf '%s: %s\n' "$TARGET" "$deps"
+# Normalize each dep with realpath so paths work regardless of which dir
+# Make is invoked from. Without this, deps like
+# `userland/bin/cat/../../lib/libtc/libtc.tc` resolve correctly only when
+# Make's CWD is the project root; `make -C userland` would see
+# `userland/userland/lib/libtc/libtc.tc` and fail with "no rule to make
+# target".
+deps=""
+while IFS= read -r dep; do
+    [ -z "$dep" ] && continue
+    abs=$(realpath -m "$dep" 2>/dev/null || echo "$dep")
+    deps="$deps $abs"
+done < <("$SCRIPT_DIR/collect_imports.sh" "$TC_FILE")
+printf '%s:%s\n' "$TARGET" "$deps"
