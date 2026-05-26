@@ -9,7 +9,7 @@
 # coordinator のみ。
 
 .NOTPARALLEL:
-.PHONY: all test full-test integration-test clean
+.PHONY: all test full-test integration-test isolation-check clean
 
 # Default: Gen1 のみ (旧 `make all` の動作を維持)
 all:
@@ -38,6 +38,13 @@ integration-test:
 	else \
 	    ./integration/test_phase7.sh; \
 	fi
+
+# isolation-check: 各サブプロジェクトの test が許可された範囲外の
+# ファイルを open していないか strace で検証。境界違反検出用 (#4)。
+isolation-check:
+	@./integration/check-test-isolation.sh compiler
+	@./integration/check-test-isolation.sh userland
+	@./integration/check-test-isolation.sh kernel
 
 clean:
 	$(MAKE) -C compiler clean
