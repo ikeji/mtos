@@ -116,10 +116,15 @@ define PRELUDE_PRE_ENCODE
               "$$_r/prelude.rl"
 endef
 
+# fs-spec で kernel/fs-spec/default.spec の静的ファイルを copy。
+# 動的部分 (task bins / prelude / kern.conf) のみ Makefile 側で処理。
+DEFAULT_SPEC := $(ROOT)/kernel/fs-spec/default.spec
+
 # Common recipe for the 4 standard disks (different DISK_KERN_CONF only)
 $(BUILD_DIR)/disk.img $(BUILD_DIR)/disk-demo.img $(BUILD_DIR)/disk-console.img $(BUILD_DIR)/disk-console-land.img: \
     $(GUEST_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) \
     $(GEN2_DIR)/asm_pass1 $(GEN2_DIR)/asm_pass2 $(GEN2_DIR)/asm_pass3 \
+    $(DEFAULT_SPEC) $(ROOT)/kernel/scripts/stage-fs.sh \
     $(ROOT)/kernel/tests/fixtures/msh_smoke.sh \
     $(ROOT)/kernel/tests/fixtures/msh_abort.sh \
     $(ROOT)/integration/fixtures/pico2_bench_idx.sh \
@@ -130,22 +135,12 @@ $(BUILD_DIR)/disk.img $(BUILD_DIR)/disk-demo.img $(BUILD_DIR)/disk-console.img $
 	for t in $(GUEST_TASKS); do \
 	    cp $(USERLAND_BUILD)/tasks/$$t.bin "$$_r/bin/$$t" || exit 1; \
 	done && \
-	printf 'hello, mtfs\n' > "$$_r/hello.txt" && \
-	{ cp $(ROOT)/integration/inputs/phase7_hello.tc "$$_r/phase7.tc" 2>/dev/null || true; } && \
-	{ cp $(ROOT)/integration/inputs/phase7_min.tc "$$_r/phase7_min.tc" 2>/dev/null || true; } && \
-	{ cp $(ROOT)/integration/inputs/phase7_hello_world.tc "$$_r/hw.tc" 2>/dev/null || true; } && \
-	{ cp $(ROOT)/kernel/tests/fixtures/msh_smoke.sh "$$_r/msh_smoke.sh" 2>/dev/null || true; } && \
-	{ cp $(ROOT)/kernel/tests/fixtures/msh_abort.sh "$$_r/msh_abort.sh" 2>/dev/null || true; } && \
-	{ cp $(ROOT)/integration/fixtures/pico2_bench_idx.sh "$$_r/pico2_bench_idx.sh" 2>/dev/null || true; } && \
+	$(ROOT)/kernel/scripts/stage-fs.sh "$$_r" $(DEFAULT_SPEC) && \
 	{ printf '; raw\n'; printf '    .text\n    .word 65536\n    .word 8192\n'; \
 	  cat $(ROOT)/compiler/runtime/mtos/task_crt0.s; cat $(USERLAND_BUILD)/shared/runtime.s; \
 	} > "$$_r/prelude.s" && \
 	cp $(ROOT)/compiler/runtime/mtos/task_data.s "$$_r/prelude_tail.s" && \
 	$(PRELUDE_PRE_ENCODE) && \
-	printf '(imports)\n' > "$$_r/empty_imports.txt" && \
-	printf '(imports\n' > "$$_r/imports_open.txt" && \
-	printf '(self\n' > "$$_r/self_open.txt" && \
-	printf ')\n' > "$$_r/wrap_close.txt" && \
 	if [ -n "$(DISK_KERN_CONF)" ] && [ -f "$(DISK_KERN_CONF)" ]; then \
 	    mkdir -p "$$_r/etc" && cp "$(DISK_KERN_CONF)" "$$_r/etc/kern.conf"; \
 	fi && \
@@ -167,63 +162,32 @@ EXTRA_SRC_DEPS := $(addprefix $(ROOT)/compiler/src/,string_buffer.tc source_read
     $(ROOT)/kernel/src/trap_common.s \
     $(ROOT)/kernel/platform/pico2/crt0_pico2_data.s
 
-EXTRA_FIXTURES := $(addprefix $(ROOT)/integration/fixtures/,pico2_compile_sb.sh pico2_compile_parse.sh pico2_compile_sigscan.sh pico2_compile_tcheck.sh pico2_compile_codegen.sh pico2_compile_bc2asm.sh pico2_compile_asm_pass1.sh pico2_compile_asm_pass2.sh pico2_compile_asm_pass3.sh pico2_compile_runtime.sh pico2_compile_libtc.sh pico2_compile_kern.sh pico2_compile_platform.sh pico2_compile_kern2.sh pico2_run_parse.sh pico2_md5_test.sh pico2_cleanup_sd.sh pico2_dir_grow_test.sh pico2_dir_grow_test2.sh)
+EXTRA_SPEC := $(ROOT)/kernel/fs-spec/extra.spec
 
+# extra disk: GUEST + EXTRA tasks + 全 source 同梱 (device 側 self-replicate
+# 用)。静的 file copy は fs-spec/extra.spec が宣言。動的部分 (tasks,
+# prelude, kern.conf, per-task header) は recipe 内で処理。
 $(BUILD_DIR)/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(EXTRA_SRC_DEPS) \
     $(GEN2_DIR)/asm_pass1 $(GEN2_DIR)/asm_pass2 $(GEN2_DIR)/asm_pass3 \
-    $(ROOT)/kernel/tests/fixtures/msh_smoke.sh \
-    $(ROOT)/kernel/tests/fixtures/msh_abort.sh \
-    $(ROOT)/integration/fixtures/pico2_bench_idx.sh \
-    $(EXTRA_FIXTURES) \
-    $(ROOT)/kernel/scripts/bin2s_incbin.sh \
+    $(EXTRA_SPEC) $(DEFAULT_SPEC) $(ROOT)/kernel/scripts/stage-fs.sh \
+    $(ROOT)/userland/scripts/bin2s_incbin.sh \
     $(BUILD_DIR)/disk.img \
     | $(BUILD_DIR)
 	@echo "Building disk image (extra): $@" >&2
 	@_tmp=$$(mktemp -d) && _r="$$_tmp/root" && \
-	mkdir -p "$$_r/bin" && \
+	mkdir -p "$$_r/bin" "$$_r/src" && \
 	for t in $(GUEST_TASKS) $(EXTRA_GUEST_TASKS); do \
 	    cp $(USERLAND_BUILD)/tasks/$$t.bin "$$_r/bin/$$t" || exit 1; \
 	done && \
-	printf 'hello, mtfs\n' > "$$_r/hello.txt" && \
-	{ cp $(ROOT)/integration/inputs/phase7_hello.tc "$$_r/phase7.tc" 2>/dev/null || true; } && \
-	{ cp $(ROOT)/integration/inputs/phase7_min.tc "$$_r/phase7_min.tc" 2>/dev/null || true; } && \
-	{ cp $(ROOT)/integration/inputs/phase7_hello_world.tc "$$_r/hw.tc" 2>/dev/null || true; } && \
-	{ cp $(ROOT)/kernel/tests/fixtures/msh_smoke.sh "$$_r/msh_smoke.sh" 2>/dev/null || true; } && \
-	{ cp $(ROOT)/kernel/tests/fixtures/msh_abort.sh "$$_r/msh_abort.sh" 2>/dev/null || true; } && \
-	for f in $(EXTRA_FIXTURES); do \
-	    [ -f "$$f" ] && cp "$$f" "$$_r/$$(basename $$f)"; \
-	done && \
-	{ cp $(ROOT)/integration/fixtures/pico2_bench_idx.sh "$$_r/pico2_bench_idx.sh" 2>/dev/null || true; } && \
-	{ cp $(ROOT)/integration/fixtures/pico2_run_sb.sh "$$_r/pico2_run_sb.sh" 2>/dev/null || true; } && \
+	$(ROOT)/kernel/scripts/stage-fs.sh "$$_r" $(EXTRA_SPEC) && \
 	{ printf '; raw\n'; printf '    .text\n    .word 65536\n    .word 8192\n'; \
 	  cat $(ROOT)/compiler/runtime/mtos/task_crt0.s; cat $(USERLAND_BUILD)/shared/runtime.s; \
 	} > "$$_r/prelude.s" && \
 	cp $(ROOT)/compiler/runtime/mtos/task_data.s "$$_r/prelude_tail.s" && \
 	$(PRELUDE_PRE_ENCODE) && \
-	printf '(imports)\n' > "$$_r/empty_imports.txt" && \
-	printf '(imports\n' > "$$_r/imports_open.txt" && \
-	printf '(self\n' > "$$_r/self_open.txt" && \
-	printf ')\n' > "$$_r/wrap_close.txt" && \
 	if [ -f $(ROOT)/kernel/kern.conf ]; then \
 	    mkdir -p "$$_r/etc" && cp $(ROOT)/kernel/kern.conf "$$_r/etc/kern.conf"; \
 	fi && \
-	mkdir -p "$$_r/src" && \
-	for s in string_buffer.tc source_reader.tc strlib.tc ast_node.tc asm_common.tc asm_dead_strip.tc parse.tc sigscan.tc tcheck.tc codegen.tc bc2asm.tc asm_pass1.tc asm_pass2.tc asm_pass2_lib.tc asm_pass3.tc asm_pass3_lib.tc runtime.tc; do \
-	    cp $(ROOT)/compiler/src/$$s "$$_r/src/$$s" || exit 1; \
-	done && \
-	cp $(ROOT)/userland/lib/libtc/libtc.tc "$$_r/src/libtc.tc" && \
-	for s in kernel_common.tc tmpfs.tc fatfs.tc mtfs.tc procfs.tc vfs.tc loader.tc kernel_pico2.tc; do \
-	    cp $(ROOT)/kernel/src/$$s "$$_r/src/$$s" || exit 1; \
-	done && \
-	for s in platform_pico2.tc block_flash.tc block_sd.tc; do \
-	    cp $(ROOT)/kernel/platform/pico2/$$s "$$_r/src/$$s" || exit 1; \
-	done && \
-	cp $(ROOT)/kernel/platform/pico2/platform_pico2.s "$$_r/src/platform_pico2.s" && \
-	cp $(ROOT)/kernel/src/trap_common.s "$$_r/src/trap_common.s" && \
-	cp $(ROOT)/kernel/platform/pico2/crt0_pico2_data.s "$$_r/src/crt0_pico2_data.s" && \
-	cp $(ROOT)/compiler/runtime/mtos/task_crt0.s "$$_r/src/task_crt0.s" && \
-	cp $(ROOT)/compiler/runtime/mtos/task_data.s "$$_r/src/task_data.s" && \
-	printf '; raw\n' > "$$_r/src/raw.s" && \
 	for spec in parse:$(TASK_ARENA_parse):$(TASK_STACK_parse) \
 	            sigscan:$(TASK_ARENA_sigscan):$(TASK_STACK_sigscan) \
 	            tcheck:$(TASK_ARENA_tcheck):$(TASK_STACK_tcheck) \
@@ -238,12 +202,6 @@ $(BUILD_DIR)/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(
 	    printf '; raw\n    .text\n    .word %d\n    .word %d\n' $$ar $$sk \
 	        > "$$_r/src/hdr_$$nm.s"; \
 	done && \
-	{ cp $(ROOT)/integration/fixtures/pico2_dumper_test.sh "$$_r/pico2_dumper_test.sh" 2>/dev/null || true; } && \
-	{ cp $(ROOT)/integration/fixtures/pico2_self_step1.sh "$$_r/pico2_self_step1.sh" 2>/dev/null || true; } && \
-	{ cp $(ROOT)/integration/fixtures/pico2_self_step2.sh "$$_r/pico2_self_step2.sh" 2>/dev/null || true; } && \
-	{ cp $(ROOT)/integration/fixtures/pico2_self_step3.sh "$$_r/pico2_self_step3.sh" 2>/dev/null || true; } && \
-	{ cp $(ROOT)/integration/fixtures/pico2_self_step4.sh "$$_r/pico2_self_step4.sh" 2>/dev/null || true; } && \
-	{ cp $(ROOT)/integration/fixtures/pico2_compile_compilers.sh "$$_r/pico2_compile_compilers.sh" 2>/dev/null || true; } && \
 	cd $(ROOT) && qemu-riscv32 compiler/build/gen2/mkfs $@ "$$_r" >&2 && \
 	rm -rf "$$_tmp"
 
@@ -276,7 +234,7 @@ define PICO2_KERNEL_RECIPE
 	_labdir=$(ROOT)/build/intermediate/gen2/kernel_pico2 && \
 	mkdir -p "$$_labdir" && \
 	cp $(PICO2_DISK) "$$_labdir/dx.img" && \
-	cd $(ROOT) && kernel/scripts/bin2s_incbin.sh $(PICO2_DISK) _mtfs_image dx.img > "$$_tmp/mtfs_image.s" && \
+	cd $(ROOT) && userland/scripts/bin2s_incbin.sh $(PICO2_DISK) _mtfs_image dx.img > "$$_tmp/mtfs_image.s" && \
 	cd $(ROOT) && CRT0="kernel/platform/pico2/platform_pico2.s kernel/src/trap_common.s" \
 	    CRT0_DATA="kernel/platform/pico2/crt0_pico2_data.s $$_tmp/mtfs_image.s" \
 	    ASM_PROLOGUE="; raw" GEN2_DIR=compiler/build/gen2 \
@@ -291,27 +249,27 @@ endef
 
 $(BUILD_DIR)/pico2_kernel.uf2: PICO2_DISK := $(BUILD_DIR)/disk.img
 $(BUILD_DIR)/pico2_kernel.uf2: $(KERNEL_COMPILE_DEPS) $(BUILD_DIR)/disk.img \
-    $(ROOT)/kernel/scripts/bin2s_incbin.sh $(GEN2_DIR)/bin2uf2 | $(BUILD_DIR)
+    $(ROOT)/userland/scripts/bin2s_incbin.sh $(GEN2_DIR)/bin2uf2 | $(BUILD_DIR)
 	$(PICO2_KERNEL_RECIPE)
 
 $(BUILD_DIR)/pico2_kernel_extra.uf2: PICO2_DISK := $(BUILD_DIR)/disk-extra.img
 $(BUILD_DIR)/pico2_kernel_extra.uf2: $(KERNEL_COMPILE_DEPS) $(BUILD_DIR)/disk-extra.img \
-    $(ROOT)/kernel/scripts/bin2s_incbin.sh $(GEN2_DIR)/bin2uf2 | $(BUILD_DIR)
+    $(ROOT)/userland/scripts/bin2s_incbin.sh $(GEN2_DIR)/bin2uf2 | $(BUILD_DIR)
 	$(PICO2_KERNEL_RECIPE)
 
 $(BUILD_DIR)/pico2_kernel_demo.uf2: PICO2_DISK := $(BUILD_DIR)/disk-demo.img
 $(BUILD_DIR)/pico2_kernel_demo.uf2: $(KERNEL_COMPILE_DEPS) $(BUILD_DIR)/disk-demo.img \
-    $(ROOT)/kernel/scripts/bin2s_incbin.sh $(GEN2_DIR)/bin2uf2 | $(BUILD_DIR)
+    $(ROOT)/userland/scripts/bin2s_incbin.sh $(GEN2_DIR)/bin2uf2 | $(BUILD_DIR)
 	$(PICO2_KERNEL_RECIPE)
 
 $(BUILD_DIR)/pico2_kernel_console.uf2: PICO2_DISK := $(BUILD_DIR)/disk-console.img
 $(BUILD_DIR)/pico2_kernel_console.uf2: $(KERNEL_COMPILE_DEPS) $(BUILD_DIR)/disk-console.img \
-    $(ROOT)/kernel/scripts/bin2s_incbin.sh $(GEN2_DIR)/bin2uf2 | $(BUILD_DIR)
+    $(ROOT)/userland/scripts/bin2s_incbin.sh $(GEN2_DIR)/bin2uf2 | $(BUILD_DIR)
 	$(PICO2_KERNEL_RECIPE)
 
 $(BUILD_DIR)/pico2_kernel_console_land.uf2: PICO2_DISK := $(BUILD_DIR)/disk-console-land.img
 $(BUILD_DIR)/pico2_kernel_console_land.uf2: $(KERNEL_COMPILE_DEPS) $(BUILD_DIR)/disk-console-land.img \
-    $(ROOT)/kernel/scripts/bin2s_incbin.sh $(GEN2_DIR)/bin2uf2 | $(BUILD_DIR)
+    $(ROOT)/userland/scripts/bin2s_incbin.sh $(GEN2_DIR)/bin2uf2 | $(BUILD_DIR)
 	$(PICO2_KERNEL_RECIPE)
 
 # ===== FAT32 disk image (second virtio-blk drive for virt) =====

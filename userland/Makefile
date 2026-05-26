@@ -147,8 +147,8 @@ $(BUILD_DIR)/jpfont_inc.s:
 else
 $(BUILD_DIR)/jpfont.dat: $(FONT_BMP) $(ROOT)/userland/scripts/genjpfont.py | $(BUILD_DIR)
 	@python3 $(ROOT)/userland/scripts/genjpfont.py $(FONT_BMP) $@
-$(BUILD_DIR)/jpfont_inc.s: $(BUILD_DIR)/jpfont.dat $(ROOT)/kernel/scripts/bin2s_incbin.sh | $(BUILD_DIR)
-	@cd $(ROOT) && kernel/scripts/bin2s_incbin.sh userland/build/jpfont.dat jpfont userland/build/jpfont.dat > $@
+$(BUILD_DIR)/jpfont_inc.s: $(BUILD_DIR)/jpfont.dat $(ROOT)/userland/scripts/bin2s_incbin.sh | $(BUILD_DIR)
+	@cd $(ROOT) && userland/scripts/bin2s_incbin.sh userland/build/jpfont.dat jpfont userland/build/jpfont.dat > $@
 endif
 
 TASK_EXTRA_S_console := $(BUILD_DIR)/jpfont_inc.s
