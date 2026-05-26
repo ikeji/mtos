@@ -625,13 +625,11 @@ b55173b, 97c1b2d, 0628374, 206fef4, ab1c484, ad21c8a。
 - ✅ `compiler/Makefile` 新設 (test scope: 140 tests)
 - ✅ `userland/Makefile` 新設 (smoke: 40 builds)
 - ✅ `kernel/Makefile` 新設 (test scope: 8 tests)
-- ⚠ build recipe の物理移動は **未完了**。current は root Makefile が
-  recipe を持ち、サブ Makefile が delegate する coordinator パターン。
-  本格分離は将来のフェーズで実施。
-- ⚠ `EXTRA_TASKS` → `FS_SPEC` 化は **未完了**。current は EXTRA_GUEST_TASKS
-  経由 (userland/bin/*/task.mk の宣言)。
 
 完了 commit: 18c32a7。
+
+initial 段階で残った 2 項目 (build recipe 物理移動、FS_SPEC 化) は
+Phase 4c/4d で実施完了 (下記「残件」セクション参照)。
 
 ### Phase 3: テスト再配置 — **完了** ✅ (2026-05-25、4 commits)
 - ✅ compiler tests → `compiler/tests/` (test_unit, test_pipeline,
@@ -786,14 +784,42 @@ Phase 2 が conservative に止めた項目を Phase 4c/4d で順次実施。全
 
 ---
 
-## 次のステップ
+## 結果サマリ (本リファクタ完了時点、2026-05-26)
 
-1. このドキュメントをレビュー、open question を決める
-2. Phase 1 (ディレクトリ移動) を 1 PR で実行
-3. Phase 2 (Makefile 分離) を 1〜2 PR で実行
-4. Phase 3 (テスト再配置) を 1 PR で実行
-5. Phase 4 (ドキュメント / 仕上げ) を 1 PR で実行
+全 Phase (0/1/2/3/4 + future work 4c/4d-1〜5) を完遂し、設計目標を
+すべて達成:
 
-各 PR は `make test` と `make full-test` の通過を必須にする。
-self-replicate (`pico2_self_replicate.sh`) と test_phase7.sh も
-Phase 2 完了時点で通ること。
+- **テストスコープが編集箇所に閉じている**: `make -C compiler test` /
+  `make -C userland test` / `make -C kernel test` がそれぞれ独立に
+  実行できる。各 test が許可範囲外のファイルを open しないことを
+  `make isolation-check` で機械的に検証可能 (3 サブ全 PASS)。
+- **ディレクトリが 3 サブプロジェクト + integration に整理された**:
+  ルート直下は `CLAUDE.md` / `Makefile` / `README.md` のみ。
+  `compiler/`, `userland/`, `kernel/`, `integration/`, `docs/`, `build/`,
+  `tmp/` の 7 ディレクトリ。
+- **ルート Makefile が coordinator only**: 580 行 → 46 行。recipe は
+  各サブ Makefile が物理所有 (compiler 178 行 / userland 165 行 /
+  kernel 330 行)。cross-sub deps は order-only delegation 経由
+  (`$(MAKE) -C ../<dep> <target>`)。
+- **出力 dir が per-subproject 分離**: `compiler/build/gen{1,2,3,test_asm}`,
+  `userland/build/{tasks,shared,jpfont*}`, `kernel/build/{virt_kernel,
+  pico2_kernel*,disk*,fat}.{bin,uf2,img}`。共有作業領域は `build/intermediate/`
+  のみ。
+- **mtfs disk image が宣言的 spec で記述される**: `kernel/fs-spec/
+  {default,extra}.spec` と `kernel/scripts/stage-fs.sh` parser、
+  `kernel/Makefile` の cp の手書きを ~60 行削減。
+- **互換性 alias は完全撤去** (decision 6): `make virt-kernel` 等の
+  旧 user-facing target は root から消滅。新 API (`make -C kernel virt`)
+  に統一。
+
+検証済 metrics: `make test` 148 PASS、`make isolation-check` 全 3 PASS。
+
+---
+
+## このドキュメントの位置づけ
+
+本ドキュメントは 2026-05-25 に開始した「3 サブプロジェクト分割」
+リファクタの設計記録 + 進捗ログ。完了したので、今後の開発で
+ディレクトリ構成 / Makefile 構造の background を確認するときの
+リファレンスとして残す。具体的な日常運用は CLAUDE.md / docs/sources.md /
+各サブプロジェクトの README.md を参照。
