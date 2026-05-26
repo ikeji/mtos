@@ -680,9 +680,9 @@ tmp) のみ。`make test` 148 PASS 維持。
 
 ---
 
-## 残件 (Phase 4d で実施)
+## 残件 (Phase 4c / 4d で実施完了)
 
-Phase 2 が conservative に止めた項目を Phase 4d で順次実施:
+Phase 2 が conservative に止めた項目を Phase 4c/4d で順次実施。全完了。
 
 - ✅ **per-subproject `build/` 分離** (Phase 4c、2026-05-25〜26):
   `compiler/build/gen{1,2,3,test_asm}`, `userland/build/{tasks,shared,
@@ -706,10 +706,19 @@ Phase 2 が conservative に止めた項目を Phase 4d で順次実施:
   - compiler test → compiler/ のみ touch
   - userland test → compiler/ + userland/
   - kernel test   → compiler/ + userland/ + kernel/
-- ⏳ **`EXTRA_GUEST_TASKS` → `FS_SPEC` 駆動**: 未着手。
-  `kernel/Makefile` の disk image recipe に大量の fixture コピーが残る
-  (~50 行 × 5 variant)。宣言的 spec ファイル (`kernel/fs-spec/*.spec`)
-  に移し、parse して mtfs に展開する build.sh 化が望ましい。
+- ✅ **`EXTRA_GUEST_TASKS` → `FS_SPEC` 駆動** (Phase 4d-5、2026-05-26):
+  `kernel/fs-spec/{default,extra}.spec` の宣言的 file list と
+  `kernel/scripts/stage-fs.sh` の spec parser を新設。
+  - default.spec: 4 標準 disks 共通の静的 file 群 (phase7_*.tc, msh_*.sh,
+    literal txt 等)
+  - extra.spec: `*include default.spec` + pico2 fixture + compiler/kernel
+    source 一式 (/src/ 配下)
+  - literal content (hello.txt, empty_imports.txt 等) を実ファイル化
+    (`kernel/fs-spec/etc/`)
+  - kernel/Makefile の disk image recipe を簡素化 (cp の手書きを
+    stage-fs.sh + spec で置き換え、~60 行削減)
+  - 副作用: bin2s.sh / bin2s_incbin.sh を kernel/scripts/ → userland/
+    scripts/ に移動 (userland font 生成が cross-sub read を避けるため)
 
 ---
 
