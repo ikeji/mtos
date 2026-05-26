@@ -23,7 +23,7 @@
 
 set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/test_common.sh"
+source "$(dirname "$SCRIPT_DIR")/../compiler/tests/test_common.sh"
 
 echo "=== Pico 2 phase 7 self-hosted compile via /sd ==="
 
@@ -102,7 +102,7 @@ asm_pass2 --add /prelude.idx --add /sd/u.idx --lab-out /sd/full.lab
 asm_pass3 --lab /sd/full.lab --out /sd/HW
 /sd/HW
 PIPE_EOF
-python3 "$SCRIPT_DIR/pico2_pipeline_drive.py" \
+python3 "$ROOT_DIR/integration/pico2_pipeline_drive.py" \
     --port "$UART_PORT" --initial-wait 2 --cmd-timeout 600 \
     --per-char-delay 0.005 \
     "$PIPE_FILE" > "$TMP/uart.log" 2>&1 || true

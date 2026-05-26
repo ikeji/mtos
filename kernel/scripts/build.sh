@@ -311,7 +311,7 @@ fi
 if [ -n "$EXTRA_TASKS" ]; then
     mkdir -p "$ROOT_DIR_TREE/src"
     for src in string_buffer.tc source_reader.tc strlib.tc parse.tc; do
-        cp "$ROOT_DIR/compiler/$src" "$ROOT_DIR_TREE/src/$src"
+        cp "$ROOT_DIR/compiler/src/$src" "$ROOT_DIR_TREE/src/$src"
     done
     echo "M7: staged /src/*.tc" >&2
 fi
@@ -347,7 +347,7 @@ fi
 # can serve it directly from XIP flash.
 MTFS_S=""
 if [ "$TARGET" = "pico2" ]; then
-    "$KERN_DIR/bin2s.sh" "$TMP/mtfs.img" _mtfs_image > "$TMP/mtfs_image.s"
+    "$ROOT_DIR/userland/scripts/bin2s.sh" "$TMP/mtfs.img" _mtfs_image > "$TMP/mtfs_image.s"
     MTFS_S="$TMP/mtfs_image.s"
 fi
 

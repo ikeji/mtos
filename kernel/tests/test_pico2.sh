@@ -31,7 +31,7 @@
 
 set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/test_common.sh"
+source "$(dirname "$SCRIPT_DIR")/../compiler/tests/test_common.sh"
 
 echo "=== Pico 2 Hardware Test ==="
 

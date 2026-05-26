@@ -27,7 +27,7 @@
 
 set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+ROOT_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
 
 OPENOCD="${OPENOCD:-$HOME/opt/openocd-rpi/bin/openocd}"
 OPENOCD_SCRIPTS="${OPENOCD_SCRIPTS:-$HOME/opt/openocd-rpi/share/openocd/scripts}"
@@ -94,7 +94,7 @@ fi
 # Step 4: Hand off to the Python driver. It does reset + the full
 # UART-mediated pipeline.
 echo "[run] driving pico2 UART pipeline"
-python3 "$SCRIPT_DIR/pico2_hw_driver.py" \
+python3 "$ROOT_DIR/integration/pico2_hw_driver.py" \
     --port "$UART_PORT" \
     --prelude "$TMP/prelude.s" \
     --prelude-tail "$TMP/prelude_tail.s" \
