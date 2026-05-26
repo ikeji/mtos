@@ -56,111 +56,45 @@ KERNEL_S_SOURCES  := kernel/platform/virt/platform_virt.s kernel/platform/pico2/
                      kernel/platform/pico2/crt0_pico2_data.s \
                      compiler/runtime/mtos/task_crt0.s compiler/runtime/mtos/task_data.s
 
-RUNTIME_DEPS := $(shell compiler/scripts/collect_imports.sh compiler/src/runtime.tc 2>/dev/null)
-LIBTC_DEPS   := $(shell compiler/scripts/collect_imports.sh userland/lib/libtc/libtc.tc 2>/dev/null)
-
-# task の定義は userland/bin/*/task.mk から include。各 task.mk が
-# GUEST_TASKS += <name> または EXTRA_GUEST_TASKS += <name> と
-# TASK_ARENA_<name> / TASK_STACK_<name> を宣言。
+# task 一覧は userland/bin/*/task.mk から再 include (root 側でも参照するため)。
+# 本物の build recipe は userland/Makefile (Phase 4d-2 で移動)。
 GUEST_TASKS :=
 EXTRA_GUEST_TASKS :=
 -include $(wildcard userland/bin/*/task.mk)
-# DROP_TASKS allows shaving disk-extra.img to fit pico2's 4 MiB
-# flash when the kernel itself grew (e.g. dumper + bin2uf2). The
-# default empty list keeps every task; CI / day-to-day builds are
-# untouched. Self-build pipeline kernels pass DROP_TASKS=vi+tcc+...
+# DROP_TASKS で pico2 4 MiB flash に収める用 (vi/neofetch を抜く等)
 GUEST_TASKS       := $(filter-out $(DROP_TASKS),$(GUEST_TASKS))
 EXTRA_GUEST_TASKS := $(filter-out $(DROP_TASKS),$(EXTRA_GUEST_TASKS))
 ALL_TASK_NAMES := $(GUEST_TASKS) $(EXTRA_GUEST_TASKS)
 
-TASK_MK_FILES := $(wildcard userland/bin/*/task.mk)
+GUEST_TASK_BINS := $(foreach t,$(GUEST_TASKS),userland/build/tasks/$(t).bin)
+EXTRA_TASK_BINS := $(foreach t,$(EXTRA_GUEST_TASKS),userland/build/tasks/$(t).bin)
+ALL_TASK_BINS   := $(GUEST_TASK_BINS) $(EXTRA_TASK_BINS)
+SHARED_S        := userland/build/shared/runtime.s userland/build/shared/libtc.s
+
+# userland artifact を kernel が依存するときは sub-make 経由で build を delegate
+.PHONY: _userland-tasks _userland-shared _userland-font _userland-sizes
+_userland-tasks:
+	$(MAKE) -C userland tasks
+_userland-shared:
+	$(MAKE) -C userland shared
+_userland-font:
+	$(MAKE) -C userland font
+_userland-sizes:
+	$(MAKE) -C userland sizes
+
+$(ALL_TASK_BINS): | _userland-tasks
+$(SHARED_S):     | _userland-shared
+userland/build/jpfont_inc.s: | _userland-font
+userland/build/task_sizes.sh: | _userland-sizes
+
+# console タスクは jpfont を必要とするので userland 側で wire 済 (TASK_EXTRA_S_console)。
+# ここから参照する必要はないが、disk image 経由で userland/build/jpfont_inc.s を
+# triggered させるための alias を残す。
+
 QEMU_USER := qemu-riscv32
 
 kernel/build:
 	mkdir -p $@
-
-# `)` を Makefile 内で安全に使うためのヘルパー変数
-close_paren := )
-
-# task_sizes.sh: per-task arena/stack サイズを bash 関数で提供。
-# kernel/build.sh (後方互換) と per-task ビルドレシピが source する。
-userland/build/task_sizes.sh: $(TASK_MK_FILES) Makefile | kernel/build
-	@printf '%s\n' \
-	    '# auto-generated from userland/bin/*/task.mk' \
-	    'TASKS="$(GUEST_TASKS)"' \
-	    'task_arena_size() { case "$$1" in' \
-	    $(foreach t,$(ALL_TASK_NAMES),'  $(t)$(close_paren) echo $(TASK_ARENA_$(t)) ;;') \
-	    '  *$(close_paren) echo 32768 ;;' \
-	    'esac; }' \
-	    'task_stack_size() { case "$$1" in' \
-	    $(foreach t,$(ALL_TASK_NAMES),'  $(t)$(close_paren) echo $(TASK_STACK_$(t)) ;;') \
-	    '  *$(close_paren) echo 16384 ;;' \
-	    'esac; }' > $@
-
-# ----- Shared pre-compiled .s files -----
-# runtime.tc と libtc.tc は全タスクが共有するので 1 度だけコンパイルし、
-# compile-gen2.sh の CACHED_S_DIR 経由で各タスクビルドに渡す。
-
-userland/build/shared:
-	mkdir -p $@
-
-userland/build/shared/runtime.s: compiler/src/runtime.tc $(RUNTIME_DEPS) $(GEN2_TOOLS) | userland/build/shared
-	@echo "Pre-compiling runtime.tc" >&2
-	@_ast=$$(mktemp) && _th=$$(mktemp) && \
-	compiler/build/gen1/parse $< > "$$_ast" && \
-	$(QEMU_USER) compiler/build/gen2/sigscan < "$$_ast" > "$$_th" && \
-	{ printf '(imports)\n(self\n'; cat "$$_th"; printf ')\n'; cat "$$_ast"; } \
-	    | $(QEMU_USER) compiler/build/gen2/tcheck \
-	    | $(QEMU_USER) compiler/build/gen2/codegen \
-	    | $(QEMU_USER) compiler/build/gen2/bc2asm > $@ && \
-	rm -f "$$_ast" "$$_th"
-
-userland/build/shared/libtc.s: userland/lib/libtc/libtc.tc $(LIBTC_DEPS) $(GEN2_TOOLS) | userland/build/shared
-	@echo "Pre-compiling libtc.tc" >&2
-	@_ast=$$(mktemp) && _th=$$(mktemp) && \
-	compiler/build/gen1/parse $< > "$$_ast" && \
-	$(QEMU_USER) compiler/build/gen2/sigscan < "$$_ast" > "$$_th" && \
-	{ printf '(imports)\n(self\n'; cat "$$_th"; printf ')\n'; cat "$$_ast"; } \
-	    | $(QEMU_USER) compiler/build/gen2/tcheck \
-	    | $(QEMU_USER) compiler/build/gen2/codegen \
-	    | $(QEMU_USER) compiler/build/gen2/bc2asm > $@ && \
-	rm -f "$$_ast" "$$_th"
-
-SHARED_S := userland/build/shared/runtime.s userland/build/shared/libtc.s
-
-# ----- Per-task binaries -----
-# 各タスクの .tc + transitive imports + 共有 .s + GEN2 ツールに依存。
-# 初回は pattern rule で起動し、.d ファイルで transitive import を追跡。
-
-userland/build/tasks:
-	mkdir -p $@
-
-# Pattern rule に kernel/tasks/%/%.tc を書けない (% は prereq 中 1 回のみ)。
-# .tc ファイル依存は .d ファイル (tc_deps_to_d.sh) が提供する。初回は
-# .bin が存在しないので無条件にビルドされ、.d が生成される。
-userland/build/tasks/%.bin: $(SHARED_S) $(GEN2_TOOLS) \
-    compiler/runtime/mtos/task_crt0.s compiler/runtime/mtos/task_data.s userland/build/task_sizes.sh \
-    compiler/scripts/compile-gen2.sh | userland/build/tasks
-	@echo "Building task: $*" >&2
-	@_tmp=$$(mktemp -d) && \
-	. userland/build/task_sizes.sh && \
-	_arena=$$(task_arena_size $*) && \
-	_stack=$$(task_stack_size $*) && \
-	printf '    .text\n    .word %s\n    .word %s\n' "$$_arena" "$$_stack" > "$$_tmp/hdr.s" && \
-	CRT0="$$_tmp/hdr.s compiler/runtime/mtos/task_crt0.s" \
-	    CRT0_DATA=compiler/runtime/mtos/task_data.s \
-	    ASM_PROLOGUE="; raw" GEN2_DIR=compiler/build/gen2 \
-	    CACHED_S_DIR=userland/build/shared \
-	    EXTRA_S="$(TASK_EXTRA_S_$*)" \
-	    ./compiler/scripts/compile-gen2.sh -o $@ userland/bin/$*/$*.tc 2>/dev/null && \
-	rm -rf "$$_tmp"
-	@compiler/scripts/tc_deps_to_d.sh $@ userland/bin/$*/$*.tc > $@.d
-
-GUEST_TASK_BINS  := $(foreach t,$(GUEST_TASKS),userland/build/tasks/$(t).bin)
-EXTRA_TASK_BINS  := $(foreach t,$(EXTRA_GUEST_TASKS),userland/build/tasks/$(t).bin)
-ALL_TASK_BINS    := $(GUEST_TASK_BINS) $(EXTRA_TASK_BINS)
-
--include $(addsuffix .d,$(ALL_TASK_BINS))
 
 # ----- Disk images -----
 # 標準イメージ (GUEST_TASKS) と extra イメージ (+ EXTRA_GUEST_TASKS) の 2 種。
@@ -180,29 +114,9 @@ kernel/build/disk-demo.img:         DISK_KERN_CONF := kernel/tests/fixtures/kern
 kernel/build/disk-console.img:      DISK_KERN_CONF := kernel/tests/fixtures/kern_console.conf
 kernel/build/disk-console-land.img: DISK_KERN_CONF := kernel/tests/fixtures/kern_console_land.conf
 
-# Japanese font: tmp/font.bmp (np21w PC-98 font, user-supplied, never
-# committed) is converted by genjpfont.py into jpfont.dat, then
-# bin2s_incbin.sh wraps it as jpfont_inc.s — a .incbin that links the
-# font into /bin/console's binary (TASK_EXTRA_S_console). console
-# reads the blob in place via peek8. font.bmp is mandatory: without it
-# /bin/console cannot be built.
-FONT_BMP := $(wildcard tmp/font.bmp)
-ifeq ($(FONT_BMP),)
-kernel/build/jpfont_inc.s:
-	@echo 'Error: tmp/font.bmp is required to build /bin/console.' >&2
-	@echo '  Download the np21w PC-98 font from:' >&2
-	@echo '  https://simk98.github.io/np21w/download.html' >&2
-	@echo '  and place font.bmp at tmp/font.bmp' >&2
-	@false
-else
-kernel/build/jpfont.dat: $(FONT_BMP) kernel/scripts/genjpfont.py | kernel/build
-	@python3 kernel/scripts/genjpfont.py $(FONT_BMP) $@
-kernel/build/jpfont_inc.s: kernel/build/jpfont.dat kernel/scripts/bin2s_incbin.sh | kernel/build
-	@kernel/scripts/bin2s_incbin.sh kernel/build/jpfont.dat jpfont kernel/build/jpfont.dat > $@
-endif
-
-TASK_EXTRA_S_console := kernel/build/jpfont_inc.s
-userland/build/tasks/console.bin: kernel/build/jpfont_inc.s
+# jpfont.dat / jpfont_inc.s は userland/Makefile に移動済
+# (出力先も userland/build/jpfont* に変更)。
+# TASK_EXTRA_S_console / console.bin → jpfont_inc.s の wiring も userland 側。
 
 # Pre-encode the prelude (Step 5 of pre-encode, docs/task/asm_pre_encode.md):
 # at kernel-build time we pre-encode the concatenation of prelude.s +
