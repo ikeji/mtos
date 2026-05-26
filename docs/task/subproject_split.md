@@ -680,23 +680,36 @@ tmp) のみ。`make test` 148 PASS 維持。
 
 ---
 
-## 残件 (本リファクタの範囲外)
+## 残件 (Phase 4d で実施)
 
-Phase 2 が conservative に止めた以下は別フェーズで実施:
+Phase 2 が conservative に止めた項目を Phase 4d で順次実施:
 
-- **build recipe の物理移動**: 現状 root Makefile が `build/gen{1,2,3}/*`,
-  `kernel/build/*.{bin,uf2,img}`, `kernel/build/tasks/*.bin` の recipe を
-  持ち、サブ Makefile が `$(MAKE) -C $(ROOT) <target>` で delegate する。
-  本格分離 (recipe を各サブ Makefile に移動、root を真の coordinator に)
-  は別途。
-- **`EXTRA_GUEST_TASKS` → `FS_SPEC` 駆動**: 設計ドキュメントの fs-spec
-  方式に置き換える。現状は task.mk の `GUEST_TASKS` / `EXTRA_GUEST_TASKS`
-  宣言経由。
-- **`build/` ディレクトリの per-subproject 分離**: 設計上は
-  `compiler/build/`, `userland/build/`, `kernel/build/` だが、現状は
-  ルート `build/` を全サブプロジェクトが共有。
-- **テスト境界の strace ベース isolation check**: 設計の境界保証
-  メカニズムで言及した自動チェッカー。
+- ✅ **per-subproject `build/` 分離** (Phase 4c、2026-05-25〜26):
+  `compiler/build/gen{1,2,3,test_asm}`, `userland/build/{tasks,shared,
+  jpfont*,task_sizes.sh}`, `kernel/build/{virt_kernel.bin,pico2_kernel*.uf2,
+  disk*.img,fat.img}` に分離完了。ルート `build/` には共有作業領域
+  `intermediate/` のみ残る。
+- ✅ **build recipe の物理移動** (Phase 4d-1/2/3、2026-05-26):
+  root Makefile から各サブ Makefile に recipe 移動。
+  - compiler/Makefile: Gen1/2/3 + mkfs/bin2uf2 + test_asm
+  - userland/Makefile: task binaries + shared.s + jpfont + task_sizes
+  - kernel/Makefile: disk images + virt_kernel + 5 pico2 UF2 + fat + run
+  root Makefile 580 → 46 行 (coordinator only: all/test/full-test/
+  integration-test/isolation-check/clean)。cross-sub deps は order-only
+  delegation 経由 (`_compiler-gen2` 等の phony が `$(MAKE) -C ../X target`
+  を呼ぶ)。
+- ✅ **テスト境界の strace ベース isolation check** (Phase 4d-4、
+  2026-05-26): `integration/check-test-isolation.sh <subproj>` が
+  `make -C <subproj> test` を strace で計測し、許可された subproject
+  (自身 + 依存) 外への file open を検出。`make isolation-check` で
+  3 サブプロジェクト全部を順に検証。検証済の境界:
+  - compiler test → compiler/ のみ touch
+  - userland test → compiler/ + userland/
+  - kernel test   → compiler/ + userland/ + kernel/
+- ⏳ **`EXTRA_GUEST_TASKS` → `FS_SPEC` 駆動**: 未着手。
+  `kernel/Makefile` の disk image recipe に大量の fixture コピーが残る
+  (~50 行 × 5 variant)。宣言的 spec ファイル (`kernel/fs-spec/*.spec`)
+  に移し、parse して mtfs に展開する build.sh 化が望ましい。
 
 ---
 
