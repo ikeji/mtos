@@ -7,6 +7,11 @@
 
 set -e
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# Source the manifest so INPUT_NAMES and (eventually) the device
+# fixtures share a single source of truth. See
+# integration/scripts/self_replicate_modules.sh.
+# shellcheck source=scripts/self_replicate_modules.sh
+source "$ROOT/integration/scripts/self_replicate_modules.sh"
 KERNEL_UF2="${KERNEL_UF2:-$ROOT/kernel/build/pico2_kernel_extra.uf2}"
 OPENOCD="${OPENOCD:-$HOME/opt/openocd-rpi/bin/openocd}"
 OPENOCD_SCRIPTS="${OPENOCD_SCRIPTS:-$HOME/opt/openocd-rpi/share/openocd/scripts}"
@@ -66,7 +71,7 @@ CRT0="$TMP/platform.s $TMP/trap.s" \
     GEN2_DIR="$ROOT/compiler/build/gen2" \
     CACHED_S_DIR="$ROOT/userland/build/shared" \
     PRELUDE_NAME="p" \
-    INPUT_NAMES="kc pp bf bs ff mf tf pf rt df vf ld r3 di km kp" \
+    INPUT_NAMES="$(module_short_names)" \
     "$ROOT/compiler/scripts/compile-gen2.sh" -o "$TMP/host_k.bin" \
     "$ROOT/kernel/src/kernel_pico2.tc" 2>/dev/null
 # Phase 8: TC port runs via qemu-riscv32 instead of python3.

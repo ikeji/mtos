@@ -9,7 +9,8 @@
 # coordinator のみ。
 
 .NOTPARALLEL:
-.PHONY: all test full-test integration-test isolation-check clean
+.PHONY: all test full-test integration-test isolation-check \
+        self-replicate-fixtures-check clean
 
 # Default: Gen1 のみ (旧 `make all` の動作を維持)
 all:
@@ -31,13 +32,22 @@ full-test: test integration-test
 # - integration/test_phase7.sh: phase 7 self-host on qemu virt
 # - 他 (pico2_*, phase3_verify, qemu_mr_scale) は実機 / 特殊 fixture
 #   が必要なので手動で実行
-integration-test:
+integration-test: self-replicate-fixtures-check
 	@echo "=== integration: test_phase7.sh ===" >&2
 	@if [ -z "$$GEN2_DIR" ]; then \
 	    GEN2_DIR=$(CURDIR)/compiler/build/gen2 ./integration/test_phase7.sh; \
 	else \
 	    ./integration/test_phase7.sh; \
 	fi
+
+# self-replicate-fixtures-check: integration/fixtures/pico2_self_step{1,2}.sh
+# と pico2_compile_kern{,2}.sh が
+# integration/scripts/self_replicate_modules.sh manifest と同期して
+# いるか検証。kernel_pico2.tc の imports を増やすと device fixture と
+# orchestrator INPUT_NAMES の同期が壊れて self_replicate が byte-exact
+# 不一致になる (K20 で発覚) ので、ここで drift を検知して人に知らせる。
+self-replicate-fixtures-check:
+	@bash integration/scripts/gen_self_replicate_fixtures.sh --check
 
 # isolation-check: 各サブプロジェクトの test が許可された範囲外の
 # ファイルを open していないか strace で検証。境界違反検出用 (#4)。
