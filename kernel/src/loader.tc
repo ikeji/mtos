@@ -128,7 +128,10 @@ fn load_fd(fd: i32, argv_size: i32) -> u32 {
     }
 
     var size: i32 = vfs_size(fd);
-    if size <= TASK_HEADER_SIZE { return 0u32; }
+    if size <= TASK_HEADER_SIZE {
+        kputs("load_fd: vfs_size too small\n");
+        return 0u32;
+    }
 
     // Slow path (virt / virtio-blk): copy the image into RAM. Record
     // the img base in g_last_img so the scheduler slot owns it and can
@@ -137,6 +140,7 @@ fn load_fd(fd: i32, argv_size: i32) -> u32 {
     var img_base: u32 = img as u32 + 4u32;
     var n: i32 = vfs_read(fd, img_base, size);
     if n != size {
+        kputs("load_fd: short read\n");
         delete(img);
         return 0u32;
     }
@@ -160,7 +164,12 @@ fn load_fd(fd: i32, argv_size: i32) -> u32 {
 // (kern.conf seed) take no argv, so argv_size is 0.
 export fn load_task(path: StringLiteral) -> u32 {
     var fd: i32 = vfs_open(path as String, 0);
-    if fd < 0 { return 0u32; }
+    if fd < 0 {
+        kputs("load_task: vfs_open failed: ");
+        kputs(path);
+        kputs("\n");
+        return 0u32;
+    }
 
     var frame: u32 = load_fd(fd, 0);
     vfs_close(fd);

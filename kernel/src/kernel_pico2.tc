@@ -277,21 +277,40 @@ fn main() -> i32 {
     // catfile, or the EXTRA_TASKS compiler binaries). /etc/kern.conf
     // can add more seed tasks if needed; the remaining slots stay
     // STATE_UNUSED until sh's sys_spawn fills them.
+    //
+    // Step prints between "FATFS: mounted" and "SH: ready" let us
+    // localize transient boot failures where the kernel reaches mount
+    // but never lets a task print — without these the captured UART
+    // log just stops at FATFS:mounted and we cannot tell whether
+    // load_task failed, sched_register failed, the timer never armed,
+    // or the first task crt0 deadlocked. Each kputs is one byte
+    // worth of UART output, so the cost is negligible.
+    kputs("KERN: sched_init\r\n");
     sched_init(8);
 
-    if start_init_tasks() == 0 {
-        sched_register(0, load_task("/bin/sh"));
+    kputs("KERN: start_init_tasks\r\n");
+    var n_init: i32 = start_init_tasks();
+    if n_init == 0 {
+        kputs("KERN: load_task /bin/sh\r\n");
+        var sh_frame: u32 = load_task("/bin/sh");
+        if sh_frame == 0u32 {
+            kputs("KERN: load_task /bin/sh FAILED\r\n");
+        }
+        kputs("KERN: sched_register slot 0\r\n");
+        sched_register(0, sh_frame);
         var seed_nm: U8Array = to_cstr("sh");
         task_set_name(0, seed_nm);
         delete(seed_nm);
     }
 
     // Enable SIO MTIME counter: EN + FULLSPEED (keep DBGPAUSE defaults)
+    kputs("KERN: timer arm\r\n");
     poke32(SIO_MTIME_CTRL, 0x0Fu32);
     rearm_timer();
     var mie: u32 = csr_read_mie();
     csr_write_mie(mie | 0x80u32);
 
+    kputs("KERN: sched_start\r\n");
     sched_start(sched_get_frame(0));
 
     kputs("\r\nKERN: all tasks done\r\n");
