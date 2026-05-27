@@ -136,6 +136,57 @@ while i < n_in_sec {
 
 ## カーネル / OS
 
+### K20. self_replicate byte-exact 復活: 新 kernel module 対応 — 完了 (2026-05-27)
+
+K18 (2026-05-14) で全 8 コンパイラ + kernel.bin/uf2 の byte-exact
+self-replicate を達成した後、`kernel_pico2.tc` の imports が +5
+module 増加 (`rtc.tc` fa34500、`rtc_ds3231.tc` 15ddff4、
+`display_ili9488.tc` 8b84348、`keyboard_matrix.tc` fb2cfc7、
+`devfs.tc`) したが、self_replicate orchestrator + device fixture
+が更新されておらず、device は 11/16 module だけ link → host build と
+md5 divergent な kernel.bin を生成していた。
+
+K18 直後は実機 self_replicate を回す機会が無く、subproject 分割
+リファクタの動作確認で初めて発覚 (b62a2e1 で bin2s_incbin.sh path
+を直して device 側を動かせるようになって表面化)。
+
+**修正** (commit cde0c7a): host emit order に device 側を同期。
+
+| 修正対象 | 変更 |
+|---|---|
+| `kernel/fs-spec/extra.spec` | 5 module の `.tc` を `/src/` に staging |
+| `pico2_compile_kern.sh` | rt / di / km の parse→bc2asm 追加 (no imports) |
+| `pico2_compile_kern2.sh` | df (imports kc+rt), r3 (imports rt) 追加。vf tcheck に df 追加。kp tcheck を 11 直接 import (kc/pp/bf/bs/ff/mf/vf/ld/r3/di/km) に拡張 |
+| `pico2_self_step1.sh` | cat 順を 22 input (4 prelude + 16 user + cd + wrap) に拡張 |
+| `pico2_self_step2.sh` | asm_pass1 を 16 user module 分、asm_pass2 `--add` を 22 input に |
+| `pico2_self_replicate.sh` | `INPUT_NAMES="kc pp bf bs ff mf tf pf rt df vf ld r3 di km kp"` |
+
+host の compile-gen2.sh emit 順を確認すると:
+- `runtime` (cached)
+- `in_0..in_15` = kc / pp / bf / bs / ff / mf / tf / pf / **rt** / **df** / vf / ld / **r3** / **di** / **km** / kp
+
+旧 INPUT_NAMES "kc pp bf bs ff mf tf pf vf ld kp pt" は `in_8` 以降で
+ズレており、host が `vf` と label していた idx が実際には `rt` (rtc)
+の text section だった等、全体的に mislabel されていた。
+
+**検証** (実機 Pico 2、`CLEAN_SD=1 REFRESH_KERN_MODS=1` で ~46 min):
+
+```
+host kernel.bin md5: 4a730de411930ad14f7f97727ba00ea3
+device k.bin md5:    4a730de411930ad14f7f97727ba00ea3  MATCH
+host kernel.uf2 md5: 777c711cfd3fdcf9e3ab471b6f846057
+device k.uf2 md5:    777c711cfd3fdcf9e3ab471b6f846057  MATCH
+```
+
+CLAUDE.md / docs/roadmap.md の「K13〜K17 self-replicate」状態に復帰。
+pico2 が host PC の触媒抜きで kernel + 全コンパイラを再生産できる
+self-hosting loop が再び成立。
+
+参考: commit cde0c7a、`integration/fixtures/pico2_self_step{1,2}.sh`、
+`integration/fixtures/pico2_compile_kern{,2}.sh`、
+`integration/pico2_self_replicate.sh::INPUT_NAMES`、
+`kernel/fs-spec/extra.spec` の `/src/` staging。
+
 ### 35. pico2 console + sh starvation: sched_yield_read で mtimecmp を rearm — 完了 (2026-05-23)
 
 `kern.conf` で `/bin/console` を seed すると LCD に最初の数バイトしか
