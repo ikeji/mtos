@@ -70,10 +70,15 @@
 /src/vfs.tc                         kernel/src/vfs.tc
 /src/loader.tc                      kernel/src/loader.tc
 /src/kernel_pico2.tc                kernel/src/kernel_pico2.tc
+/src/rtc.tc                         kernel/src/rtc.tc
+/src/devfs.tc                       kernel/src/devfs.tc
 /src/trap_common.s                  kernel/src/trap_common.s
 /src/platform_pico2.tc              kernel/platform/pico2/platform_pico2.tc
 /src/block_flash.tc                 kernel/platform/pico2/block_flash.tc
 /src/block_sd.tc                    kernel/platform/pico2/block_sd.tc
+/src/rtc_ds3231.tc                  kernel/platform/pico2/rtc_ds3231.tc
+/src/display_ili9488.tc             kernel/platform/pico2/display_ili9488.tc
+/src/keyboard_matrix.tc             kernel/platform/pico2/keyboard_matrix.tc
 /src/platform_pico2.s               kernel/platform/pico2/platform_pico2.s
 /src/crt0_pico2_data.s              kernel/platform/pico2/crt0_pico2_data.s
 

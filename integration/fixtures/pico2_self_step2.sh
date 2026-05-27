@@ -15,10 +15,15 @@
 #   in_5  = mf.s (mtfs)
 #   in_6  = tf.s (tmpfs)
 #   in_7  = pf.s (procfs)
-#   in_8  = vf.s (vfs)
-#   in_9  = ld.s (loader)
-#   in_10 = kp.s (kernel_pico2)
-#   in_11 = pt.s (prelude_tail = crt0_pico2_data.s + wrap.s)
+#   in_8  = rt.s (rtc)
+#   in_9  = df.s (devfs)
+#   in_10 = vf.s (vfs)
+#   in_11 = ld.s (loader)
+#   in_12 = r3.s (rtc_ds3231)
+#   in_13 = di.s (display_ili9488)
+#   in_14 = km.s (keyboard_matrix)
+#   in_15 = kp.s (kernel_pico2)
+#   tail  = crt0_pico2_data.s + wrap.s
 #
 # Per-file approach keeps each asm_pass1 invocation at ~50-150 KB
 # peak on its own small input. The task exits before the next runs,
@@ -37,11 +42,16 @@ asm_pass1 /sd/ff.s --idx-out /sd/ff.idx --text-bin /sd/ff.tx --rodata-bin /sd/ff
 asm_pass1 /sd/mf.s --idx-out /sd/mf.idx --text-bin /sd/mf.tx --rodata-bin /sd/mf.ro --data-bin /sd/mf.dt --reloc-out /sd/mf.rl
 asm_pass1 /sd/tf.s --idx-out /sd/tf.idx --text-bin /sd/tf.tx --rodata-bin /sd/tf.ro --data-bin /sd/tf.dt --reloc-out /sd/tf.rl
 asm_pass1 /sd/pf.s --idx-out /sd/pf.idx --text-bin /sd/pf.tx --rodata-bin /sd/pf.ro --data-bin /sd/pf.dt --reloc-out /sd/pf.rl
+asm_pass1 /sd/rt.s --idx-out /sd/rt.idx --text-bin /sd/rt.tx --rodata-bin /sd/rt.ro --data-bin /sd/rt.dt --reloc-out /sd/rt.rl
+asm_pass1 /sd/df.s --idx-out /sd/df.idx --text-bin /sd/df.tx --rodata-bin /sd/df.ro --data-bin /sd/df.dt --reloc-out /sd/df.rl
 asm_pass1 /sd/vf.s --idx-out /sd/vf.idx --text-bin /sd/vf.tx --rodata-bin /sd/vf.ro --data-bin /sd/vf.dt --reloc-out /sd/vf.rl
 asm_pass1 /sd/ld.s --idx-out /sd/ld.idx --text-bin /sd/ld.tx --rodata-bin /sd/ld.ro --data-bin /sd/ld.dt --reloc-out /sd/ld.rl
+asm_pass1 /sd/r3.s --idx-out /sd/r3.idx --text-bin /sd/r3.tx --rodata-bin /sd/r3.ro --data-bin /sd/r3.dt --reloc-out /sd/r3.rl
+asm_pass1 /sd/di.s --idx-out /sd/di.idx --text-bin /sd/di.tx --rodata-bin /sd/di.ro --data-bin /sd/di.dt --reloc-out /sd/di.rl
+asm_pass1 /sd/km.s --idx-out /sd/km.idx --text-bin /sd/km.tx --rodata-bin /sd/km.ro --data-bin /sd/km.dt --reloc-out /sd/km.rl
 asm_pass1 /sd/kp.s --idx-out /sd/kp.idx --text-bin /sd/kp.tx --rodata-bin /sd/kp.ro --data-bin /sd/kp.dt --reloc-out /sd/kp.rl
 asm_pass1 /src/crt0_pico2_data.s --idx-out /sd/cd.idx --text-bin /sd/cd.tx --rodata-bin /sd/cd.ro --data-bin /sd/cd.dt --reloc-out /sd/cd.rl
 asm_pass1 /sd/wrap.s --idx-out /sd/wrap.idx --text-bin /sd/wrap.tx --rodata-bin /sd/wrap.ro --data-bin /sd/wrap.dt --reloc-out /sd/wrap.rl
-asm_pass2 --add /sd/raw.idx --add /sd/platform.idx --add /sd/trap.idx --add /sd/runtime.idx --add /sd/kc.idx --add /sd/pp.idx --add /sd/bf.idx --add /sd/bs.idx --add /sd/ff.idx --add /sd/mf.idx --add /sd/tf.idx --add /sd/pf.idx --add /sd/vf.idx --add /sd/ld.idx --add /sd/kp.idx --add /sd/cd.idx --add /sd/wrap.idx --lab-out /sd/full.lab
+asm_pass2 --add /sd/raw.idx --add /sd/platform.idx --add /sd/trap.idx --add /sd/runtime.idx --add /sd/kc.idx --add /sd/pp.idx --add /sd/bf.idx --add /sd/bs.idx --add /sd/ff.idx --add /sd/mf.idx --add /sd/tf.idx --add /sd/pf.idx --add /sd/rt.idx --add /sd/df.idx --add /sd/vf.idx --add /sd/ld.idx --add /sd/r3.idx --add /sd/di.idx --add /sd/km.idx --add /sd/kp.idx --add /sd/cd.idx --add /sd/wrap.idx --lab-out /sd/full.lab
 md5sum /sd/full.lab
 echo SELF_STEP2_DONE

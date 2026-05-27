@@ -1,6 +1,6 @@
 # Compile kernel modules with imports. Reuses /sd/kc.th, /sd/bf.th,
-# /sd/bs.th, /sd/tf.th from pico2_compile_kern.sh — those need to
-# already exist on the SD when this runs (or run kern.sh first).
+# /sd/bs.th, /sd/tf.th, /sd/rt.th from pico2_compile_kern.sh — those
+# need to already exist on the SD when this runs (or run kern.sh first).
 # Order: leaves' importers, then progressively top.
 #
 # fatfs, mtfs, procfs each import only kernel_common
@@ -22,10 +22,24 @@ tcheck --exth /sd/kc.th --tgth /sd/pf.th --tgt /sd/pf.ast --out /sd/pf.tast
 codegen < /sd/pf.tast > /sd/pf.bc
 bc2asm < /sd/pf.bc > /sd/pf.s
 md5sum /sd/pf.s
-# vfs: imports mtfs + tmpfs + procfs + fatfs + kernel_common
+# devfs: imports kernel_common + rtc
+parse < /src/devfs.tc > /sd/df.ast
+sigscan < /sd/df.ast > /sd/df.th
+tcheck --exth /sd/kc.th --exth /sd/rt.th --tgth /sd/df.th --tgt /sd/df.ast --out /sd/df.tast
+codegen < /sd/df.tast > /sd/df.bc
+bc2asm < /sd/df.bc > /sd/df.s
+md5sum /sd/df.s
+# rtc_ds3231: imports rtc
+parse < /src/rtc_ds3231.tc > /sd/r3.ast
+sigscan < /sd/r3.ast > /sd/r3.th
+tcheck --exth /sd/rt.th --tgth /sd/r3.th --tgt /sd/r3.ast --out /sd/r3.tast
+codegen < /sd/r3.tast > /sd/r3.bc
+bc2asm < /sd/r3.bc > /sd/r3.s
+md5sum /sd/r3.s
+# vfs: imports mtfs + tmpfs + procfs + devfs + fatfs + kernel_common
 parse < /src/vfs.tc > /sd/vf.ast
 sigscan < /sd/vf.ast > /sd/vf.th
-tcheck --exth /sd/mf.th --exth /sd/tf.th --exth /sd/pf.th --exth /sd/ff.th --exth /sd/kc.th --tgth /sd/vf.th --tgt /sd/vf.ast --out /sd/vf.tast
+tcheck --exth /sd/mf.th --exth /sd/tf.th --exth /sd/pf.th --exth /sd/df.th --exth /sd/ff.th --exth /sd/kc.th --tgth /sd/vf.th --tgt /sd/vf.ast --out /sd/vf.tast
 codegen < /sd/vf.tast > /sd/vf.bc
 bc2asm < /sd/vf.bc > /sd/vf.s
 md5sum /sd/vf.s
@@ -36,10 +50,12 @@ tcheck --exth /sd/vf.th --exth /sd/kc.th --tgth /sd/ld.th --tgt /sd/ld.ast --out
 codegen < /sd/ld.tast > /sd/ld.bc
 bc2asm < /sd/ld.bc > /sd/ld.s
 md5sum /sd/ld.s
-# kernel_pico2: imports kernel_common + block_flash + block_sd + fatfs + mtfs + vfs + loader
+# kernel_pico2: imports kernel_common + platform_pico2 + block_flash +
+# block_sd + fatfs + mtfs + vfs + loader + rtc_ds3231 + display_ili9488
+# + keyboard_matrix
 parse < /src/kernel_pico2.tc > /sd/kp.ast
 sigscan < /sd/kp.ast > /sd/kp.th
-tcheck --exth /sd/kc.th --exth /sd/bf.th --exth /sd/bs.th --exth /sd/ff.th --exth /sd/mf.th --exth /sd/vf.th --exth /sd/ld.th --tgth /sd/kp.th --tgt /sd/kp.ast --out /sd/kp.tast
+tcheck --exth /sd/kc.th --exth /sd/pp.th --exth /sd/bf.th --exth /sd/bs.th --exth /sd/ff.th --exth /sd/mf.th --exth /sd/vf.th --exth /sd/ld.th --exth /sd/r3.th --exth /sd/di.th --exth /sd/km.th --tgth /sd/kp.th --tgt /sd/kp.ast --out /sd/kp.tast
 codegen < /sd/kp.tast > /sd/kp.bc
 bc2asm < /sd/kp.bc > /sd/kp.s
 md5sum /sd/kp.s

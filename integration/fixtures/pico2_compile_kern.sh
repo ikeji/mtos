@@ -2,7 +2,8 @@
 # byte-exactness against host build/intermediate/gen2/kernel_pico2/*.s.
 # Order: leaves first (no imports), then dependents.
 #
-# leaves (no imports): kernel_common, block_flash, block_sd, tmpfs
+# leaves (no imports): kernel_common, block_flash, block_sd, tmpfs,
+# rtc, display_ili9488, keyboard_matrix
 parse < /src/kernel_common.tc > /sd/kc.ast
 sigscan < /sd/kc.ast > /sd/kc.th
 tcheck --tgth /sd/kc.th --tgt /sd/kc.ast --out /sd/kc.tast
@@ -27,4 +28,22 @@ tcheck --tgth /sd/tf.th --tgt /sd/tf.ast --out /sd/tf.tast
 codegen < /sd/tf.tast > /sd/tf.bc
 bc2asm < /sd/tf.bc > /sd/tf.s
 md5sum /sd/tf.s
+parse < /src/rtc.tc > /sd/rt.ast
+sigscan < /sd/rt.ast > /sd/rt.th
+tcheck --tgth /sd/rt.th --tgt /sd/rt.ast --out /sd/rt.tast
+codegen < /sd/rt.tast > /sd/rt.bc
+bc2asm < /sd/rt.bc > /sd/rt.s
+md5sum /sd/rt.s
+parse < /src/display_ili9488.tc > /sd/di.ast
+sigscan < /sd/di.ast > /sd/di.th
+tcheck --tgth /sd/di.th --tgt /sd/di.ast --out /sd/di.tast
+codegen < /sd/di.tast > /sd/di.bc
+bc2asm < /sd/di.bc > /sd/di.s
+md5sum /sd/di.s
+parse < /src/keyboard_matrix.tc > /sd/km.ast
+sigscan < /sd/km.ast > /sd/km.th
+tcheck --tgth /sd/km.th --tgt /sd/km.ast --out /sd/km.tast
+codegen < /sd/km.tast > /sd/km.bc
+bc2asm < /sd/km.bc > /sd/km.s
+md5sum /sd/km.s
 echo COMPILE_KERN_LEAVES_DONE

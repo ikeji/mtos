@@ -66,7 +66,7 @@ CRT0="$TMP/platform.s $TMP/trap.s" \
     GEN2_DIR="$ROOT/compiler/build/gen2" \
     CACHED_S_DIR="$ROOT/userland/build/shared" \
     PRELUDE_NAME="p" \
-    INPUT_NAMES="kc pp bf bs ff mf tf pf vf ld kp pt" \
+    INPUT_NAMES="kc pp bf bs ff mf tf pf rt df vf ld r3 di km kp" \
     "$ROOT/compiler/scripts/compile-gen2.sh" -o "$TMP/host_k.bin" \
     "$ROOT/kernel/src/kernel_pico2.tc" 2>/dev/null
 # Phase 8: TC port runs via qemu-riscv32 instead of python3.
