@@ -43,17 +43,26 @@ cp "$ROOT/kernel/build/disk-extra.img" "$TMP/disk-extra.img"
 # dir — so we also have to drop a sibling `dx.img` next to the lab
 # in compile-gen2's intermediate dir (see HOST_LAB_DIR below).
 "$ROOT/userland/scripts/bin2s_incbin.sh" "$TMP/disk-extra.img" _mtfs_image dx.img > "$TMP/wrap.s" 2>/dev/null
-cat "$ROOT/kernel/platform/pico2/platform_pico2.s" "$ROOT/kernel/src/trap_common.s" > "$TMP/host_crt0.s"
-cat "$ROOT/kernel/platform/pico2/crt0_pico2_data.s" "$TMP/wrap.s" > "$TMP/host_data.s"
+# Mirror the on-device per-file layout: device step2 uses raw,
+# platform, trap, runtime, kc, pp, ..., kp, cd, wrap as separate
+# asm_pass1 inputs (17 total). compile-gen2.sh names each idx after
+# the basename of the source file, so we have to drop short-named
+# copies into $TMP and feed those to CRT0 / CRT0_DATA. Concatenating
+# into host_crt0.s / host_data.s used to be fine but breaks
+# byte-exactness now that asm_pass2's .lab emits per-input src lines.
+cp "$ROOT/kernel/platform/pico2/platform_pico2.s"  "$TMP/platform.s"
+cp "$ROOT/kernel/src/trap_common.s"                "$TMP/trap.s"
+cp "$ROOT/kernel/platform/pico2/crt0_pico2_data.s" "$TMP/cd.s"
 # Where compile-gen2.sh keeps its intermediates for this .tc.
 HOST_LAB_DIR="$ROOT/build/intermediate/gen2/kernel_pico2"
 mkdir -p "$HOST_LAB_DIR"
 cp "$TMP/disk-extra.img" "$HOST_LAB_DIR/dx.img"
 # INPUT_NAMES + PRELUDE_NAME align the host intermediate basenames
-# (prelude.tx, in_0.tx, ...) with the on-device fixture names
-# (p.tx, kc.tx, pp.tx, bf.tx, ...) so the resulting .lab is byte-
-# identical between host and device.
-CRT0="$TMP/host_crt0.s" CRT0_DATA="$TMP/host_data.s" ASM_PROLOGUE="; raw" \
+# (p.tx, kc.tx, pp.tx, bf.tx, ...) with the on-device fixture names
+# so the resulting .lab is byte-identical between host and device.
+CRT0="$TMP/platform.s $TMP/trap.s" \
+    CRT0_DATA="$TMP/cd.s $TMP/wrap.s" \
+    ASM_PROLOGUE="; raw" \
     GEN2_DIR="$ROOT/compiler/build/gen2" \
     CACHED_S_DIR="$ROOT/userland/build/shared" \
     PRELUDE_NAME="p" \
