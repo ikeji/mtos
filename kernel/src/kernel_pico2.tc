@@ -122,6 +122,7 @@ fn dump_dec(fd: i32, v: i32) -> void {
 // Idempotent: if /sd/dx.img already has the right size we skip
 // the (slow) byte copy.
 fn dump_mtfs_to_sd() -> void {
+    kputs("DUMP: probing /sd/dx.img\r\n");
     var img_addr: u32 = _mtfs_image_addr();
     var img_size: i32 = _mtfs_image_size_value() as i32;
 
@@ -162,6 +163,7 @@ fn dump_mtfs_to_sd() -> void {
         fatfs_close(rfd);
     }
     if skip == 0 {
+        kputs("DUMP: writing /sd/dx.img (slow, ~6 s)\r\n");
         var fd: i32 = fatfs_open(name_addr, 6, 64 | 512 | 1);
         if fd < 0 {
             kputs("DUMP: fatfs_open /sd/dx.img failed\r\n");
