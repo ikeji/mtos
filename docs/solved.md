@@ -187,6 +187,49 @@ self-hosting loop が再び成立。
 `integration/pico2_self_replicate.sh::INPUT_NAMES`、
 `kernel/fs-spec/extra.spec` の `/src/` staging。
 
+**Follow-up (2026-05-28): drift 再発防止 + boot トレース** (commits
+5065391, dd213b2):
+
+K20 の原因は 6 ファイル (`INPUT_NAMES` + step1/2 + compile_kern{,2}
++ fs-spec) の手動同期 — kernel に import を 1 個追加するたびに 6 ヶ所
+更新が必要で、忘れると静かに byte-exact regression を引き起こす。
+追加対策:
+
+- `integration/scripts/self_replicate_modules.sh` を single source of
+  truth に。short-name → .tc path の 16 行 manifest + 直接 import を
+  `grep '^import'` で自動抽出するヘルパー関数。
+- `integration/scripts/gen_self_replicate_fixtures.sh` が manifest から
+  pico2_self_step{1,2}.sh + pico2_compile_kern{,2}.sh を生成。`--check`
+  モードで現行 fixture と diff、drift を検知。
+- `make self-replicate-fixtures-check` を `integration-test` の依存に
+  加え、`make full-test` 実行時に drift があれば即失敗。
+- orchestrator は manifest を source して
+  `INPUT_NAMES=$(module_short_names)` で動的派生。
+
+これで kernel に import を追加する手順は: kernel/src/<mod>.tc + manifest
+1 行 + `bash integration/scripts/gen_self_replicate_fixtures.sh` の 3
+ステップで sync 完了。
+
+加えて transient boot stall 用に kernel_pico2.tc::main + loader.tc に
+step プリント追加:
+
+  KERN: sched_init → start_init_tasks → load_task /bin/sh →
+        sched_register slot 0 → timer arm → sched_start
+
+`load_task` / `load_fd` の silent failure (vfs_open / vfs_size /
+vfs_read 失敗) も `load_task: vfs_open failed: <path>` 等の説明文
+出力に変更。次回 `FATFS: mounted` 以降で止まったときに UART log だけで
+どの step が deadlock したか即特定可能。
+
+debug print 込みで再 self_replicate して MATCH 維持を確認:
+
+```
+host kernel.bin md5: 6033734207eb2ccd552b7c361d9ac8ce
+device k.bin md5:    6033734207eb2ccd552b7c361d9ac8ce  MATCH
+host kernel.uf2 md5: 5c1351bc3de4db5aed44f807d5dab43f
+device k.uf2 md5:    5c1351bc3de4db5aed44f807d5dab43f  MATCH
+```
+
 ### 35. pico2 console + sh starvation: sched_yield_read で mtimecmp を rearm — 完了 (2026-05-23)
 
 `kern.conf` で `/bin/console` を seed すると LCD に最初の数バイトしか
