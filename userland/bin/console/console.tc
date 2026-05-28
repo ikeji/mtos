@@ -730,12 +730,15 @@ fn main(argv: StringArray) -> i32 {
         }
     }
 
+    eputs("CONSOLE: opening /dev/kbd\n");
     var kbd: i32 = do_openat(0, "/dev/kbd", 0);
+    eputs("CONSOLE: opening /dev/fb\n");
     var fb:  i32 = do_openat(0, "/dev/fb", 1);
     if kbd < 0 || fb < 0 {
         eputs("CONSOLE: device open failed\n");
         return 1;
     }
+    eputs("CONSOLE: devices open\n");
 
     var pb: U8Array = U8Array(8u32);
     if do_pipe(pb as u32 + 4u32) != 0 {
@@ -746,6 +749,7 @@ fn main(argv: StringArray) -> i32 {
     var pr: i32 = peek32(pb as u32 + 4u32) as i32;
     var pw: i32 = peek32(pb as u32 + 8u32) as i32;
 
+    eputs("CONSOLE: spawning sh\n");
     // sh: stdin = /dev/kbd, stdout = pipe write end.
     var slot: i32 = do_spawn_fds("/bin/sh", 0u32, kbd, pw);
     delete(pb);
@@ -753,6 +757,7 @@ fn main(argv: StringArray) -> i32 {
         eputs("CONSOLE: sh spawn failed\n");
         return 1;
     }
+    eputs("CONSOLE: sh spawned, entering render loop\n");
     // Do NOT close kbd / pw here: spawn_fds passes fd numbers (no
     // dup); sh owns them now and slot_free_allocs closes them when
     // sh exits — that close of the pipe write end is our EOF.
