@@ -65,13 +65,14 @@ def write_all(fd: int, data: bytes) -> None:
         view = view[n:]
 
 
-def wait_ack(fd: int, timeout: float, label: str) -> None:
-    """Read one '.' from fd. Raises on timeout."""
+def wait_ack(fd: int, timeout: float, label: str) -> str:
+    """Read until a '.' (ACK) or '!' (NAK) byte from fd. Returns
+    'ack' or 'nak'. Raises on timeout."""
     deadline = time.monotonic() + timeout
     while True:
         remaining = deadline - time.monotonic()
         if remaining <= 0:
-            raise TimeoutError(f"no ACK ({label}) within {timeout}s")
+            raise TimeoutError(f"no ACK/NAK ({label}) within {timeout}s")
         r, _, _ = select.select([fd], [], [], remaining)
         if not r:
             continue
@@ -80,7 +81,9 @@ def wait_ack(fd: int, timeout: float, label: str) -> None:
             continue
         for byte in b:
             if byte == ord("."):
-                return
+                return "ack"
+            if byte == ord("!"):
+                return "nak"
             sys.stderr.write(chr(byte) if 32 <= byte < 127 else f"<{byte:02x}>")
             sys.stderr.flush()
 
@@ -98,6 +101,9 @@ def main() -> int:
                    help="shell command to write to the port before waiting "
                         "for the startup ACK (e.g. 'mr -a > /sd/dx.img'). "
                         "When empty, assume mr is already running.")
+    p.add_argument("--max-retries", type=int, default=5,
+                   help="re-send a frame up to this many times on NAK "
+                        "before giving up")
     args = p.parse_args()
 
     if args.chunk_size <= 0 or args.chunk_size > 65535:
@@ -126,12 +132,30 @@ def main() -> int:
         total = len(data)
         i = 0
         chunks = 0
+        retries = 0
         t0 = time.monotonic()
         while i < total:
             n = min(cs, total - i)
-            write_all(fd, n.to_bytes(2, "little"))
-            write_all(fd, data[i:i + n])
-            wait_ack(fd, args.ack_timeout, f"frame@{i}")
+            payload = data[i:i + n]
+            checksum = sum(payload) & 0xFFFFFFFF
+            attempt = 0
+            while True:
+                write_all(fd, n.to_bytes(2, "little"))
+                write_all(fd, payload)
+                write_all(fd, checksum.to_bytes(4, "little"))
+                resp = wait_ack(fd, args.ack_timeout, f"frame@{i}")
+                if resp == "ack":
+                    break
+                attempt += 1
+                retries += 1
+                if attempt >= args.max_retries:
+                    raise RuntimeError(
+                        f"frame@{i} NAK'd {attempt} times — giving up"
+                    )
+                sys.stderr.write(
+                    f"\n[retry frame@{i} attempt {attempt}/{args.max_retries}]\n"
+                )
+                sys.stderr.flush()
             i += n
             chunks += 1
             if chunks % 50 == 0:
@@ -150,7 +174,8 @@ def main() -> int:
         elapsed = time.monotonic() - t0
         sys.stderr.write(
             f"\nupload complete: {total} bytes in {elapsed:.1f}s "
-            f"({total / elapsed / 1024:.1f} KB/s, {chunks} chunks)\n"
+            f"({total / elapsed / 1024:.1f} KB/s, {chunks} chunks, "
+            f"{retries} NAK retries)\n"
         )
     finally:
         os.close(fd)

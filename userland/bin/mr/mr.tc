@@ -1,19 +1,26 @@
 // mr.tc — XMODEM-ish framing decoder. Counterpart of mx.tc.
 //
-// Reads `[len:u16 LE][data:len bytes]` frames from stdin and writes
-// `data` straight to stdout. A frame with len=0 terminates the
-// stream; mr returns 0 at that point.
+// Default frame (no flag): `[len:u16 LE][data:len bytes]`. mr reads
+// data and writes it straight to stdout. A frame with len=0
+// terminates the stream; mr returns 0.
 //
-// Binary-transparent by construction (no inband escaping).
-// Frame size limit: 65535 bytes. Actual max written by mx is 256.
+// ACK+checksum frame (`mr -a`):
+//   `[len:u16 LE][data:len bytes][sum:u32 LE]`
+// where `sum` is the unsigned 32-bit sum of all `data` bytes
+// (treating each byte as u32; arithmetic mod 2^32). mr:
+//   - emits '.' to fd 2 (stderr → UART) at startup
+//   - after each frame: writes data only if checksum matches,
+//     emits '.' if match, '!' (NAK) if mismatch so the sender
+//     can re-transmit. NAK does NOT write the (possibly corrupt)
+//     bytes; the file stays at the offset before this frame.
+//   - emits '.' at clean end-of-stream
+// Length 0 still terminates (no trailing sum).
 //
-// `mr -a` enables ACK mode: after each successful sys_write to stdout
-// (and once at start, once before exiting), mr emits one '.' byte to
-// stderr (fd 2 → UART). Senders that gate the next frame on the ACK
-// avoid K11 (PL011 RX FIFO overflow during SD writes) because they
-// stop transmitting while mr is busy in fatfs_write. The default
-// (no `-a`) preserves the original silent behavior used by tests
-// that consume the file output and don't read stderr.
+// The ACK byte gates the sender against streaming during mr's
+// M-mode fatfs_write window (K11 PL011 RX FIFO overflow). The
+// checksum catches UART bit errors that ACK alone wouldn't —
+// observed in practice as non-deterministic device-built
+// kernel.bin md5 after 3.5 MB ACK-only uploads.
 
 import "../../lib/libtc/libtc.tc";
 
@@ -35,9 +42,12 @@ fn main(argv: StringArray) -> i32 {
     }
 
     var hdr: U8Array = U8Array(2);
+    var sum_buf: U8Array = U8Array(4);
     var buf: U8Array = U8Array(65536);
     var ack_buf: U8Array = U8Array(1);
     set(ack_buf, 0, '.' as u8);
+    var nak_buf: U8Array = U8Array(1);
+    set(nak_buf, 0, '!' as u8);
     var done: i32 = 0;
 
     // Initial ACK so the sender knows mr is up and ready to read.
@@ -61,20 +71,19 @@ fn main(argv: StringArray) -> i32 {
             }
             delete(tmp);
         }
-        if done == 1 { i_break(); }  // sys_read failed mid-header
+        if done == 1 { i_break(); }
 
         var sz: i32 = (get(hdr, 0) as i32) | ((get(hdr, 1) as i32) << 8);
         if sz == 0 {
             // End marker.
             done = 1;
         } else {
-            // Read sz bytes of payload and forward.
+            // Read sz bytes of payload.
             var have: i32 = 0;
             while have < sz && done == 0 {
                 var tmp2: U8Array = U8Array((sz - have) as u32);
                 var m: i32 = sys_read(0, tmp2, sz - have);
                 if m <= 0 {
-                    // Truncated payload — bail out.
                     done = 1;
                 } else {
                     var j: i32 = 0;
@@ -86,33 +95,66 @@ fn main(argv: StringArray) -> i32 {
                 }
                 delete(tmp2);
             }
-            if have > 0 {
+            if done == 1 { i_break(); }
+
+            // ACK mode reads a 4-byte little-endian sum32 trailer.
+            // Silent mode (mr without -a) skips this entirely — its
+            // legacy senders (qemu test fixtures, mx.tc) emit no
+            // trailer.
+            var ok: i32 = 1;
+            if ack_mode != 0 {
+                var sgot: i32 = 0;
+                while sgot < 4 && done == 0 {
+                    var tmp3: U8Array = U8Array((4 - sgot) as u32);
+                    var k: i32 = sys_read(0, tmp3, 4 - sgot);
+                    if k <= 0 {
+                        done = 1;
+                    } else {
+                        var l: i32 = 0;
+                        while l < k {
+                            set(sum_buf, sgot + l, get(tmp3, l));
+                            l = l + 1;
+                        }
+                        sgot = sgot + k;
+                    }
+                    delete(tmp3);
+                }
+                if done == 1 { i_break(); }
+                var expected: u32 = (get(sum_buf, 0) as u32)
+                                  | ((get(sum_buf, 1) as u32) << 8u32)
+                                  | ((get(sum_buf, 2) as u32) << 16u32)
+                                  | ((get(sum_buf, 3) as u32) << 24u32);
+                // Sum all received bytes as u32 (mod 2^32).
+                var actual: u32 = 0u32;
+                var p: i32 = 0;
+                while p < have {
+                    actual = actual + (get(buf, p) as u32);
+                    p = p + 1;
+                }
+                if actual != expected { ok = 0; }
+            }
+
+            if ok == 0 {
+                // Checksum mismatch — NAK and DON'T write. Sender
+                // re-transmits the same frame.
+                sys_write(2, nak_buf, 1);
+            } else if have > 0 {
                 var wn: i32 = sys_write(1, buf, have);
                 if wn != have {
-                    // Truncated write — bail rather than silently
-                    // ACKing a partial sector. The sender will see
-                    // the missing ACK and time out with a clear
-                    // "frame@N" position.
                     done = 1;
                 } else {
-                    // ACK after fatfs_write completes — the sender's
-                    // wait-for-ACK loop has been idle on the UART
-                    // during the M-mode SD-write window, so the RX
-                    // FIFO drained.
                     ack(ack_mode, ack_buf);
                 }
             }
         }
     }
-    // Final ACK on clean end-of-stream so the sender knows mr is done.
     ack(ack_mode, ack_buf);
     delete(hdr);
+    delete(sum_buf);
     delete(buf);
     delete(ack_buf);
+    delete(nak_buf);
     return 0;
 }
 
-// Tiny helper: TC doesn't have `break`, so we simulate early-exit with
-// a no-op call that compilers can inline away. Used once above for
-// clarity; the outer `while done == 0` would catch the exit anyway.
 fn i_break() -> void { return; }
