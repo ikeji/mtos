@@ -92,7 +92,7 @@ def main() -> int:
     p.add_argument("--chunk-size", type=int, default=4096)
     p.add_argument("--ack-timeout", type=float, default=10.0,
                    help="seconds to wait for each chunk ACK")
-    p.add_argument("--initial-ack-timeout", type=float, default=15.0,
+    p.add_argument("--initial-ack-timeout", type=float, default=30.0,
                    help="seconds to wait for the startup ACK after `mr -a`")
     p.add_argument("--spawn-cmd", default="",
                    help="shell command to write to the port before waiting "

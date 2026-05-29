@@ -179,17 +179,21 @@ os.close(fd)
 # only needs to know whether the file matches; the link step at
 # Step 2 catches any content mismatch via the byte-exact .lab diff.
 echo "=== Probe /sd/dx.img ===" >&2
-PROBE_WC=$(run_sh_cmd "wc -c /sd/dx.img" "sh\$" 10)
-DEV_DX_SIZE=$(printf '%s' "$PROBE_WC" | grep -oE '^[0-9]+' | head -1)
+PROBE_WC=$(run_sh_cmd "wc /sd/dx.img" "/sd/dx.img" 10)
+# wc prints "L W B path" (lines, words, bytes, path). We want B.
+DEV_DX_SIZE=$(printf '%s' "$PROBE_WC" | awk '/\/sd\/dx\.img/ {print $3; exit}')
 echo "device dx.img size=${DEV_DX_SIZE:-<missing>} (host=$HOST_DX_SIZE)" >&2
 
 if [ "$DEV_DX_SIZE" = "$HOST_DX_SIZE" ]; then
     echo "dx.img size matches host — skip mr upload" >&2
 else
     echo "uploading dx.img (~$((HOST_DX_SIZE / 1024)) KB at ~10.9 KB/s, ~6 min)" >&2
-    # Settle UART before mr_upload.py opens it.
+    # Settle UART before mr_upload.py opens it. The probe's cat-PID
+    # may take a moment to release the fd, and the device-side sh
+    # needs to finish writing its [km ...] post-cmd debug line.
+    sleep 2
     stty -F "$UART_PORT" 115200 cs8 -cstopb -parenb raw -echo -crtscts 2>/dev/null
-    timeout 0.5 cat "$UART_PORT" > /dev/null 2>&1 || true
+    timeout 1.5 cat "$UART_PORT" > /dev/null 2>&1 || true
     # mr_upload.py spawns `mr -a > /sd/dx.img` itself, waits for the
     # startup ACK, then sends ACK-gated 512-byte frames. The ACK
     # handshake stops the host streaming during mr's M-mode
@@ -203,8 +207,8 @@ else
     # times out our 90 s probe; size is enough since the byte-exact
     # check at Step 2/3 catches any content corruption.
     sleep 2
-    POST_WC=$(run_sh_cmd "wc -c /sd/dx.img" "sh\$" 20)
-    UPLOADED_SIZE=$(printf '%s' "$POST_WC" | grep -oE '^[0-9]+' | head -1)
+    POST_WC=$(run_sh_cmd "wc /sd/dx.img" "/sd/dx.img" 20)
+    UPLOADED_SIZE=$(printf '%s' "$POST_WC" | awk '/\/sd\/dx\.img/ {print $3; exit}')
     if [ "$UPLOADED_SIZE" != "$HOST_DX_SIZE" ]; then
         echo "mr upload size MISMATCH: device=${UPLOADED_SIZE:-<missing>} host=$HOST_DX_SIZE" >&2
         exit 1
