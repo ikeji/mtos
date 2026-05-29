@@ -203,6 +203,22 @@ else
     echo "mr upload reported success (trust mr_upload's ACK count)" >&2
 fi
 
+# /sd/wrap.s — the `.incbin "dx.img"` wrapper that step2's asm_pass1
+# /sd/wrap.s reads. The boot-time dump_mtfs_to_sd used to emit this
+# alongside dx.img; with that removed we have to upload wrap.s
+# ourselves. It is small (~few hundred bytes) so a fast plain mr -a
+# pass is enough — no K11 risk at this size.
+echo "=== Stage /sd/wrap.s via mr -a ===" >&2
+sleep 2
+stty -F "$UART_PORT" 115200 cs8 -cstopb -parenb raw -echo -crtscts 2>/dev/null
+timeout 1.5 cat "$UART_PORT" > /dev/null 2>&1 || true
+python3 "$ROOT/integration/scripts/mr_upload.py" \
+    --port "$UART_PORT" \
+    --chunk-size 256 --ack-timeout 30 \
+    --spawn-cmd "mr -a > /sd/wrap.s" \
+    "$TMP/wrap.s"
+echo "wrap.s upload complete" >&2
+
 # Optional /sd cleanup. After multiple bench / self_replicate runs
 # the SD card accumulates ~30+ transient intermediate files in the
 # root directory; with REFRESH_KERN_MODS=1 NORESET=1 this can saturate
