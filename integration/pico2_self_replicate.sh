@@ -131,7 +131,66 @@ os.close(fd)
 
 echo "=== Initial flash ===" >&2
 flash_kernel
-sleep 6  # extra time for boot-time dumper to write /sd/dx.img
+sleep 4  # boot to sh ready
+
+# Stage /sd/dx.img via mr -a (ACK mode) over UART. Replaces the
+# boot-time dump_mtfs_to_sd path that used to run inside the kernel
+# (removed for boot speed — boot is now < 1 s).
+# The host's $TMP/disk-extra.img matches the .incbin in the running
+# kernel, so dx.img + the kernel agree byte-for-byte.
+# ~6 min for the full 3.5 MB at 10.9 KB/s. Skip when /sd/dx.img md5
+# already matches.
+echo "=== Stage /sd/dx.img via mr -a ===" >&2
+HOST_DX_MD5=$(md5sum "$TMP/disk-extra.img" | awk '{print $1}')
+HOST_DX_SIZE=$(stat -c%s "$TMP/disk-extra.img")
+echo "host dx.img md5=$HOST_DX_MD5 size=$HOST_DX_SIZE" >&2
+
+# Probe device side. Send a md5sum command and scrape the output.
+# Per-char delay matches mr_upload.py's spawn-cmd loop — sh's echo
+# can drop bytes on bursty input.
+probe_dx_md5() {
+    local LOG="$TMP/uart_dx_probe.log"
+    stty -F "$UART_PORT" 115200 cs8 -cstopb -parenb raw -echo -crtscts 2>/dev/null
+    timeout 0.3 cat "$UART_PORT" > /dev/null 2>&1 || true
+    (cat "$UART_PORT" > "$LOG" 2>&1) &
+    local CATPID=$!
+    sleep 0.5
+    python3 -c "
+import os, time
+fd = os.open('$UART_PORT', os.O_WRONLY)
+for c in 'md5sum /sd/dx.img\n'.encode():
+    os.write(fd, bytes([c]))
+    time.sleep(0.01)
+os.close(fd)
+"
+    # md5sum on 3.5 MB at ~150 KB/s SD read = ~24 s. Give it 60 s.
+    sleep 60
+    kill -9 "$CATPID" 2>/dev/null || true
+    grep -oE '^[0-9a-f]{32}' "$LOG" | head -1
+}
+DEV_DX_MD5=$(probe_dx_md5)
+echo "device dx.img md5=${DEV_DX_MD5:-<missing>}" >&2
+
+if [ "$DEV_DX_MD5" = "$HOST_DX_MD5" ]; then
+    echo "dx.img already matches host — skip mr upload" >&2
+else
+    echo "uploading dx.img (~$((HOST_DX_SIZE / 1024)) KB at ~10.9 KB/s, ~6 min)" >&2
+    # mr_upload.py spawns `mr -a > /sd/dx.img` itself, waits for the
+    # startup ACK, then sends ACK-gated 512-byte frames. The ACK
+    # handshake stops the host streaming during mr's M-mode
+    # fatfs_write window, sidestepping K11 (PL011 RX FIFO overflow).
+    python3 "$ROOT/integration/scripts/mr_upload.py" \
+        --port "$UART_PORT" \
+        --chunk-size 512 --ack-timeout 60 \
+        --spawn-cmd "mr -a > /sd/dx.img" \
+        "$TMP/disk-extra.img"
+    UPLOADED_MD5=$(probe_dx_md5)
+    if [ "$UPLOADED_MD5" != "$HOST_DX_MD5" ]; then
+        echo "mr upload md5 MISMATCH: device=$UPLOADED_MD5 host=$HOST_DX_MD5" >&2
+        exit 1
+    fi
+    echo "mr upload OK (md5 matches)" >&2
+fi
 
 # Optional /sd cleanup. After multiple bench / self_replicate runs
 # the SD card accumulates ~30+ transient intermediate files in the
