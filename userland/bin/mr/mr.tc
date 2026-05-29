@@ -87,11 +87,20 @@ fn main(argv: StringArray) -> i32 {
                 delete(tmp2);
             }
             if have > 0 {
-                sys_write(1, buf, have);
-                // ACK after fatfs_write completes — the sender's
-                // wait-for-ACK loop has been idle on the UART during
-                // the M-mode SD-write window, so RX FIFO drained.
-                ack(ack_mode, ack_buf);
+                var wn: i32 = sys_write(1, buf, have);
+                if wn != have {
+                    // Truncated write — bail rather than silently
+                    // ACKing a partial sector. The sender will see
+                    // the missing ACK and time out with a clear
+                    // "frame@N" position.
+                    done = 1;
+                } else {
+                    // ACK after fatfs_write completes — the sender's
+                    // wait-for-ACK loop has been idle on the UART
+                    // during the M-mode SD-write window, so the RX
+                    // FIFO drained.
+                    ack(ack_mode, ack_buf);
+                }
             }
         }
     }

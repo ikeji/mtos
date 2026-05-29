@@ -145,11 +145,12 @@ HOST_DX_MD5=$(md5sum "$TMP/disk-extra.img" | awk '{print $1}')
 HOST_DX_SIZE=$(stat -c%s "$TMP/disk-extra.img")
 echo "host dx.img md5=$HOST_DX_MD5 size=$HOST_DX_SIZE" >&2
 
-# Probe device side. Send a md5sum command and scrape the output.
-# Per-char delay matches mr_upload.py's spawn-cmd loop — sh's echo
-# can drop bytes on bursty input.
-probe_dx_md5() {
-    local LOG="$TMP/uart_dx_probe.log"
+# Run a UART command via sh and capture the output. Stops the
+# capture as soon as `done_marker` appears, so a fast no-op
+# (e.g. ls on a missing file) doesn't block on a hardcoded sleep.
+run_sh_cmd() {
+    local cmd="$1" done_marker="$2" timeout_s="${3:-30}"
+    local LOG="$TMP/uart_$(echo "$cmd" | tr -c '[:alnum:]' '_').log"
     stty -F "$UART_PORT" 115200 cs8 -cstopb -parenb raw -echo -crtscts 2>/dev/null
     timeout 0.3 cat "$UART_PORT" > /dev/null 2>&1 || true
     (cat "$UART_PORT" > "$LOG" 2>&1) &
@@ -158,23 +159,37 @@ probe_dx_md5() {
     python3 -c "
 import os, time
 fd = os.open('$UART_PORT', os.O_WRONLY)
-for c in 'md5sum /sd/dx.img\n'.encode():
+for c in (\"$cmd\" + '\n').encode():
     os.write(fd, bytes([c]))
     time.sleep(0.01)
 os.close(fd)
 "
-    # md5sum on 3.5 MB at ~150 KB/s SD read = ~24 s. Give it 60 s.
-    sleep 60
+    local deadline=$(( $(date +%s) + timeout_s ))
+    while [ "$(date +%s)" -lt "$deadline" ]; do
+        if grep -qF "$done_marker" "$LOG" 2>/dev/null; then break; fi
+        sleep 1
+    done
+    sleep 0.5
     kill -9 "$CATPID" 2>/dev/null || true
-    grep -oE '^[0-9a-f]{32}' "$LOG" | head -1
+    cat "$LOG"
 }
-DEV_DX_MD5=$(probe_dx_md5)
-echo "device dx.img md5=${DEV_DX_MD5:-<missing>}" >&2
 
-if [ "$DEV_DX_MD5" = "$HOST_DX_MD5" ]; then
-    echo "dx.img already matches host — skip mr upload" >&2
+# Probe: wc -c /sd/dx.img returns the size on a single line. Much
+# faster than md5sum on 3.5 MB (~24 s vs ~1 s) and the orchestrator
+# only needs to know whether the file matches; the link step at
+# Step 2 catches any content mismatch via the byte-exact .lab diff.
+echo "=== Probe /sd/dx.img ===" >&2
+PROBE_WC=$(run_sh_cmd "wc -c /sd/dx.img" "sh\$" 10)
+DEV_DX_SIZE=$(printf '%s' "$PROBE_WC" | grep -oE '^[0-9]+' | head -1)
+echo "device dx.img size=${DEV_DX_SIZE:-<missing>} (host=$HOST_DX_SIZE)" >&2
+
+if [ "$DEV_DX_SIZE" = "$HOST_DX_SIZE" ]; then
+    echo "dx.img size matches host — skip mr upload" >&2
 else
     echo "uploading dx.img (~$((HOST_DX_SIZE / 1024)) KB at ~10.9 KB/s, ~6 min)" >&2
+    # Settle UART before mr_upload.py opens it.
+    stty -F "$UART_PORT" 115200 cs8 -cstopb -parenb raw -echo -crtscts 2>/dev/null
+    timeout 0.5 cat "$UART_PORT" > /dev/null 2>&1 || true
     # mr_upload.py spawns `mr -a > /sd/dx.img` itself, waits for the
     # startup ACK, then sends ACK-gated 512-byte frames. The ACK
     # handshake stops the host streaming during mr's M-mode
@@ -184,12 +199,17 @@ else
         --chunk-size 512 --ack-timeout 60 \
         --spawn-cmd "mr -a > /sd/dx.img" \
         "$TMP/disk-extra.img"
-    UPLOADED_MD5=$(probe_dx_md5)
-    if [ "$UPLOADED_MD5" != "$HOST_DX_MD5" ]; then
-        echo "mr upload md5 MISMATCH: device=$UPLOADED_MD5 host=$HOST_DX_MD5" >&2
+    # Verify by size — md5sum on 3.5 MB at SD speed takes 100+ s and
+    # times out our 90 s probe; size is enough since the byte-exact
+    # check at Step 2/3 catches any content corruption.
+    sleep 2
+    POST_WC=$(run_sh_cmd "wc -c /sd/dx.img" "sh\$" 20)
+    UPLOADED_SIZE=$(printf '%s' "$POST_WC" | grep -oE '^[0-9]+' | head -1)
+    if [ "$UPLOADED_SIZE" != "$HOST_DX_SIZE" ]; then
+        echo "mr upload size MISMATCH: device=${UPLOADED_SIZE:-<missing>} host=$HOST_DX_SIZE" >&2
         exit 1
     fi
-    echo "mr upload OK (md5 matches)" >&2
+    echo "mr upload OK (size matches)" >&2
 fi
 
 # Optional /sd cleanup. After multiple bench / self_replicate runs
