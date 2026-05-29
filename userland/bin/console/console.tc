@@ -246,7 +246,7 @@ fn jp_load() -> i32 {
         eputs("CONSOLE: jpfont size mismatch\n");
         return 1;
     }
-    eputs("CONSOLE: jpfont loaded\n");
+    eputs_t("CONSOLE: jpfont loaded\n");
     return 0;
 }
 
@@ -674,8 +674,40 @@ fn render(fb: i32, frame: U8Array, b: i32) -> void {
     return;
 }
 
+fn print_us(us: u32) -> void {
+    var ms: u32 = us / 1000u32;
+    if ms == 0u32 { eputs("0"); }
+    else {
+        var tmp: U8Array = U8Array(12u32);
+        var n: i32 = 0;
+        while ms > 0u32 {
+            set(tmp, n, ('0' as i32 + (ms % 10u32) as i32) as u8);
+            n = n + 1;
+            ms = ms / 10u32;
+        }
+        var out: U8Array = U8Array(n as u32);
+        var k: i32 = 0;
+        while k < n {
+            set(out, k, get(tmp, n - 1 - k));
+            k = k + 1;
+        }
+        sys_write(2, out, n);
+        delete(out);
+        delete(tmp);
+    }
+    return;
+}
+
+fn eputs_t(s: StringLiteral) -> void {
+    eputs("[");
+    print_us(do_uptime_us());
+    eputs("ms] ");
+    eputs(s);
+    return;
+}
+
 fn main(argv: StringArray) -> i32 {
-    eputs("CONSOLE: ready\n");
+    eputs_t("CONSOLE: ready\n");
     if jp_load() != 0 { return 1; }
 
     // Orientation: `-l` in argv selects landscape (panel rotated 90°),
@@ -706,7 +738,7 @@ fn main(argv: StringArray) -> i32 {
         g_content_y = 40;
         COLS = 56;
         ROWS = 15;
-        eputs("CONSOLE: landscape, software scroll, chrome\n");
+        eputs_t("CONSOLE: landscape, software scroll, chrome\n");
     } else {
         SCREEN_W = 320;  SCREEN_H = 480;  g_sw_scroll = 0;
         g_have_chrome = 0;
@@ -714,7 +746,7 @@ fn main(argv: StringArray) -> i32 {
         g_content_y = 0;
         COLS = SCREEN_W / CW;
         ROWS = SCREEN_H / CH;
-        eputs("CONSOLE: portrait, hardware scroll\n");
+        eputs_t("CONSOLE: portrait, hardware scroll\n");
     }
     FB_H = SCREEN_H;
     if g_sw_scroll != 0 {
@@ -730,15 +762,15 @@ fn main(argv: StringArray) -> i32 {
         }
     }
 
-    eputs("CONSOLE: opening /dev/kbd\n");
+    eputs_t("CONSOLE: opening /dev/kbd\n");
     var kbd: i32 = do_openat(0, "/dev/kbd", 0);
-    eputs("CONSOLE: opening /dev/fb\n");
+    eputs_t("CONSOLE: opening /dev/fb\n");
     var fb:  i32 = do_openat(0, "/dev/fb", 1);
     if kbd < 0 || fb < 0 {
         eputs("CONSOLE: device open failed\n");
         return 1;
     }
-    eputs("CONSOLE: devices open\n");
+    eputs_t("CONSOLE: devices open\n");
 
     var pb: U8Array = U8Array(8u32);
     if do_pipe(pb as u32 + 4u32) != 0 {
@@ -749,7 +781,7 @@ fn main(argv: StringArray) -> i32 {
     var pr: i32 = peek32(pb as u32 + 4u32) as i32;
     var pw: i32 = peek32(pb as u32 + 8u32) as i32;
 
-    eputs("CONSOLE: spawning sh\n");
+    eputs_t("CONSOLE: spawning sh\n");
     // sh: stdin = /dev/kbd, stdout = pipe write end.
     var slot: i32 = do_spawn_fds("/bin/sh", 0u32, kbd, pw);
     delete(pb);
@@ -757,7 +789,7 @@ fn main(argv: StringArray) -> i32 {
         eputs("CONSOLE: sh spawn failed\n");
         return 1;
     }
-    eputs("CONSOLE: sh spawned, entering render loop\n");
+    eputs_t("CONSOLE: sh spawned, entering render loop\n");
     // Do NOT close kbd / pw here: spawn_fds passes fd numbers (no
     // dup); sh owns them now and slot_free_allocs closes them when
     // sh exits — that close of the pipe write end is our EOF.

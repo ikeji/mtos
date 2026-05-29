@@ -71,6 +71,47 @@ fn ticks_per_ms() -> u32 {
     return 131500u32;
 }
 
+// Print "[N ms] " prefix for boot trace messages. N is wall-clock
+// elapsed since power-on, computed from full 64-bit SIO_MTIME
+// (kern_uptime_us / 1000) so it doesn't wrap every 32 sec the way
+// reading just the low 32 bits would.
+fn kput_ms() -> void {
+    var t: u32 = kern_uptime_us() / 1000u32;
+    var buf: U8Array = U8Array(16);
+    var n: i32 = 0;
+    if t == 0u32 {
+        set(buf, n, '0' as u8);
+        n = n + 1;
+    } else {
+        var tmp: U8Array = U8Array(12);
+        var k: i32 = 0;
+        while t > 0u32 {
+            set(tmp, k, ('0' as i32 + (t % 10u32) as i32) as u8);
+            k = k + 1;
+            t = t / 10u32;
+        }
+        while k > 0 {
+            set(buf, n, get(tmp, k - 1));
+            n = n + 1;
+            k = k - 1;
+        }
+        delete(tmp);
+    }
+    uart_emit_frame("KERN", (buf as u32) + 4u32, n);
+    uart_emit_frame("KERN", ("ms] " as u32) + 4u32, 4);
+    delete(buf);
+    return;
+}
+
+// kputs_t = kput_ms + kputs.  Use at boot trace points to make the
+// per-step latency visible without re-reading kern.conf each time.
+fn kputs_t(s: StringLiteral) -> void {
+    kputs("[");
+    kput_ms();
+    kputs(s);
+    return;
+}
+
 // Mount mtfs from XIP flash and announce it to the serial console. If
 // block/vfs init fail we still start the hello/hello2/catfile tasks so
 // that a regression in the FS code does not break visible progress.
@@ -245,9 +286,12 @@ fn mount_fs() -> void {
         kputs("SD: card init OK\r\n");
         var mret: i32 = fatfs_mount();
         if mret == 0 {
-            kputs("FATFS: mounted\r\n");
+            kputs_t("FATFS: mounted\r\n");
             vfs_set_fatfs_ready();
-            dump_mtfs_to_sd();
+            // dump_mtfs_to_sd() — removed from default boot path
+            // (used to add ~6 s on first boot writing /sd/dx.img).
+            // self_replicate orchestrator now stages dx.img via
+            // mx → mr UART upload after flashing the kernel.
         } else {
             // Spell out which step in fatfs_mount tripped — far more
             // useful than a single "no FAT?" when triaging cards.
@@ -269,9 +313,10 @@ fn mount_fs() -> void {
 }
 
 fn main() -> i32 {
-    kputs("KERN: starting\r\n");
+    kputs_t("KERN: starting\r\n");
 
     mount_fs();
+    kputs_t("KERN: mount_fs done\r\n");
 
     // 8 scheduler slots. Slot 0 seeds /bin/sh — the Debug Probe's
     // CDC-ACM line is bidirectional, so a connected host can type
@@ -287,10 +332,10 @@ fn main() -> i32 {
     // load_task failed, sched_register failed, the timer never armed,
     // or the first task crt0 deadlocked. Each kputs is one byte
     // worth of UART output, so the cost is negligible.
-    kputs("KERN: sched_init\r\n");
+    kputs_t("KERN: sched_init\r\n");
     sched_init(8);
 
-    kputs("KERN: start_init_tasks\r\n");
+    kputs_t("KERN: start_init_tasks\r\n");
     var n_init: i32 = start_init_tasks();
     if n_init == 0 {
         kputs("KERN: load_task /bin/sh\r\n");
@@ -306,13 +351,13 @@ fn main() -> i32 {
     }
 
     // Enable SIO MTIME counter: EN + FULLSPEED (keep DBGPAUSE defaults)
-    kputs("KERN: timer arm\r\n");
+    kputs_t("KERN: timer arm\r\n");
     poke32(SIO_MTIME_CTRL, 0x0Fu32);
     rearm_timer();
     var mie: u32 = csr_read_mie();
     csr_write_mie(mie | 0x80u32);
 
-    kputs("KERN: sched_start\r\n");
+    kputs_t("KERN: sched_start\r\n");
     sched_start(sched_get_frame(0));
 
     kputs("\r\nKERN: all tasks done\r\n");

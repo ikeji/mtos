@@ -6,11 +6,42 @@
 //
 // Binary-transparent by construction (no inband escaping).
 // Frame size limit: 65535 bytes. Actual max written by mx is 256.
+//
+// `mr -a` enables ACK mode: after each successful sys_write to stdout
+// (and once at start, once before exiting), mr emits one '.' byte to
+// stderr (fd 2 → UART). Senders that gate the next frame on the ACK
+// avoid K11 (PL011 RX FIFO overflow during SD writes) because they
+// stop transmitting while mr is busy in fatfs_write. The default
+// (no `-a`) preserves the original silent behavior used by tests
+// that consume the file output and don't read stderr.
 
-fn main() -> i32 {
+import "../../lib/libtc/libtc.tc";
+
+fn ack(enabled: i32, buf: U8Array) -> void {
+    if enabled == 0 { return; }
+    sys_write(2, buf, 1);
+    return;
+}
+
+fn main(argv: StringArray) -> i32 {
+    var ack_mode: i32 = 0;
+    var ai: i32 = 1;
+    while ai < len(argv) {
+        var s: String = get(argv, ai);
+        if len(s) == 2 && get(s, 0) == ('-' as u8) && get(s, 1) == ('a' as u8) {
+            ack_mode = 1;
+        }
+        ai = ai + 1;
+    }
+
     var hdr: U8Array = U8Array(2);
     var buf: U8Array = U8Array(65536);
+    var ack_buf: U8Array = U8Array(1);
+    set(ack_buf, 0, '.' as u8);
     var done: i32 = 0;
+
+    // Initial ACK so the sender knows mr is up and ready to read.
+    ack(ack_mode, ack_buf);
 
     while done == 0 {
         // Read the 2-byte little-endian size header.
@@ -57,11 +88,18 @@ fn main() -> i32 {
             }
             if have > 0 {
                 sys_write(1, buf, have);
+                // ACK after fatfs_write completes — the sender's
+                // wait-for-ACK loop has been idle on the UART during
+                // the M-mode SD-write window, so RX FIFO drained.
+                ack(ack_mode, ack_buf);
             }
         }
     }
+    // Final ACK on clean end-of-stream so the sender knows mr is done.
+    ack(ack_mode, ack_buf);
     delete(hdr);
     delete(buf);
+    delete(ack_buf);
     return 0;
 }
 
