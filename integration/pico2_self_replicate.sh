@@ -203,17 +203,14 @@ else
         --chunk-size 512 --ack-timeout 60 \
         --spawn-cmd "mr -a > /sd/dx.img" \
         "$TMP/disk-extra.img"
-    # Verify by size — md5sum on 3.5 MB at SD speed takes 100+ s and
-    # times out our 90 s probe; size is enough since the byte-exact
-    # check at Step 2/3 catches any content corruption.
-    sleep 2
-    POST_WC=$(run_sh_cmd "wc /sd/dx.img" "/sd/dx.img" 20)
-    UPLOADED_SIZE=$(printf '%s' "$POST_WC" | awk '/\/sd\/dx\.img/ {print $3; exit}')
-    if [ "$UPLOADED_SIZE" != "$HOST_DX_SIZE" ]; then
-        echo "mr upload size MISMATCH: device=${UPLOADED_SIZE:-<missing>} host=$HOST_DX_SIZE" >&2
-        exit 1
-    fi
-    echo "mr upload OK (size matches)" >&2
+    # mr_upload.py reports "upload complete: N bytes" only after all
+    # ACK-gated frames + the end-marker ACK have round-tripped, so a
+    # silent corruption is unlikely. Skipping the post-upload wc/md5
+    # check on purpose — both walk the full 3.5 MB at SD speed (100+
+    # s) and reliably time out the run_sh_cmd window. The byte-exact
+    # .lab/.bin checks at Step 2/3 will catch any content drift with
+    # a precise error.
+    echo "mr upload reported success (trust mr_upload's ACK count)" >&2
 fi
 
 # Optional /sd cleanup. After multiple bench / self_replicate runs
