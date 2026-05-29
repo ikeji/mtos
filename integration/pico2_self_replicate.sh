@@ -174,26 +174,16 @@ os.close(fd)
     cat "$LOG"
 }
 
-# Probe: wc -c /sd/dx.img returns the size on a single line. Much
-# faster than md5sum on 3.5 MB (~24 s vs ~1 s) and the orchestrator
-# only needs to know whether the file matches; the link step at
-# Step 2 catches any content mismatch via the byte-exact .lab diff.
-echo "=== Probe /sd/dx.img ===" >&2
-PROBE_WC=$(run_sh_cmd "wc /sd/dx.img" "/sd/dx.img" 10)
-# wc prints "L W B path" (lines, words, bytes, path). We want B.
-DEV_DX_SIZE=$(printf '%s' "$PROBE_WC" | awk '/\/sd\/dx\.img/ {print $3; exit}')
-echo "device dx.img size=${DEV_DX_SIZE:-<missing>} (host=$HOST_DX_SIZE)" >&2
-
-if [ "$DEV_DX_SIZE" = "$HOST_DX_SIZE" ]; then
-    echo "dx.img size matches host — skip mr upload" >&2
+# Always re-upload (~6 min). Previously tried to skip when
+# /sd/dx.img matched, but probing via wc / md5sum walks the entire
+# 3.5 MB at SD speed (100+ s) — slower than just re-uploading, AND
+# leaves the wc task running in sh which then blocks our mr spawn.
+# SKIP_DX_UPLOAD=1 lets the user opt out when they know /sd/dx.img
+# is already current (e.g. immediately after a successful run).
+if [ "${SKIP_DX_UPLOAD:-0}" = "1" ]; then
+    echo "SKIP_DX_UPLOAD=1 — assuming /sd/dx.img already matches" >&2
 else
     echo "uploading dx.img (~$((HOST_DX_SIZE / 1024)) KB at ~10.9 KB/s, ~6 min)" >&2
-    # Settle UART before mr_upload.py opens it. The probe's cat-PID
-    # may take a moment to release the fd, and the device-side sh
-    # needs to finish writing its [km ...] post-cmd debug line.
-    sleep 2
-    stty -F "$UART_PORT" 115200 cs8 -cstopb -parenb raw -echo -crtscts 2>/dev/null
-    timeout 1.5 cat "$UART_PORT" > /dev/null 2>&1 || true
     # mr_upload.py spawns `mr -a > /sd/dx.img` itself, waits for the
     # startup ACK, then sends ACK-gated 512-byte frames. The ACK
     # handshake stops the host streaming during mr's M-mode
