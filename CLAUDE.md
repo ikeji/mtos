@@ -8,33 +8,48 @@
 
 # 現在のフェーズ
 
-`docs/roadmap.md` 参照。**フルセルフホスト達成 (K18、2026-05-14)**:
-pico2 実機が parse / sigscan / tcheck / codegen / bc2asm / asm_pass1
-/ asm_pass2 / asm_pass3 の **全 8 コンパイラ binary** を host build
-と byte-exact 一致で再生成する。kernel.bin/uf2 の self-replicate
-(K13〜K17、2026-05-06〜2026-05-13) と合わせて Pico 2 が catalyst
-抜きで kernel + 全コンパイラを再生産できる完全な self-hosting loop
-が成立。
+`docs/roadmap.md` 参照。**boot < 1 秒 + byte-exact self-replicate
+維持 (K21、2026-05-30)**: pico2 実機が host wall clock で
+`KERN: starting → sh spawned` を 61 ms (openocd reset 込みでも
+423 ms) でこなしつつ、`CLEAN_SD=1 REFRESH_KERN_MODS=1 NORESET=1
+./integration/pico2_self_replicate.sh` が end-to-end ~50 min で
+kernel.bin/uf2 を host build と byte-exact 一致で再生成する。
 
-実機での self-build 経路 (commit `d59e9c0`、各コンパイラ 5〜21 min):
-`/sd/<name>.bin` md5 を `kernel/build/tasks/<name>.bin` と比較して
-完全一致を確認済。詳細は `docs/solved.md` の K18 entry。
+**最近の改善 (K20 / K21)**:
+- K20 (2026-05-27): K18 以降に kernel_pico2.tc が 11 → 16 module
+  (rtc, devfs, rtc_ds3231, display_ili9488, keyboard_matrix を追加
+  した) ことに self_replicate orchestrator + device fixture が
+  追従していなかった byte-exact regression を解消
+  (`docs/solved.md` K20)。
+- K20 follow-up (2026-05-28): `integration/scripts/
+  self_replicate_modules.sh` manifest を single source of truth 化、
+  `integration/scripts/gen_self_replicate_fixtures.sh` で
+  pico2_self_step{1,2} + pico2_compile_kern{,2} を生成、
+  `make self-replicate-fixtures-check` で drift を検出。
+  kernel boot trace 用に `kputs_t` (kernel_pico2.tc) /
+  `eputs_t` (console.tc) も追加。
+- K21 (2026-05-30): `dump_mtfs_to_sd` を boot から削除 (~6 秒短縮)。
+  orchestrator が `mr -a` で /sd/dx.img と /sd/wrap.s を upload
+  する経路に切り替え。`mr -a` は ACK + sum32 checksum + NAK retry
+  プロトコル (frame: `[len:u16][data][sum:u32]`、ACK `.` / NAK `!`)
+  で K11 を回避しつつ UART bit error も検出/再送 (`docs/solved.md`
+  K21、commits fbf75b6 / d24ac4d / 7f22244)。
 
-完了済の前段マイルストーン:
-- **Pico 2 self-replicate 1-boot byte-exact 完走** (K13 解決
-  2026-05-06、K15 再帰仕上げ 2026-05-12、K16 kernel arena
-  fragmentation 解消 2026-05-13、K17 tcheck fd_t leak 解消 + byte-
-  exact 1 boot 完走 2026-05-13): host gen2 build と md5 完全一致
-  を確認した状態で `CLEAN_SD=1 REFRESH_KERN_MODS=1 NORESET=1
-  tests/pico2_self_replicate.sh` が end-to-end **~22 min** で完走
-  (2026-05-13 計測、commit 66386cb)。
+完了済の前段マイルストーン (K13 〜 K18):
+- **K18 (2026-05-14)**: 全 8 コンパイラ binary (parse / sigscan
+  / tcheck / codegen / bc2asm / asm_pass1 / asm_pass2 / asm_pass3)
+  を host build と byte-exact 一致で再生成。
+- **K13 〜 K17 (2026-05-06 〜 2026-05-13)**: kernel.bin/uf2 の
+  self-replicate を 1 boot で完走可能に。K15 再帰仕上げ、K16
+  kernel arena fragmentation 解消、K17 tcheck fd_t leak 解消
+  + byte-exact 1 boot 完走 (commit 66386cb、~22 min 計測時点)。
 - **Hello World end-to-end** も 1 boot で **13.78 sec** に短縮
   (K7 era 127 sec → 9.2× speedup、`docs/scaling.md` Q1)。
 
 これでコンパイラ + カーネル全ソースが pico2 でセルフホストし、ホスト
 PC は触媒として一度ソースを置いた後は更新時にしか登場しない。詳細は
-`docs/solved.md` の K13 / K15 / K16 / K17 / K18 エントリ、
-`docs/roadmap.md` 2026-05-06 milestone。
+`docs/solved.md` の K13 / K15 / K16 / K17 / K18 / K20 / K21
+エントリ、`docs/roadmap.md` 2026-05-06 milestone。
 
 完了した過去マイルストーン — フェーズ 7 完走 (K7 解決、2026-04-29、qemu
 virt + pico2 実機で `parse → sigscan → tcheck → codegen → bc2asm →
@@ -55,14 +70,15 @@ as-String 片付け (`path: String` syscall ABI)、フェーズ 8 部分着手
 
 - **フェーズ 8 残り**: 手書き asm は `platform_*.s` の boot/CSR 部分、
   `trap_common.s`, `crt0_*_data.s`, `task_crt0.s` のみ
-- **K11 (mr UART upload hang)**: boot-time dumper で迂回済だが、UART
-  大容量転送が pico2 device をハングさせる原因は未特定 (qemu virt
-  では再現せず — PL011 / DMA 経路に固有の何か、`docs/problem.md` K11)
+- **K11 (mr UART upload hang) を本格解決**: 実用上は `mr -a` の ACK
+  gate で回避できているが、PL011 RX FIFO overflow during SD writes
+  という本質は残っている。PL011 RX IRQ + nested trap (`trap_common.s`
+  改修) が本筋 (`docs/problem.md` K11、`docs/solved.md` K21)
 - **echo / spawn baseline ではなく pipeline 内の処理時間**: msh-driven
   `echo BENCH_DONE` は ~10 ms と無視可。残るのは個別 task の本体実行
-  + SD I/O (`docs/scaling.md` Q1, Q6)。self_replicate ~30 min の支配項
-  は asm_pass3 link (~10 min) + bin2uf2 (~9 min) で、どちらも 3.8〜
-  7.6 MB を SD 書き込みする時間 (SPI 6 MHz + fatfs FAT cache)
+  + SD I/O (`docs/scaling.md` Q1, Q6)。self_replicate ~50 min の支配項
+  は asm_pass3 link (~10 min) + bin2uf2 (~9 min) + dx.img upload
+  (~6 min) で、どれも SPI 6 MHz + fatfs FAT cache の SD 書き込み時間
 - **bcrun.tc::vm_run の vartab=128 制限**: 現在の tcheck では bcrun.tc
   自身が vartab overflow で compile 不可。pipeline の現実的 worst case
   は bc2asm.tc (nc=1656) に格下げ済 (`docs/scaling.md` Q5)
@@ -173,6 +189,8 @@ build/      生成物 (gitignored)
 make                              # Gen1 (build/gen1/) のみ build
 make test                         # 148 tests 集約レポート (test_all.sh 経由)
 make full-test                    # + integration + FULL_TEST=1 (kmalloc/kernel1)
+make self-replicate-fixtures-check  # manifest と device fixture の sync 検証 (K20)
+make isolation-check              # 各サブの test が範囲外 file を開いてないか strace 検査
 make clean                        # Gen1 + build/ 全消去
 
 # compiler サブプロジェクト
