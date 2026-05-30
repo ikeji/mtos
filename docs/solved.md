@@ -136,6 +136,81 @@ while i < n_in_sec {
 
 ## カーネル / OS
 
+### K21. boot < 1 秒 + mr -a CRC で byte-exact 維持 — 完了 (2026-05-30)
+
+K20 で self_replicate byte-exact を復活させた後、実機 boot に毎回
+~6 秒かかっていた原因が `kernel_pico2.tc::mount_fs` 内の
+`dump_mtfs_to_sd` (3.5 MB の disk-extra.img を /sd/dx.img に
+コピー) と判明。boot dump を完全削除して boot を **61 ms** (host
+wall clock、openocd reset 込みでも 423 ms) に短縮、その上で
+byte-exact self-replicate を維持する仕組みを実装。
+
+**boot time 計測** (`kputs_t` を `kern_uptime_us` ベースに修正、
+console + sh まで含む実時間):
+
+```
+openocd reset → KERN: starting        362 ms (bootrom + flash sector init)
+KERN: starting → MTFS: mounted          11 ms
+MTFS → mount_fs done                     8 ms
+sched_init + start_init_tasks + load    14 ms
+timer arm → sched_start                  1 ms
+sched_start → console main + sh spawned  27 ms
+合計 (KERN: starting → sh spawned)      61 ms
+```
+
+**dump 廃止と引き換えの仕掛け**: orchestrator 側で
+
+1. **dx.img を mr -a で upload** (~6 分、disk-extra.img 全部)
+2. **wrap.s も同様に upload** (`.incbin SIZE "dx.img"` の小さい
+   wrapper、boot dump が emit していた)
+
+**`mr -a` ACK + sum32 checksum + NAK retry** (commit d24ac4d):
+
+frame format:
+```
+[len:u16 LE][data:len bytes][sum:u32 LE]
+sum = (Σ data bytes as u32) mod 2^32
+```
+
+mr の動作:
+- 起動時に `.` (ACK) を fd 2 に emit
+- frame 受信後 sum 検証、一致なら fd 1 に write + `.` ACK、
+  不一致なら write せず `!` NAK
+- 終端 (len=0) で `.` ACK
+
+mr_upload.py:
+- frame 送信後 ACK/NAK を 1 byte read
+- NAK 時は同じ frame を re-send (`--max-retries` 5 回まで)
+- 最終 progress 行に retry 回数も表示
+
+これで K11 (PL011 RX FIFO overflow during SD writes) を ACK gate で
+回避しつつ、UART bit error も checksum で検出/再送可能。実測 3.5 MB
+upload を 0 NAK retry で完走 (10.6 KB/s、~6 分)。
+
+**検証** (CLEAN_SD=1 REFRESH_KERN_MODS=1、~50 分):
+
+```
+host kernel.bin md5: d7742e39aa324b0b328d64c3463fadfb
+device k.bin md5:    d7742e39aa324b0b328d64c3463fadfb  MATCH
+host kernel.uf2 md5: bfae44187fd11b95683a8e99dab817fd
+device k.uf2 md5:    bfae44187fd11b95683a8e99dab817fd  MATCH
+```
+
+**過程で見えた debug**:
+- `kputs_t` 初版が `read_mtime() / ticks_per_ms()` で low 32-bit のみ
+  読んでいて 32 sec 毎に wrap。`kern_uptime_us() / 1000` 経由に修正
+  して hi+lo を正しく扱えるように
+- 最初の wrap.s 漏れ: dump 削除直後の run で device full.lab が
+  host と md5 違うのを per-module .s 比較で全 module 一致と確認、
+  /sd/wrap.s が stale (previous run の dx.img size 残ってる) と
+  特定。orchestrator から wrap.s upload を追加して解決
+- K11 (mr 16 KB hang) は引き続き未解決。ACK gate で実用上は回避
+  できているが PL011 RX IRQ + nested trap 化が本質的 fix
+
+参考: commits fbf75b6 (boot dump 削除 + mr -a)、d24ac4d (sum32
++ NAK retry)、7f22244 (wrap.s upload)、`integration/scripts/
+mr_upload.py`、`userland/bin/mr/mr.tc::ack_mode`。
+
 ### K20. self_replicate byte-exact 復活: 新 kernel module 対応 — 完了 (2026-05-27)
 
 K18 (2026-05-14) で全 8 コンパイラ + kernel.bin/uf2 の byte-exact
