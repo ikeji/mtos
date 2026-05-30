@@ -814,14 +814,23 @@ fn main(argv: StringArray) -> i32 {
     // window + title + taskbar + Start button) and the content area
     // is sized to fit inside the window. Portrait clears the whole
     // panel to black.
+    eputs_t("CONSOLE: before fb_fill (triggers lcd_init on first write)\n");
     if g_have_chrome != 0 {
         draw_chrome(fb, frame);
     } else {
         fb_fill(fb, frame, 0, 0, SCREEN_W, SCREEN_H, COLOR_CONTENT);
     }
+    eputs_t("CONSOLE: after fb_fill\n");
     // Initial cursor — sh will write the first prompt straight after
     // we enter the read loop, but the cursor sits at (0,0) until then.
     draw_cursor(fb, frame);
+    eputs_t("CONSOLE: after draw_cursor\n");
+    // At this point the LCD has been initialized + the background
+    // cleared + the cursor painted. This is the earliest moment the
+    // user sees something on the panel that says "the kernel is alive
+    // and console is ready to render". Mark it so power-on → LCD
+    // measurements are comparable across boot configurations.
+    eputs_t("CONSOLE: LCD ready (background + cursor painted)\n");
     // The buf data area starts 4 bytes past the U8Array header. We pass
     // it raw to do_read (the syscall stub) instead of going through
     // libtc's sys_read — sys_read loops until the full requested count
@@ -834,6 +843,7 @@ fn main(argv: StringArray) -> i32 {
     // 250 ms × 2 toggles = ~2 Hz blink with at most one 250 ms latency
     // before sh output shows up on screen.
     var running: i32 = 1;
+    var first_render: i32 = 1;
     while running == 1 {
         var r: i32 = do_read_nb(pr, buf_data, 64);
         if r > 0 {
@@ -845,6 +855,14 @@ fn main(argv: StringArray) -> i32 {
             }
             draw_cursor(fb, frame);
             draw_clock(fb, frame);
+            // One-shot trace: the moment sh's first byte (= part of
+            // "SH: ready\n" or "sh$ ") has been rasterised to /dev/fb.
+            // Pairs with sh.tc's "SH: first prompt" trace for a full
+            // pipe-to-glass round trip number.
+            if first_render == 1 {
+                eputs_t("CONSOLE: first sh output rendered\n");
+                first_render = 0;
+            }
         } else if r == 0 {
             // Writer closed → EOF, time to wind down.
             running = 0;

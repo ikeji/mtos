@@ -75,7 +75,7 @@ fn ticks_per_ms() -> u32 {
 // elapsed since power-on, computed from full 64-bit SIO_MTIME
 // (kern_uptime_us / 1000) so it doesn't wrap every 32 sec the way
 // reading just the low 32 bits would.
-fn kput_ms() -> void {
+export fn kput_ms() -> void {
     var t: u32 = kern_uptime_us() / 1000u32;
     var buf: U8Array = U8Array(16);
     var n: i32 = 0;
@@ -105,7 +105,7 @@ fn kput_ms() -> void {
 
 // kputs_t = kput_ms + kputs.  Use at boot trace points to make the
 // per-step latency visible without re-reading kern.conf each time.
-fn kputs_t(s: StringLiteral) -> void {
+export fn kputs_t(s: StringLiteral) -> void {
     kputs("[");
     kput_ms();
     kputs(s);
