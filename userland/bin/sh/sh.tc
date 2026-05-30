@@ -686,6 +686,34 @@ fn open_redir_path(p: String, flags: i32) -> i32 {
     return do_openat(0, p, flags);
 }
 
+// emit_us_dec — print `us / 1000` (= ms) as decimal to fd 2 (stderr).
+// Used by the one-shot first-prompt timestamp below so the host can
+// time `power-on → prompt visible` end-to-end. Stderr goes to UART
+// even when sh is wrapped by /bin/console (which redirects fd 1 to
+// the pipe but inherits fd 2 from itself = UART), so the trace shows
+// up in the openocd-captured UART log either way.
+fn emit_ms_dec(us: u32) -> void {
+    var ms: u32 = us / 1000u32;
+    if ms == 0u32 { eputs("0"); return; }
+    var tmp: U8Array = U8Array(12u32);
+    var n: i32 = 0;
+    while ms > 0u32 {
+        set(tmp, n, ('0' as i32 + (ms % 10u32) as i32) as u8);
+        n = n + 1;
+        ms = ms / 10u32;
+    }
+    var out: U8Array = U8Array(n as u32);
+    var k: i32 = 0;
+    while k < n {
+        set(out, k, get(tmp, n - 1 - k));
+        k = k + 1;
+    }
+    sys_write(2, out, n);
+    delete(out);
+    delete(tmp);
+    return;
+}
+
 fn main() -> i32 {
     puts("SH: ready\n");
     hist_init();
@@ -693,8 +721,19 @@ fn main() -> i32 {
     var cmd:  U8Array = U8Array(CMD_MAX  as u32);
     var path: U8Array = U8Array(PATH_MAX as u32);
 
+    // One-shot trace: stamp the moment the first prompt is about to
+    // hit fd 1 (= pipe → /bin/console → LCD). Capturing on UART
+    // gives a clean "power-on → prompt visible" number when paired
+    // with the orchestrator's host wall-clock cat reader.
+    var first_prompt: i32 = 1;
     var running: i32 = 1;
     while running == 1 {
+        if first_prompt == 1 {
+            eputs("[");
+            emit_ms_dec(do_uptime_us());
+            eputs("ms] SH: first prompt\n");
+            first_prompt = 0;
+        }
         puts("sh$ ");
         var n: i32 = read_line(cmd);
         if n == 0 {
