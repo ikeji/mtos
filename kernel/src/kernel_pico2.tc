@@ -112,6 +112,27 @@ export fn kputs_t(s: StringLiteral) -> void {
     return;
 }
 
+// Print a u32 as 8 hex digits to UART. Used by PIO LCD bring-up to
+// dump register values for register-by-register diff.
+export fn kput_hex32(v: u32) -> void {
+    var buf: U8Array = U8Array(8);
+    var i: i32 = 0;
+    while i < 8 {
+        var nib: u32 = (v >> (28u32 - (i as u32) * 4u32)) & 0xFu32;
+        var c: u8 = '0' as u8;
+        if nib < 10u32 {
+            c = ('0' as i32 + nib as i32) as u8;
+        } else {
+            c = ('a' as i32 + nib as i32 - 10) as u8;
+        }
+        set(buf, i, c);
+        i = i + 1;
+    }
+    uart_emit_frame("KERN", (buf as u32) + 4u32, 8);
+    delete(buf);
+    return;
+}
+
 // Mount mtfs from XIP flash and announce it to the serial console. If
 // block/vfs init fail we still start the hello/hello2/catfile tasks so
 // that a regression in the FS code does not break visible progress.

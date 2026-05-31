@@ -108,4 +108,99 @@ GDB probe で:
 
 ## ログ
 
-(調査進めながら追記)
+### 2026-05-31: PIO 動作開始 + 高速化 (commit `bba6949`〜)
+
+`g_lcd_use_pio = 1` で起動 + GPIOBASE 周辺の register に対する write+
+read-back を仕込んで実機調査。結果は2つの bug が判明、両方修正で
+PIO LCD 動作 + fb_fill が **5388ms → 1139ms** (4.7x 高速化)。total
+boot **KERN: starting → first sh rendered = 1810 ms** (元の 6167ms から
+3.4x 高速化)。
+
+#### Bug 1: GPIOBASE を bit 0 に書いていた
+
+pico-sdk `src/rp2350/hardware_regs/include/hardware/regs/pio.h` の定義:
+
+```
+#define PIO_GPIOBASE_OFFSET _u(0x00000168)
+#define PIO_GPIOBASE_BITS   _u(0x00000010)   ← bit 4 ONLY
+#define PIO_GPIOBASE_MSB    _u(4)
+#define PIO_GPIOBASE_LSB    _u(4)
+```
+
+つまり register は 0x168 で正解、ただし書き換え可能な bit は **bit 4**
+(mask 0x10) のみ。`docs/problem.md` #37 の前回実装は
+
+```c
+poke32(PIO2_BASE + PIO_GPIOBASE, 1u32);   // bit 0 — no-op
+```
+
+と bit 0 に書いていたため write が完全に no-op (read-back 0 のまま)。
+PIO2 SM は内部 pin 24/25 を低半 GP24/25 に向けていて、ハードウェアの
+LCD GP40/41 までは届いていなかった。
+
+修正: `poke32(PIO2_BASE + PIO_GPIOBASE, 0x10u32);` で bit 4 を立てる。
+read-back で `0x00000010` 確認、GP40/41 の STATUS register
+(`0x40028140` / `0x40028148`) が **0x00000000 → 0x00002000** に変化、
+pad が PIO の OUTFROMPERI/OEFROMPERI を反映していることを確認。
+
+#### Bug 2: FSTAT_TXFULL の bit 位置が違っていた
+
+pico-sdk の同じヘッダ:
+
+```
+// PIO_FSTAT_TXEMPTY: bits 24-27 (SM0 = bit 24, mask 0x01000000)
+// PIO_FSTAT_TXFULL:  bits 16-19 (SM0 = bit 16, mask 0x00010000)
+// PIO_FSTAT_RXEMPTY: bits  8-11
+// PIO_FSTAT_RXFULL:  bits  0- 3
+```
+
+前回実装は:
+
+```c
+var FSTAT_TXFULL_SM0:  u32 = 0x10000000u32;  // bit 28 — WRONG
+var FSTAT_TXEMPTY_SM0: u32 = 0x01000000u32;  // bit 24 — OK
+```
+
+bit 28 は RP2350 PIO FSTAT には何も無く (SM 0-3 のみ存在、bit 28-31 は
+存在しない SM 4-7 用)、常に 0 を読む。結果 `pio_spi_byte` の TXFULL 待ち
+ループ `while (FSTAT & 0x10000000) != 0 { }` は **一度も block せず**、
+TX FIFO が満タンになっても CPU が push を続けて溢れた byte が黙って
+drop される。LCD は画面上から 1/4 (~120 行) だけ描画して以降は空転、
+というユーザ目撃通りの症状。
+
+修正: `var FSTAT_TXFULL_SM0: u32 = 0x00010000u32;` で bit 16 に。
+TXFULL が立つようになり push が正しく rate-limit されて全 byte が
+LCD まで届くように。
+
+#### CLKDIV チューニング
+
+修正後 fb_fill 時間:
+
+| CLKDIV INT | SM clock | SPI clock | fb_fill 実測 |
+|---:|---:|---:|---:|
+| 64 (初期試験値) | 2.34 MHz | 1.17 MHz | 3605 ms |
+| 4 (採用) | 37.5 MHz | 18.75 MHz | 1139 ms |
+
+INT=4 で SPI 18.75 MHz、ILI9488 の 20 MHz spec ceiling の手前で安定。
+1139ms のうち SPI 転送は 460800 byte × 8 / 18.75 MHz = ~200ms、残り
+~900ms は per-byte の CPU push overhead (lcd_dat → pio_spi_byte の
+poke32 が pixel 1 個あたり 3 回)。さらに高速化するには DMA か
+asm 化が必要だが現時点では十分。
+
+#### 最終 boot 内訳 (warm reset、PIO ON、CLKDIV=4)
+
+| 段階 | mtime | 区間 |
+|---|---:|---:|
+| KERN: starting | 142184 | base |
+| FATFS: mounted | 142236 | +52 |
+| CONSOLE: ready | 142261 | +25 (kernel boot 含む) |
+| CONSOLE: spawning sh | 142283 | +22 |
+| CONSOLE: before fb_fill | 142299 | +16 |
+| LCD: lcd_init begin | 142307 | +8 |
+| LCD: lcd_init done | 142783 | +476 (delays + init seq、変わらず) |
+| **CONSOLE: after fb_fill** | **143922** | **+1139 ms** ← PIO で 5388→1139 |
+| CONSOLE: LCD ready | 143933 | +11 |
+| CONSOLE: first sh rendered | 143994 | +61 |
+
+**KERN: starting → first sh rendered = 1810 ms**。元の 6167ms から
+**4357ms 短縮** (boot 全体で 3.4x、fb_fill 単体で 4.7x)。

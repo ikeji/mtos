@@ -27,6 +27,7 @@
 // SIO timer (kernel_pico2.tc) — used for the power-on delays.
 fn read_mtime() -> u32;
 fn kputs_t(s: StringLiteral) -> void;
+fn kput_hex32(v: u32) -> void;
 
 // ===== RP2350 register addresses =====
 var LCD_IO_BANK0:    u32 = 0x40028000u32;
@@ -112,9 +113,18 @@ var PIO2_PIN_SCK:  i32 = 24;   // GP40
 var PIO2_PIN_MOSI: i32 = 25;   // GP41
 var LCD_FUNC_PIO2: u32 = 8u32;
 
-// Bit masks for FSTAT (TX FIFO state per SM in the low nibble of each
-// 4-bit group). We only run SM0, so SM0's bit is the LSB of each group.
-var FSTAT_TXFULL_SM0:  u32 = 0x10000000u32;  // bit 28
+// Bit masks for FSTAT. Per RP2350 PIO datasheet
+// (pico-sdk hardware/regs/pio.h):
+//   bits 24-27: TXEMPTY (SM0 = bit 24, mask 0x01000000)
+//   bits 16-19: TXFULL  (SM0 = bit 16, mask 0x00010000)
+//   bits  8-11: RXEMPTY
+//   bits  0- 3: RXFULL
+// Previous TXFULL = 0x10000000 was bit 28, which has nothing in
+// FSTAT (RP2350 PIO only has SMs 0-3). The wait loop in
+// pio_spi_byte therefore never blocked, the TX FIFO overflowed,
+// and only the first ~1/4 of fb_fill's pixel stream reached the
+// LCD — the rest landed in a full FIFO and was silently dropped.
+var FSTAT_TXFULL_SM0:  u32 = 0x00010000u32;  // bit 16
 var FSTAT_TXEMPTY_SM0: u32 = 0x01000000u32;  // bit 24
 
 var g_pio_lcd_inited: i32 = 0;
@@ -122,7 +132,7 @@ var g_pio_lcd_inited: i32 = 0;
 // bit-bang. Useful kill-switch while bringing PIO up: if the screen
 // stays white with PIO on but is fine with PIO off, we know the LCD +
 // init sequence is healthy and the bug is in our PIO config.
-var g_lcd_use_pio:    i32 = 0;
+var g_lcd_use_pio:    i32 = 1;
 // Track DC state to avoid wait_idle + GPIO write on every byte when DC
 // doesn't actually change (e.g. while streaming pixel data after the
 // initial RAMWR command).
@@ -139,11 +149,16 @@ fn pio_lcd_init() -> void {
     poke32(RESETS_BASE + RESETS_RESET_CLR, RESETS_PIO2_BIT);
     while (peek32(RESETS_BASE + RESETS_DONE) & RESETS_PIO2_BIT) == 0u32 { }
 
-    // Select the high GPIO window (GP16-47) for PIO2. Without this our
-    // internal pins 24/25 land on GP24/25 (low half) instead of the
-    // LCD's GP40/41. SM ends up running, OE gets set, but on the wrong
-    // pads and the panel sees zero clock.
-    poke32(PIO2_BASE + PIO_GPIOBASE, 1u32);
+    // GPIOBASE = 0x10 (bit 4). The register is at PIO_GPIOBASE
+    // (offset 0x168) per pico-sdk's rp2350 hardware_regs/pio.h,
+    // BUT the writeable bit is bit 4 (mask 0x10), not bit 0. The
+    // previous attempt (problem.md #37) wrote 0x1 — bit 0 of a
+    // register whose only writable bit is bit 4, so the write was
+    // a no-op, SM kept driving its internal pins 24/25 which were
+    // routed to GP24/25 (low half) instead of the LCD's GP40/41.
+    // With 0x10 the routing flips to GP16-47 and SCK/MOSI land on
+    // the LCD.
+    poke32(PIO2_BASE + PIO_GPIOBASE, 0x10u32);
 
     // Disable SM0 while we reload.
     poke32(PIO2_BASE + PIO_CTRL, 0u32);
@@ -154,12 +169,11 @@ fn pio_lcd_init() -> void {
 
     // CLKDIV: INT in bits 31:16, FRAC in bits 15:8. SM clock =
     // clk_sys / (INT + FRAC/256); SPI clock = SM clock / 2 (two SM
-    // cycles per bit). The previous bit-bang ran ~1 MHz effective;
-    // start the PIO conservatively at INT=16 → SM 9.4 MHz → SPI 4.7
-    // MHz, well within everything's tolerance. Once we've confirmed
-    // the wiring + PIO config are sound we can crank it down to
-    // INT=4 (18.75 MHz, near the panel's 20 MHz spec ceiling).
-    poke32(PIO2_BASE + PIO_SM0_CLKDIV, 64u32 << 16u32);
+    // cycles per bit). INT=4 → SM 37.5 MHz → SPI 18.75 MHz, right at
+    // the ILI9488's 20 MHz spec ceiling. Verified working on this
+    // panel; back off to INT=8 (9.4 MHz) if you see screen tearing /
+    // pixel garbage on a different unit.
+    poke32(PIO2_BASE + PIO_SM0_CLKDIV, 4u32 << 16u32);
 
     // EXECCTRL: WRAP_TOP=1 (bits 16:12), WRAP_BOTTOM=0 (bits 11:7).
     poke32(PIO2_BASE + PIO_SM0_EXECCTRL, 1u32 << 12u32);
