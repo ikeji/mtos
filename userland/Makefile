@@ -54,7 +54,7 @@ SHARED_S := $(SHARED_DIR)/runtime.s $(SHARED_DIR)/libtc.s
 # Japanese font fixture for /bin/console (user-supplied tmp/font.bmp)
 FONT_BMP := $(wildcard $(ROOT)/tmp/font.bmp)
 
-.PHONY: all build test test-quick clean tasks shared sizes font \
+.PHONY: all build test test-quick test-units clean tasks shared sizes font \
         guest-tasks extra-tasks
 
 # Default: all GUEST + EXTRA tasks
@@ -160,6 +160,31 @@ test: all
 
 test-quick: $(GUEST_TASK_BINS)
 	@echo "userland test-quick: $(words $(GUEST_TASKS)) GUEST_TASKS built OK"
+
+# test-units: build each userland/tests/**/test_*.tc as a Linux RV32 ELF
+# (via compile-gen1.sh — pulls in libtc.tc + libtc_test.tc imports) and
+# run it under qemu-riscv32. Tests use libtc_test.tc's assert_* helpers
+# + return non-zero on failure, so a single test file's failure shows up
+# in the summary line. ~1 s per file once Gen1 binaries are built.
+TEST_UNIT_FILES := $(shell find $(ROOT)/userland/tests -name 'test_*.tc' 2>/dev/null)
+
+test-units:
+	$(MAKE) -C $(ROOT)/compiler gen1
+	@total=0; failed=0; \
+	tmp=$$(mktemp -d); trap "rm -rf $$tmp" EXIT; \
+	for t in $(TEST_UNIT_FILES); do \
+	    total=$$((total + 1)); \
+	    base=$$(basename "$$t" .tc); \
+	    echo "=== $$t ==="; \
+	    if ! $(ROOT)/compiler/scripts/compile-gen1.sh -o "$$tmp/$$base" "$$t" 2>&1 | tail -1; then \
+	        failed=$$((failed + 1)); continue; \
+	    fi; \
+	    if ! qemu-riscv32 "$$tmp/$$base"; then \
+	        failed=$$((failed + 1)); \
+	    fi; \
+	done; \
+	echo "==== test-units: $$((total - failed))/$$total files passed ===="; \
+	test $$failed -eq 0
 
 clean:
 	rm -rf $(BUILD_DIR)

@@ -1,0 +1,58 @@
+// test_libtc.tc — sample test for the libtc_test framework.
+//
+// Exercises libtc.tc's `eq` helper across a few scenarios. Acts as both
+// a smoke-test of the framework and a copy-pasteable template for future
+// tests against any userland TC code.
+//
+// Run:  ./compiler/scripts/tc_run.sh bcrun userland/tests/sample/test_libtc.tc
+
+import "../../lib/libtc/libtc.tc";
+import "../../lib/libtc_test.tc";
+
+fn fill_hello(b: U8Array) -> void {
+    set(b, 0, 'h' as u8);
+    set(b, 1, 'e' as u8);
+    set(b, 2, 'l' as u8);
+    set(b, 3, 'l' as u8);
+    set(b, 4, 'o' as u8);
+    return;
+}
+
+fn test_eq_match() -> void {
+    var b: U8Array = U8Array(5u32);
+    fill_hello(b);
+    assert_true(eq(b, 5, "hello"),  "eq returns true on exact match");
+    assert_false(eq(b, 5, "hellp"), "eq returns false on last-byte mismatch");
+    assert_false(eq(b, 4, "hello"), "eq returns false when n < lit len");
+    assert_false(eq(b, 5, "hell"),  "eq returns false when lit shorter than n");
+    delete(b);
+    return;
+}
+
+fn test_eq_empty() -> void {
+    var b: U8Array = U8Array(1u32);
+    assert_true(eq(b, 0, ""),       "eq empty buf vs empty literal");
+    assert_false(eq(b, 0, "x"),     "eq empty buf vs non-empty literal");
+    delete(b);
+    return;
+}
+
+fn test_assert_eq_int() -> void {
+    assert_eq_int(2 + 2, 4, "2 + 2 = 4");
+    assert_eq_int(0 - 1, 0 - 1, "negative int compares");
+}
+
+fn test_assert_eq_str_lit() -> void {
+    var b: U8Array = U8Array(5u32);
+    fill_hello(b);
+    assert_eq_str_lit(b, 5, "hello", "buf matches literal");
+    return;
+}
+
+fn main() -> i32 {
+    test_begin("test_eq_match");         test_eq_match();
+    test_begin("test_eq_empty");         test_eq_empty();
+    test_begin("test_assert_eq_int");    test_assert_eq_int();
+    test_begin("test_assert_eq_str_lit"); test_assert_eq_str_lit();
+    return test_summary();
+}
