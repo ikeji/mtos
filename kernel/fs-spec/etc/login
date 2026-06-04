@@ -1,0 +1,10 @@
+# /etc/login — runs at sh startup before the interactive prompt.
+#
+# Syntax: one shell command per line. Lines starting with `#` and
+# blank lines are skipped. Each executed line is echoed back to the
+# user as `sh$ <line>` so the boot-time activity is visible. A `quit`
+# here aborts sh entirely instead of dropping to interactive mode.
+#
+# Edit `kernel/fs-spec/etc/login` and rebuild to change this file.
+
+echo Welcome to MTOS

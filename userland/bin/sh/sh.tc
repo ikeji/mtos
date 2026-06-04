@@ -686,6 +686,38 @@ fn open_redir_path(p: String, flags: i32) -> i32 {
     return do_openat(0, p, flags);
 }
 
+// Read one line from fd into buf, no echo / history / tab — meant for
+// scripted input (e.g. /etc/login). Returns the line length, 0 on a
+// blank line, -1 on clean EOF before any byte was read. Lines longer
+// than CMD_MAX-1 are truncated silently; trailing \r is dropped.
+fn read_script_line(fd: i32, buf: U8Array) -> i32 {
+    var one: U8Array = U8Array(1);
+    var pos: i32 = 0;
+    var got_any: i32 = 0;
+    var done: i32 = 0;
+    while done == 0 {
+        var n: i32 = sys_read(fd, one, 1);
+        if n <= 0 {
+            done = 1;
+        } else {
+            got_any = 1;
+            var c: u8 = get(one, 0);
+            if c == ('\n' as u8) {
+                done = 1;
+            } else if c == ('\r' as u8) {
+                // swallow; LF will follow (or EOF)
+            } else if pos < CMD_MAX - 1 {
+                set(buf, pos, c);
+                pos = pos + 1;
+            }
+        }
+    }
+    delete(one);
+    set(buf, pos, 0u8);
+    if got_any == 0 { return -1; }
+    return pos;
+}
+
 // emit_us_dec — print `us / 1000` (= ms) as decimal to fd 2 (stderr).
 // Used by the one-shot first-prompt timestamp below so the host can
 // time `power-on → prompt visible` end-to-end. Stderr goes to UART
@@ -714,12 +746,230 @@ fn emit_ms_dec(us: u32) -> void {
     return;
 }
 
+// Dispatch one command line stored in cmd[0..n]. `path` is a scratch
+// buffer the caller owns. Returns 0 if the shell should quit (the
+// "quit" built-in), 1 otherwise. Extracted from main() so the same
+// dispatch handles both interactive lines and lines coming from
+// /etc/login at startup.
+fn exec_command(cmd: U8Array, n: i32, path: U8Array) -> i32 {
+    if eq(cmd, n, "quit") {
+        return 0;
+    }
+    var pipe_pos: I32Array = I32Array(4);
+    var num_pipes: i32 = count_pipes(cmd, n, pipe_pos);
+
+    if num_pipes == 0 {
+        // No pipes: single command (existing path)
+        delete(pipe_pos);
+        var argv: StringArray = parse_redir(cmd, n);
+        if !build_path(path, argv) {
+            puts("sh: empty command\n");
+            free_argv(argv);
+            if g_in_path  as u32 != 0u32 { delete(g_in_path); g_in_path  = 0 as String; }
+            if g_out_path as u32 != 0u32 { delete(g_out_path); g_out_path = 0 as String; }
+        } else {
+            var slot: i32 = do_spawn(path as String, argv as u32,
+                                     g_in_path, g_out_path);
+            free_argv(argv);
+            if g_in_path  as u32 != 0u32 { delete(g_in_path); g_in_path  = 0 as String; }
+            if g_out_path as u32 != 0u32 { delete(g_out_path); g_out_path = 0 as String; }
+            if slot < 0 {
+                puts("sh: spawn failed\n");
+            } else {
+                do_wait(slot);
+            }
+        }
+    } else if num_pipes > 4 {
+        puts("sh: too many pipes\n");
+        delete(pipe_pos);
+    } else {
+        // Pipeline via kernel pipe syscall. All segments are spawned
+        // first (concurrent execution), then waited on in order.
+        var seg_buf: U8Array = U8Array(CMD_MAX as u32);
+        var slots: I32Array = I32Array(5);
+        var pipe_rfds: I32Array = I32Array(4);
+        var pipe_wfds: I32Array = I32Array(4);
+        var pipe_buf: U8Array = U8Array(8);
+        var ok: i32 = 1;
+
+        // Create all pipes up front
+        var pi: i32 = 0;
+        while pi < num_pipes && ok == 1 {
+            if do_pipe(pipe_buf as u32 + 4u32) != 0 {
+                puts("sh: pipe failed\n");
+                ok = 0;
+            } else {
+                set(pipe_rfds, pi, peek32(pipe_buf as u32 + 4u32) as i32);
+                set(pipe_wfds, pi, peek32(pipe_buf as u32 + 8u32) as i32);
+            }
+            pi = pi + 1;
+        }
+
+        // Spawn all segments concurrently
+        var seg_idx: i32 = 0;
+        var seg_start: i32 = 0;
+        var num_spawned: i32 = 0;
+        while seg_idx <= num_pipes && ok == 1 {
+            var seg_end: i32 = n;
+            if seg_idx < num_pipes {
+                seg_end = get(pipe_pos, seg_idx);
+            }
+            var slen: i32 = 0;
+            var j: i32 = seg_start;
+            while j < seg_end {
+                set(seg_buf, slen, get(cmd, j));
+                slen = slen + 1;
+                j = j + 1;
+            }
+
+            var argv: StringArray = parse_redir(seg_buf, slen);
+
+            if !build_path(path, argv) {
+                puts("sh: empty command in pipe\n");
+                free_argv(argv);
+                if g_in_path  as u32 != 0u32 { delete(g_in_path); g_in_path  = 0 as String; }
+                if g_out_path as u32 != 0u32 { delete(g_out_path); g_out_path = 0 as String; }
+                ok = 0;
+            } else {
+                // Determine fd redirects for this segment
+                var in_fd:  i32 = 0;
+                var out_fd: i32 = 0;
+                if seg_idx > 0 {
+                    in_fd = get(pipe_rfds, seg_idx - 1);
+                }
+                if seg_idx < num_pipes {
+                    out_fd = get(pipe_wfds, seg_idx);
+                }
+                // Explicit < on first segment. A failed open aborts the
+                // whole pipeline — keeping the pipe-fd input would
+                // silently hide the missing redirect source.
+                var redir_ok: i32 = 1;
+                if g_in_path as u32 != 0u32 {
+                    var ffd: i32 = open_redir_path(g_in_path, 0);
+                    if ffd < 0 {
+                        eputs("sh: ");
+                        sys_write(2, g_in_path);
+                        eputs(": open failed\n");
+                        redir_ok = 0;
+                    } else {
+                        in_fd = ffd;
+                    }
+                    delete(g_in_path); g_in_path = 0 as String;
+                }
+                // Explicit > on last segment
+                if redir_ok == 1 && g_out_path as u32 != 0u32 {
+                    var ffd: i32 = open_redir_path(g_out_path, 577);
+                    if ffd < 0 {
+                        eputs("sh: ");
+                        sys_write(2, g_out_path);
+                        eputs(": open failed\n");
+                        redir_ok = 0;
+                    } else {
+                        out_fd = ffd;
+                    }
+                    delete(g_out_path); g_out_path = 0 as String;
+                }
+
+                if redir_ok == 0 {
+                    free_argv(argv);
+                    ok = 0;
+                } else {
+                    var slot: i32 = do_spawn_fds(path as String,
+                                                  argv as u32,
+                                                  in_fd, out_fd);
+                    free_argv(argv);
+                    if slot < 0 {
+                        puts("sh: pipe spawn failed\n");
+                        ok = 0;
+                    } else {
+                        set(slots, seg_idx, slot);
+                        num_spawned = num_spawned + 1;
+                    }
+                }
+            }
+
+            if seg_idx < num_pipes {
+                seg_start = get(pipe_pos, seg_idx) + 1;
+            }
+            seg_idx = seg_idx + 1;
+        }
+
+        // Do NOT close the pipe fds here. do_spawn_fds passes fd
+        // *numbers* (no dup) and transfers each fd's ownership to the
+        // child it was handed to (vfs_set_owner). Closing them in the
+        // shell would tear the pipe entry out from under the child
+        // before it even runs. slot_free_allocs closes them at each
+        // child's exit instead — and the writer child's close of its
+        // write end is exactly what gives the reader child its EOF.
+
+        // Wait for all spawned segments
+        var wi: i32 = 0;
+        while wi < num_spawned {
+            do_wait(get(slots, wi));
+            wi = wi + 1;
+        }
+
+        delete(pipe_buf);
+        delete(pipe_wfds);
+        delete(pipe_rfds);
+        delete(slots);
+        delete(seg_buf);
+        delete(pipe_pos);
+    }
+    return 1;
+}
+
+// Run /etc/login if it exists. Each line is dispatched through
+// exec_command exactly as if typed interactively, and is echoed as
+// `sh$ <line>` first so the user sees what ran. A clean EOF ends
+// the script and we fall through to the interactive loop. A "quit"
+// in the script returns 0 to abort sh entirely (matches the
+// interactive built-in's meaning).
+fn run_login_script(cmd: U8Array, path: U8Array) -> i32 {
+    var fd: i32 = do_openat(0, "/etc/login", 0);
+    if fd < 0 { return 1; }
+    eputs("SH: running /etc/login\n");
+    var keep: i32 = 1;
+    while keep == 1 {
+        var ln: i32 = read_script_line(fd, cmd);
+        if ln < 0 { keep = 0; }
+        else if ln == 0 {
+            // blank line — skip silently
+        } else if get(cmd, 0) == ('#' as u8) {
+            // comment — skip silently
+        } else {
+            puts("sh$ ");
+            sys_write(1, cmd, ln);
+            puts("\n");
+            if exec_command(cmd, ln, path) == 0 {
+                keep = 0;
+                do_close(fd);
+                return 0;
+            }
+        }
+    }
+    do_close(fd);
+    return 1;
+}
+
 fn main() -> i32 {
     puts("SH: ready\n");
     hist_init();
 
     var cmd:  U8Array = U8Array(CMD_MAX  as u32);
     var path: U8Array = U8Array(PATH_MAX as u32);
+
+    // /etc/login runs before the interactive prompt — used to seed
+    // demo state (touch files, launch background tasks, etc) and to
+    // hand the launcher / outline-processor a place to register
+    // themselves without editing kern.conf.
+    if run_login_script(cmd, path) == 0 {
+        // Script ended with "quit" — skip the interactive loop.
+        puts("SH: bye\n");
+        delete(cmd);
+        delete(path);
+        return 0;
+    }
 
     // One-shot trace: stamp the moment the first prompt is about to
     // hit fd 1 (= pipe → /bin/console → LCD). Capturing on UART
@@ -740,174 +990,8 @@ fn main() -> i32 {
             // empty line, prompt again
         } else {
             hist_push(cmd, n);
-            if eq(cmd, n, "quit") {
+            if exec_command(cmd, n, path) == 0 {
                 running = 0;
-            } else {
-                var pipe_pos: I32Array = I32Array(4);
-                var num_pipes: i32 = count_pipes(cmd, n, pipe_pos);
-
-                if num_pipes == 0 {
-                    // No pipes: single command (existing path)
-                    delete(pipe_pos);
-                    var argv: StringArray = parse_redir(cmd, n);
-                    if !build_path(path, argv) {
-                        puts("sh: empty command\n");
-                        free_argv(argv);
-                        if g_in_path  as u32 != 0u32 { delete(g_in_path); g_in_path  = 0 as String; }
-                        if g_out_path as u32 != 0u32 { delete(g_out_path); g_out_path = 0 as String; }
-                    } else {
-                        var slot: i32 = do_spawn(path as String, argv as u32,
-                                                 g_in_path, g_out_path);
-                        free_argv(argv);
-                        if g_in_path  as u32 != 0u32 { delete(g_in_path); g_in_path  = 0 as String; }
-                        if g_out_path as u32 != 0u32 { delete(g_out_path); g_out_path = 0 as String; }
-                        if slot < 0 {
-                            puts("sh: spawn failed\n");
-                        } else {
-                            do_wait(slot);
-                        }
-                    }
-                } else if num_pipes > 4 {
-                    puts("sh: too many pipes\n");
-                    delete(pipe_pos);
-                } else {
-                    // Pipeline via kernel pipe syscall. All segments
-                    // are spawned first (concurrent execution), then
-                    // waited on in order.
-                    var seg_buf: U8Array = U8Array(CMD_MAX as u32);
-                    var slots: I32Array = I32Array(5);
-                    var pipe_rfds: I32Array = I32Array(4);
-                    var pipe_wfds: I32Array = I32Array(4);
-                    var pipe_buf: U8Array = U8Array(8);
-                    var ok: i32 = 1;
-
-                    // Create all pipes up front
-                    var pi: i32 = 0;
-                    while pi < num_pipes && ok == 1 {
-                        if do_pipe(pipe_buf as u32 + 4u32) != 0 {
-                            puts("sh: pipe failed\n");
-                            ok = 0;
-                        } else {
-                            set(pipe_rfds, pi, peek32(pipe_buf as u32 + 4u32) as i32);
-                            set(pipe_wfds, pi, peek32(pipe_buf as u32 + 8u32) as i32);
-                        }
-                        pi = pi + 1;
-                    }
-
-                    // Spawn all segments concurrently
-                    var seg_idx: i32 = 0;
-                    var seg_start: i32 = 0;
-                    var num_spawned: i32 = 0;
-                    while seg_idx <= num_pipes && ok == 1 {
-                        var seg_end: i32 = n;
-                        if seg_idx < num_pipes {
-                            seg_end = get(pipe_pos, seg_idx);
-                        }
-                        var slen: i32 = 0;
-                        var j: i32 = seg_start;
-                        while j < seg_end {
-                            set(seg_buf, slen, get(cmd, j));
-                            slen = slen + 1;
-                            j = j + 1;
-                        }
-
-                        var argv: StringArray = parse_redir(seg_buf, slen);
-
-                        if !build_path(path, argv) {
-                            puts("sh: empty command in pipe\n");
-                            free_argv(argv);
-                            if g_in_path  as u32 != 0u32 { delete(g_in_path); g_in_path  = 0 as String; }
-                            if g_out_path as u32 != 0u32 { delete(g_out_path); g_out_path = 0 as String; }
-                            ok = 0;
-                        } else {
-                            // Determine fd redirects for this segment
-                            var in_fd:  i32 = 0;
-                            var out_fd: i32 = 0;
-                            if seg_idx > 0 {
-                                in_fd = get(pipe_rfds, seg_idx - 1);
-                            }
-                            if seg_idx < num_pipes {
-                                out_fd = get(pipe_wfds, seg_idx);
-                            }
-                            // Explicit < on first segment. A failed
-                            // open aborts the whole pipeline — keeping
-                            // the pipe-fd input would silently hide the
-                            // missing redirect source.
-                            var redir_ok: i32 = 1;
-                            if g_in_path as u32 != 0u32 {
-                                var ffd: i32 = open_redir_path(g_in_path, 0);
-                                if ffd < 0 {
-                                    eputs("sh: ");
-                                    sys_write(2, g_in_path);
-                                    eputs(": open failed\n");
-                                    redir_ok = 0;
-                                } else {
-                                    in_fd = ffd;
-                                }
-                                delete(g_in_path); g_in_path = 0 as String;
-                            }
-                            // Explicit > on last segment
-                            if redir_ok == 1 && g_out_path as u32 != 0u32 {
-                                var ffd: i32 = open_redir_path(g_out_path, 577);
-                                if ffd < 0 {
-                                    eputs("sh: ");
-                                    sys_write(2, g_out_path);
-                                    eputs(": open failed\n");
-                                    redir_ok = 0;
-                                } else {
-                                    out_fd = ffd;
-                                }
-                                delete(g_out_path); g_out_path = 0 as String;
-                            }
-
-                            if redir_ok == 0 {
-                                free_argv(argv);
-                                ok = 0;
-                            } else {
-                                var slot: i32 = do_spawn_fds(path as String,
-                                                              argv as u32,
-                                                              in_fd, out_fd);
-                                free_argv(argv);
-                                if slot < 0 {
-                                    puts("sh: pipe spawn failed\n");
-                                    ok = 0;
-                                } else {
-                                    set(slots, seg_idx, slot);
-                                    num_spawned = num_spawned + 1;
-                                }
-                            }
-                        }
-
-                        if seg_idx < num_pipes {
-                            seg_start = get(pipe_pos, seg_idx) + 1;
-                        }
-                        seg_idx = seg_idx + 1;
-                    }
-
-                    // Do NOT close the pipe fds here. do_spawn_fds
-                    // passes fd *numbers* (no dup) and transfers each
-                    // fd's ownership to the child it was handed to
-                    // (vfs_set_owner). Closing them in the shell would
-                    // tear the pipe entry out from under the child
-                    // before it even runs. slot_free_allocs closes
-                    // them at each child's exit instead — and the
-                    // writer child's close of its write end is exactly
-                    // what gives the reader child its EOF.
-
-                    // Wait for all spawned segments
-                    var wi: i32 = 0;
-                    while wi < num_spawned {
-                        do_wait(get(slots, wi));
-                        wi = wi + 1;
-                    }
-
-                    delete(pipe_buf);
-                    delete(pipe_wfds);
-                    delete(pipe_rfds);
-                    delete(slots);
-                    delete(seg_buf);
-                    delete(pipe_pos);
-                }
             }
         }
     }
