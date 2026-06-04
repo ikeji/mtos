@@ -1,12 +1,11 @@
 // neofetch.tc — friendly system info splash.
 //
-// Reads /proc/tasks to count active/done slots, then prints a small
-// ASCII banner alongside kernel / arch / mux / task summary. No args.
+// Reads /proc/tasks for task counts, /proc/meminfo for kernel
+// kmalloc usage, and readdir on /bin + /sd for filesystem entry
+// counts. Prints a small ASCII banner alongside the summary.
 
 import "../../lib/libtc/libtc.tc";
 
-
-// (print moved to libtc/libtc.tc)
 
 // Count task slots by state. Reads /proc/tasks lines; each line starts
 // with "N state ...". We classify tokens after the first space.
@@ -53,8 +52,97 @@ fn read_task_stats() -> TaskStats {
     return stats;
 }
 
+// /proc/meminfo layout (from kernel/src/procfs.tc::synth_meminfo):
+//   peak: <decimal>\n
+//   used: <decimal>\n
+// We parse it by scanning labels; whichever orders procfs uses, the
+// match is by label so reordering doesn't break us.
+struct MemInfo {
+    used: i32,
+    peak: i32,
+}
+
+fn parse_dec_at(buf: U8Array, off: i32, n: i32) -> i32 {
+    var v: i32 = 0;
+    while off < n {
+        var c: u8 = get(buf, off);
+        if c < ('0' as u8) || c > ('9' as u8) { return v; }
+        v = v * 10 + ((c as i32) - ('0' as i32));
+        off = off + 1;
+    }
+    return v;
+}
+
+// True iff `prefix` is at buf[off..]. Returns the length on match, 0 on miss.
+fn match_prefix(buf: U8Array, off: i32, n: i32, prefix: StringLiteral) -> i32 {
+    var pl: i32 = len(prefix);
+    if off + pl > n { return 0; }
+    var i: i32 = 0;
+    while i < pl {
+        if get(buf, off + i) != get(prefix, i) { return 0; }
+        i = i + 1;
+    }
+    return pl;
+}
+
+fn read_meminfo() -> MemInfo {
+    var info: MemInfo = MemInfo(0, 0);
+    var fd: i32 = do_openat(0, "/proc/meminfo", 0);
+    if fd < 0 { return info; }
+    var buf: U8Array = U8Array(256);
+    var n: i32 = sys_read(fd, buf, 256);
+    do_close(fd);
+    if n <= 0 { delete(buf); return info; }
+    var i: i32 = 0;
+    while i < n {
+        var m: i32 = match_prefix(buf, i, n, "peak: ");
+        if m > 0 {
+            peak(info, parse_dec_at(buf, i + m, n));
+        } else {
+            m = match_prefix(buf, i, n, "used: ");
+            if m > 0 {
+                used(info, parse_dec_at(buf, i + m, n));
+            }
+        }
+        // skip to next line
+        while i < n && get(buf, i) != 10u8 { i = i + 1; }
+        if i < n { i = i + 1; }
+    }
+    delete(buf);
+    return info;
+}
+
+// Count NUL-terminated entries in a readdir buffer. Returns -1 when
+// the path can't be enumerated (e.g. /sd on virt without fatfs).
+fn count_dir(path: StringLiteral) -> i32 {
+    var buf: U8Array = U8Array(2048);
+    var n: i32 = do_readdir(path, buf as u32 + 4u32, 2048);
+    if n <= 0 { delete(buf); return 0 - 1; }
+    var i: i32 = 0;
+    var count: i32 = 0;
+    while i < n {
+        if get(buf, i) == 0u8 { count = count + 1; }
+        i = i + 1;
+    }
+    delete(buf);
+    return count;
+}
+
+// Print v as "X.Y KB" — one decimal digit, rounded. v is bytes.
+fn print_kb(v: i32) -> void {
+    var tenths: i32 = (v * 10 + 512) / 1024;   // round to one decimal
+    print(tenths / 10);
+    puts(".");
+    print(tenths % 10);
+    puts(" KB");
+    return;
+}
+
 fn main() -> i32 {
     var stats: TaskStats = read_task_stats();
+    var mem:   MemInfo   = read_meminfo();
+    var n_bin: i32       = count_dir("/bin");
+    var n_sd:  i32       = count_dir("/sd");
 
     puts("      ___      \n");
     puts("     |___|     ");
@@ -79,6 +167,25 @@ fn main() -> i32 {
     puts("  wait  : ");
     print(waiting(stats));
     puts("\n");
+    puts("                ");
+    puts("  mem   : ");
+    print_kb(used(mem));
+    puts(" used / ");
+    print_kb(peak(mem));
+    puts(" peak\n");
+    puts("                ");
+    puts("  bin   : ");
+    print(n_bin);
+    puts(" tasks\n");
+    puts("                ");
+    puts("  /sd   : ");
+    if n_sd < 0 {
+        puts("(unmounted)\n");
+    } else {
+        print(n_sd);
+        puts(" files\n");
+    }
     delete(stats);
+    delete(mem);
     return 0;
 }

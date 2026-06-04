@@ -70,12 +70,16 @@ KERNEL_COMPILE_DEPS := $(KERNEL_TC_SOURCES) $(KERNEL_S_SOURCES) \
 BUILD_DIR := $(ROOT)/kernel/build
 
 # ----- Disk image fixture inputs -----
+# Files in kernel/fs-spec/etc are dragged in by default.spec via stage-fs.sh
+# at disk-image build time; list them as deps so editing /etc/login etc.
+# triggers a rebuild instead of silently shipping the previous version.
 DISK_STATIC_DEPS := $(ROOT)/integration/inputs/phase7_hello.tc \
                     $(ROOT)/integration/inputs/phase7_min.tc \
                     $(ROOT)/integration/inputs/phase7_hello_world.tc \
                     $(ROOT)/compiler/runtime/mtos/task_crt0.s \
                     $(ROOT)/compiler/runtime/mtos/task_data.s \
-                    $(GEN2_DIR)/mkfs
+                    $(GEN2_DIR)/mkfs \
+                    $(wildcard $(ROOT)/kernel/fs-spec/etc/*)
 
 .PHONY: all build test clean \
         virt pico2 pico2-extra pico2-demo pico2-console pico2-console-land \
