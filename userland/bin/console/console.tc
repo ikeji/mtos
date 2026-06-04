@@ -28,6 +28,13 @@
 // landscape (480x320) — rotated 90°, the hardware scroll axis is now
 // horizontal and useless for text, so console scrolls in software:
 // it keeps a codepoint grid and re-blits the screen on each scroll.
+//
+// Argv: `console [-l] [<path> [args...]]`. The first non-`-l` positional
+// becomes the program to spawn (default `/bin/sh`), and any trailing
+// argv slots are passed as that program's argv. `console -l /bin/msh`
+// boots msh under the LCD instead of sh; `console /bin/sh -c ls` runs
+// a one-shot command. kern.conf init lines pass no argv, in which
+// case console falls back to portrait + `/bin/sh`.
 
 import "../../lib/libtc/libtc.tc";
 
@@ -710,19 +717,49 @@ fn main(argv: StringArray) -> i32 {
     eputs_t("CONSOLE: ready\n");
     if jp_load() != 0 { return 1; }
 
-    // Orientation: `-l` in argv selects landscape (panel rotated 90°),
-    // which scrolls in software. Default is portrait + hardware scroll.
-    // kern.conf init tasks get no argv (a2 == 0) → portrait.
+    // argv: `[-l] [path [args...]]`. -l selects landscape (panel
+    // rotated 90° + software scroll); default is portrait + hardware
+    // scroll. The first non-"-l" positional sets the program to spawn
+    // (default /bin/sh) and the rest become its argv (program seen at
+    // argv[0] of the child). kern.conf init tasks get no argv → default
+    // portrait + /bin/sh.
     var land: i32 = 0;
+    var spawn_path: String = 0 as String;
+    var child_argv: StringArray = 0 as StringArray;
     if (argv as u32) != 0u32 {
+        var argc: i32 = len(argv);
+        var path_idx: i32 = 0 - 1;
+        var positional_n: i32 = 0;
         var ai: i32 = 1;
-        while ai < len(argv) {
+        while ai < argc {
             var a: String = get(argv, ai);
             if len(a) == 2 && get(a, 0) == ('-' as u8)
                 && get(a, 1) == ('l' as u8) {
                 land = 1;
+            } else {
+                if path_idx < 0 { path_idx = ai; }
+                positional_n = positional_n + 1;
             }
             ai = ai + 1;
+        }
+        if path_idx >= 0 {
+            spawn_path = get(argv, path_idx);
+            // Build child argv with positional args (path at [0]). The
+            // String pointers reference our own argv storage, which the
+            // task owns for its lifetime; pack_argv_at copies into the
+            // child at spawn time. We only allocate the array container.
+            child_argv = StringArray(positional_n as u32);
+            var ci: i32 = 0;
+            var ki: i32 = path_idx;
+            while ki < argc {
+                var ak: String = get(argv, ki);
+                if !(len(ak) == 2 && get(ak, 0) == ('-' as u8)
+                     && get(ak, 1) == ('l' as u8)) {
+                    set(child_argv, ci, ak);
+                    ci = ci + 1;
+                }
+                ki = ki + 1;
+            }
         }
     }
     if land != 0 {
@@ -781,18 +818,29 @@ fn main(argv: StringArray) -> i32 {
     var pr: i32 = peek32(pb as u32 + 4u32) as i32;
     var pw: i32 = peek32(pb as u32 + 8u32) as i32;
 
-    eputs_t("CONSOLE: spawning sh\n");
-    // sh: stdin = /dev/kbd, stdout = pipe write end.
-    var slot: i32 = do_spawn_fds("/bin/sh", 0u32, kbd, pw);
+    eputs_t("CONSOLE: spawning child\n");
+    // Spawn the chosen program with stdin = /dev/kbd, stdout = pipe
+    // write end. When the user didn't pass a path, default to /bin/sh
+    // with no argv (matches the historical seed-task behaviour).
+    var slot: i32;
+    if (spawn_path as u32) != 0u32 {
+        slot = do_spawn_fds(spawn_path, child_argv as u32, kbd, pw);
+    } else {
+        slot = do_spawn_fds("/bin/sh", 0u32, kbd, pw);
+    }
     delete(pb);
+    // Drop the array container — its String entries belong to our argv
+    // and stay alive for our lifetime, but pack_argv_at has already
+    // copied them into the child.
+    if (child_argv as u32) != 0u32 { delete(child_argv); }
     if slot < 0 {
-        eputs("CONSOLE: sh spawn failed\n");
+        eputs("CONSOLE: child spawn failed\n");
         return 1;
     }
-    eputs_t("CONSOLE: sh spawned, entering render loop\n");
+    eputs_t("CONSOLE: child spawned, entering render loop\n");
     // Do NOT close kbd / pw here: spawn_fds passes fd numbers (no
-    // dup); sh owns them now and slot_free_allocs closes them when
-    // sh exits — that close of the pipe write end is our EOF.
+    // dup); the child owns them now and slot_free_allocs closes them
+    // when it exits — that close of the pipe write end is our EOF.
 
     // /dev/fb framed-write buffer: 10-byte header + up to a 16x16
     // RGB565 glyph payload (16*16*2 = 512) = 522 bytes.
