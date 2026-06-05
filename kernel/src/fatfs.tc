@@ -25,6 +25,11 @@ var g_fat_root_clus: u32 = 0u32;    // root directory start cluster
 var g_fat_data_start: u32 = 0u32;   // first data sector
 var g_fat_fat_start: u32 = 0u32;    // first FAT sector
 var g_fat_ready: i32 = 0;
+// Free-cluster count loaded from FSInfo at mount. 0xFFFFFFFF means
+// "unknown" (FSInfo absent / unreadable / dirty), which propagates as
+// -1 through fatfs_free_kib. We don't update this on alloc/free yet —
+// it's a point-in-time snapshot for /proc/diskinfo display.
+var g_fat_free_clusters: u32 = 0xFFFFFFFFu32;
 
 // Shared sector buffer for FAT table reads (avoids extra alloc)
 
@@ -246,6 +251,28 @@ export fn fatfs_mount() -> i32 {
     var data_sec: u32 = tot_sec - g_fat_rsvd - (g_fat_nfats as u32) * g_fat_fatsz;
     g_fat_total_clusters = data_sec / (g_fat_spc as u32);
 
+    // FSInfo (FAT32): BPB+48 holds the sector number (partition-relative)
+    // of the FSInfo structure. Validate the lead / struct / trail
+    // signatures and pull FSI_Free_Count from offset 488. Skipped for
+    // FAT12/16 (BPB+48 reads as garbage there) — those have no FSInfo
+    // sector. We don't track which FAT variant we mounted yet, so the
+    // signature checks below double as a "this looks like real FSInfo"
+    // gate; if any fails we leave g_fat_free_clusters at 0xFFFFFFFF
+    // (unknown) and /proc/diskinfo reports "?" for free space.
+    var fsinfo_sec: u32 = read_le16(secbuf, 48) as u32;
+    if fsinfo_sec != 0u32 && fsinfo_sec != 0xFFFFu32 {
+        if fat_block_read(bpb_lba + fsinfo_sec, secbuf) == 512 {
+            // Lead signature 0x41615252 at offset 0
+            if read_le32(secbuf, 0) == 0x41615252u32
+                // Struct signature 0x61417272 at offset 484
+                && read_le32(secbuf, 484) == 0x61417272u32
+                // Trail signature 0xAA550000 at offset 508
+                && read_le32(secbuf, 508) == 0xAA550000u32 {
+                g_fat_free_clusters = read_le32(secbuf, 488);
+            }
+        }
+    }
+
     // Allocate FD table
     g_fat_fds = FatFDArray(FATFS_MAX_FDS as u32);
     var i: i32 = 0;
@@ -269,25 +296,16 @@ export fn fatfs_total_kib() -> i32 {
     return (g_fat_total_clusters as i32) * g_fat_spc / 2;
 }
 
-// Scan the FAT once for free clusters. O(total_clusters) reads — on a
-// 32 GB card that's ~8M entries → 32 MB FAT, slow over SPI. Capped at
-// 65536 clusters to keep the worst-case scan under a few seconds; on
-// larger volumes we surrender and return -1 ("unknown") rather than
-// stall /proc/diskinfo for tens of seconds.
-fn fat_free_kib_internal() -> i32 {
+// Free space comes from the FSInfo snapshot captured at mount. Cheap
+// (no FAT scan), but stale-by-design: it reflects the volume as the
+// formatter left it, plus whatever updates the host or this driver
+// have committed. We don't yet update g_fat_free_clusters on
+// alloc/free, so /proc/diskinfo can drift after writes — accurate
+// enough for the neofetch boot splash.
+export fn fatfs_free_kib() -> i32 {
     if g_fat_ready == 0 { return 0 - 1; }
-    var total: u32 = g_fat_total_clusters;
-    if total > 65536u32 { return 0 - 1; }
-    var free_clusters: i32 = 0;
-    var c: u32 = 2u32;
-    while c < total + 2u32 {
-        if fat_get_entry(c) == 0u32 { free_clusters = free_clusters + 1; }
-        c = c + 1u32;
-    }
-    return free_clusters * g_fat_spc / 2;
-}
-
-export fn fatfs_free_kib() -> i32 { return fat_free_kib_internal();
+    if g_fat_free_clusters == 0xFFFFFFFFu32 { return 0 - 1; }
+    return (g_fat_free_clusters as i32) * g_fat_spc / 2;
 }
 
 // ===== Filename helpers =====
