@@ -105,6 +105,14 @@ $(BUILD_DIR)/disk-demo.img:         $(ROOT)/kernel/tests/fixtures/kern_demo.conf
 $(BUILD_DIR)/disk-console.img:      $(ROOT)/kernel/tests/fixtures/kern_console.conf
 $(BUILD_DIR)/disk-console-land.img: $(ROOT)/kernel/tests/fixtures/kern_console_land.conf
 
+# /etc/login: only console disks ship the neofetch banner. Plain and
+# demo disks omit it because nested-console rendering of neofetch
+# would push the test_os landscape test past its budget.
+$(BUILD_DIR)/disk-console.img:      DISK_LOGIN := $(ROOT)/kernel/fs-spec/etc/login
+$(BUILD_DIR)/disk-console-land.img: DISK_LOGIN := $(ROOT)/kernel/fs-spec/etc/login
+$(BUILD_DIR)/disk-console.img:      $(ROOT)/kernel/fs-spec/etc/login
+$(BUILD_DIR)/disk-console-land.img: $(ROOT)/kernel/fs-spec/etc/login
+
 # Pre-encode prelude (Step 5 of pre-encode, docs/task/asm_pre_encode.md)
 define PRELUDE_PRE_ENCODE
     cd $(ROOT) && qemu-riscv32 compiler/build/gen2/asm_pass1 \
@@ -147,6 +155,9 @@ $(BUILD_DIR)/disk.img $(BUILD_DIR)/disk-demo.img $(BUILD_DIR)/disk-console.img $
 	$(PRELUDE_PRE_ENCODE) && \
 	if [ -n "$(DISK_KERN_CONF)" ] && [ -f "$(DISK_KERN_CONF)" ]; then \
 	    mkdir -p "$$_r/etc" && cp "$(DISK_KERN_CONF)" "$$_r/etc/kern.conf"; \
+	fi && \
+	if [ -n "$(DISK_LOGIN)" ] && [ -f "$(DISK_LOGIN)" ]; then \
+	    mkdir -p "$$_r/etc" && cp "$(DISK_LOGIN)" "$$_r/etc/login"; \
 	fi && \
 	cd $(ROOT) && qemu-riscv32 compiler/build/gen2/mkfs $@ "$$_r" >&2 && \
 	rm -rf "$$_tmp"

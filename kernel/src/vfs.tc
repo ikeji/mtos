@@ -48,6 +48,7 @@ export fn vfs_set_fatfs_ready() -> void {
     g_fatfs_ready = 1;
     return;
 }
+export fn vfs_fatfs_ready() -> i32 { return g_fatfs_ready; }
 
 // ===== fd table =====
 // fs_type : which FS owns this fd

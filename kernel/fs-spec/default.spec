@@ -13,11 +13,9 @@
 # Static content files
 /hello.txt                          kernel/fs-spec/etc/hello.txt
 
-# sh runs /etc/login at startup before the interactive prompt — like
-# a stripped-down tcsh .login. Default content is a Welcome banner;
-# edit kernel/fs-spec/etc/login to seed background tasks, launch a
-# launcher, etc.
-/etc/login                          kernel/fs-spec/etc/login
+# /etc/login is staged per-disk by the Makefile (DISK_LOGIN variable),
+# not here — console disks ship a neofetch banner, the plain disk and
+# test disks omit it to keep test runtime under the 1 min budget.
 
 # phase 7 test inputs (referenced by integration/test_phase7.sh)
 /phase7.tc                          integration/inputs/phase7_hello.tc

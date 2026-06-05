@@ -112,22 +112,6 @@ fn read_meminfo() -> MemInfo {
     return info;
 }
 
-// Count NUL-terminated entries in a readdir buffer. Returns -1 when
-// the path can't be enumerated (e.g. /sd on virt without fatfs).
-fn count_dir(path: StringLiteral) -> i32 {
-    var buf: U8Array = U8Array(2048);
-    var n: i32 = do_readdir(path, buf as u32 + 4u32, 2048);
-    if n <= 0 { delete(buf); return 0 - 1; }
-    var i: i32 = 0;
-    var count: i32 = 0;
-    while i < n {
-        if get(buf, i) == 0u8 { count = count + 1; }
-        i = i + 1;
-    }
-    delete(buf);
-    return count;
-}
-
 // Print v as "X.Y KB" — one decimal digit, rounded. v is bytes.
 fn print_kb(v: i32) -> void {
     var tenths: i32 = (v * 10 + 512) / 1024;   // round to one decimal
@@ -138,11 +122,112 @@ fn print_kb(v: i32) -> void {
     return;
 }
 
+// Print v KiB as "X.Y MB" or "X.Y GB" depending on magnitude. Used
+// for fatfs sizes that don't fit cleanly in KB.
+fn print_kib_human(v: i32) -> void {
+    if v < 0 { puts("?"); return; }
+    if v < 1024 {
+        print(v);
+        puts(" KB");
+        return;
+    }
+    var mib_tenths: i32 = (v * 10 + 512) / 1024;
+    if mib_tenths < 10240 {
+        print(mib_tenths / 10);
+        puts(".");
+        print(mib_tenths % 10);
+        puts(" MB");
+        return;
+    }
+    var gib_tenths: i32 = (mib_tenths + 512) / 1024;
+    print(gib_tenths / 10);
+    puts(".");
+    print(gib_tenths % 10);
+    puts(" GB");
+    return;
+}
+
+// Stream /proc/diskinfo into stdout, one line per mounted FS, each
+// preceded by the 16-space banner padding so the FS table aligns
+// with the rest of the right column. Lines from the kernel are key=
+// value records (see kernel/src/procfs.tc::synth_diskinfo); we pretty-
+// print them per-FS into "name path  <human-readable>".
+fn print_diskinfo() -> void {
+    var fd: i32 = do_openat(0, "/proc/diskinfo", 0);
+    if fd < 0 { return; }
+    var buf: U8Array = U8Array(512);
+    var n: i32 = sys_read(fd, buf, 512);
+    do_close(fd);
+    if n <= 0 { delete(buf); return; }
+    var i: i32 = 0;
+    while i < n {
+        var line_start: i32 = i;
+        while i < n && get(buf, i) != 10u8 { i = i + 1; }
+        var line_end: i32 = i;
+        if i < n { i = i + 1; }
+        // Recognise the FS by the first whitespace-delimited token.
+        if match_prefix(buf, line_start, line_end, "mtfs ") > 0 {
+            puts("                  mtfs  : ");
+            var fc: i32 = 0 - 1; var tot: i32 = 0 - 1;
+            // walk tokens
+            var k: i32 = line_start;
+            while k < line_end {
+                var m: i32 = match_prefix(buf, k, line_end, "total=");
+                if m > 0 { tot = parse_dec_at(buf, k + m, line_end); }
+                m = match_prefix(buf, k, line_end, "files=");
+                if m > 0 { fc = parse_dec_at(buf, k + m, line_end); }
+                while k < line_end && get(buf, k) != ' ' as u8 { k = k + 1; }
+                while k < line_end && get(buf, k) == ' ' as u8 { k = k + 1; }
+            }
+            print(fc); puts(" files, "); print_kib_human(tot / 1024); puts("\n");
+        } else if match_prefix(buf, line_start, line_end, "tmpfs ") > 0 {
+            puts("                  tmpfs : ");
+            var used_b: i32 = 0; var fc: i32 = 0; var max_f: i32 = 0;
+            var k: i32 = line_start;
+            while k < line_end {
+                var m: i32 = match_prefix(buf, k, line_end, "files=");
+                if m > 0 {
+                    fc = parse_dec_at(buf, k + m, line_end);
+                    // skip past N
+                    while k + m < line_end && get(buf, k + m) >= '0' as u8
+                          && get(buf, k + m) <= '9' as u8 { m = m + 1; }
+                    if k + m < line_end && get(buf, k + m) == '/' as u8 {
+                        max_f = parse_dec_at(buf, k + m + 1, line_end);
+                    }
+                }
+                m = match_prefix(buf, k, line_end, "used=");
+                if m > 0 { used_b = parse_dec_at(buf, k + m, line_end); }
+                while k < line_end && get(buf, k) != ' ' as u8 { k = k + 1; }
+                while k < line_end && get(buf, k) == ' ' as u8 { k = k + 1; }
+            }
+            print(fc); puts("/"); print(max_f); puts(" files, ");
+            print(used_b); puts(" B\n");
+        } else if match_prefix(buf, line_start, line_end, "fatfs ") > 0 {
+            puts("                  fatfs : ");
+            var tot_kib: i32 = 0 - 1; var free_kib: i32 = 0 - 1;
+            var k: i32 = line_start;
+            while k < line_end {
+                var m: i32 = match_prefix(buf, k, line_end, "total_kib=");
+                if m > 0 { tot_kib = parse_dec_at(buf, k + m, line_end); }
+                m = match_prefix(buf, k, line_end, "free_kib=");
+                if m > 0 { free_kib = parse_dec_at(buf, k + m, line_end); }
+                while k < line_end && get(buf, k) != ' ' as u8 { k = k + 1; }
+                while k < line_end && get(buf, k) == ' ' as u8 { k = k + 1; }
+            }
+            print_kib_human(tot_kib);
+            if free_kib >= 0 {
+                puts(" total, "); print_kib_human(free_kib); puts(" free");
+            }
+            puts("\n");
+        }
+    }
+    delete(buf);
+    return;
+}
+
 fn main() -> i32 {
     var stats: TaskStats = read_task_stats();
     var mem:   MemInfo   = read_meminfo();
-    var n_bin: i32       = count_dir("/bin");
-    var n_sd:  i32       = count_dir("/sd");
 
     puts("      ___      \n");
     puts("     |___|     ");
@@ -173,18 +258,7 @@ fn main() -> i32 {
     puts(" used / ");
     print_kb(peak(mem));
     puts(" peak\n");
-    puts("                ");
-    puts("  bin   : ");
-    print(n_bin);
-    puts(" tasks\n");
-    puts("                ");
-    puts("  /sd   : ");
-    if n_sd < 0 {
-        puts("(unmounted)\n");
-    } else {
-        print(n_sd);
-        puts(" files\n");
-    }
+    print_diskinfo();
     delete(stats);
     delete(mem);
     return 0;

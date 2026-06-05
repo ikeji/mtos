@@ -81,6 +81,32 @@ fn name_matches(stored: u32, name_addr: u32, n: i32) -> bool {
     return peek8(stored + n as u32) == 0u8;
 }
 
+// /proc/diskinfo helpers — count occupied slots and sum allocated
+// payload bytes. Used by synth_diskinfo.
+export fn tmpfs_file_count() -> i32 {
+    if g_tmpfs_ready == 0 { return 0; }
+    var c: i32 = 0;
+    var i: i32 = 0;
+    while i < TMPFS_MAX_FILES {
+        var f: TmpFile = get(g_tmpfs_files, i);
+        if nm_addr(f) != 0u32 { c = c + 1; }
+        i = i + 1;
+    }
+    return c;
+}
+export fn tmpfs_max_files() -> i32 { return TMPFS_MAX_FILES; }
+export fn tmpfs_used_bytes() -> i32 {
+    if g_tmpfs_ready == 0 { return 0; }
+    var total: i32 = 0;
+    var i: i32 = 0;
+    while i < TMPFS_MAX_FILES {
+        var f: TmpFile = get(g_tmpfs_files, i);
+        if nm_addr(f) != 0u32 { total = total + sz(f); }
+        i = i + 1;
+    }
+    return total;
+}
+
 // Enumerate tmpfs entries, writing each name + NUL into buf. Returns
 // bytes written or -1 on error.
 export fn tmpfs_readdir(buf_addr: u32, buf_size: i32) -> i32 {

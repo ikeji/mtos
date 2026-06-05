@@ -124,6 +124,18 @@ export fn mtfs_mount() -> i32 {
     return 0;
 }
 
+// /proc/diskinfo helpers — bytes are the total image size (read-only,
+// so "used" == "total" by definition). Bytes overflow i32 above 2 GB;
+// mtfs images are tiny (KB-MB range) so i32 is fine.
+export fn mtfs_total_bytes() -> i32 {
+    return (g_mtfs_total_blocks as i32) * MTFS_BLOCK_SIZE;
+}
+export fn mtfs_file_count() -> i32 {
+    // inode 0 is the root directory placeholder; user-visible files
+    // start at inode 1.
+    return (g_mtfs_inode_count as i32) - 1;
+}
+
 export fn mtfs_lookup(parent_inode: u32, name: U8Array, name_len: i32) -> i32 {
     if g_mtfs_mounted == 0 { return -1; }
     var i: u32 = 1u32;

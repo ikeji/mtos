@@ -303,8 +303,12 @@ fi
 if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     && [ -s "$KERNEL_BIN" ] && [ -s "$KERNEL_DISK" ]; then
     t0=$(time_ms)
-    cl_out=$(printf 'console -l\nseq 30\nquit\nquit\n' \
-        | timeout 10 qemu-system-riscv32 -smp 1 -nographic \
+    # seq 10 still forces software scroll once /etc/login's neofetch
+    # banner has filled the 15-row landscape window — that's all the
+    # test needs to assert "no mode=2 blits". Larger seq counts push
+    # the test past the kernel-test 30 s budget on slower hosts.
+    cl_out=$(printf 'console -l\nseq 10\nquit\nquit\n' \
+        | timeout 15 qemu-system-riscv32 -smp 1 -nographic \
         -serial mon:stdio --no-reboot -m 128 \
         -machine virt,aclint=on -bios none \
         -drive "file=$KERNEL_DISK,format=raw,if=none,id=blk0" \
@@ -340,7 +344,10 @@ KERNEL_CONSOLE_LAND_DISK="$ROOT_DIR/kernel/build/disk-console-land.img"
 if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     && [ -s "$KERNEL_BIN" ] && [ -s "$KERNEL_CONSOLE_LAND_DISK" ]; then
     t0=$(time_ms)
-    ck_out=$(printf 'seq 30\nquit\n' \
+    # seq 5 already overflows the 15-row landscape window once
+    # /etc/login's neofetch has filled it — enough to assert "no
+    # mode=2 blits". seq 30 was a leftover from the no-login era.
+    ck_out=$(printf 'seq 5\nquit\n' \
         | timeout 10 qemu-system-riscv32 -smp 1 -nographic \
         -serial mon:stdio --no-reboot -m 128 \
         -machine virt,aclint=on -bios none \

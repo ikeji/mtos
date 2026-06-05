@@ -20,6 +20,17 @@ fn kfree(ptr: u32) -> void;
 fn km_peak_bytes() -> i32;
 fn km_curr_bytes() -> i32;
 
+// Per-FS stats consumed by synth_diskinfo. mtfs / tmpfs are always
+// present; fatfs is optional (vfs_fatfs_ready reports the mount).
+fn mtfs_total_bytes() -> i32;
+fn mtfs_file_count() -> i32;
+fn tmpfs_file_count() -> i32;
+fn tmpfs_max_files()  -> i32;
+fn tmpfs_used_bytes() -> i32;
+fn vfs_fatfs_ready()  -> i32;
+fn fatfs_total_kib()  -> i32;
+fn fatfs_free_kib()   -> i32;
+
 var PROCFS_MAX_FDS: i32 = 4;
 
 struct ProcFD {
@@ -193,6 +204,45 @@ fn synth_meminfo() -> u32 {
     return buf as u32;
 }
 
+// /proc/diskinfo — one whitespace-separated line per mounted FS:
+//   name path key=value [key=value...]
+// keys:
+//   total=<bytes>   total capacity (mtfs)
+//   files=<n>/<m>   used / max file slots (tmpfs)
+//   used=<bytes>    bytes in use (tmpfs)
+//   total_kib=<n>   total capacity in KiB (fatfs, fits >2 GB in i32)
+//   free_kib=<n>    free capacity in KiB (fatfs, -1 if not scanned)
+// Lines are ordered mtfs, tmpfs, fatfs. fatfs only appears when mounted.
+fn synth_diskinfo() -> u32 {
+    var cap: i32 = 256;
+    var buf: U8Array = U8Array(cap as u32);
+    var pos: i32 = 0;
+    // mtfs
+    pos = append_str(buf, pos, "mtfs / total=", cap);
+    pos = append_dec(buf, pos, mtfs_total_bytes(), cap);
+    pos = append_str(buf, pos, " files=", cap);
+    pos = append_dec(buf, pos, mtfs_file_count(), cap);
+    pos = append_byte(buf, pos, 10u8, cap);
+    // tmpfs
+    pos = append_str(buf, pos, "tmpfs /tmp files=", cap);
+    pos = append_dec(buf, pos, tmpfs_file_count(), cap);
+    pos = append_byte(buf, pos, '/' as u8, cap);
+    pos = append_dec(buf, pos, tmpfs_max_files(), cap);
+    pos = append_str(buf, pos, " used=", cap);
+    pos = append_dec(buf, pos, tmpfs_used_bytes(), cap);
+    pos = append_byte(buf, pos, 10u8, cap);
+    // fatfs (only when mounted)
+    if vfs_fatfs_ready() != 0 {
+        pos = append_str(buf, pos, "fatfs /sd total_kib=", cap);
+        pos = append_dec(buf, pos, fatfs_total_kib(), cap);
+        pos = append_str(buf, pos, " free_kib=", cap);
+        pos = append_dec(buf, pos, fatfs_free_kib(), cap);
+        pos = append_byte(buf, pos, 10u8, cap);
+    }
+    poke32(buf as u32, pos as u32);
+    return buf as u32;
+}
+
 fn synth_cpuinfo() -> u32 {
     var cap: i32 = 128;
     var buf: U8Array = U8Array(cap as u32);
@@ -239,6 +289,8 @@ export fn procfs_open(path_addr: u32, plen: i32) -> i32 {
         buf_hdr = synth_cpuinfo();
     } else if path_is(path_addr, plen, "/proc/uptime") {
         buf_hdr = synth_uptime();
+    } else if path_is(path_addr, plen, "/proc/diskinfo") {
+        buf_hdr = synth_diskinfo();
     } else {
         return -1;
     }
@@ -317,5 +369,6 @@ export fn procfs_readdir(buf_addr: u32, buf_size: i32) -> i32 {
     pos = readdir_append(buf_addr, buf_size, pos, "meminfo");
     pos = readdir_append(buf_addr, buf_size, pos, "cpuinfo");
     pos = readdir_append(buf_addr, buf_size, pos, "uptime");
+    pos = readdir_append(buf_addr, buf_size, pos, "diskinfo");
     return pos;
 }
