@@ -134,6 +134,27 @@ var OFF_U2K: i32 = 286856;     // 4104 + 94*94*32
 var g_un:  i32 = 0;            // continuation bytes still expected
 var g_ucp: i32 = 0;            // codepoint being assembled
 
+// ANSI CSI parser state.
+//   0 = ground (regular bytes flow to the UTF-8 decoder),
+//   1 = saw ESC, waiting for '[' (anything else aborts and is dropped),
+//   2 = inside ESC[<params><final>,
+//   3 = inside ESC[?<params><final> (DEC-private).
+// Numeric params accumulate in g_csi_cur until ';' or the final byte
+// pushes them into g_csi_p. CSI_PMAX caps the parameter list; extra
+// params past it are discarded silently — the subset we care about
+// (CUP up to 2 params, SGR-style not implemented) never overflows.
+var g_esc_state:   i32 = 0;
+var g_csi_cur:     i32 = 0;
+var g_csi_has:     i32 = 0;
+var g_csi_n:       i32 = 0;
+var CSI_PMAX:      i32 = 4;
+var g_csi_p:       I32Array = 0 as I32Array;
+// DECTCEM: 0 hides the cursor entirely (draw_cursor becomes a no-op so
+// the blink poll loop stops repainting it). Apps like /bin/sl flip
+// this off while animating to keep the cursor bar from streaking
+// through the frame.
+var g_cur_enabled: i32 = 1;
+
 // Read byte `off` of the embedded jpfont blob.
 fn fbyte(off: i32) -> i32 {
     return peek8(g_font_addr + (off as u32)) as i32;
@@ -625,6 +646,7 @@ var g_cur_on: i32 = 0;
 var CUR_H:    i32 = 4;
 
 fn draw_cursor(fb: i32, frame: U8Array) -> void {
+    if g_cur_enabled == 0 { return; }     // DECTCEM ESC[?25l
     if g_row < 0 || g_row >= ROWS { return; }
     if g_col < 0 || g_col >= COLS { return; }
     fb_fill(fb, frame, g_content_x + g_col * CW,
@@ -651,9 +673,233 @@ fn erase_cursor(fb: i32, frame: U8Array) -> void {
     return;
 }
 
-// Feed one byte through the UTF-8 decoder; render completed
-// codepoints. ASCII passes straight through.
+// ===== ANSI CSI dispatch =====
+//
+// Implements the minimum the apps shipped in this tree actually emit:
+//   ESC[<r>;<c>H / f   CUP — absolute cursor position (1-based; 0/blank → 1)
+//   ESC[<n>A/B/C/D     CUU/CUD/CUF/CUB — relative cursor move
+//   ESC[<n>J           ED  — erase display (n=0 below, 1 above, 2 all)
+//   ESC[<n>K           EL  — erase line    (n=0 right, 1 left, 2 all)
+//   ESC[?25h / ?25l    DECTCEM — show / hide cursor
+// SGR (colour) and the more exotic CSI verbs intentionally fall
+// through to "ignored" — sl/vi don't use them and skipping them is
+// the same behaviour the host UART terminal exhibits when given an
+// unsupported sequence (drop the bytes, move on).
+
+// Read the i-th CSI numeric param; substitute `dflt` if it was absent
+// or explicitly zero (ANSI says "0 means default for most verbs").
+fn csi_param(i: i32, dflt: i32) -> i32 {
+    if i >= g_csi_n { return dflt; }
+    var v: i32 = get(g_csi_p, i);
+    if v == 0 { return dflt; }
+    return v;
+}
+
+// Blank `len` cells on `row` starting at column `c0`. Repaints in both
+// scroll modes — software scroll's redraw skips cells where prev still
+// matches grid, so this is cheap on no-op clears.
+fn blank_cells(fb: i32, frame: U8Array, row: i32, c0: i32, len: i32) -> void {
+    if row < 0 || row >= ROWS { return; }
+    if c0 < 0 { len = len + c0; c0 = 0; }
+    if c0 + len > COLS { len = COLS - c0; }
+    if len <= 0 { return; }
+    if g_sw_scroll != 0 {
+        var c: i32 = 0;
+        while c < len {
+            set(g_grid, row * COLS + c0 + c, 0);
+            c = c + 1;
+        }
+        redraw(fb, frame);
+    } else {
+        fb_fill(fb, frame, g_content_x + c0 * CW, phys_y(row),
+                len * CW, CH, COLOR_CONTENT);
+    }
+    return;
+}
+
+// ED 2 — clear the whole content area. SW mode wipes g_grid + redraws;
+// HW mode fb_fills the screen (no chrome in portrait, so 0,0,SW,SH is
+// safe). g_grid_prev is left alone: redraw uses prev != grid to find
+// the dirty cells, so leaving prev populated is what makes empties
+// repaint with COLOR_CONTENT instead of being skipped.
+fn erase_display_all(fb: i32, frame: U8Array) -> void {
+    if g_sw_scroll != 0 {
+        var i: i32 = 0;
+        while i < COLS * ROWS {
+            set(g_grid, i, 0);
+            i = i + 1;
+        }
+        redraw(fb, frame);
+    } else {
+        fb_fill(fb, frame, 0, 0, SCREEN_W, SCREEN_H, COLOR_CONTENT);
+        // Hardware scroll: the visible window may have rotated through
+        // the framebuffer ring. A whole-FB fill blanks every line in
+        // the ring so subsequent scrolls reveal black, not stale text.
+    }
+    return;
+}
+
+// ED 0 — clear from the cursor (inclusive) to the bottom-right.
+fn erase_display_below(fb: i32, frame: U8Array) -> void {
+    blank_cells(fb, frame, g_row, g_col, COLS - g_col);
+    var r: i32 = g_row + 1;
+    while r < ROWS {
+        blank_cells(fb, frame, r, 0, COLS);
+        r = r + 1;
+    }
+    return;
+}
+
+// ED 1 — clear from the top-left to the cursor (inclusive).
+fn erase_display_above(fb: i32, frame: U8Array) -> void {
+    var r: i32 = 0;
+    while r < g_row {
+        blank_cells(fb, frame, r, 0, COLS);
+        r = r + 1;
+    }
+    blank_cells(fb, frame, g_row, 0, g_col + 1);
+    return;
+}
+
+// ESC[<final> with g_csi_p / g_csi_n already populated.
+fn dispatch_csi(fb: i32, frame: U8Array, final: i32) -> void {
+    if final == ('H' as i32) || final == ('f' as i32) {
+        var row: i32 = csi_param(0, 1) - 1;
+        var col: i32 = csi_param(1, 1) - 1;
+        if row < 0 { row = 0; }
+        if col < 0 { col = 0; }
+        if row >= ROWS { row = ROWS - 1; }
+        if col >= COLS { col = COLS - 1; }
+        g_row = row;
+        g_col = col;
+        return;
+    }
+    if final == ('A' as i32) {
+        var n: i32 = csi_param(0, 1);
+        g_row = g_row - n;
+        if g_row < 0 { g_row = 0; }
+        return;
+    }
+    if final == ('B' as i32) {
+        var n: i32 = csi_param(0, 1);
+        g_row = g_row + n;
+        if g_row >= ROWS { g_row = ROWS - 1; }
+        return;
+    }
+    if final == ('C' as i32) {
+        var n: i32 = csi_param(0, 1);
+        g_col = g_col + n;
+        if g_col >= COLS { g_col = COLS - 1; }
+        return;
+    }
+    if final == ('D' as i32) {
+        var n: i32 = csi_param(0, 1);
+        g_col = g_col - n;
+        if g_col < 0 { g_col = 0; }
+        return;
+    }
+    if final == ('J' as i32) {
+        var nj: i32 = 0;
+        if g_csi_n > 0 { nj = get(g_csi_p, 0); }
+        if nj == 2 { erase_display_all(fb, frame); }
+        else if nj == 1 { erase_display_above(fb, frame); }
+        else { erase_display_below(fb, frame); }
+        return;
+    }
+    if final == ('K' as i32) {
+        var nk: i32 = 0;
+        if g_csi_n > 0 { nk = get(g_csi_p, 0); }
+        if nk == 2 { blank_cells(fb, frame, g_row, 0, COLS); }
+        else if nk == 1 { blank_cells(fb, frame, g_row, 0, g_col + 1); }
+        else { blank_cells(fb, frame, g_row, g_col, COLS - g_col); }
+        return;
+    }
+    // SGR (m), DSR, etc. fall through unimplemented on purpose.
+    return;
+}
+
+// ESC[? <final> — DEC-private mode set/reset. We only honour DECTCEM
+// (?25 l/h) since that's the one cursor-aware apps actually emit.
+fn dispatch_csi_private(fb: i32, frame: U8Array, final: i32) -> void {
+    if g_csi_n > 0 && get(g_csi_p, 0) == 25 {
+        if final == ('l' as i32) {
+            erase_cursor(fb, frame);          // hide what may be on screen
+            g_cur_enabled = 0;
+        } else if final == ('h' as i32) {
+            g_cur_enabled = 1;
+        }
+    }
+    return;
+}
+
+// Feed one byte through the ANSI escape parser and (if it falls
+// through) the UTF-8 decoder, then render completed codepoints. The
+// CSI parser eats ESC + everything up to and including the final byte
+// so escape bytes never reach draw_cp.
 fn render(fb: i32, frame: U8Array, b: i32) -> void {
+    if g_esc_state != 0 {
+        if g_esc_state == 1 {
+            if b == ('[' as i32) {
+                g_esc_state = 2;
+                g_csi_cur = 0;
+                g_csi_has = 0;
+                g_csi_n = 0;
+            } else {
+                // Two-byte ESC <X> sequences (DECSC, charset selects,
+                // etc.) aren't useful here — drop the byte and return
+                // to ground state. SL/vi/sh don't emit any of them.
+                g_esc_state = 0;
+            }
+            return;
+        }
+        if g_esc_state == 2 || g_esc_state == 3 {
+            // '?' as the first byte switches to private-mode CSI.
+            if g_esc_state == 2 && b == ('?' as i32)
+               && g_csi_has == 0 && g_csi_n == 0 {
+                g_esc_state = 3;
+                return;
+            }
+            if b >= ('0' as i32) && b <= ('9' as i32) {
+                g_csi_cur = g_csi_cur * 10 + (b - ('0' as i32));
+                g_csi_has = 1;
+                return;
+            }
+            if b == (';' as i32) {
+                if g_csi_n < CSI_PMAX {
+                    set(g_csi_p, g_csi_n, g_csi_cur);
+                    g_csi_n = g_csi_n + 1;
+                }
+                g_csi_cur = 0;
+                g_csi_has = 0;
+                return;
+            }
+            if b >= 0x40 && b <= 0x7E {
+                if g_csi_has != 0 || g_csi_n > 0 {
+                    if g_csi_n < CSI_PMAX {
+                        set(g_csi_p, g_csi_n, g_csi_cur);
+                        g_csi_n = g_csi_n + 1;
+                    }
+                }
+                if g_esc_state == 2 {
+                    dispatch_csi(fb, frame, b);
+                } else {
+                    dispatch_csi_private(fb, frame, b);
+                }
+                g_esc_state = 0;
+                return;
+            }
+            // Intermediate bytes (0x20..0x2F) or anything else we don't
+            // understand — abort the sequence and resume ground state.
+            g_esc_state = 0;
+            return;
+        }
+    }
+    if b == 27 {
+        // Resync: any half-decoded UTF-8 char is discarded on ESC.
+        g_un = 0;
+        g_esc_state = 1;
+        return;
+    }
     var cp: i32 = 0 - 1;
     if g_un > 0 {
         if (b & 192) == 128 {
@@ -716,6 +962,8 @@ fn eputs_t(s: StringLiteral) -> void {
 fn main(argv: StringArray) -> i32 {
     eputs_t("CONSOLE: ready\n");
     if jp_load() != 0 { return 1; }
+
+    g_csi_p = I32Array(CSI_PMAX as u32);
 
     // argv: `[-l] [path [args...]]`. -l selects landscape (panel
     // rotated 90° + software scroll); default is portrait + hardware
@@ -937,6 +1185,7 @@ fn main(argv: StringArray) -> i32 {
     delete(buf);
     if (g_grid as u32) != 0u32 { delete(g_grid); }
     if (g_grid_prev as u32) != 0u32 { delete(g_grid_prev); }
+    if (g_csi_p as u32) != 0u32 { delete(g_csi_p); }
     eputs("CONSOLE: exit\n");
     return 0;
 }
