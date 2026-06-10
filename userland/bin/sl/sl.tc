@@ -1,0 +1,171 @@
+// sl.tc — Steam Locomotive joke task (classic Unix `sl`).
+//
+// Animates a 10-line ASCII steam locomotive scrolling right-to-left on
+// an 80x24 terminal. Each frame uses ANSI cursor positioning
+// (ESC[<row>;1H) so the host UART terminal redraws in place; one
+// sys_write per row keeps the per-frame syscall count predictable.
+//
+// On the LCD console (userland/bin/console/console.tc) the ESC bytes
+// are silently dropped because the render() dispatcher only honours
+// LF/CR/BS plus printable codepoints — the train still prints, just as
+// scrolling rows instead of fixed-position animation. Either way the
+// joke survives.
+
+import "../../lib/libtc/libtc.tc";
+
+fn do_nanosleep(ms: i32) -> i32;
+
+// Terminal geometry. SH only sets the vertical centring; rendering
+// itself never relies on it.
+var SW: i32 = 80;
+var SH: i32 = 24;
+
+// Train bounding box. 10 rows tall, max line is 53 cols wide. The
+// animation loop runs while pos > -TRAIN_W so the train clears the
+// left edge before we redraw the final clean frame.
+var TRAIN_W: i32 = 53;
+var TRAIN_H: i32 = 10;
+
+// Append a non-negative decimal `v` to buf starting at off; return
+// the new offset. Used inline by render_row to splice the row number
+// into the ESC[<row>;1H prefix without an extra sys_write.
+fn put_dec(buf: U8Array, off: i32, v: i32) -> i32 {
+    if v == 0 {
+        set(buf, off, '0' as u8);
+        return off + 1;
+    }
+    var tmp: U8Array = U8Array(12u32);
+    var n: i32 = 0;
+    while v > 0 {
+        set(tmp, n, ('0' as i32 + v % 10) as u8);
+        n = n + 1;
+        v = v / 10;
+    }
+    var k: i32 = 0;
+    while k < n {
+        set(buf, off + k, get(tmp, n - 1 - k));
+        k = k + 1;
+    }
+    delete(tmp);
+    return off + n;
+}
+
+// Render one train row. Layout written into `buf`:
+//   ESC '[' <row> ';' '1' 'H'   (cursor positioning, 5–7 bytes)
+//   SW bytes of payload         (spaces overlaid with the train slice)
+// We emit it as a single sys_write so each animation frame fires
+// exactly TRAIN_H syscalls — important on UART where the slow path is
+// the trap rather than the bytes themselves.
+fn render_row(s: StringLiteral, pos: i32, row: i32, buf: U8Array) -> void {
+    var o: i32 = 0;
+    set(buf, o, 27u8);            o = o + 1;
+    set(buf, o, '[' as u8);       o = o + 1;
+    o = put_dec(buf, o, row);
+    set(buf, o, ';' as u8);       o = o + 1;
+    set(buf, o, '1' as u8);       o = o + 1;
+    set(buf, o, 'H' as u8);       o = o + 1;
+    var pad: i32 = o;
+    var i: i32 = 0;
+    while i < SW {
+        set(buf, pad + i, ' ' as u8);
+        i = i + 1;
+    }
+    var ll: i32 = len(s);
+    var src: i32 = 0;
+    var dst: i32 = pos;
+    if dst < 0 { src = 0 - dst; dst = 0; }
+    while src < ll && dst < SW {
+        set(buf, pad + dst, get(s, src));
+        src = src + 1;
+        dst = dst + 1;
+    }
+    sys_write(1, buf, pad + SW);
+    return;
+}
+
+// Inline-dispatched 10-row train. Returning a StringLiteral from a
+// table function isn't exercised anywhere else in the codebase, so
+// keep each row's literal at the call site instead.
+fn render_train(pos: i32, start_row: i32, buf: U8Array) -> void {
+    render_row("      ====        ________                ___________",
+               pos, start_row + 0, buf);
+    render_row("  _D _|  |_______/        \\__I_I_____===__|_________|",
+               pos, start_row + 1, buf);
+    render_row("   |(_)---  |   H\\________/ |   |        =|___ ___|",
+               pos, start_row + 2, buf);
+    render_row("   /     |  |   H  |  |     |   |         ||_| |_||",
+               pos, start_row + 3, buf);
+    render_row("  |      |  |   H  |__--------------------| [___] |",
+               pos, start_row + 4, buf);
+    render_row("  | ________|___H__/__|_____/[][]~\\_______|       |",
+               pos, start_row + 5, buf);
+    render_row("  |/ |   |-----------I_____I [][] []  D   |=======|__",
+               pos, start_row + 6, buf);
+    render_row("__/ =| o |=-~~\\  /~~\\  /~~\\  /~~\\ ____Y___________|__",
+               pos, start_row + 7, buf);
+    render_row(" |/-=|___||    ||    ||    ||    |_____/~\\___/",
+               pos, start_row + 8, buf);
+    render_row("  \\_/      \\O=====O=====O=====O_/      \\_/",
+               pos, start_row + 9, buf);
+    return;
+}
+
+// ESC [ 2 J + ESC [ H — clear + home. Single sys_write.
+fn clear_screen() -> void {
+    var buf: U8Array = U8Array(8u32);
+    set(buf, 0, 27u8);          set(buf, 1, '[' as u8);
+    set(buf, 2, '2' as u8);     set(buf, 3, 'J' as u8);
+    set(buf, 4, 27u8);          set(buf, 5, '[' as u8);
+    set(buf, 6, 'H' as u8);
+    sys_write(1, buf, 7);
+    delete(buf);
+    return;
+}
+
+// ESC [ ? 2 5 l — hide the terminal cursor so it doesn't flicker
+// across the locomotive while the frames repaint.
+fn hide_cursor() -> void {
+    var buf: U8Array = U8Array(8u32);
+    set(buf, 0, 27u8);          set(buf, 1, '[' as u8);
+    set(buf, 2, '?' as u8);     set(buf, 3, '2' as u8);
+    set(buf, 4, '5' as u8);     set(buf, 5, 'l' as u8);
+    sys_write(1, buf, 6);
+    delete(buf);
+    return;
+}
+
+// ESC [ ? 2 5 h — paired show_cursor for the wind-down.
+fn show_cursor() -> void {
+    var buf: U8Array = U8Array(8u32);
+    set(buf, 0, 27u8);          set(buf, 1, '[' as u8);
+    set(buf, 2, '?' as u8);     set(buf, 3, '2' as u8);
+    set(buf, 4, '5' as u8);     set(buf, 5, 'h' as u8);
+    sys_write(1, buf, 6);
+    delete(buf);
+    return;
+}
+
+fn main() -> i32 {
+    var start_row: i32 = (SH - TRAIN_H) / 2;
+    if start_row < 1 { start_row = 1; }
+
+    hide_cursor();
+    clear_screen();
+
+    // Scratch holds the ESC prefix + SW bytes of payload; the longest
+    // row prefix at SH=24 is 6 bytes, so SW+16 leaves slack.
+    var buf: U8Array = U8Array((SW + 16) as u32);
+
+    var pos:  i32 = SW;
+    var step: i32 = 2;
+    while pos > 0 - TRAIN_W {
+        render_train(pos, start_row, buf);
+        do_nanosleep(20);
+        pos = pos - step;
+    }
+
+    delete(buf);
+    clear_screen();
+    show_cursor();
+    return 0;
+}

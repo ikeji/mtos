@@ -1,0 +1,3 @@
+GUEST_TASKS += sl
+TASK_ARENA_sl := 16384
+TASK_STACK_sl := 8192
