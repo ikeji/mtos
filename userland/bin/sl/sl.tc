@@ -15,16 +15,34 @@ import "../../lib/libtc/libtc.tc";
 
 fn do_nanosleep(ms: i32) -> i32;
 
-// Terminal geometry. SH only sets the vertical centring; rendering
-// itself never relies on it.
-var SW: i32 = 80;
-var SH: i32 = 24;
+// Terminal geometry. Defaults match /bin/console -l (landscape, 56x15)
+// so `sl` with no args renders cleanly on the LCD without wrapping.
+// `sl COLS ROWS` overrides — pass 80 24 for a host UART terminal.
+var SW: i32 = 56;
+var SH: i32 = 15;
 
 // Train bounding box. 10 rows tall, max line is 53 cols wide. The
 // animation loop runs while pos > -TRAIN_W so the train clears the
 // left edge before we redraw the final clean frame.
 var TRAIN_W: i32 = 53;
 var TRAIN_H: i32 = 10;
+
+// Parse a non-negative decimal — returns -1 on empty / non-digit input
+// so main() can fall back to the default. Same logic as seq.tc but
+// without the leading-minus handling (SW/SH are always positive).
+fn parse_uint(s: String) -> i32 {
+    var n: i32 = 0;
+    var i: i32 = 0;
+    var ll: i32 = len(s);
+    if ll == 0 { return -1; }
+    while i < ll {
+        var c: u8 = get(s, i);
+        if c < ('0' as u8) || c > ('9' as u8) { return -1; }
+        n = n * 10 + (c as i32 - 48);
+        i = i + 1;
+    }
+    return n;
+}
 
 // Append a non-negative decimal `v` to buf starting at off; return
 // the new offset. Used inline by render_row to splice the row number
@@ -145,7 +163,23 @@ fn show_cursor() -> void {
     return;
 }
 
-fn main() -> i32 {
+fn main(argv: StringArray) -> i32 {
+    // argv: `sl [COLS [ROWS]]`. Anything missing or non-numeric falls
+    // back to the SW/SH defaults (56x15 = console -l). Caps SW at 240
+    // because the row scratch buffer is allocated against it and a
+    // typo'd 80000 should not OOM the task arena.
+    if (argv as u32) != 0u32 {
+        var ac: i32 = len(argv);
+        if ac >= 2 {
+            var v0: i32 = parse_uint(get(argv, 1));
+            if v0 > 0 && v0 <= 240 { SW = v0; }
+        }
+        if ac >= 3 {
+            var v1: i32 = parse_uint(get(argv, 2));
+            if v1 > 0 && v1 <= 200 { SH = v1; }
+        }
+    }
+
     var start_row: i32 = (SH - TRAIN_H) / 2;
     if start_row < 1 { start_row = 1; }
 
@@ -153,7 +187,7 @@ fn main() -> i32 {
     clear_screen();
 
     // Scratch holds the ESC prefix + SW bytes of payload; the longest
-    // row prefix at SH=24 is 6 bytes, so SW+16 leaves slack.
+    // row prefix at SH up to 200 is 7 bytes, so SW+16 leaves slack.
     var buf: U8Array = U8Array((SW + 16) as u32);
 
     var pos:  i32 = SW;
