@@ -15,11 +15,12 @@ import "../../lib/libtc/libtc.tc";
 
 fn do_nanosleep(ms: i32) -> i32;
 
-// Terminal geometry. Defaults match /bin/console -l (landscape, 56x15)
-// so `sl` with no args renders cleanly on the LCD without wrapping.
-// `sl COLS ROWS` overrides — pass 80 24 for a host UART terminal.
-var SW: i32 = 56;
-var SH: i32 = 15;
+// Terminal geometry. Defaults match a standard 80x24 host terminal
+// (what UART users see). /etc/term.conf overrides for LCD consoles —
+// disk-console-land.img ships 56x15, disk-console.img ships 40x30.
+// `sl COLS ROWS` on the command line has the highest precedence.
+var SW: i32 = 80;
+var SH: i32 = 24;
 
 // Train bounding box. 10 rows tall, max line is 53 cols wide. The
 // animation loop runs while pos > -TRAIN_W so the train clears the
@@ -28,7 +29,7 @@ var TRAIN_W: i32 = 53;
 var TRAIN_H: i32 = 10;
 
 // Parse a non-negative decimal — returns -1 on empty / non-digit input
-// so main() can fall back to the default. Same logic as seq.tc but
+// so callers can fall back to a default. Same logic as seq.tc but
 // without the leading-minus handling (SW/SH are always positive).
 fn parse_uint(s: String) -> i32 {
     var n: i32 = 0;
@@ -42,6 +43,63 @@ fn parse_uint(s: String) -> i32 {
         i = i + 1;
     }
     return n;
+}
+
+// Parse one i32 decimal starting at buf[off..n], stopping at the first
+// non-digit. Returns the value (0 if no digits matched).
+fn parse_dec_buf(buf: U8Array, off: i32, n: i32) -> i32 {
+    var v: i32 = 0;
+    while off < n {
+        var c: u8 = get(buf, off);
+        if c < ('0' as u8) || c > ('9' as u8) { return v; }
+        v = v * 10 + (c as i32 - 48);
+        off = off + 1;
+    }
+    return v;
+}
+
+// True iff `prefix` is a literal prefix of buf[off..n].
+fn buf_starts_with(buf: U8Array, off: i32, n: i32, prefix: StringLiteral) -> bool {
+    var pl: i32 = len(prefix);
+    if off + pl > n { return false; }
+    var i: i32 = 0;
+    while i < pl {
+        if get(buf, off + i) != get(prefix, i) { return false; }
+        i = i + 1;
+    }
+    return true;
+}
+
+// Read /etc/term.conf and apply COLS / ROWS overrides. Format is
+// trivial: each line is `KEY=VALUE`; '#' and blank lines are skipped.
+// Silently no-ops when the file is absent so UART runs still see the
+// 80x24 compile-time default.
+fn load_term_conf() -> void {
+    var fd: i32 = do_openat(0, "/etc/term.conf", 0);
+    if fd < 0 { return; }
+    var buf: U8Array = U8Array(256);
+    var n: i32 = sys_read(fd, buf, 256);
+    do_close(fd);
+    if n <= 0 { delete(buf); return; }
+    var i: i32 = 0;
+    while i < n {
+        // skip leading whitespace
+        while i < n && (get(buf, i) == ' ' as u8 || get(buf, i) == '\t' as u8) {
+            i = i + 1;
+        }
+        if i < n && get(buf, i) != '#' as u8 && get(buf, i) != '\n' as u8 {
+            if buf_starts_with(buf, i, n, "COLS=") {
+                SW = parse_dec_buf(buf, i + 5, n);
+            } else if buf_starts_with(buf, i, n, "ROWS=") {
+                SH = parse_dec_buf(buf, i + 5, n);
+            }
+        }
+        // advance to next line
+        while i < n && get(buf, i) != '\n' as u8 { i = i + 1; }
+        if i < n { i = i + 1; }
+    }
+    delete(buf);
+    return;
 }
 
 // Append a non-negative decimal `v` to buf starting at off; return
@@ -164,10 +222,16 @@ fn show_cursor() -> void {
 }
 
 fn main(argv: StringArray) -> i32 {
-    // argv: `sl [COLS [ROWS]]`. Anything missing or non-numeric falls
-    // back to the SW/SH defaults (56x15 = console -l). Caps SW at 240
-    // because the row scratch buffer is allocated against it and a
-    // typo'd 80000 should not OOM the task arena.
+    // Precedence: compile-time defaults (80x24) → /etc/term.conf
+    // (shipped on console disks) → argv (`sl COLS ROWS`). The conf
+    // file lets the LCD pick up the right size automatically without
+    // every script having to remember to type `sl 56 15`.
+    load_term_conf();
+
+    // argv: `sl [COLS [ROWS]]`. Missing or non-numeric args keep the
+    // value resolved above. Caps SW at 240 because the row scratch
+    // buffer is allocated against it and a typo'd 80000 should not
+    // OOM the task arena.
     if (argv as u32) != 0u32 {
         var ac: i32 = len(argv);
         if ac >= 2 {

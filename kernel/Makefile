@@ -113,6 +113,14 @@ $(BUILD_DIR)/disk-console-land.img: DISK_LOGIN := $(ROOT)/kernel/fs-spec/etc/log
 $(BUILD_DIR)/disk-console.img:      $(ROOT)/kernel/fs-spec/etc/login
 $(BUILD_DIR)/disk-console-land.img: $(ROOT)/kernel/fs-spec/etc/login
 
+# /etc/term.conf: COLS/ROWS for full-screen apps (sl, eventually vi).
+# Only console disks ship it; the plain disk leaves it absent so sl on
+# the UART terminal falls back to its 80x24 compile-time default.
+$(BUILD_DIR)/disk-console.img:      DISK_TERM_CONF := $(ROOT)/kernel/fs-spec/etc/term_portrait.conf
+$(BUILD_DIR)/disk-console-land.img: DISK_TERM_CONF := $(ROOT)/kernel/fs-spec/etc/term_landscape.conf
+$(BUILD_DIR)/disk-console.img:      $(ROOT)/kernel/fs-spec/etc/term_portrait.conf
+$(BUILD_DIR)/disk-console-land.img: $(ROOT)/kernel/fs-spec/etc/term_landscape.conf
+
 # Pre-encode prelude (Step 5 of pre-encode, docs/task/asm_pre_encode.md)
 define PRELUDE_PRE_ENCODE
     cd $(ROOT) && qemu-riscv32 compiler/build/gen2/asm_pass1 \
@@ -158,6 +166,9 @@ $(BUILD_DIR)/disk.img $(BUILD_DIR)/disk-demo.img $(BUILD_DIR)/disk-console.img $
 	fi && \
 	if [ -n "$(DISK_LOGIN)" ] && [ -f "$(DISK_LOGIN)" ]; then \
 	    mkdir -p "$$_r/etc" && cp "$(DISK_LOGIN)" "$$_r/etc/login"; \
+	fi && \
+	if [ -n "$(DISK_TERM_CONF)" ] && [ -f "$(DISK_TERM_CONF)" ]; then \
+	    mkdir -p "$$_r/etc" && cp "$(DISK_TERM_CONF)" "$$_r/etc/term.conf"; \
 	fi && \
 	cd $(ROOT) && qemu-riscv32 compiler/build/gen2/mkfs $@ "$$_r" >&2 && \
 	rm -rf "$$_tmp"
