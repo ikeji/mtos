@@ -836,64 +836,72 @@ fn dispatch_csi_private(fb: i32, frame: U8Array, final: i32) -> void {
 // through) the UTF-8 decoder, then render completed codepoints. The
 // CSI parser eats ESC + everything up to and including the final byte
 // so escape bytes never reach draw_cp.
+//
+// Defensive structure: each state handler returns once it has consumed
+// the byte. If `g_esc_state` is ever NOT 1/2/3 (i.e. a stale value or
+// zero) the code falls through to the ground-state handling — and we
+// stamp g_esc_state back to 0 so the next pass can't get stuck in a
+// non-canonical state where bytes route around the parser entirely.
 fn render(fb: i32, frame: U8Array, b: i32) -> void {
-    if g_esc_state != 0 {
-        if g_esc_state == 1 {
-            if b == ('[' as i32) {
-                g_esc_state = 2;
-                g_csi_cur = 0;
-                g_csi_has = 0;
-                g_csi_n = 0;
-            } else {
-                // Two-byte ESC <X> sequences (DECSC, charset selects,
-                // etc.) aren't useful here — drop the byte and return
-                // to ground state. SL/vi/sh don't emit any of them.
-                g_esc_state = 0;
-            }
+    if g_esc_state == 1 {
+        if b == ('[' as i32) {
+            g_esc_state = 2;
+            g_csi_cur = 0;
+            g_csi_has = 0;
+            g_csi_n = 0;
+        } else {
+            // Two-byte ESC <X> sequences (DECSC, charset selects,
+            // etc.) aren't useful here — drop the byte and return
+            // to ground state. SL/vi/sh don't emit any of them.
+            g_esc_state = 0;
+        }
+        return;
+    }
+    if g_esc_state == 2 || g_esc_state == 3 {
+        // '?' as the first byte switches to private-mode CSI.
+        if g_esc_state == 2 && b == ('?' as i32)
+           && g_csi_has == 0 && g_csi_n == 0 {
+            g_esc_state = 3;
             return;
         }
-        if g_esc_state == 2 || g_esc_state == 3 {
-            // '?' as the first byte switches to private-mode CSI.
-            if g_esc_state == 2 && b == ('?' as i32)
-               && g_csi_has == 0 && g_csi_n == 0 {
-                g_esc_state = 3;
-                return;
+        if b >= ('0' as i32) && b <= ('9' as i32) {
+            g_csi_cur = g_csi_cur * 10 + (b - ('0' as i32));
+            g_csi_has = 1;
+            return;
+        }
+        if b == (';' as i32) {
+            if g_csi_n < CSI_PMAX {
+                set(g_csi_p, g_csi_n, g_csi_cur);
+                g_csi_n = g_csi_n + 1;
             }
-            if b >= ('0' as i32) && b <= ('9' as i32) {
-                g_csi_cur = g_csi_cur * 10 + (b - ('0' as i32));
-                g_csi_has = 1;
-                return;
-            }
-            if b == (';' as i32) {
+            g_csi_cur = 0;
+            g_csi_has = 0;
+            return;
+        }
+        if b >= 0x40 && b <= 0x7E {
+            if g_csi_has != 0 || g_csi_n > 0 {
                 if g_csi_n < CSI_PMAX {
                     set(g_csi_p, g_csi_n, g_csi_cur);
                     g_csi_n = g_csi_n + 1;
                 }
-                g_csi_cur = 0;
-                g_csi_has = 0;
-                return;
             }
-            if b >= 0x40 && b <= 0x7E {
-                if g_csi_has != 0 || g_csi_n > 0 {
-                    if g_csi_n < CSI_PMAX {
-                        set(g_csi_p, g_csi_n, g_csi_cur);
-                        g_csi_n = g_csi_n + 1;
-                    }
-                }
-                if g_esc_state == 2 {
-                    dispatch_csi(fb, frame, b);
-                } else {
-                    dispatch_csi_private(fb, frame, b);
-                }
-                g_esc_state = 0;
-                return;
+            if g_esc_state == 2 {
+                dispatch_csi(fb, frame, b);
+            } else {
+                dispatch_csi_private(fb, frame, b);
             }
-            // Intermediate bytes (0x20..0x2F) or anything else we don't
-            // understand — abort the sequence and resume ground state.
             g_esc_state = 0;
             return;
         }
+        // Intermediate bytes (0x20..0x2F) or anything else we don't
+        // understand — abort the sequence and resume ground state.
+        g_esc_state = 0;
+        return;
     }
+    // Ground state (canonical g_esc_state == 0). Pin the state to 0
+    // defensively so a stale value caused by a memory glitch upstream
+    // can't trap subsequent bytes in a dead branch above.
+    g_esc_state = 0;
     if b == 27 {
         // Resync: any half-decoded UTF-8 char is discarded on ESC.
         g_un = 0;
