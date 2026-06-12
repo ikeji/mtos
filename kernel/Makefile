@@ -170,6 +170,11 @@ $(BUILD_DIR)/disk.img $(BUILD_DIR)/disk-demo.img $(BUILD_DIR)/disk-console.img $
 	if [ -n "$(DISK_TERM_CONF)" ] && [ -f "$(DISK_TERM_CONF)" ]; then \
 	    mkdir -p "$$_r/etc" && cp "$(DISK_TERM_CONF)" "$$_r/etc/term.conf"; \
 	fi && \
+	mkdir -p "$$_r/etc" && \
+	_kbuild=$$(git -C $(ROOT) rev-parse --short=8 HEAD 2>/dev/null || echo unknown) && \
+	if ! git -C $(ROOT) diff --quiet HEAD 2>/dev/null; then _kbuild="$$_kbuild+dirty"; fi && \
+	_kdate=$$(date -u +%Y-%m-%dT%H:%M:%SZ) && \
+	printf 'build=%s\ndate=%s\n' "$$_kbuild" "$$_kdate" > "$$_r/etc/version" && \
 	cd $(ROOT) && qemu-riscv32 compiler/build/gen2/mkfs $@ "$$_r" >&2 && \
 	rm -rf "$$_tmp"
 

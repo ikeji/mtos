@@ -147,6 +147,76 @@ fn print_kib_human(v: i32) -> void {
     return;
 }
 
+// Emit `count` bytes starting at buf[off] to stdout. The caller is
+// expected to size `count` against `len(buf)`; we keep the temp
+// allocation small to avoid pressuring the task arena.
+fn write_bytes(buf: U8Array, off: i32, count: i32) -> void {
+    if count <= 0 { return; }
+    var out: U8Array = U8Array(count as u32);
+    var i: i32 = 0;
+    while i < count {
+        set(out, i, get(buf, off + i));
+        i = i + 1;
+    }
+    sys_write(1, out, count);
+    delete(out);
+    return;
+}
+
+// Print one line from /etc/version for the named key (e.g. "build="
+// or "date="). Cap at 32 bytes — long enough for K21 milestone tags
+// or a short hash, short enough to keep the splash from wrapping.
+// Trims trailing CR so files saved with CRLF still align cleanly.
+fn print_version_field(buf: U8Array, n: i32, prefix: StringLiteral) -> void {
+    var i: i32 = 0;
+    while i < n {
+        var m: i32 = match_prefix(buf, i, n, prefix);
+        if m > 0 {
+            var start: i32 = i + m;
+            var end: i32 = start;
+            while end < n && get(buf, end) != 10u8 && get(buf, end) != 13u8 {
+                end = end + 1;
+            }
+            var w: i32 = end - start;
+            if w > 32 { w = 32; }
+            write_bytes(buf, start, w);
+            return;
+        }
+        while i < n && get(buf, i) != 10u8 { i = i + 1; }
+        if i < n { i = i + 1; }
+    }
+    puts("?");
+    return;
+}
+
+// /etc/version is a KEY=VALUE file shipped on every disk (see
+// kernel/fs-spec/default.spec). When the file is missing — e.g. a
+// hand-built disk that omits default.spec — we degrade to "(unknown)"
+// rather than hide the line entirely so the splash still tells you
+// what info isn't available.
+fn print_build_line() -> void {
+    var fd: i32 = do_openat(0, "/etc/version", 0);
+    if fd < 0 {
+        puts("  build : (unknown)\n");
+        return;
+    }
+    var buf: U8Array = U8Array(128);
+    var n: i32 = sys_read(fd, buf, 128);
+    do_close(fd);
+    if n <= 0 {
+        delete(buf);
+        puts("  build : (unknown)\n");
+        return;
+    }
+    puts("  build : ");
+    print_version_field(buf, n, "build=");
+    puts(" (");
+    print_version_field(buf, n, "date=");
+    puts(")\n");
+    delete(buf);
+    return;
+}
+
 // Stream /proc/diskinfo into stdout, one line per mounted FS, each
 // preceded by the 16-space banner padding so the FS table aligns
 // with the rest of the right column. Lines from the kernel are key=
@@ -244,6 +314,8 @@ fn main() -> i32 {
     puts(" ready / ");
     print(total(stats));
     puts(" total\n");
+    puts("                ");
+    print_build_line();
     puts("                ");
     puts("  done  : ");
     print(done(stats));

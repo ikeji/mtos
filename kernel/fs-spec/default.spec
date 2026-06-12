@@ -13,6 +13,13 @@
 # Static content files
 /hello.txt                          kernel/fs-spec/etc/hello.txt
 
+# /etc/version is staged by the Makefile recipe at disk build time
+# (kernel/Makefile, common disk recipe) so it can carry the current
+# git short hash + build timestamp. Generating it dynamically means
+# the disk image is not byte-exact across builds — pico2 self-
+# replicate compares the compiled kernel, not the disk inodes, so
+# this is fine.
+
 # /etc/login is staged per-disk by the Makefile (DISK_LOGIN variable),
 # not here — console disks ship a neofetch banner, the plain disk and
 # test disks omit it to keep test runtime under the 1 min budget.
