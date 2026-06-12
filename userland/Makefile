@@ -182,19 +182,26 @@ GCC_LDFLAGS :=
 # Per-task rule generator. Static-pattern-style: emits an explicit
 # target for $(TASK_DIR)/<name>.bin that overrides the generic TC
 # pattern above (Make picks the most specific match).
+#
+# Sources default to a single $(ROOT)/userland/gcc-bin/<name>/<name>.c
+# but task.mk can override via GCC_SOURCES_<name> := <list> (used by
+# gcc_doom, which vendors ~85 doomgeneric .c files). Same for header
+# search via GCC_INCLUDES_<name>.
 define GCC_TASK_RULE
-$$(TASK_DIR)/$(1).bin: $$(ROOT)/userland/gcc-bin/$(1)/$(1).c \
+GCC_SOURCES_$(1) ?= $$(ROOT)/userland/gcc-bin/$(1)/$(1).c
+GCC_INCLUDES_$(1) ?=
+$$(TASK_DIR)/$(1).bin: $$(GCC_SOURCES_$(1)) \
     $$(GCC_CRT0) $$(GCC_LIBC) $$(GCC_LD) $$(TASK_SIZES) | $$(TASK_DIR)
-	@echo "Building gcc task: $(1)" >&2
+	@echo "Building gcc task: $(1) ($$(words $$(GCC_SOURCES_$(1))) src)" >&2
 	@_tmp=$$$$(mktemp -d) && \
 	. $$(TASK_SIZES) && \
 	_arena=$$$$(task_arena_size $(1)) && \
 	_stack=$$$$(task_stack_size $(1)) && \
 	printf '    .section .text.k3, "ax", @progbits\n    .word %s\n    .word %s\n' \
 	    "$$$$_arena" "$$$$_stack" > "$$$$_tmp/hdr.s" && \
-	$$(RISCV_GCC) $$(GCC_CFLAGS) $$(GCC_LDFLAGS) -T $$(GCC_LD) \
-	    "$$$$_tmp/hdr.s" $$(GCC_CRT0) $$(GCC_LIBC) $$< \
-	    -o "$$$$_tmp/$(1).elf" && \
+	$$(RISCV_GCC) $$(GCC_CFLAGS) $$(GCC_INCLUDES_$(1)) $$(GCC_LDFLAGS) \
+	    -T $$(GCC_LD) "$$$$_tmp/hdr.s" $$(GCC_CRT0) $$(GCC_LIBC) \
+	    $$(GCC_SOURCES_$(1)) -o "$$$$_tmp/$(1).elf" && \
 	$$(RISCV_OBJCOPY) -O binary "$$$$_tmp/$(1).elf" $$@ && \
 	rm -rf "$$$$_tmp"
 endef

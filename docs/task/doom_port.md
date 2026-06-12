@@ -151,17 +151,41 @@ address で動く必要がある。text は flash 上にあるので load-time f
 - globals + heap を実際に使う回帰 smoke task (`gcc_globals_smoke`)
   を `make test` に組み込み
 
-### Phase 1: doomgeneric vendor + ホスト層 (1-2 日)
+### Phase 1: doomgeneric vendor + ホスト層 (完了、2026-06-12)
 
-- `userland/gcc-bin/gcc_doom/doomgeneric/` に doomgeneric を vendor in
-  (submodule か git subtree か copy)
-- `doomgeneric_tcos.c` を新規作成、`DG_*` を埋める:
-  - `DG_Init` — `/dev/fb` と `/dev/kbd` を open
-  - `DG_DrawFrame` — Phase 2 で実装
-  - `DG_GetKey` — Phase 3 で実装
-  - `DG_GetTicksMs` — `do_uptime_us() / 1000`
-  - `DG_SleepMs` — `do_nanosleep(ms)`
+成果:
+
+- **vendor**: ozkl/doomgeneric @ `dcb7a8d` から `.h` / `.c` を全量 copy
+  (8 つの他 platform port `doomgeneric_{allegro,emscripten,linuxvt,
+  sdl,soso,sosox,win,xlib}.c` のみ除外)。`userland/gcc-bin/gcc_doom/
+  doomgeneric/` に upstream LICENSE と VENDOR.md を同梱。
+- **doomgeneric_tcos.c**: `DG_*` 6 callback の実装。Phase 1 stub:
+  - `DG_Init` — no-op (Phase 2 で `/dev/fb` / `/dev/kbd` open)
+  - `DG_DrawFrame` — no-op (Phase 2 で RGB565 変換 + band blit)
+  - `DG_GetKey` — 常に 0 (Phase 3 で kbd → KEY_* mapping)
+  - `DG_GetTicksMs` — syscall 153 `do_uptime_us` / 1000
+  - `DG_SleepMs` — syscall 101 nanosleep
   - `DG_SetWindowTitle` — no-op
+- **gcc_doom.c**: `main(argc, argv)` から `doomgeneric_Create` を
+  呼ぶ薄い wrapper。
+- **Makefile plumbing**: `userland/Makefile::GCC_TASK_RULE` を
+  multi-source 化 (`GCC_SOURCES_<task>` 上書き対応 + 任意の
+  `GCC_INCLUDES_<task>` で per-task include path)。
+- **task.mk**: `EXTRA_GUEST_TASKS += gcc_doom` (default seed には
+  入れない)、arena 256 KB / stack 16 KB を割り当て。
+
+未着手 (Phase 2 着手時に対処):
+
+- libc gap — Debian の `gcc-riscv64-unknown-elf` は freestanding GCC
+  のみ。`#include <stdio.h>` 等が解決できないので現状は cc 段階で
+  落ちる。`picolibc-riscv64-unknown-elf` apt package を入れて
+  `--specs=picolibc.specs` を `GCC_CFLAGS` に足す予定。
+- gcc_libc.c が printf / malloc / fopen 系を持っていないので picolibc
+  ホスト後も `_open/_read/_write/_lseek/_fstat/_isatty` の retarget が
+  必要。
+- math: `sin / cos / atan2` は picolibc が持つので multi-libc 整備で
+  もらう想定 (DOOM は fixed-point だが、PI_SIN テーブル参照に内部で
+  使う箇所がある)。
 
 ### Phase 2: video driver (3-5 日)
 
