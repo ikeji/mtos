@@ -843,6 +843,16 @@ fn dispatch_csi_private(fb: i32, frame: U8Array, final: i32) -> void {
 // stamp g_esc_state back to 0 so the next pass can't get stuck in a
 // non-canonical state where bytes route around the parser entirely.
 fn render(fb: i32, frame: U8Array, b: i32) -> void {
+    // ESC at ANY state restarts the parser: hardware-style resync
+    // for the realistic case where an app's partial sys_write left a
+    // half-CSI in the pipe and the next sys_write started a fresh
+    // ESC[ sequence. Without this the truncated CSI would consume the
+    // new ESC, and `[<row>;1H` would leak straight to draw_cp.
+    if b == 27 {
+        g_un = 0;
+        g_esc_state = 1;
+        return;
+    }
     if g_esc_state == 1 {
         if b == ('[' as i32) {
             g_esc_state = 2;
@@ -900,14 +910,10 @@ fn render(fb: i32, frame: U8Array, b: i32) -> void {
     }
     // Ground state (canonical g_esc_state == 0). Pin the state to 0
     // defensively so a stale value caused by a memory glitch upstream
-    // can't trap subsequent bytes in a dead branch above.
+    // can't trap subsequent bytes in a dead branch above. The
+    // top-of-function ESC check already handled b == 27, so the only
+    // bytes reaching here flow into the UTF-8 decoder.
     g_esc_state = 0;
-    if b == 27 {
-        // Resync: any half-decoded UTF-8 char is discarded on ESC.
-        g_un = 0;
-        g_esc_state = 1;
-        return;
-    }
     var cp: i32 = 0 - 1;
     if g_un > 0 {
         if (b & 192) == 128 {
