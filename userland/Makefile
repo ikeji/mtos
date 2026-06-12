@@ -151,26 +151,33 @@ RISCV_OBJCOPY := riscv64-unknown-elf-objcopy
 GCC_CRT0   := $(ROOT)/compiler/runtime/mtos/gcc_crt0.s
 GCC_LIBC   := $(ROOT)/compiler/runtime/mtos/gcc_libc.c
 GCC_LD     := $(ROOT)/compiler/runtime/mtos/gcc_task.ld
-# -fPIE + --no-relax keeps every string-literal / global access PC-relative
-# (auipc + addi) instead of folding to an absolute `li`. The kernel loads
-# each task at a per-task RAM/flash address, so any code that bakes in
-# the link-time VMA (0x100-ish for .text, 0x128 for the first .rodata)
-# would compute wild pointers at runtime — exactly the load-fault trap
-# we hit on the first gcc_hello.
-GCC_CFLAGS := -march=rv32im -mabi=ilp32 -mcmodel=medlow -Os \
+# Codegen strategy for guest tasks (see gcc_task.ld for the matching
+# memory layout):
+#
+#   * -fPIE + -mcmodel=medany: every text/rodata reference is emitted
+#     as PC-relative auipc+addi (or auipc+lw/sw). The kernel loads each
+#     task at a per-task RAM/flash address, so any access that bakes
+#     in the link-time VMA would compute a wild pointer at runtime —
+#     exactly the load-fault trap we hit on the first gcc_hello.
+#   * FLASH ORIGIN = 0x20000000 in the linker script keeps every
+#     rodata symbol's VMA outside the 12-bit signed window so the
+#     linker relaxer can't fold the auipc+addi pair into a single
+#     absolute `li`.
+#   * Heap state lives at a fixed gp-relative offset in .bss; crt0
+#     points `tp` at it once at startup and libc reads through tp
+#     directly. This bypasses a binutils gp-relax quirk where one of
+#     several consecutive auipc+lw/sw pairs would silently keep its
+#     auipc, baking the link-time VMA into the binary.
+#
+# -msmall-data-limit=2048 stays on so that any future small-data
+# scalars can land in .sdata/.sbss within ±2KB of gp; nothing today
+# actually exercises that, but the budget is free.
+GCC_CFLAGS := -march=rv32im -mabi=ilp32 -mcmodel=medany -Os \
               -fPIE -ffunction-sections -fdata-sections \
               -fno-builtin -nostdlib -nostartfiles \
               -msmall-data-limit=2048 \
               -Wall -Wno-unused-parameter
-# --no-relax keeps `auipc + addi` literal-address pairs intact. With
-# relaxation enabled the linker folds them into single absolute `li`s,
-# which bake the link-time VMA into the binary; our task runs at a
-# kernel-assigned runtime address, not at the linker's idea of one,
-# so those folds break PC-relative .rodata lookups. (Trade-off: this
-# also blocks the gp-relative relaxation that would let small-data
-# globals collapse into `lw/sw rd, off(gp)` — once Phase 0.5 adds a
-# load-time reloc pass we can revisit.)
-GCC_LDFLAGS := -Wl,--no-relax
+GCC_LDFLAGS :=
 
 # Per-task rule generator. Static-pattern-style: emits an explicit
 # target for $(TASK_DIR)/<name>.bin that overrides the generic TC

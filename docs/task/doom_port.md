@@ -98,52 +98,58 @@ GCC で compile した RV32 raw bin を我々の K3 task として spawn でき�
   - `make -C userland test-quick` でビルドできて、qemu virt 上で
     `sh$ gcc_hello` で hello が出れば Phase 0 PASS
 
-### Phase 0.5: load-time relocation で globals を解錠 (3-5 日)
+### Phase 0.5: PIC text/rodata + gp-relative data/bss (完了、2026-06-12)
 
-Phase 0 commit `e371610` で「globals を持たない」GCC task は動いたが、
-.data / .bss を持つ task (= doomgeneric 含む実用 task 全部) はまだ
-動かない。理由は GCC が生成する globals アクセスのアドレッシングと、
-我々の task ABI の RAM レイアウトが整合しないこと:
+Phase 0 commit `e371610` で「globals を持たない」GCC task は動いた
+ものの、.data / .bss を持つ task は kernel が選ぶ任意の runtime
+address で動く必要がある。text は flash 上にあるので load-time fixup
+は不可、ということで採用した方針:
 
-- **-fPIE + linker --no-relax**: .rodata は auipc + addi で PC-rel
-  に解決され ✓ (これが Phase 0 で string literal が動く理由)、しかし
-  .data / .bss も同じ仕組みで PC-rel になり、起動時に
-  「runtime_text_base + VMA_offset」を計算してしまう。我々の RAM は
-  flash に隣接しているわけではなく、kernel が別途 ram_base に
-  allocate するため、ストアが flash 領域に向かってトラップ。
-- **-fPIE + relax 有効**: linker が PC-rel pair を絶対 `li` や
-  `sw rd, off(zero)` に畳む。今度は .rodata 参照も絶対化されて
-  link-time VMA を baked-in した bin が出来上がり、結局 task が
-  別アドレスに load された瞬間にデタラメな pointer を読みに行く。
-- **-msmall-data-limit + gp-relative relax**: `__global_pointer$`
-  を PROVIDE しても linker が pickup せず、small globals は
-  zero-base 相対 (`sw rd, off(zero)`) に落ちる。
+- **PIC text / rodata**: `-fPIE -mcmodel=medany` で全アクセスを
+  auipc + addi (PC-rel) に。FLASH ORIGIN を 0x20000000 に上げて
+  linker relaxer が PC-rel pair を 12-bit 即値 `li` に畳まないように
+  ガード。
+- **gp-relative data / bss**: kernel が ABI 通り `gp = ram_base + 0x800`
+  で task を起動。linker script で `__global_pointer$ = __data_start
+  + 0x800` を **explicit `=`** (`PROVIDE` ではない) で定義、RAM
+  ORIGIN を 0x10000000 に上げて linker が zero-base に畳まないよう
+  にする。これで scalar load/store の auipc+lw/sw 対が単一の
+  `lw/sw rd, off(gp)` に relax される。
+- **heap state は tp 経由**: binutils の gp-relax は連続する複数の
+  auipc+lw/sw 対のうち 1 つを取りこぼすバグがあり、特に「address-of
+  (`auipc + addi` で `&sym` を計算)」パターンを gp-relative `addi
+  rd, gp, off` に畳めない。回避策として linker script で `.bss` の
+  先頭 4 byte パディング後に 12 byte の `__heap_state` を予約し、
+  `gcc_crt0.s` で `addi tp, gp, -0x7FC` を 1 回発行して tp を
+  base にする。libc は `mv reg, tp` + offset 指定で
+  base/brk/end にアクセスするので relax 依存ゼロ。
+- **argv は stack-local**: ARGV_MAX+1 entry を stack 上に取り、
+  kernel の StringArray を `_libc_unpack_argv_to(sa, &argv[0])` で
+  詰め直す。`_libc_get_argv()` のような address-of API は持たない
+  ことで relax の死角を全部消す。
+- **.data copy / .bss zero**: gcc_crt0 が `lla t0, __data_lma`
+  (PC-rel) + `addi t1, gp, -0x800` (gp-rel) でコピー先 / 元を計算、
+  `lui + addi %hi/%lo(__data_size)` で link-time 定数として size を
+  load。
 
-正攻法は **load-time relocation**:
+これで globals + heap を使う task (= doomgeneric 含む実用 task 全部)
+が任意の runtime address で動く。Phase 1 へ進む準備完了。
 
-1. `--emit-relocs` で ELF を吐き、`R_RISCV_RELATIVE` 等の relocation
-   表を保持したまま objcopy で raw bin にする (relocs を末尾の
-   独立セクションに dump)
-2. K3 header を `arena | stack | reloc_off | reloc_count` の 16 byte
-   に拡張し、bin 末尾の reloc 表へのオフセットを格納
-3. kernel/loader.tc::load_fd で K3 header を読んだ後、reloc 表を
-   走査して `*addr += task_load_base` でアドレスを fix-up
-4. これで -fno-pic / -fPIC 関係なく、絶対参照を含むコードが任意の
-   runtime address で動く
-5. gcc_crt0 は .data copy + .bss zero + heap init + argv unpack を
-   フル実装してよくなる
+成果物 (commit `7e9d... 想定`):
 
-成果物:
-
-- `kernel/src/loader.tc` の K3 header parsing 拡張と reloc 適用ループ
-- `compiler/runtime/mtos/gcc_crt0.s` をフル版に戻す
+- `compiler/runtime/mtos/gcc_crt0.s` フル版 (.data copy + .bss zero
+  + tp 初期化 + argv unpack + main 呼び出し)
 - `compiler/runtime/mtos/gcc_libc.c` の `_libc_init_heap` /
-  `_libc_unpack_argv` 経路の smoke test (printf, malloc 含む)
-- `userland/gcc-bin/gcc_globals_smoke/` で globals + heap を実際に
-  使う smoke task を追加 (`make test` 組み込み)
+  `_libc_unpack_argv_to` / `_sbrk` 経路、tp 経由
+- `compiler/runtime/mtos/gcc_task.ld` (FLASH 0x20000000, RAM
+  0x10000000, `__heap_state` 予約 + ASSERT で offset を sanity check)
+- qemu virt で `sh$ gcc_hello` → `hello from gcc task` 出力確認済
 
-Phase 1 着手前にここを通すことで、doomgeneric の 50K LOC を素直に
-GCC に通す道が拓ける。
+未着手 (Phase 1 着手前 or Phase 5 で必要になれば):
+
+- newlib retarget を本格的に繋いで printf / malloc を使えるように
+- globals + heap を実際に使う回帰 smoke task (`gcc_globals_smoke`)
+  を `make test` に組み込み
 
 ### Phase 1: doomgeneric vendor + ホスト層 (1-2 日)
 
