@@ -25,7 +25,8 @@ USERLAND_BUILD := $(ROOT)/userland/build
 SHARED_S       := $(USERLAND_BUILD)/shared/runtime.s $(USERLAND_BUILD)/shared/libtc.s
 
 # task 一覧 (userland と同じ wildcard 経由で読む)
-TASK_MK_FILES := $(wildcard $(ROOT)/userland/bin/*/task.mk)
+TASK_MK_FILES := $(wildcard $(ROOT)/userland/bin/*/task.mk) \
+                 $(wildcard $(ROOT)/userland/gcc-bin/*/task.mk)
 GUEST_TASKS :=
 EXTRA_GUEST_TASKS :=
 -include $(TASK_MK_FILES)

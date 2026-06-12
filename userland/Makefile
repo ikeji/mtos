@@ -36,9 +36,16 @@ SHARED_DIR := $(BUILD_DIR)/shared
 TASK_SIZES := $(BUILD_DIR)/task_sizes.sh
 
 # ----- Task definitions from per-task task.mk -----
-TASK_MK_FILES := $(wildcard $(ROOT)/userland/bin/*/task.mk)
+# TC tasks live under userland/bin/<name>/, GCC tasks (riscv-elf-gcc
+# compiled C) live under userland/gcc-bin/<name>/. Both contribute to
+# GUEST_TASKS / TASK_ARENA_<name> / TASK_STACK_<name>; GCC tasks
+# additionally append to GCC_TASKS so the dedicated build rule below
+# picks them up instead of falling through to the TC pattern rule.
+TASK_MK_FILES := $(wildcard $(ROOT)/userland/bin/*/task.mk) \
+                 $(wildcard $(ROOT)/userland/gcc-bin/*/task.mk)
 GUEST_TASKS :=
 EXTRA_GUEST_TASKS :=
+GCC_TASKS :=
 -include $(TASK_MK_FILES)
 # DROP_TASKS で個別タスクを除外可 (pico2 4 MiB flash 用)
 GUEST_TASKS       := $(filter-out $(DROP_TASKS),$(GUEST_TASKS))
@@ -130,6 +137,52 @@ $(TASK_DIR)/%.bin: $(SHARED_S) $(GEN2_TOOLS) $(TASK_CRT0) $(TASK_DATA) $(TASK_SI
 	@cd $(ROOT) && compiler/scripts/tc_deps_to_d.sh $@ userland/bin/$*/$*.tc > $@.d
 
 -include $(addsuffix .d,$(ALL_TASK_BINS))
+
+# ===== GCC-compiled tasks (riscv-elf-gcc) =====
+# Linker layout, crt0, and minimal libc shared by every gcc-bin task.
+# The build composes:
+#   hdr.s  (K3 header, generated per-task from TASK_ARENA / TASK_STACK)
+# + gcc_crt0.s
+# + gcc_libc.c
+# + <task>.c
+# → .elf via riscv64-unknown-elf-gcc + ld → .bin via objcopy.
+RISCV_GCC  := riscv64-unknown-elf-gcc
+RISCV_OBJCOPY := riscv64-unknown-elf-objcopy
+GCC_CRT0   := $(ROOT)/compiler/runtime/mtos/gcc_crt0.s
+GCC_LIBC   := $(ROOT)/compiler/runtime/mtos/gcc_libc.c
+GCC_LD     := $(ROOT)/compiler/runtime/mtos/gcc_task.ld
+# -fPIE + --no-relax keeps every string-literal / global access PC-relative
+# (auipc + addi) instead of folding to an absolute `li`. The kernel loads
+# each task at a per-task RAM/flash address, so any code that bakes in
+# the link-time VMA (0x100-ish for .text, 0x128 for the first .rodata)
+# would compute wild pointers at runtime — exactly the load-fault trap
+# we hit on the first gcc_hello.
+GCC_CFLAGS := -march=rv32im -mabi=ilp32 -mcmodel=medlow -Os \
+              -fPIE -ffunction-sections -fdata-sections \
+              -fno-builtin -nostdlib -nostartfiles \
+              -Wall -Wno-unused-parameter
+GCC_LDFLAGS := -Wl,--no-relax
+
+# Per-task rule generator. Static-pattern-style: emits an explicit
+# target for $(TASK_DIR)/<name>.bin that overrides the generic TC
+# pattern above (Make picks the most specific match).
+define GCC_TASK_RULE
+$$(TASK_DIR)/$(1).bin: $$(ROOT)/userland/gcc-bin/$(1)/$(1).c \
+    $$(GCC_CRT0) $$(GCC_LIBC) $$(GCC_LD) $$(TASK_SIZES) | $$(TASK_DIR)
+	@echo "Building gcc task: $(1)" >&2
+	@_tmp=$$$$(mktemp -d) && \
+	. $$(TASK_SIZES) && \
+	_arena=$$$$(task_arena_size $(1)) && \
+	_stack=$$$$(task_stack_size $(1)) && \
+	printf '    .text\n    .word %s\n    .word %s\n' "$$$$_arena" "$$$$_stack" \
+	    > "$$$$_tmp/hdr.s" && \
+	$$(RISCV_GCC) $$(GCC_CFLAGS) $$(GCC_LDFLAGS) -T $$(GCC_LD) \
+	    "$$$$_tmp/hdr.s" $$(GCC_CRT0) $$(GCC_LIBC) $$< \
+	    -o "$$$$_tmp/$(1).elf" && \
+	$$(RISCV_OBJCOPY) -O binary "$$$$_tmp/$(1).elf" $$@ && \
+	rm -rf "$$$$_tmp"
+endef
+$(foreach t,$(GCC_TASKS),$(eval $(call GCC_TASK_RULE,$(t))))
 
 # ===== Japanese font for /bin/console =====
 # tmp/font.bmp (np21w PC-98 font、user-supplied、never committed) を
