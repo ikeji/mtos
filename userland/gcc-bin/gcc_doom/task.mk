@@ -14,7 +14,11 @@
 #     docs/task/doom_port.md phase 2.
 #   * GCC_CFLAGS needs to add `--specs=picolibc.specs` (or the
 #     equivalent paths) once the package is installed.
-EXTRA_GUEST_TASKS += gcc_doom
+# GCC_TASKS-only (no GUEST_TASKS / EXTRA_GUEST_TASKS yet): the build
+# rule gets generated so `make userland/build/tasks/gcc_doom.bin`
+# works for poking at the build, but the default `make tasks` skips
+# it. Phase 2 promotes this to EXTRA_GUEST_TASKS once the link goes
+# clean.
 GCC_TASKS         += gcc_doom
 
 # 256 KB arena leaves DOOM zone allocator room to breathe; we don't

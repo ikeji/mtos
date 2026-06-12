@@ -1,30 +1,44 @@
 /*
  * gcc_task.ld — linker script for GCC-compiled guest tasks.
  *
- * Phase 0.5 strategy: text/rodata stays position-independent (-fPIE
- * + linker relax keeps auipc+addi pairs for .rodata references), and
- * .data / .bss are accessed strictly through `__global_pointer$` so
- * the kernel-allocated per-task RAM is reachable regardless of where
- * the binary is actually loaded. The kernel sets gp = ram_base + 0x800
- * before jumping to _start; with __global_pointer$ link-time placed
- * at `__data_start + 0x800`, every small global resolves to
- * `lw/sw rd, (sym - __global_pointer$)(gp)` after gp-relative
- * relaxation, which yields `ram_base + (sym - __data_start)` at
- * runtime — i.e. the right RAM slot regardless of load address.
+ * Strategy (Phase 0.5 + 2 evolution): text/rodata stays
+ * position-independent (-fPIE keeps auipc+addi pairs for .rodata
+ * references — those targets live in flash next to the access, so
+ * PC-relative resolution is correct at any load address). Data is
+ * trickier:
+ *
+ *   * SMALL globals (within ±2 KB of gp) — relaxed by the linker
+ *     from `auipc + lw/sw` to a single `lw/sw rd, off(gp)`. Works at
+ *     any load address since gp is set by the kernel at runtime.
+ *
+ *   * LARGE / FAR globals (anything beyond ±2 KB of gp) — the relaxer
+ *     can't fold these, so they stay as `auipc + lw/sw` PC-relative
+ *     pairs that bake in the LINK-TIME (text → data) offset. For
+ *     these to work at runtime we need the kernel loader to honour
+ *     the link-time VMAs: the task arena RAM is placed at exactly
+ *     the address the linker assumed for `.data` (0x10000000 here),
+ *     so the PC-rel math resolves to the right RAM slot.
  *
  * Two non-obvious knobs:
  *
- *   * RAM ORIGIN sits at 0x10000000, not 0. The linker only does
- *     gp-relative relaxation when the existing zero-relative form
- *     can't reach the target; if RAM were at 0 the linker would
- *     prefer `sw rd, off(zero)` for small globals and ignore gp.
- *     Lifting the VMA past the 12-bit signed window forces gp-rel.
+ *   * FLASH ORIGIN at 0x20000000 keeps every .text / .rodata symbol's
+ *     VMA outside the 12-bit signed window, so the relaxer can't
+ *     collapse PC-rel pairs into a single absolute `li` (which would
+ *     bake the link-time VMA into the binary instead of letting the
+ *     PC-rel math resolve to a runtime-correct value).
  *
- *   * __global_pointer$ is defined with `=` not `PROVIDE`. PROVIDE
+ *   * `__global_pointer$` is defined with `=` not `PROVIDE`. PROVIDE
  *     only fires when something references the symbol but leaves it
- *     undefined; with no explicit reference (and the relax pass is
- *     the only would-be consumer), the symbol stays unresolved and
- *     the linker silently falls back to PC-relative codegen.
+ *     undefined; with no explicit reference (the relax pass is the
+ *     only would-be consumer), PROVIDE silently no-ops and the linker
+ *     falls back to PC-relative codegen for everything.
+ *
+ *   * Heap state lives at the start of the kernel-provided arena, not
+ *     in .bss. `gcc_crt0.s` sets `tp = a0` (arena addr) and libc
+ *     reads `base/brk/end` through tp directly. Keeping the heap
+ *     pointers out of .bss means we don't have to keep them within
+ *     gp's ±2 KB window — a constraint we'd lose anyway once .data
+ *     grows past 4 KB (which it does the moment picolibc shows up).
  */
 
 OUTPUT_ARCH(riscv)
@@ -32,17 +46,11 @@ OUTPUT_FORMAT("elf32-littleriscv")
 ENTRY(_start)
 
 MEMORY {
-    /* FLASH ORIGIN is high enough that no .text/.rodata symbol's VMA
-       can fit in the 12-bit signed window. Otherwise the linker's
-       relaxer collapses `auipc rd, 0 + addi rd, rd, imm` into a
-       single `li rd, imm` for small targets — which bakes the
-       link-time VMA into the binary and breaks our PIC story
-       (the task is loaded at a kernel-determined address, not 0). */
-    FLASH (rx) : ORIGIN = 0x20000000, LENGTH = 4M
-    /* RAM ORIGIN is similarly above the zero-relative window so the
-       linker can't fold small-global stores into `sw rd, off(zero)`,
-       forcing it to use gp-relative addressing instead. */
-    RAM   (rwx): ORIGIN = 0x10000000, LENGTH = 4K
+    FLASH (rx) : ORIGIN = 0x20000000, LENGTH = 8M
+    /* RAM is large enough to hold picolibc + DOOM-sized .data/.bss.
+       The kernel maps the task's arena to ORIGIN at load time so
+       far-data PC-rel relocations resolve correctly. */
+    RAM   (rwx): ORIGIN = 0x10000000, LENGTH = 1M
 }
 
 SECTIONS {
@@ -60,13 +68,14 @@ SECTIONS {
         *(.srodata .srodata.*)
     } > FLASH
 
-    /* .data + .sdata: VMA in RAM (gp-relative reachable), LMA in
-       FLASH (bytes live in the binary right after .rodata so _start
-       can memcpy them across). */
+    /* .data + .sdata: VMA in RAM, LMA in FLASH (bytes live in the
+       binary right after .rodata so _start can memcpy them across).
+       .sdata goes FIRST so small globals stay closest to gp and
+       benefit from the gp-relative relaxation pass. */
     .data : ALIGN(4) {
         __data_start = .;
+        *(.sdata .sdata.* .sdata2 .sdata2.*)
         *(.data .data.*)
-        *(.sdata .sdata.*)
         . = ALIGN(4);
         __data_end = .;
     } > RAM AT > FLASH
@@ -74,32 +83,25 @@ SECTIONS {
     __data_lma = LOADADDR(.data);
 
     /* Explicit = (not PROVIDE) so the linker definitely picks this
-       value during gp-relative relaxation. */
+       value during gp-relative relaxation. Placed 0x800 into .data
+       so the small-data window (±2 KB) covers .sdata + the first
+       0x800 bytes of .data. */
     __global_pointer$ = __data_start + 0x800;
 
     .bss (NOLOAD) : ALIGN(4) {
         __bss_start = .;
-        /* 4 bytes of padding keeps subsequent bss symbols off the
-           -0x800 boundary in case anything else ever needs gp-rel
-           relaxation; the heap-state block itself doesn't use the
-           relaxer (crt0 puts its address into `tp` and libc reads
-           through tp directly). */
-        . += 4;
-        __heap_state = .;
-        . += 12;                /* base, brk, end — populated by libc */
-        *(.bss .bss.*)
         *(.sbss .sbss.*)
+        *(.bss .bss.*)
         *(COMMON)
         . = ALIGN(4);
         __bss_end = .;
     } > RAM
 
-    /* crt0 sets `tp = gp - 0x7FC` to point at __heap_state. This
-       assertion catches a future layout shuffle that would silently
-       desync the hardcoded literal in gcc_crt0.s from the actual
-       gp-relative offset. */
-    ASSERT(__heap_state - __global_pointer$ == -0x7FC,
-        "gcc_crt0.s expects __heap_state at gp - 0x7FC")
+    /* picolibc's _sbrk uses __heap_start / __heap_end if our libc
+       shim doesn't provide _sbrk first. Leave them defined so the
+       link doesn't fail; we override _sbrk anyway. */
+    PROVIDE(__heap_start = __bss_end);
+    PROVIDE(__heap_end   = ORIGIN(RAM) + LENGTH(RAM));
 
     __data_size = __data_end - __data_start;
     __bss_size  = __bss_end  - __bss_start;

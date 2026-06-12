@@ -1,20 +1,39 @@
 /*
- * gcc_libc.c — minimal libc shim for GCC-compiled tasks.
+ * gcc_libc.c — picolibc-facing libc shim for GCC-compiled guest tasks.
  *
- * Implements what `_start` (gcc_crt0.s) and small programs need to do
- * useful work:
+ * picolibc supplies the heavy lifting (printf / malloc / strcmp / sin /
+ * cos / FILE buffering) and asks the platform to provide:
  *
- *   _libc_init_heap   — set up sbrk bump allocator from the kernel arena
- *   _libc_unpack_argv — convert kernel's StringArray to C argv/argc
- *   _sbrk             — heap grow; called by malloc / printf scratch
- *   write/read/open/close/lseek — POSIX-ish wrappers around our syscalls
+ *   - POSIX syscall wrappers (open / read / write / close / lseek /
+ *     unlink / rename) that translate to our ecall ABI.
+ *   - stdin / stdout / stderr FILE objects so anything that writes
+ *     via fprintf(stderr, ...) or printf(...) lands on the right fd.
+ *   - _sbrk for the bump allocator picolibc malloc layers itself onto.
+ *   - _exit so picolibc's exit/abort eventually terminate the task.
  *
- * No printf yet — phase 0 smoke test writes a literal string directly via
- * write(1, ...). Wire newlib in once the basics are confirmed.
+ * We also expose:
+ *
+ *   - _libc_init_heap (called by gcc_crt0.s before main): drains the
+ *     kernel-provided arena into the sbrk state block.
+ *   - _libc_unpack_argv_to: converts the kernel's StringArray to a
+ *     C-style argv[] in a caller-provided buffer.
+ *
+ * Kernel ecall ABI (a7 = syscall #):
+ *   34 mkdir(path:String)         87 unlink(path:String)
+ *     [no rename yet]            56 openat(dirfd, path:String, flags)
+ *   57 close(fd)                 63 read(fd, buf, n)
+ *   64 write(fd, buf, n)         93 exit(rc)
+ *
+ * Path arguments are kernel-side `String` values (`[count:u32][bytes][\0]`),
+ * NOT NUL-terminated C strings. The wrappers in this file build a
+ * temporary String on the caller's stack so picolibc's C-string callers
+ * can keep talking C-string. PATH_MAX is capped at 256.
  */
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 
 /* Syscall stubs. ABI: a7 = syscall number, a0..a5 = args, a0 = return. */
 static inline long _syscall3(long n, long a, long b, long c) {
@@ -52,25 +71,117 @@ void _exit(int rc) {
     for (;;) {}
 }
 
-/* openat-style: takes a String (length-prefixed) for path. C callers
-   that want POSIX open() need to wrap their C string into a String;
-   that wrapper lives outside this phase 0 stub. */
+/* openat-style: takes a kernel-side String (length-prefixed) for path.
+   Used by callers (libtc-style) that already hold a String value. */
 long do_openat(int dirfd, const void *path_str, int flags) {
     return _syscall3(56, dirfd, (long)path_str, flags);
 }
 
+/* ---------- C-string → String path wrappers for picolibc ---------- */
+
+/* Cap on path length we feed into the kernel. DOOM file names are well
+   under this; tighten later if it starts costing stack. */
+#define _LIBC_PATH_MAX 256
+
+/* Build a kernel-side String in `out` from a NUL-terminated C path.
+   out must have room for 4 + len + 1 bytes (header + payload + NUL).
+   Returns the length of the path (≤ _LIBC_PATH_MAX-5) or -1 on
+   overflow. */
+static long _path_to_string(const char *path, char *out) {
+    unsigned long len = 0;
+    while (path[len] && len < _LIBC_PATH_MAX - 5) {
+        out[4 + len] = path[len];
+        len++;
+    }
+    if (path[len] != '\0') return -1;       /* path too long */
+    *(uint32_t *)out = (uint32_t)len;
+    out[4 + len] = '\0';
+    return (long)len;
+}
+
+#define _AT_FDCWD (-100)
+
+int open(const char *path, int flags, ...) {
+    char buf[_LIBC_PATH_MAX];
+    if (_path_to_string(path, buf) < 0) return -1;
+    return (int)_syscall3(56, _AT_FDCWD, (long)buf, flags);
+}
+
+int unlink(const char *path) {
+    char buf[_LIBC_PATH_MAX];
+    if (_path_to_string(path, buf) < 0) return -1;
+    return (int)_syscall1(87, (long)buf);
+}
+
+int mkdir(const char *path, unsigned int mode) {
+    (void)mode;     /* kernel mkdir takes path only (no perms yet) */
+    char buf[_LIBC_PATH_MAX];
+    if (_path_to_string(path, buf) < 0) return -1;
+    return (int)_syscall1(34, (long)buf);
+}
+
+/* Our kernel doesn't currently have lseek or rename. Stub them as
+   "not supported" so picolibc can still link — DOOM's WAD reader
+   only uses lseek for forward/backward seeks on a WAD file, and we'll
+   wire it up properly in Phase 4. rename is hit by save-game logic,
+   which is far down the scope list. */
+long lseek(int fd, long offset, int whence) {
+    (void)fd; (void)offset; (void)whence;
+    return -1;
+}
+
+int rename(const char *oldp, const char *newp) {
+    (void)oldp; (void)newp;
+    return -1;
+}
+
+/* ---------- stdin / stdout / stderr ---------- */
+
+static int _stdout_put(char c, FILE *f) {
+    (void)f;
+    write(1, &c, 1);
+    return (unsigned char)c;
+}
+
+static int _stderr_put(char c, FILE *f) {
+    (void)f;
+    write(2, &c, 1);
+    return (unsigned char)c;
+}
+
+static int _stdin_get(FILE *f) {
+    (void)f;
+    unsigned char c;
+    long n = read(0, &c, 1);
+    if (n != 1) return _FDEV_EOF;
+    return c;
+}
+
+static FILE __stdin_file  = FDEV_SETUP_STREAM(NULL,        _stdin_get, NULL, _FDEV_SETUP_READ);
+static FILE __stdout_file = FDEV_SETUP_STREAM(_stdout_put, NULL,       NULL, _FDEV_SETUP_WRITE);
+static FILE __stderr_file = FDEV_SETUP_STREAM(_stderr_put, NULL,       NULL, _FDEV_SETUP_WRITE);
+
+FILE *const stdin  = &__stdin_file;
+FILE *const stdout = &__stdout_file;
+FILE *const stderr = &__stderr_file;
+
 /* ---------- sbrk bump allocator ---------- */
 
-/* The three heap pointers (base / brk / end) live in a 12-byte
-   block in .bss whose address sits in tp by the time main runs —
-   gcc_crt0.s does `addi tp, gp, %lo(__heap_state_gp_off)` once,
-   and the kernel's trap_common.s preserves tp across context
-   switches the same way it does s0..s11. Going through tp instead
-   of a C-level global sidesteps a binutils gp-relax quirk where one
-   of several consecutive `auipc + lw/sw` pairs silently fails to
-   collapse to `lw/sw rd, off(gp)`; the surviving auipc bakes in the
-   link-time VMA and the task crashes when the kernel loads it at a
-   different RAM address. */
+/* The three heap pointers (base / brk / end) live in the first 16
+   bytes of the kernel-provided arena. gcc_crt0.s sets `tp = arena
+   addr` so libc can read/write them through tp directly without
+   touching gp or the binutils gp-relax pass. The kernel's
+   trap_common.s preserves tp across context switches the same way
+   it does s0..s11.
+
+   Two reasons we don't put the heap pointers in .bss:
+   - The binutils gp-relax pass has a quirk where one of several
+     consecutive `auipc + lw/sw` pairs silently fails to collapse to
+     `lw/sw rd, off(gp)`; the surviving auipc bakes in the link-time
+     VMA and the task crashes when the kernel loads it elsewhere.
+   - Tasks with > 4 KB of .data (anything picolibc-linked) push the
+     gp window beyond the heap pointers' VMAs anyway, so the relax
+     wouldn't help even if it worked. */
 typedef struct { char *base; char *brk; char *end; } heap_state_t;
 
 static inline heap_state_t *_heap_state(void) {

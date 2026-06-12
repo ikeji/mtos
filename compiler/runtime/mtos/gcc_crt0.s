@@ -75,23 +75,17 @@ _start:
 .Lbss_done:
 
     # ----- Hand libc a stable pointer to the heap-state block -----
-    # tp = &__heap_state. The bss-clear loop above already zeroed
-    # those 12 bytes; libc's _sbrk treats `brk == 0` as "uninit",
-    # which gets fixed up by _libc_init_heap immediately below.
-    # Using tp sidesteps the binutils relaxer entirely: every heap
-    # access in libc becomes `lw/sw rd, off(tp)` with no link-time
-    # fixup needed.
-    #
-    # The offset is hardcoded -0x7FC = `__heap_state - __global_pointer$`:
-    # the linker script lays __heap_state at __bss_start + 4 and
-    # __global_pointer$ at __data_start + 0x800, with __bss_start ==
-    # __data_start, so the math is constant. The linker script also
-    # asserts this so a future layout shuffle can't silently desync.
-    addi tp, gp, -0x7FC
+    # tp = arena addr. We reserve the first 16 bytes of the
+    # kernel-provided arena for [base:u32][brk:u32][end:u32][pad:u32]
+    # — libc reads/writes through tp directly, never touching gp or
+    # going through the binutils gp-relax pass. The remaining
+    # arena_size - 16 bytes is what _libc_init_heap hands to the sbrk
+    # bump allocator.
+    mv   tp, s0
 
-    # ----- Initialise libc heap from the kernel-provided arena -----
-    mv   a0, s0
-    mv   a1, s1
+    # ----- Initialise libc heap from (arena + 16, arena_size - 16) -----
+    addi a0, s0, 16
+    addi a1, s1, -16
     call _libc_init_heap
 
     # ----- Allocate stack-local argv[ARGV_MAX+1] and unpack -----
