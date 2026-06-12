@@ -87,6 +87,11 @@ void *_sbrk(long n) {
 #define ARGV_MAX 32
 char *g_argv[ARGV_MAX + 1];   /* +1 for trailing NULL */
 
+/* Helper so the gcc_crt0 assembly doesn't have to reach g_argv via
+   a cross-section gp-relative expression. C compiles this to a
+   one-liner that the linker resolves correctly under -fPIE. */
+char **_libc_get_argv(void) { return g_argv; }
+
 /* Each kernel-side String / StringLiteral is laid out as:
      [count:u32][bytes...][\0]    — bytes is `count` long
    Translate to a C-pointer to the first byte of `bytes`. The NUL byte

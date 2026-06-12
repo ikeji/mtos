@@ -160,7 +160,16 @@ GCC_LD     := $(ROOT)/compiler/runtime/mtos/gcc_task.ld
 GCC_CFLAGS := -march=rv32im -mabi=ilp32 -mcmodel=medlow -Os \
               -fPIE -ffunction-sections -fdata-sections \
               -fno-builtin -nostdlib -nostartfiles \
+              -msmall-data-limit=2048 \
               -Wall -Wno-unused-parameter
+# --no-relax keeps `auipc + addi` literal-address pairs intact. With
+# relaxation enabled the linker folds them into single absolute `li`s,
+# which bake the link-time VMA into the binary; our task runs at a
+# kernel-assigned runtime address, not at the linker's idea of one,
+# so those folds break PC-relative .rodata lookups. (Trade-off: this
+# also blocks the gp-relative relaxation that would let small-data
+# globals collapse into `lw/sw rd, off(gp)` — once Phase 0.5 adds a
+# load-time reloc pass we can revisit.)
 GCC_LDFLAGS := -Wl,--no-relax
 
 # Per-task rule generator. Static-pattern-style: emits an explicit
@@ -174,8 +183,8 @@ $$(TASK_DIR)/$(1).bin: $$(ROOT)/userland/gcc-bin/$(1)/$(1).c \
 	. $$(TASK_SIZES) && \
 	_arena=$$$$(task_arena_size $(1)) && \
 	_stack=$$$$(task_stack_size $(1)) && \
-	printf '    .text\n    .word %s\n    .word %s\n' "$$$$_arena" "$$$$_stack" \
-	    > "$$$$_tmp/hdr.s" && \
+	printf '    .section .text.k3, "ax", @progbits\n    .word %s\n    .word %s\n' \
+	    "$$$$_arena" "$$$$_stack" > "$$$$_tmp/hdr.s" && \
 	$$(RISCV_GCC) $$(GCC_CFLAGS) $$(GCC_LDFLAGS) -T $$(GCC_LD) \
 	    "$$$$_tmp/hdr.s" $$(GCC_CRT0) $$(GCC_LIBC) $$< \
 	    -o "$$$$_tmp/$(1).elf" && \

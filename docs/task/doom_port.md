@@ -98,6 +98,53 @@ GCC で compile した RV32 raw bin を我々の K3 task として spawn でき�
   - `make -C userland test-quick` でビルドできて、qemu virt 上で
     `sh$ gcc_hello` で hello が出れば Phase 0 PASS
 
+### Phase 0.5: load-time relocation で globals を解錠 (3-5 日)
+
+Phase 0 commit `e371610` で「globals を持たない」GCC task は動いたが、
+.data / .bss を持つ task (= doomgeneric 含む実用 task 全部) はまだ
+動かない。理由は GCC が生成する globals アクセスのアドレッシングと、
+我々の task ABI の RAM レイアウトが整合しないこと:
+
+- **-fPIE + linker --no-relax**: .rodata は auipc + addi で PC-rel
+  に解決され ✓ (これが Phase 0 で string literal が動く理由)、しかし
+  .data / .bss も同じ仕組みで PC-rel になり、起動時に
+  「runtime_text_base + VMA_offset」を計算してしまう。我々の RAM は
+  flash に隣接しているわけではなく、kernel が別途 ram_base に
+  allocate するため、ストアが flash 領域に向かってトラップ。
+- **-fPIE + relax 有効**: linker が PC-rel pair を絶対 `li` や
+  `sw rd, off(zero)` に畳む。今度は .rodata 参照も絶対化されて
+  link-time VMA を baked-in した bin が出来上がり、結局 task が
+  別アドレスに load された瞬間にデタラメな pointer を読みに行く。
+- **-msmall-data-limit + gp-relative relax**: `__global_pointer$`
+  を PROVIDE しても linker が pickup せず、small globals は
+  zero-base 相対 (`sw rd, off(zero)`) に落ちる。
+
+正攻法は **load-time relocation**:
+
+1. `--emit-relocs` で ELF を吐き、`R_RISCV_RELATIVE` 等の relocation
+   表を保持したまま objcopy で raw bin にする (relocs を末尾の
+   独立セクションに dump)
+2. K3 header を `arena | stack | reloc_off | reloc_count` の 16 byte
+   に拡張し、bin 末尾の reloc 表へのオフセットを格納
+3. kernel/loader.tc::load_fd で K3 header を読んだ後、reloc 表を
+   走査して `*addr += task_load_base` でアドレスを fix-up
+4. これで -fno-pic / -fPIC 関係なく、絶対参照を含むコードが任意の
+   runtime address で動く
+5. gcc_crt0 は .data copy + .bss zero + heap init + argv unpack を
+   フル実装してよくなる
+
+成果物:
+
+- `kernel/src/loader.tc` の K3 header parsing 拡張と reloc 適用ループ
+- `compiler/runtime/mtos/gcc_crt0.s` をフル版に戻す
+- `compiler/runtime/mtos/gcc_libc.c` の `_libc_init_heap` /
+  `_libc_unpack_argv` 経路の smoke test (printf, malloc 含む)
+- `userland/gcc-bin/gcc_globals_smoke/` で globals + heap を実際に
+  使う smoke task を追加 (`make test` 組み込み)
+
+Phase 1 着手前にここを通すことで、doomgeneric の 50K LOC を素直に
+GCC に通す道が拓ける。
+
 ### Phase 1: doomgeneric vendor + ホスト層 (1-2 日)
 
 - `userland/gcc-bin/gcc_doom/doomgeneric/` に doomgeneric を vendor in
