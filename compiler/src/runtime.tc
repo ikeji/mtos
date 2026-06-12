@@ -642,12 +642,31 @@ export fn delete(o: String) -> void { delete_impl(o as u32); return; }
 export fn delete(o: StringLiteral) -> void { return; }
 
 // ===== sys_write / sys_read / sys_exit =====
+
+// Drive do_write in a loop until either all `count` bytes are written
+// or the syscall reports an error. Pipe-backed fds (the shell ↔
+// /bin/console plumbing being the realistic case) return short — the
+// kernel's pipe_write only copies what fits in its 4 KB ring before
+// returning, and without retry the bytes past the cutoff are silently
+// dropped. Mirrors what sys_read does on the read side.
+fn do_write_full(fd: i32, data: u32, count: i32) -> i32 {
+    var total: i32 = 0;
+    while total < count {
+        var r: i32 = do_write(fd, data + total as u32, count - total);
+        if r <= 0 {
+            if total > 0 { return total; }
+            return r;
+        }
+        total = total + r;
+    }
+    return total;
+}
+
 export fn sys_write(fd: i32, buf: U8Array, slen: i32) -> i32 {
     if buf as u32 == 0u32 { return 0 - 1; }
     var count: i32 = peek32(buf as u32) as i32;
     if slen < count { count = slen; }
-    var data: u32 = buf as u32 + 4u32;
-    return do_write(fd, data, count);
+    return do_write_full(fd, buf as u32 + 4u32, count);
 }
 
 // String / StringLiteral overloads: the count header already carries
@@ -655,11 +674,11 @@ export fn sys_write(fd: i32, buf: U8Array, slen: i32) -> i32 {
 // cast through U8Array.
 export fn sys_write(fd: i32, s: String) -> i32 {
     if s as u32 == 0u32 { return 0 - 1; }
-    return do_write(fd, s as u32 + 4u32, len(s));
+    return do_write_full(fd, s as u32 + 4u32, len(s));
 }
 
 export fn sys_write(fd: i32, s: StringLiteral) -> i32 {
-    return do_write(fd, s as u32 + 4u32, len(s));
+    return do_write_full(fd, s as u32 + 4u32, len(s));
 }
 
 export fn sys_read(fd: i32, buf: U8Array, slen: i32) -> i32 {
