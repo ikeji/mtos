@@ -62,7 +62,7 @@ fn read_task_header_stack(img_addr: u32) -> i32 {
 // valid task binary (or we read the wrong file — see K7-3 in
 // docs/problem.md). Bail out instead of passing garbage to make_task,
 // which would kmalloc megabytes and OOM the kernel arena.
-var TASK_ARENA_MAX: i32 = 4194304;  // 4 MB
+var TASK_ARENA_MAX: i32 = 16777216;  // 16 MB (DOOM zone wants ~5 MB up front)
 var TASK_STACK_MAX: i32 = 131072;   // 128 KB
 var TASK_ARENA_MIN: i32 = 4096;     // 4 KB
 var TASK_STACK_MIN: i32 = 1024;     // 1 KB
@@ -133,15 +133,34 @@ fn load_fd(fd: i32, argv_size: i32) -> u32 {
         return 0u32;
     }
 
-    // Slow path (virt / virtio-blk): copy the image into RAM. Record
-    // the img base in g_last_img so the scheduler slot owns it and can
-    // free it in sched_task_exit / sys_exec.
-    var img: U8Array = U8Array(size as u32);
-    var img_base: u32 = img as u32 + 4u32;
+    // K22: large binaries (gcc_doom and friends) ship picolibc, which
+    // uses absolute lui+addi addressing for its internal globals. The
+    // linker resolves those at link time, so the task only runs
+    // correctly when its runtime address matches the linker's VMA.
+    // Load any task bigger than 256 KB into the fixed RAM slot at
+    // 0x87000000: above the kernel arena's 96 MB tail (which ends at
+    // ~0x86060000 on qemu virt) and below the boot-time stack top at
+    // 0x88000000, so we don't tread on kmalloc state or the kernel's
+    // own descend-from-top stack pages. Smaller TC tasks keep the
+    // kmalloc path so spawn/wait still works for multiple concurrent
+    // ones.
+    var GCC_TASK_BASE: u32 = 0x87000000u32;
+    var GCC_TASK_THRESH: i32 = 262144;
+    var img: U8Array = 0 as U8Array;
+    var img_base: u32 = 0u32;
+    if size > GCC_TASK_THRESH {
+        img_base = GCC_TASK_BASE;
+    } else {
+        // Slow path (virt / virtio-blk): copy the image into RAM.
+        // Record the img base in g_last_img so the scheduler slot
+        // owns it and can free it in sched_task_exit / sys_exec.
+        img = U8Array(size as u32);
+        img_base = img as u32 + 4u32;
+    }
     var n: i32 = vfs_read(fd, img_base, size);
     if n != size {
         kputs("load_fd: short read\n");
-        delete(img);
+        if (img as u32) != 0u32 { delete(img); }
         return 0u32;
     }
 
@@ -149,7 +168,7 @@ fn load_fd(fd: i32, argv_size: i32) -> u32 {
     var stack_s: i32 = read_task_header_stack(img_base);
     if !load_fd_header_ok(arena_s, stack_s) {
         kputs("load_fd: invalid K3 header\n");
-        delete(img);
+        if (img as u32) != 0u32 { delete(img); }
         return 0u32;
     }
     var frame: u32 = make_task(img_base + (TASK_HEADER_SIZE as u32),

@@ -178,10 +178,17 @@ GCC_LD     := $(ROOT)/compiler/runtime/mtos/gcc_task.ld
 # (-nostartfiles + -T gcc_task.ld), and re-target the syscalls that
 # picolibc's `posix-io` layer relies on through gcc_libc.c.
 GCC_CFLAGS := -march=rv32im -mabi=ilp32 -mcmodel=medany -Os \
-              -fPIE -ffunction-sections -fdata-sections \
+              -fno-pic -fno-pie -ffunction-sections -fdata-sections \
               -fno-builtin -nostartfiles --specs=picolibc.specs \
               -msmall-data-limit=2048 \
               -Wall -Wno-unused-parameter
+# Why -fno-pic / -fno-pie: under -fPIE GCC emits GOT-indirect access
+# for cross-TU globals (auipc + lw GOT_entry + lw target), and the
+# GOT entries bake link-time VMAs that point into the wrong RAM once
+# the kernel loads the task at a kmalloc'd address. -fno-pic with
+# -mcmodel=medany emits straight auipc + lw PCREL pairs instead;
+# those resolve correctly at any load address because text + data
+# move together in our single-segment layout.
 GCC_LDFLAGS :=
 
 # Per-task rule generator. Static-pattern-style: emits an explicit
@@ -207,7 +214,9 @@ $$(TASK_DIR)/$(1).bin: $$(GCC_SOURCES_$(1)) \
 	$$(RISCV_GCC) $$(GCC_CFLAGS) $$(GCC_INCLUDES_$(1)) $$(GCC_LDFLAGS) \
 	    -T $$(GCC_LD) "$$$$_tmp/hdr.s" $$(GCC_CRT0) $$(GCC_LIBC) \
 	    $$(GCC_SOURCES_$(1)) -o "$$$$_tmp/$(1).elf" && \
-	$$(RISCV_OBJCOPY) -O binary "$$$$_tmp/$(1).elf" $$@ && \
+	$$(RISCV_OBJCOPY) --set-section-flags .data.zero=alloc,contents,load \
+	    "$$$$_tmp/$(1).elf" "$$$$_tmp/$(1).elf2" 2>/dev/null && \
+	$$(RISCV_OBJCOPY) -O binary "$$$$_tmp/$(1).elf2" $$@ && \
 	rm -rf "$$$$_tmp"
 endef
 $(foreach t,$(GCC_TASKS),$(eval $(call GCC_TASK_RULE,$(t))))

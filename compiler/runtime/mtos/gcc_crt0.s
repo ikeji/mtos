@@ -3,35 +3,32 @@
 #
 # Kernel entry contract (matches task_crt0.s for TC tasks):
 #   sp = task stack top
-#   gp = ram_base + 0x800   (== __global_pointer$ at link time)
-#   a0 = arena addr (= ram_base + 0x1000)
+#   gp = ram_base + 0x800   (linker sets __global_pointer$ to match)
+#   a0 = arena addr
 #   a1 = arena size
 #   a2 = argv StringArray ptr (or 0 if no argv)
 #
-# Runtime data layout (kernel-allocated, max 4 KB):
-#   ram_base + 0x000 .. + 0x1000   .data + .sdata + .bss + .sbss
-#                                  (all within ±2 KB of gp)
-#   ram_base + 0x1000 ..           task arena (sbrk pool)
+# The linker script lays out text + rodata + data + bss as one
+# contiguous LOAD segment with .bss emitted as zero bytes in the
+# binary. The kernel just copies the whole binary into RAM at some
+# address; -fPIE PC-relative addressing handles the runtime
+# relocation since text and data move together.
 #
-# Bootstrap:
-#   1. Copy .data + .sdata from binary LMA → RAM (gp - 0x800).
-#      lla picks up __data_lma PC-relatively, gp gives the runtime
-#      destination. __data_size is a linker-emitted constant; we load
-#      it via lui+addi instead of an `la` so the relocation produces
-#      an immediate value, not an address.
-#   2. Zero .bss + .sbss starting where .data ended in RAM, length
-#      __bss_size (same trick).
-#   3. Hand the kernel arena to the libc shim's bump allocator.
-#   4. Allocate (ARGV_MAX + 1) * 4 = 132 bytes on the task stack and
-#      translate the kernel StringArray into it via
-#      _libc_unpack_argv_to. Stack-local argv sidesteps the address-of
-#      relaxation hole (binutils gp-relaxer only folds direct loads
-#      and stores into gp-rel form; the auipc+addi pair the compiler
-#      emits for `&g_argv` is left as-is even when the target is in
-#      range, which would crash a flash-loaded task that takes the
-#      address of a global). g_heap_* are only ever touched via
-#      load/store so they relax fine.
-#   5. main(argc, argv); sys_exit on return.
+# That eliminates two startup steps the TC crt0 still needs:
+#   - .data copy LMA → VMA (not needed: .data is already at its
+#     runtime address when the binary lands in RAM)
+#   - .bss zero (not needed: the linker baked the zeros into the
+#     binary, so the kernel's image copy already zeroed it)
+#
+# Bootstrap is therefore just:
+#   1. tp = arena addr (libc reads heap state through tp; first
+#      16 bytes of arena hold base/brk/end).
+#   2. _libc_init_heap(arena + 16, arena_size - 16).
+#   3. Allocate stack-local argv[ARGV_MAX+1] and unpack the kernel
+#      StringArray into it. Stack-local sidesteps the binutils
+#      gp-relax address-of quirk: stack alloc is `addi a0, sp, off`,
+#      which doesn't need linker relaxation to work after relocation.
+#   4. main(argc, argv); sys_exit on return.
 #
     .section .text.start, "ax", @progbits
     .globl _start
@@ -41,46 +38,23 @@ _start:
     mv   s1, a1                              # s1 = arena size
     mv   s2, a2                              # s2 = argv StringArray ptr
 
-    # ----- Copy .data from binary LMA → RAM VMA -----
-    # lla forces auipc+addi (PC-relative) instead of la's PIE-mode
-    # GOT-indirect form — __data_lma lives in the loaded binary, no
-    # dynamic linker to populate a GOT entry for us.
-    lla  t0, __data_lma                      # PC-rel: data in binary
-    addi t1, gp, -0x800                      # gp-rel: data start in RAM
-    lui  t3, %hi(__data_size)                # link-time constant
-    addi t3, t3, %lo(__data_size)
-    beqz t3, .Ldata_done
-    add  t2, t1, t3                          # t2 = data end in RAM
-.Ldata_copy:
-    lw   t4, 0(t0)
-    sw   t4, 0(t1)
-    addi t0, t0, 4
-    addi t1, t1, 4
-    bltu t1, t2, .Ldata_copy
-.Ldata_done:
-
-    # ----- Zero .bss + .sbss -----
-    # t1 already points at __data_end after the copy loop; .bss
-    # starts immediately after .data in the gcc_task.ld layout, so
-    # reuse it as bss_start with no recomputation.
-    mv   t0, t1
-    lui  t3, %hi(__bss_size)
-    addi t3, t3, %lo(__bss_size)
-    beqz t3, .Lbss_done
-    add  t1, t0, t3
-.Lbss_clear:
-    sw   zero, 0(t0)
-    addi t0, t0, 4
-    bltu t0, t1, .Lbss_clear
-.Lbss_done:
+    # ----- gp setup -----
+    # The kernel hands us gp = arena_base + 0x800, which points into
+    # the per-task arena (a separate kmalloc block). gcc-compiled code
+    # expects gp to point at __global_pointer$ INSIDE the binary
+    # image (= __data_start + 0x800), so any gp-relative-relaxed
+    # access lands on a real .data / .sdata symbol. Use lla to pick
+    # up the runtime address of __global_pointer$ via PC-relative
+    # arithmetic — that works at any load address.
+.option push
+.option norelax
+    lla  gp, __global_pointer$
+.option pop
 
     # ----- Hand libc a stable pointer to the heap-state block -----
-    # tp = arena addr. We reserve the first 16 bytes of the
-    # kernel-provided arena for [base:u32][brk:u32][end:u32][pad:u32]
-    # — libc reads/writes through tp directly, never touching gp or
-    # going through the binutils gp-relax pass. The remaining
-    # arena_size - 16 bytes is what _libc_init_heap hands to the sbrk
-    # bump allocator.
+    # tp = arena addr. The first 16 bytes of the kernel-provided
+    # arena hold [base:u32][brk:u32][end:u32][pad:u32]; libc reads
+    # and writes through tp directly.
     mv   tp, s0
 
     # ----- Initialise libc heap from (arena + 16, arena_size - 16) -----

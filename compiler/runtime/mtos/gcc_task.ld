@@ -1,44 +1,43 @@
 /*
  * gcc_task.ld — linker script for GCC-compiled guest tasks.
  *
- * Strategy (Phase 0.5 + 2 evolution): text/rodata stays
- * position-independent (-fPIE keeps auipc+addi pairs for .rodata
- * references — those targets live in flash next to the access, so
- * PC-relative resolution is correct at any load address). Data is
- * trickier:
+ * Single-segment layout: text + rodata + data + bss are laid out as
+ * one contiguous block of RAM. The kernel loads the whole binary into
+ * an arbitrary RAM address, and -fPIE PC-relative addressing handles
+ * the runtime relocation automatically: every auipc+lw/sw or
+ * auipc+addi pair encodes a LINK-TIME relative offset, and because
+ * text and data move together (we link them in one block), the same
+ * relative offset is correct at runtime no matter where the kernel
+ * placed us.
  *
- *   * SMALL globals (within ±2 KB of gp) — relaxed by the linker
- *     from `auipc + lw/sw` to a single `lw/sw rd, off(gp)`. Works at
- *     any load address since gp is set by the kernel at runtime.
+ *   Run-time math:
+ *     PC_runtime  + (link_target - link_PC)  == target_runtime
+ *                      ^^^^^^^^^^^^^^^^^^^^^^
+ *                      encoded in auipc/lo12 — fixed at link time
  *
- *   * LARGE / FAR globals (anything beyond ±2 KB of gp) — the relaxer
- *     can't fold these, so they stay as `auipc + lw/sw` PC-relative
- *     pairs that bake in the LINK-TIME (text → data) offset. For
- *     these to work at runtime we need the kernel loader to honour
- *     the link-time VMAs: the task arena RAM is placed at exactly
- *     the address the linker assumed for `.data` (0x10000000 here),
- *     so the PC-rel math resolves to the right RAM slot.
+ * Why this works for tasks of any size:
+ *   - All globals are PC-relative regardless of distance from gp; we
+ *     don't depend on the binutils gp-relax pass folding far refs
+ *     (which it can't beyond ±2 KB of gp).
+ *   - .bss is emitted as zero bytes inside the binary (LOAD, not
+ *     NOLOAD), so the kernel only needs to know "load this many
+ *     bytes" — no extra header field for bss_size, no crt0 bss-zero
+ *     loop, no separate per-task RAM block for data/bss.
  *
- * Two non-obvious knobs:
+ * Cost: the binary on disk is `text + rodata + data + bss` bytes,
+ * including the zero bytes for .bss. For DOOM that's ~620 KB on disk
+ * instead of ~376 KB. Acceptable on virtio (slow path) and on the
+ * pico2 4 MB flash (DOOM is one game, not the whole disk).
  *
- *   * FLASH ORIGIN at 0x20000000 keeps every .text / .rodata symbol's
- *     VMA outside the 12-bit signed window, so the relaxer can't
- *     collapse PC-rel pairs into a single absolute `li` (which would
- *     bake the link-time VMA into the binary instead of letting the
- *     PC-rel math resolve to a runtime-correct value).
+ * Heap state: stays at `tp = arena addr` (gcc_crt0.s sets it).
+ * The kernel-allocated arena (via make_task) is independent of this
+ * binary block; it's where _sbrk hands out pages, addressed entirely
+ * through tp + small immediate offsets.
  *
- *   * `__global_pointer$` is defined with `=` not `PROVIDE`. PROVIDE
- *     only fires when something references the symbol but leaves it
- *     undefined; with no explicit reference (the relax pass is the
- *     only would-be consumer), PROVIDE silently no-ops and the linker
- *     falls back to PC-relative codegen for everything.
- *
- *   * Heap state lives at the start of the kernel-provided arena, not
- *     in .bss. `gcc_crt0.s` sets `tp = a0` (arena addr) and libc
- *     reads `base/brk/end` through tp directly. Keeping the heap
- *     pointers out of .bss means we don't have to keep them within
- *     gp's ±2 KB window — a constraint we'd lose anyway once .data
- *     grows past 4 KB (which it does the moment picolibc shows up).
+ * Why VMA at 0x10000000 (not 0): no real reason for `> 0` anymore
+ * since the relaxer's "zero-rel fold" concern went away with the
+ * single-segment layout. Kept at a high address so casual `lui`
+ * folds don't accidentally match the 12-bit absolute window.
  */
 
 OUTPUT_ARCH(riscv)
@@ -46,11 +45,22 @@ OUTPUT_FORMAT("elf32-littleriscv")
 ENTRY(_start)
 
 MEMORY {
-    FLASH (rx) : ORIGIN = 0x20000000, LENGTH = 8M
-    /* RAM is large enough to hold picolibc + DOOM-sized .data/.bss.
-       The kernel maps the task's arena to ORIGIN at load time so
-       far-data PC-rel relocations resolve correctly. */
-    RAM   (rwx): ORIGIN = 0x10000000, LENGTH = 1M
+    /* picolibc objects use absolute lui+addi for their internal
+       globals, so the binary only runs at the link-time VMA. On
+       qemu virt we reserved 0x87000000 (the slot kernel/src/loader.tc
+       uses for any image > 256 KB — above the 96 MB kmalloc arena,
+       below the boot stack top at 0x88000000); the kernel copies the
+       binary there before scheduling the task. The pico2 port will
+       pick a different VMA inside SRAM.
+
+       LENGTH covers binary + heap. picolibc's malloc reads
+       __heap_start / __heap_end from the linker script (NOT our
+       arena-based _sbrk shim), so the heap window has to fit DOOM's
+       6 MiB zone + working set. Stopping at 14 MB leaves a 2 MB
+       guard below the boot stack top (qemu virt sp starts at
+       0x88000000 and descends only a few KB during early kernel
+       setup, but the slack is cheap insurance). */
+    RAM (rwx) : ORIGIN = 0x87000000, LENGTH = 14M
 }
 
 SECTIONS {
@@ -61,34 +71,36 @@ SECTIONS {
         KEEP(*(.text.k3))
         KEEP(*(.text.start))
         *(.text .text.*)
-    } > FLASH
+    } > RAM
 
     .rodata : ALIGN(4) {
         *(.rodata .rodata.*)
         *(.srodata .srodata.*)
-    } > FLASH
+    } > RAM
 
-    /* .data + .sdata: VMA in RAM, LMA in FLASH (bytes live in the
-       binary right after .rodata so _start can memcpy them across).
-       .sdata goes FIRST so small globals stay closest to gp and
-       benefit from the gp-relative relaxation pass. */
     .data : ALIGN(4) {
         __data_start = .;
         *(.sdata .sdata.* .sdata2 .sdata2.*)
         *(.data .data.*)
         . = ALIGN(4);
         __data_end = .;
-    } > RAM AT > FLASH
-
-    __data_lma = LOADADDR(.data);
+    } > RAM
 
     /* Explicit = (not PROVIDE) so the linker definitely picks this
        value during gp-relative relaxation. Placed 0x800 into .data
        so the small-data window (±2 KB) covers .sdata + the first
-       0x800 bytes of .data. */
+       0x800 bytes of .data. (Still useful for small statics even
+       though we no longer rely on it for far globals.) */
     __global_pointer$ = __data_start + 0x800;
 
-    .bss (NOLOAD) : ALIGN(4) {
+    /* Rename what would normally be .bss to .data.zero so ld marks it
+       as SHT_PROGBITS instead of SHT_NOBITS — otherwise `objcopy -O
+       binary` would skip it and the raw binary would be missing the
+       zeroed bss region. With this trick the binary on disk grows by
+       the .bss size (zero bytes), but the kernel can then load
+       text+rodata+data+bss as one contiguous blob without needing
+       to know the bss size separately. */
+    .data.zero : ALIGN(4) {
         __bss_start = .;
         *(.sbss .sbss.*)
         *(.bss .bss.*)
@@ -97,9 +109,9 @@ SECTIONS {
         __bss_end = .;
     } > RAM
 
-    /* picolibc's _sbrk uses __heap_start / __heap_end if our libc
-       shim doesn't provide _sbrk first. Leave them defined so the
-       link doesn't fail; we override _sbrk anyway. */
+    /* picolibc's _sbrk fallback references these; we override _sbrk
+       in gcc_libc.c so they're never actually read, but the link
+       fails without something definitions. */
     PROVIDE(__heap_start = __bss_end);
     PROVIDE(__heap_end   = ORIGIN(RAM) + LENGTH(RAM));
 

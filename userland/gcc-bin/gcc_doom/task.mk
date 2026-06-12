@@ -14,18 +14,16 @@
 #     docs/task/doom_port.md phase 2.
 #   * GCC_CFLAGS needs to add `--specs=picolibc.specs` (or the
 #     equivalent paths) once the package is installed.
-# GCC_TASKS-only (no GUEST_TASKS / EXTRA_GUEST_TASKS yet): the build
-# rule gets generated so `make userland/build/tasks/gcc_doom.bin`
-# works for poking at the build, but the default `make tasks` skips
-# it. Phase 2 promotes this to EXTRA_GUEST_TASKS once the link goes
-# clean.
+EXTRA_GUEST_TASKS += gcc_doom
 GCC_TASKS         += gcc_doom
 
-# 256 KB arena leaves DOOM zone allocator room to breathe; we don't
-# expect to actually fit a vanilla zone here, but giving it some
-# slack lets us see how far it gets in phase 1 smoke testing.
-TASK_ARENA_gcc_doom := 262144
-TASK_STACK_gcc_doom := 16384
+# 8 MB arena so DOOM's Z_Init can grab its 5 MiB zone (vanilla
+# Z_Init asks for 5 MiB up front and bails if malloc returns NULL).
+# 64 KB stack covers the deep R_DrawColumn recursion. Both come out
+# of the kernel's 96 MB kmalloc pool — generous on qemu virt, won't
+# fit on pico2's 520 KB SRAM (Phase 5 deals with that diet).
+TASK_ARENA_gcc_doom := 8388608
+TASK_STACK_gcc_doom := 65536
 
 # Sources: our two top-level files plus every vendored .c except
 #   * mus2mid.c — standalone host-side utility with its own main()
