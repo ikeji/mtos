@@ -33,7 +33,7 @@
 
 // Enables sound output
 
-//#undef FEATURE_SOUND
+#undef FEATURE_SOUND   /* K22: no audio scope (docs/task/doom_port.md) */
 
 #endif /* #ifndef DOOM_FEATURES_H */
 

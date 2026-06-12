@@ -172,9 +172,14 @@ GCC_LD     := $(ROOT)/compiler/runtime/mtos/gcc_task.ld
 # -msmall-data-limit=2048 stays on so that any future small-data
 # scalars can land in .sdata/.sbss within ±2KB of gp; nothing today
 # actually exercises that, but the budget is free.
+# picolibc gives us the standard C headers (<stdio.h>, <string.h>,
+# <math.h>, ...) and a small libc.a (printf, malloc, sin, cos,
+# memcpy, ...). We override its crt0 and linker script with our own
+# (-nostartfiles + -T gcc_task.ld), and re-target the syscalls that
+# picolibc's `posix-io` layer relies on through gcc_libc.c.
 GCC_CFLAGS := -march=rv32im -mabi=ilp32 -mcmodel=medany -Os \
               -fPIE -ffunction-sections -fdata-sections \
-              -fno-builtin -nostdlib -nostartfiles \
+              -fno-builtin -nostartfiles --specs=picolibc.specs \
               -msmall-data-limit=2048 \
               -Wall -Wno-unused-parameter
 GCC_LDFLAGS :=

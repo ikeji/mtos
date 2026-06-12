@@ -24,12 +24,18 @@ TASK_ARENA_gcc_doom := 262144
 TASK_STACK_gcc_doom := 16384
 
 # Sources: our two top-level files plus every vendored .c except
-# mus2mid.c (it has its own main(), it's a standalone host-side
-# utility, not part of the runtime).
+#   * mus2mid.c — standalone host-side utility with its own main()
+#   * i_allegro{music,sound}.c, i_sdl{music,sound}.c — sound backends
+#     that need libraries we don't ship; #undef FEATURE_SOUND in
+#     doomfeatures.h drops the references to their DG_*_module
+#     symbols so the link still works without them.
+GCC_DOOM_EXCLUDE := mus2mid.c i_allegromusic.c i_allegrosound.c \
+                    i_sdlmusic.c i_sdlsound.c
 GCC_SOURCES_gcc_doom := \
     $(ROOT)/userland/gcc-bin/gcc_doom/gcc_doom.c \
     $(ROOT)/userland/gcc-bin/gcc_doom/doomgeneric_tcos.c \
-    $(filter-out %/mus2mid.c, \
+    $(filter-out $(foreach f,$(GCC_DOOM_EXCLUDE), \
+                     $(ROOT)/userland/gcc-bin/gcc_doom/doomgeneric/$(f)), \
         $(wildcard $(ROOT)/userland/gcc-bin/gcc_doom/doomgeneric/*.c))
 
 # DOOM headers are looked up relative to doomgeneric/ in many places.
