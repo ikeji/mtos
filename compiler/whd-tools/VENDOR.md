@@ -36,6 +36,9 @@ whd-tools/
                         + a handful of headers: huffman.h, huff_sink.h,
                         statsomizer.h, extra_patches.h, config.h)
     doom/doomdata.h   — WAD lump structures (referenced from whd_gen)
+    doom/doomdef.h    — pulled in transitively by doomdata.h
+    d_mode.h          — game-mode enum, pulled in by doomdef.h
+    i_timer.h         — timer API decl, pulled in by doomdef.h
     tiny_huff.{c,h}   — decoder counterpart; shared with on-device code
     musx_decoder.{c,h}
     image_decoder.{c,h}
