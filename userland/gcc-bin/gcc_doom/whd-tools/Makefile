@@ -1,11 +1,12 @@
-# compiler/whd-tools/Makefile — host build for whd_gen.
+# userland/gcc-bin/gcc_doom/whd-tools/Makefile — host build for whd_gen.
 #
 # Produces build/whd_gen, a single executable that converts a Doom WAD
 # into the compressed WHD format the on-device DOOM reader consumes
 # (see VENDOR.md for the upstream provenance and license summary).
 #
-# Build: `make -C compiler/whd-tools` → compiler/whd-tools/build/whd_gen
-# Use:   `compiler/whd-tools/build/whd_gen <doom1.wad> <doom1.whd>`
+# Build: `make -C userland/gcc-bin/gcc_doom/whd-tools`
+#   → userland/gcc-bin/gcc_doom/whd-tools/build/whd_gen
+# Use:   `userland/gcc-bin/gcc_doom/whd-tools/build/whd_gen <wad> <whd>`
 #        (exact CLI documented by whd_gen.cpp at line ~5000; we'll
 #        usually wrap this in a higher-level script that trims the
 #        WAD to E1M1 first.)

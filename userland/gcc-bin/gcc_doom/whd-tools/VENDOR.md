@@ -1,4 +1,4 @@
-# whd-tools — host-side WAD→WHD converter (K22 Phase 5)
+# userland/gcc-bin/gcc_doom/whd-tools — host-side WAD→WHD converter (K22 Phase 5)
 
 This directory vendors **`whd_gen`**, the host-side tool from
 [kilograham/rp2040-doom](https://github.com/kilograham/rp2040-doom) that
@@ -100,18 +100,24 @@ here.
 
 ## Next steps
 
-1. **Add host build glue** — `compiler/whd-tools/Makefile` or
-   `build_whd_gen.sh` that produces `build/host/whd_gen` from this
-   tree. Will need a `pico.h` shim since tiny_huff.c et al. include it
-   for embedded targets.
-2. **Strip ADPCM + MUS** to reduce build surface — define
-   `IS_WHD_GEN=1` and `#undef FEATURE_SOUND` where it propagates, so
-   we don't need to vendor adpcm-xq's full implementation.
-3. **Trim doom1.wad to E1M1-only** before feeding to whd_gen — drop
-   E1M2-M9 lumps, titlepic, intermission images. Target ~500 KB whd.
-4. **Wire `doom1.whd` into our runtime** — replace doomgeneric's
+1. **Add host build glue** — DONE. `make -C
+   userland/gcc-bin/gcc_doom/whd-tools` produces `build/whd_gen`.
+   `pico.h` shim turned out unnecessary because the embedded-only
+   #includes inside tiny_huff.c / image_decoder.c / doomtype.h are
+   already gated on `PICO_BUILD` / `PICO_ON_DEVICE`, both of which
+   stay undefined on host.
+2. **Trim doom1.wad to E1M1-only** before feeding to whd_gen — DONE.
+   `wad_trim.py` in this dir. Drops E1M2..E1M9 markers + their level
+   data and (with `--no-music`) the per-level music lumps. User
+   supplies doom1.wad — not committed (shareware license + binary
+   asset policy).
+3. **Wire `doom1.whd` into our runtime** — replace doomgeneric's
    `fopen("doom1.wad")` with a whd reader that issues
    `do_openat("/sd/doom1.whd")` and caches lumps on demand. The whd
-   on-disk format spec is `src/whddata.h`.
-5. **Provision SD** — `mr -a /sd/doom1.whd` upload path (already in
+   on-disk format spec is `src/whddata.h`. NOT STARTED — this is
+   the biggest piece of remaining Phase 5 work.
+4. **Provision SD** — `mr -a /sd/doom1.whd` upload path (already in
    place for K21 self-replicate fixtures).
+5. **One-shot pipeline script** (`build_doom1_whd.sh`): take a path
+   to user-supplied doom1.wad, run wad_trim.py + whd_gen, output
+   doom1_e1m1.whd. Pending (task #31).

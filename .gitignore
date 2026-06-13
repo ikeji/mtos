@@ -4,7 +4,7 @@ kernel/kernel_pico2.uf2
 # Per-subproject build outputs (post Phase 4c-1)
 /build/
 /compiler/build/
-/compiler/whd-tools/build/
+/userland/gcc-bin/gcc_doom/whd-tools/build/
 /userland/build/
 /kernel/build/
 # Scratch dir — holds the user-supplied Japanese font.bmp and its
