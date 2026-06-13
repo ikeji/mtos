@@ -8,30 +8,32 @@
  * splitting the binary across flash and SRAM is the only way it
  * fits at all.
  *
- *   Flash @ 0x10100000 .. 0x10180000 (512 KB available for gcc tasks)
+ *   Flash @ FLASH ORIGIN .. +512 KB
  *     .text       (PROGBITS, RX)
  *     .rodata     (PROGBITS, R)
+ *     .got        (PROGBITS, R) — stays in flash next to text so the
+ *                  PCREL auipc+lw GOT_entry pair lands in the same flash
+ *                  region. PCREL only resolves correctly when both ends
+ *                  of the pair sit at the same delta from their link-time
+ *                  addresses; flash↔flash trivially satisfies that.
  *
  *   SRAM @ 0x20030000 .. 0x2007D000 (~308 KB reserved for one gcc task)
  *     .data       (LMA in flash → VMA in SRAM, copied by crt0)
- *     .got        (LMA in flash → VMA in SRAM, picolibc's GOT entries
- *                  hold absolute SRAM VMAs that only resolve correctly
- *                  once the table sits at its link-time address)
  *     .bss        (NOLOAD, zeroed by crt0)
  *
- * Text addressing: PIC-built picolibc + -fno-pic application code is
- * a mix — application code uses PC-relative auipc + addi pairs (work
- * from any flash offset), and picolibc internals use auipc + lw via
- * the GOT (resolve correctly because both text PC and GOT entries
- * are anchored to fixed link-time VMAs that the kernel honours).
- *
- * Why VMA = 0x10100000 for flash:
- *   - The kernel itself sits at 0x10000000 + first ~256 KB.
- *   - mtfs disk image lands after the kernel; bin2s_incbin picks the
- *     exact flash offset at kernel build time.
- *   - Reserving 0x10100000 as the gcc-task slot leaves space for the
- *     kernel + a couple of TC tasks before us, with the mtfs disk
- *     pushed past 0x10180000.
+ * Text↔data addressing — the painful constraint:
+ *   picolibc (PIC build) compiles its `static` vars (e.g. picosbrk's
+ *   __malloc_sbrk_brk) with PCREL auipc+addi, NOT through the GOT.
+ *   PCREL data access from text only lands on the correct SRAM slot
+ *   when (text_runtime - text_link) == (data_runtime - data_link).
+ *   data lives at fixed SRAM VMA 0x20030000 at runtime, so data delta
+ *   is 0. That forces text delta to also be 0 — i.e. FLASH ORIGIN
+ *   must equal the actual chip flash address where this binary's K3
+ *   header lands inside kernel.bin. K22 (2026-06-10) hit memset(0x10,
+ *   ...) trap because gcc_doom_pico2 landed at chip 0x100f57e0 but
+ *   was linked at 0x10100000 — picosbrk's brk var read landed 0xa820
+ *   bytes before its real SRAM slot, returned 0, and malloc handed
+ *   back ~0x10 (= sbrk_aligned overhead).
  *
  * Why VMA = 0x20030000 for SRAM:
  *   - Kernel .data + .bss live below 0x20030000 (see crt0_pico2_data.s).
@@ -49,8 +51,21 @@ OUTPUT_ARCH(riscv)
 OUTPUT_FORMAT("elf32-littleriscv")
 ENTRY(_start)
 
+/* FLASH ORIGIN must equal gcc_doom_pico2's actual flash position
+   inside the kernel.bin — see the long comment above for why.
+   To find the current value after a kernel rebuild:
+     python3 -c "import struct; d=open('kernel/build/pico2_kernel.uf2','rb').read(); \
+       out=b''.join(d[i+32:i+32+struct.unpack_from('<I',d,i+16)[0]] \
+       for i in range(0,len(d),512) if d[i:i+4]==b'UF2\\n'); \
+       j=out.find(b'MTFS'); i_st=struct.unpack_from('<I',out,j+20)[0]; \
+       d_st=struct.unpack_from('<I',out,j+24)[0]; \
+       [print('FLASH ORIGIN =','0x%08x'%(0x10000000+j+(d_st+struct.unpack_from('<I',out,j+i_st*512+k*64+40)[0])*512)) \
+        for k in range(56) if out[j+i_st*512+k*64:j+i_st*512+k*64+32].split(b'\\0')[0]==b'gcc_doom_pico2']"
+   Then update the ORIGIN below and rebuild + reflash. Yes, this is
+   a chicken-and-egg loop; the proper fix is a 2-pass build that
+   re-links gcc_doom_pico2 after mkfs decides its position. */
 MEMORY {
-    FLASH (rx)  : ORIGIN = 0x10100000, LENGTH = 512K
+    FLASH (rx)  : ORIGIN = 0x100f57e0, LENGTH = 512K
     RAM   (rwx) : ORIGIN = 0x20030000, LENGTH = 320K
 }
 
