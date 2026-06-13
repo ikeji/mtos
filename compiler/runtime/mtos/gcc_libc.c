@@ -120,14 +120,13 @@ int mkdir(const char *path, unsigned int mode) {
     return (int)_syscall1(34, (long)buf);
 }
 
-/* Our kernel doesn't currently have lseek or rename. Stub them as
-   "not supported" so picolibc can still link — DOOM's WAD reader
-   only uses lseek for forward/backward seeks on a WAD file, and we'll
-   wire it up properly in Phase 4. rename is hit by save-game logic,
-   which is far down the scope list. */
+/* lseek lands on syscall 62 (= Linux ABI). The kernel routes the
+   request through vfs_lseek -> fatfs_seek for SD-backed files; other
+   backends (mtfs / pipes / tmpfs / UART) return -1. DOOM's WAD reader
+   is the primary client today — fopen(/sd/...) on the WAD goes
+   through picolibc -> open -> read/lseek -> our syscalls. */
 long lseek(int fd, long offset, int whence) {
-    (void)fd; (void)offset; (void)whence;
-    return -1;
+    return _syscall3(62, fd, offset, whence);
 }
 
 int rename(const char *oldp, const char *newp) {

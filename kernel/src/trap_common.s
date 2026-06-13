@@ -107,6 +107,8 @@ _handle_ecall:
     beq  t0, t1, _ecall_uptime_us
     li   t1, 271
     beq  t0, t1, _ecall_read_nb
+    li   t1, 62
+    beq  t0, t1, _ecall_lseek
     # Unknown: advance mepc and return
     lw   t0, 128(sp)
     addi t0, t0, 4
@@ -208,6 +210,18 @@ _ecall_close:
     call _ecall_enter
     lw   a0, 40(s0)         # fd
     call vfs_close__i32
+    sw   a0, 40(s0)
+    j    _ecall_leave_advance
+
+# lseek(fd, offset, whence) -> i32 — POSIX-style cursor move on
+# seekable backends (currently fatfs only; vfs_lseek returns -1 for
+# everything else). a7 = 62 matches Linux's lseek syscall number.
+_ecall_lseek:
+    call _ecall_enter
+    lw   a0, 40(s0)         # fd
+    lw   a1, 44(s0)         # offset
+    lw   a2, 48(s0)         # whence
+    call vfs_lseek__i32__i32__i32
     sw   a0, 40(s0)
     j    _ecall_leave_advance
 

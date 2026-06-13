@@ -1546,6 +1546,58 @@ export fn fatfs_size(fd: i32) -> i32 {
     return ff_size(f);
 }
 
+// Seek to an absolute position inside the file. `whence` is the POSIX
+// triple (0=SEEK_SET, 1=SEEK_CUR, 2=SEEK_END). Negative results from
+// the arithmetic clamp to 0; results past EOF clamp to the current
+// file size (we don't support writing past EOF via lseek yet — there
+// is no fatfs_truncate-by-extending path; that would need cluster
+// allocation here too). Returns the resulting absolute position, or
+// -1 on bad fd / invalid whence.
+//
+// Cluster index is rewalked from ff_start each call. That's O(N) in
+// the file's cluster count but our FAT cache makes each FAT lookup
+// one or two sector reads, so DOOM's WAD lump fetches (each one
+// seek-then-read pair) still run in milliseconds for files under a
+// few MB. If a workload starts seeking inside a 10+ MB file, replace
+// this with a forward/backward walk relative to ff_clus_idx.
+export fn fatfs_seek(fd: i32, offset: i32, whence: i32) -> i32 {
+    if fd < 0 || fd >= FATFS_MAX_FDS { return -1; }
+    var f: FatFD = get(g_fat_fds, fd);
+    if ff_active(f) == 0 { return -1; }
+
+    var base: i32 = 0;
+    if whence == 0 { base = 0; }
+    else if whence == 1 { base = ff_pos(f); }
+    else if whence == 2 { base = ff_size(f); }
+    else { return -1; }
+
+    var new_pos: i32 = base + offset;
+    if new_pos < 0 { new_pos = 0; }
+    if new_pos > ff_size(f) { new_pos = ff_size(f); }
+
+    var bytes_per_clus: i32 = g_fat_spc * 512;
+    var target_idx: i32 = new_pos / bytes_per_clus;
+
+    // Walk the chain from ff_start to target_idx. Empty files (start
+    // cluster 0) skip the walk; their pos stays at 0 regardless.
+    var cur: u32 = ff_start(f);
+    var idx: i32 = 0;
+    if cur >= 2u32 && cur < 0x0FFFFFF8u32 {
+        while idx < target_idx {
+            var nxt: u32 = fat_get_entry(cur);
+            if nxt < 2u32 || nxt >= 0x0FFFFFF8u32 { return -1; }
+            cur = nxt;
+            idx = idx + 1;
+        }
+    }
+
+    ff_pos(f, new_pos);
+    ff_clus(f, cur);
+    ff_clus_idx(f, idx);
+    set(g_fat_fds, fd, f);
+    return new_pos;
+}
+
 export fn fatfs_read(fd: i32, buf_addr: u32, n: i32) -> i32 {
     if fd < 0 || fd >= FATFS_MAX_FDS { return -1; }
     var f: FatFD = get(g_fat_fds, fd);
