@@ -218,6 +218,10 @@ GCC_LDFLAGS :=
 #   GCC_LD_<name>       — linker script; defaults to gcc_task.ld
 #                         (qemu virt single-segment). Pico2 uses
 #                         gcc_task_pico2.ld for the flash + SRAM split.
+#   GCC_CRT0_<name>     — startup .s; defaults to gcc_crt0.s (qemu
+#                         virt, no .data copy). Pico2 uses
+#                         gcc_crt0_pico2.s which handles the
+#                         flash → SRAM .data + .got copy and .bss zero.
 #   GCC_OBJCOPY_FLAGS_<name> — extra objcopy steps (default: rewrite
 #                              .data.zero section flags so the bss
 #                              zeros land in the raw bin; the pico2
@@ -228,9 +232,10 @@ define GCC_TASK_RULE
 GCC_SOURCES_$(1)  ?= $$(ROOT)/userland/gcc-bin/$(1)/$(1).c
 GCC_INCLUDES_$(1) ?=
 GCC_LD_$(1)       ?= $$(GCC_LD)
+GCC_CRT0_$(1)     ?= $$(GCC_CRT0)
 GCC_OBJCOPY_FLAGS_$(1) ?= --set-section-flags .data.zero=alloc,contents,load
 $$(TASK_DIR)/$(1).bin: $$(GCC_SOURCES_$(1)) \
-    $$(GCC_CRT0) $$(GCC_LIBC) $$(GCC_LD_$(1)) $$(TASK_SIZES) | $$(TASK_DIR)
+    $$(GCC_CRT0_$(1)) $$(GCC_LIBC) $$(GCC_LD_$(1)) $$(TASK_SIZES) | $$(TASK_DIR)
 	@echo "Building gcc task: $(1) ($$(words $$(GCC_SOURCES_$(1))) src)" >&2
 	@_tmp=$$$$(mktemp -d) && \
 	. $$(TASK_SIZES) && \
@@ -239,7 +244,7 @@ $$(TASK_DIR)/$(1).bin: $$(GCC_SOURCES_$(1)) \
 	printf '    .section .text.k3, "ax", @progbits\n    .word %s\n    .word %s\n' \
 	    "$$$$_arena" "$$$$_stack" > "$$$$_tmp/hdr.s" && \
 	$$(RISCV_GCC) $$(GCC_CFLAGS) $$(GCC_INCLUDES_$(1)) $$(GCC_LDFLAGS) \
-	    -T $$(GCC_LD_$(1)) "$$$$_tmp/hdr.s" $$(GCC_CRT0) $$(GCC_LIBC) \
+	    -T $$(GCC_LD_$(1)) "$$$$_tmp/hdr.s" $$(GCC_CRT0_$(1)) $$(GCC_LIBC) \
 	    $$(GCC_SOURCES_$(1)) -o "$$$$_tmp/$(1).elf" && \
 	$$(RISCV_OBJCOPY) $$(GCC_OBJCOPY_FLAGS_$(1)) \
 	    "$$$$_tmp/$(1).elf" "$$$$_tmp/$(1).elf2" 2>/dev/null && \
