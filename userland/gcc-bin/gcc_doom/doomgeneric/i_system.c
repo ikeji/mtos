@@ -62,8 +62,14 @@
    probe past Z_Init for the next failure mode while we plan the whd
    path. Leave the defaults alone for non-pico2 builds. */
 #ifdef PICO2_TINY_ZONE
-#define DEFAULT_RAM 16 /* KiB */
-#define MIN_RAM     4  /* KiB */
+/* 64 KiB zone — big enough for lumpinfo[~1200] from a trimmed WAD
+   (33 KB) + W_AddFile's directory read buffer + the early PU_STATIC
+   allocs that happen before any level loads. Won't survive an actual
+   P_SetupLevel for E1M1 (those need a few hundred KiB minimum), but
+   gets us past Z_Init / D_FindIWAD / W_AddFile so the next failure
+   mode is exposed. */
+#define DEFAULT_RAM 64 /* KiB */
+#define MIN_RAM     16 /* KiB */
 #define ZONE_UNIT   1024
 #else
 #define DEFAULT_RAM 6 /* MiB */

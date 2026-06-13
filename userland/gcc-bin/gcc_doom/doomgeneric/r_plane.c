@@ -42,14 +42,25 @@ planefunction_t		ceilingfunc;
 //
 
 // Here comes the obnoxious "visplane".
+// K22 Phase 5: PICO2_TINY_BUFFERS halves both renderer pools so the
+// resulting .bss is small enough to leave room for an actual heap
+// in our 320 KB SRAM budget. E1M1 fits comfortably within 64 visplanes
+// (sampled empirically in vanilla DOOM ranged 30-50 for that map),
+// and SCREENWIDTH*32 openings holds for the same map; rooms with more
+// dense overlap may glitch but won't crash. Tune up if E1M1 misrenders.
+#ifdef PICO2_TINY_BUFFERS
+#define MAXVISPLANES	64
+#define OPENINGS_FACTOR	32
+#else
 #define MAXVISPLANES	128
+#define OPENINGS_FACTOR	64
+#endif
 visplane_t		visplanes[MAXVISPLANES];
 visplane_t*		lastvisplane;
 visplane_t*		floorplane;
 visplane_t*		ceilingplane;
 
-// ?
-#define MAXOPENINGS	SCREENWIDTH*64
+#define MAXOPENINGS	SCREENWIDTH*OPENINGS_FACTOR
 short			openings[MAXOPENINGS];
 short*			lastopening;
 

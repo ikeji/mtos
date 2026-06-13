@@ -65,7 +65,7 @@ ENTRY(_start)
    a chicken-and-egg loop; the proper fix is a 2-pass build that
    re-links gcc_doom_pico2 after mkfs decides its position. */
 MEMORY {
-    FLASH (rx)  : ORIGIN = 0x100f57e0, LENGTH = 512K
+    FLASH (rx)  : ORIGIN = 0x100f64f0, LENGTH = 512K
     RAM   (rwx) : ORIGIN = 0x20030000, LENGTH = 320K
 }
 
