@@ -55,8 +55,21 @@
 #include <CoreFoundation/CFUserNotification.h>
 #endif
 
+/* K22 Phase 5: PICO2_TINY_ZONE switches the zone unit from MiB to KiB
+   so AutoAllocMemory can find a size that fits the ~28 KB heap left
+   over after picolibc's static .data/.bss. Vanilla DOOM expects MiB
+   here; the tiny zone won't survive a real level load but lets us
+   probe past Z_Init for the next failure mode while we plan the whd
+   path. Leave the defaults alone for non-pico2 builds. */
+#ifdef PICO2_TINY_ZONE
+#define DEFAULT_RAM 16 /* KiB */
+#define MIN_RAM     4  /* KiB */
+#define ZONE_UNIT   1024
+#else
 #define DEFAULT_RAM 6 /* MiB */
 #define MIN_RAM     6  /* MiB */
+#define ZONE_UNIT   (1024 * 1024)
+#endif
 
 
 typedef struct atexit_listentry_s atexit_listentry_t;
@@ -114,7 +127,7 @@ static byte *AutoAllocMemory(int *size, int default_ram, int min_ram)
 
         // Try to allocate the zone memory.
 
-        *size = default_ram * 1024 * 1024;
+        *size = default_ram * ZONE_UNIT;
 
         zonemem = malloc(*size);
 
