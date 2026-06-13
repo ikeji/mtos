@@ -16,9 +16,10 @@
 #     equivalent paths) once the package is installed.
 EXTRA_GUEST_TASKS += gcc_doom
 GCC_TASKS         += gcc_doom
-# Pico 2 variant — split flash/SRAM layout for the eventual hardware
-# target. Rule generated but not in any disk image yet; the kernel-side
-# placement work is still pending (Phase 3c kernel + Phase 5 WAD diet).
+# Pico 2 variant — text + GOT in flash, .data + .bss live at the
+# fixed link-time SRAM VMA carved out of the kernel arena
+# (__gcc_sram in kernel/platform/pico2/crt0_pico2_data.s).
+EXTRA_GUEST_TASKS += gcc_doom_pico2
 GCC_TASKS         += gcc_doom_pico2
 
 # 8 MB arena so DOOM's Z_Init can grab its 5 MiB zone (vanilla
@@ -28,10 +29,13 @@ GCC_TASKS         += gcc_doom_pico2
 # fit on pico2's 520 KB SRAM (Phase 5 deals with that diet).
 TASK_ARENA_gcc_doom := 8388608
 TASK_STACK_gcc_doom := 65536
-# Pico 2 variant: matches the qemu virt sizes today; Phase 5 will trim
-# the arena once whd-streaming replaces the 6 MiB zone.
-TASK_ARENA_gcc_doom_pico2 := 8388608
-TASK_STACK_gcc_doom_pico2 := 65536
+# Pico 2 variant: 64 KB arena fits inside the shrunken pico2 kernel
+# kmalloc pool (~191 KB after __gcc_sram reservation). DOOM's Z_Init
+# wants 6 MiB, so this build is expected to print the DOOM banner
+# and bail at "Unable to allocate 5 MiB of RAM for zone" — that's
+# the Phase 3c smoke-test endpoint. Phase 5 lifts it.
+TASK_ARENA_gcc_doom_pico2 := 65536
+TASK_STACK_gcc_doom_pico2 := 16384
 
 # Sources: our two top-level files plus every vendored .c except
 #   * mus2mid.c — standalone host-side utility with its own main()
