@@ -1,0 +1,117 @@
+/*
+ * gcc_task_pico2.ld — linker script for GCC-compiled guest tasks
+ * running on Pico 2 (RP2350) with flash XIP for text/rodata.
+ *
+ * The Pico 2 has 4 MB of XIP-mapped flash at 0x10000000 and only
+ * 520 KB of SRAM at 0x20000000. DOOM's text + rodata weigh ~330 KB
+ * and would never fit in SRAM alongside its data + bss (~302 KB);
+ * splitting the binary across flash and SRAM is the only way it
+ * fits at all.
+ *
+ *   Flash @ 0x10100000 .. 0x10180000 (512 KB available for gcc tasks)
+ *     .text       (PROGBITS, RX)
+ *     .rodata     (PROGBITS, R)
+ *
+ *   SRAM @ 0x20030000 .. 0x2007D000 (~308 KB reserved for one gcc task)
+ *     .data       (LMA in flash → VMA in SRAM, copied by crt0)
+ *     .got        (LMA in flash → VMA in SRAM, picolibc's GOT entries
+ *                  hold absolute SRAM VMAs that only resolve correctly
+ *                  once the table sits at its link-time address)
+ *     .bss        (NOLOAD, zeroed by crt0)
+ *
+ * Text addressing: PIC-built picolibc + -fno-pic application code is
+ * a mix — application code uses PC-relative auipc + addi pairs (work
+ * from any flash offset), and picolibc internals use auipc + lw via
+ * the GOT (resolve correctly because both text PC and GOT entries
+ * are anchored to fixed link-time VMAs that the kernel honours).
+ *
+ * Why VMA = 0x10100000 for flash:
+ *   - The kernel itself sits at 0x10000000 + first ~256 KB.
+ *   - mtfs disk image lands after the kernel; bin2s_incbin picks the
+ *     exact flash offset at kernel build time.
+ *   - Reserving 0x10100000 as the gcc-task slot leaves space for the
+ *     kernel + a couple of TC tasks before us, with the mtfs disk
+ *     pushed past 0x10180000.
+ *
+ * Why VMA = 0x20030000 for SRAM:
+ *   - Kernel .data + .bss live below 0x20030000 (see crt0_pico2_data.s).
+ *   - Leaves ~308 KB for the gcc task's data/bss/heap; DOOM's
+ *     data + bss alone is ~302 KB so the budget is tight.
+ *   - The kernel's stack at 0x20080000-0x20082000 stays untouched.
+ *
+ * Phase 5 (WAD diet) still needs to land before DOOM actually runs
+ * — even with text in flash, the vanilla 6 MiB zone allocator
+ * doesn't fit in the SRAM budget. This script just makes the binary
+ * shape correct.
+ */
+
+OUTPUT_ARCH(riscv)
+OUTPUT_FORMAT("elf32-littleriscv")
+ENTRY(_start)
+
+MEMORY {
+    FLASH (rx)  : ORIGIN = 0x10100000, LENGTH = 512K
+    RAM   (rwx) : ORIGIN = 0x20030000, LENGTH = 320K
+}
+
+SECTIONS {
+    .text : {
+        /* K3 header (hdr.s, .section .text.k3) must occupy the
+           first 8 bytes of the binary so the kernel's XIP loader
+           can read arena/stack sizes off the flash image directly. */
+        KEEP(*(.text.k3))
+        KEEP(*(.text.start))
+        *(.text .text.*)
+    } > FLASH
+
+    .rodata : ALIGN(4) {
+        *(.rodata .rodata.*)
+        *(.srodata .srodata.*)
+    } > FLASH
+
+    /* .data: VMA in SRAM, LMA in flash. gcc_crt0_pico2.s copies the
+       bytes across at startup before main runs. */
+    .data : ALIGN(4) {
+        __data_start = .;
+        *(.sdata .sdata.* .sdata2 .sdata2.*)
+        *(.data .data.*)
+        . = ALIGN(4);
+        __data_end = .;
+    } > RAM AT > FLASH
+
+    /* .got holds PIC-libc's absolute symbol addresses. The linker
+       fills the entries with link-time SRAM VMAs, so the table only
+       resolves correctly when its runtime location matches the link.
+       Keep it adjacent to .data so the crt0 copy loop covers both
+       in a single pass. */
+    .got : ALIGN(4) {
+        __got_start = .;
+        *(.got .got.*)
+        *(.got.plt .got.plt.*)
+        . = ALIGN(4);
+        __got_end = .;
+    } > RAM AT > FLASH
+
+    __data_lma = LOADADDR(.data);
+    __data_size = __got_end - __data_start;
+
+    __global_pointer$ = __data_start + 0x800;
+
+    .bss (NOLOAD) : ALIGN(4) {
+        __bss_start = .;
+        *(.sbss .sbss.*)
+        *(.bss .bss.*)
+        *(COMMON)
+        . = ALIGN(4);
+        __bss_end = .;
+    } > RAM
+
+    __bss_size  = __bss_end  - __bss_start;
+
+    /* picolibc's _sbrk fallback path references these. We override
+       _sbrk in gcc_libc.c, but the link needs them defined. */
+    PROVIDE(__heap_start = __bss_end);
+    PROVIDE(__heap_end   = ORIGIN(RAM) + LENGTH(RAM));
+
+    /DISCARD/ : { *(.comment) *(.note*) *(.eh_frame) }
+}
