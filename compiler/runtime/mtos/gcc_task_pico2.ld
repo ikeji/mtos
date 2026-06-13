@@ -69,8 +69,25 @@ SECTIONS {
         *(.srodata .srodata.*)
     } > FLASH
 
+    /* .got stays in flash alongside text/rodata. The entries are
+       pre-filled at link time with absolute SRAM VMAs of .data /
+       .bss symbols, and flash is read-only at runtime so we never
+       need to write to them. Keeping .got in flash means every
+       `auipc + lw GOT_entry` pair is a relative jump within the
+       same flash region — that's the property that lets the
+       kernel place the binary at any flash address (e.g. inside
+       mtfs at whatever offset mkfs picks), not just the linker's
+       0x10100000 default. */
+    .got : ALIGN(4) {
+        *(.got .got.*)
+        *(.got.plt .got.plt.*)
+    } > FLASH
+
     /* .data: VMA in SRAM, LMA in flash. gcc_crt0_pico2.s copies the
-       bytes across at startup before main runs. */
+       bytes across at startup before main runs. The kernel still
+       has to put SRAM at the link-time VMA — the GOT entries hold
+       absolute pointers into it, so the SRAM destination is the
+       one piece of address that has to match. */
     .data : ALIGN(4) {
         __data_start = .;
         *(.sdata .sdata.* .sdata2 .sdata2.*)
@@ -79,21 +96,8 @@ SECTIONS {
         __data_end = .;
     } > RAM AT > FLASH
 
-    /* .got holds PIC-libc's absolute symbol addresses. The linker
-       fills the entries with link-time SRAM VMAs, so the table only
-       resolves correctly when its runtime location matches the link.
-       Keep it adjacent to .data so the crt0 copy loop covers both
-       in a single pass. */
-    .got : ALIGN(4) {
-        __got_start = .;
-        *(.got .got.*)
-        *(.got.plt .got.plt.*)
-        . = ALIGN(4);
-        __got_end = .;
-    } > RAM AT > FLASH
-
     __data_lma = LOADADDR(.data);
-    __data_size = __got_end - __data_start;
+    __data_size = __data_end - __data_start;
 
     __global_pointer$ = __data_start + 0x800;
 

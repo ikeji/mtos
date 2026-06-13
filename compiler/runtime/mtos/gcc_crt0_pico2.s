@@ -38,22 +38,28 @@ _start:
     mv   s2, a2                              # s2 = argv StringArray ptr
 
     # ----- gp setup -----
-    # PC-relative lla picks up the binary's link-time
-    # __global_pointer$ value (= __data_start + 0x800 inside SRAM).
-    # `.option norelax` keeps the linker from collapsing this to a
-    # gp-relative addi that would (paradoxically) use the wrong gp.
+    # SRAM addresses use absolute lui+addi (NOT lla/auipc), because
+    # PC-relative addressing from flash text to SRAM data only
+    # produces the correct address when text lives at its link-time
+    # flash VMA. Once the kernel starts placing the binary at
+    # mtfs-determined flash offsets, the runtime PC differs and PCREL
+    # math points into garbage. Absolute lui+addi uses the linker
+    # symbol's value directly, so it stays correct regardless of where
+    # text was loaded.
 .option push
 .option norelax
-    lla  gp, __global_pointer$
+    lui  gp, %hi(__global_pointer$)
+    addi gp, gp, %lo(__global_pointer$)
 .option pop
 
-    # ----- Copy .data + .got from flash LMA → SRAM VMA -----
-    # __data_lma is a link-time constant pointing at the flash byte
-    # right after .rodata. __data_start is the SRAM destination. The
-    # linker emits __data_size = __got_end - __data_start so this
-    # loop covers .data + .got in one pass.
-    lla  t0, __data_lma                      # t0 = src (flash)
-    lla  t1, __data_start                    # t1 = dst (SRAM)
+    # ----- Copy .data from flash LMA → SRAM VMA -----
+    # __data_lma IS inside flash with the text, so PC-relative lla
+    # naturally tracks wherever text was loaded. __data_start and
+    # __data_size are an SRAM address and a pure constant, so they
+    # use the absolute (lui+addi or lui+lo) idiom.
+    lla  t0, __data_lma                      # t0 = src (flash, PC-rel)
+    lui  t1, %hi(__data_start)
+    addi t1, t1, %lo(__data_start)           # t1 = dst (SRAM, absolute)
     lui  t3, %hi(__data_size)
     addi t3, t3, %lo(__data_size)
     beqz t3, .Ldata_done
@@ -66,8 +72,9 @@ _start:
     bltu t1, t2, .Ldata_copy
 .Ldata_done:
 
-    # ----- Zero .bss + .sbss -----
-    lla  t0, __bss_start
+    # ----- Zero .bss + .sbss (all in SRAM, absolute addressing) -----
+    lui  t0, %hi(__bss_start)
+    addi t0, t0, %lo(__bss_start)
     lui  t3, %hi(__bss_size)
     addi t3, t3, %lo(__bss_size)
     beqz t3, .Lbss_done
