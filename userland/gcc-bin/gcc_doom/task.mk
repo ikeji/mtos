@@ -19,7 +19,11 @@ GCC_TASKS         += gcc_doom
 # Pico 2 variant — text + GOT in flash, .data + .bss live at the
 # fixed link-time SRAM VMA carved out of the kernel arena
 # (__gcc_sram in kernel/platform/pico2/crt0_pico2_data.s).
-EXTRA_GUEST_TASKS += gcc_doom_pico2
+# In GUEST_TASKS rather than EXTRA so it ships in the small disk.img
+# (and therefore pico2_kernel.uf2 fits in the 4 MB flash). The qemu
+# virt disk also picks it up but that build never spawns it; the
+# binary's link-time addresses don't match qemu virt's RAM map.
+GUEST_TASKS       += gcc_doom_pico2
 GCC_TASKS         += gcc_doom_pico2
 
 # 8 MB arena so DOOM's Z_Init can grab its 5 MiB zone (vanilla
