@@ -62,14 +62,17 @@
    probe past Z_Init for the next failure mode while we plan the whd
    path. Leave the defaults alone for non-pico2 builds. */
 #ifdef PICO2_TINY_ZONE
-/* 64 KiB zone — big enough for lumpinfo[~1200] from a trimmed WAD
-   (33 KB) + W_AddFile's directory read buffer + the early PU_STATIC
-   allocs that happen before any level loads. Won't survive an actual
-   P_SetupLevel for E1M1 (those need a few hundred KiB minimum), but
-   gets us past Z_Init / D_FindIWAD / W_AddFile so the next failure
-   mode is exposed. */
-#define DEFAULT_RAM 64 /* KiB */
-#define MIN_RAM     16 /* KiB */
+/* 32 KiB zone — needs to be small enough that the picolibc heap
+   left over after `malloc(DOOM_zone)` still fits lumpinfo[~1200]
+   (~33 KB), which w_wad.c's ExtendLumpInfo allocates via plain
+   calloc (NOT through the DOOM zone). With ~80 KB heap (after
+   PICO2_TINY_BUFFERS halves visplanes/openings) and 32 KB zone,
+   ~48 KB stays in the heap pool — comfortably above the
+   ExtendLumpInfo high-water mark.
+   Won't survive an actual P_SetupLevel for E1M1, but unblocks
+   W_AddFile so the next zone-side failure mode is exposed. */
+#define DEFAULT_RAM 32 /* KiB */
+#define MIN_RAM     8  /* KiB */
 #define ZONE_UNIT   1024
 #else
 #define DEFAULT_RAM 6 /* MiB */
