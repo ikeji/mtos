@@ -177,18 +177,35 @@ GCC_LD     := $(ROOT)/compiler/runtime/mtos/gcc_task.ld
 # memcpy, ...). We override its crt0 and linker script with our own
 # (-nostartfiles + -T gcc_task.ld), and re-target the syscalls that
 # picolibc's `posix-io` layer relies on through gcc_libc.c.
-GCC_CFLAGS := -march=rv32im -mabi=ilp32 -mcmodel=medany -Os \
+# Custom PIC-built picolibc; produced by compiler/scripts/build_picolibc_pic.sh.
+# Override PICOLIBC_PIC_PREFIX if you installed it somewhere else.
+PICOLIBC_PIC_PREFIX ?= $(HOME)/opt/picolibc-pic-rv32im
+PICOLIBC_PIC_SPECS  := $(PICOLIBC_PIC_PREFIX)/picolibc.specs
+GCC_CFLAGS := -march=rv32im_zicsr -mabi=ilp32 -mcmodel=medany -Os \
               -fno-pic -fno-pie -ffunction-sections -fdata-sections \
-              -fno-builtin -nostartfiles --specs=picolibc.specs \
-              -msmall-data-limit=2048 \
+              -fno-builtin -nostartfiles --specs=$(PICOLIBC_PIC_SPECS) \
+              -msmall-data-limit=0 \
               -Wall -Wno-unused-parameter
-# Why -fno-pic / -fno-pie: under -fPIE GCC emits GOT-indirect access
-# for cross-TU globals (auipc + lw GOT_entry + lw target), and the
-# GOT entries bake link-time VMAs that point into the wrong RAM once
-# the kernel loads the task at a kmalloc'd address. -fno-pic with
-# -mcmodel=medany emits straight auipc + lw PCREL pairs instead;
-# those resolve correctly at any load address because text + data
-# move together in our single-segment layout.
+# Why this combination:
+#   * -mcmodel=medany lets the linker keep PC-relative auipc + addi
+#     pairs for any symbol; combined with the single-segment layout
+#     (text + rodata + data + .bss laid out contiguous in RAM by
+#     gcc_task.ld), that resolves correctly at any load address.
+#   * -fno-pic + -fno-pie: under -fPIE GCC emits GOT-indirect access
+#     for cross-TU globals (auipc + lw GOT_entry + lw target), and
+#     the GOT entries bake link-time VMAs that fail when the kernel
+#     loads the task at a different runtime address.
+#   * --specs points at our custom PIC-built picolibc (see
+#     /home/ikeji/opt/picolibc-pic-rv32im). The Debian-shipped
+#     picolibc.specs would pick up libc.a from the system path —
+#     that build uses lui + addi absolute addressing for picolibc's
+#     own internals, which is what forced the kernel-side fixed-VMA
+#     hack on qemu virt. The PIC libc here uses auipc + lw via the
+#     GOT instead, so once we wire up the GOT layout it works at
+#     any load address.
+#   * -msmall-data-limit=0 stays because the custom libc was built
+#     with the same setting and the linker complains about mismatch
+#     otherwise.
 GCC_LDFLAGS :=
 
 # Per-task rule generator. Static-pattern-style: emits an explicit

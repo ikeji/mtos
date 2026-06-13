@@ -1,0 +1,46 @@
+# Meson cross-build file for picolibc, RV32IM, PIC.
+#
+# Used by compiler/scripts/build_picolibc_pic.sh to produce a PIC-built
+# libc.a under ~/opt/picolibc-pic-rv32im. The qemu-virt-shipped Debian
+# picolibc emits `lui + addi` absolute addressing for its internal
+# globals (errno, __malloc_free_list, ...), which only works when the
+# binary lives at its link-time VMA. The kernel side already pins large
+# gcc tasks to a fixed slot on qemu virt as a workaround, but that
+# doesn't survive the pico2 jump to flash XIP + 520 KB SRAM.
+#
+# Flags worth understanding:
+#   * -mcmodel=medany + -fPIC: globals get auipc + lw via GOT, so text
+#     can run from any flash address as long as the GOT entries (which
+#     hold absolute VMAs) match the SRAM layout.
+#   * -fshort-enums comes from upstream rv32 cross files; keep for
+#     ABI compatibility with anything else picolibc might link against.
+#   * -msave-restore folds prologue/epilogue into __riscv_save / restore
+#     helpers — saves ~6 % code size, matters once we're memory-bound.
+[binaries]
+c    = ['riscv64-unknown-elf-gcc', '-nostdlib']
+cpp  = ['riscv64-unknown-elf-g++', '-nostdlib']
+ar   = 'riscv64-unknown-elf-ar'
+as   = 'riscv64-unknown-elf-as'
+nm   = 'riscv64-unknown-elf-nm'
+strip = 'riscv64-unknown-elf-strip'
+
+[host_machine]
+system = 'unknown'
+cpu_family = 'riscv32'
+cpu = 'riscv32'
+endian = 'little'
+
+[properties]
+c_args        = ['-march=rv32im_zicsr', '-mabi=ilp32', '-mcmodel=medany', '-fPIC', '-fshort-enums', '-msave-restore', '-msmall-data-limit=0']
+cpp_args      = ['-march=rv32im_zicsr', '-mabi=ilp32', '-mcmodel=medany', '-fPIC', '-fshort-enums', '-msave-restore', '-msmall-data-limit=0']
+c_link_args   = ['-march=rv32im_zicsr', '-mabi=ilp32', '-mcmodel=medany', '-fPIC']
+cpp_link_args = ['-march=rv32im_zicsr', '-mabi=ilp32', '-mcmodel=medany', '-fPIC']
+skip_sanity_check = true
+
+# Match the rv32im / ilp32 multilib layout of upstream picolibc cross
+# files. We don't actually use these defaults — gcc_task.ld owns the
+# memory layout — but meson requires them.
+default_flash_addr = '0x10000000'
+default_flash_size = '0x00400000'
+default_ram_addr   = '0x20000000'
+default_ram_size   = '0x00080000'
