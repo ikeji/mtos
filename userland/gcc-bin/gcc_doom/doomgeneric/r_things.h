@@ -22,7 +22,14 @@
 
 
 
+/* K22 Phase 5 stage 5: halve MAXVISSPRITES for pico2 — saves ~3.7 KB
+   of vissprites[] .bss. E1M1 maxes out around 30 visible sprites in
+   any frame. */
+#ifdef PICO2_TINY_BUFFERS_HARDER
+#define MAXVISSPRITES  	64
+#else
 #define MAXVISSPRITES  	128
+#endif
 
 extern vissprite_t	vissprites[MAXVISSPRITES];
 extern vissprite_t*	vissprite_p;

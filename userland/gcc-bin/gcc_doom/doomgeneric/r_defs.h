@@ -48,7 +48,17 @@
 #define SIL_TOP			2
 #define SIL_BOTH		3
 
+/* K22 Phase 5 stage 5: halve MAXDRAWSEGS for pico2 — saves ~6 KB
+   of drawsegs[] .bss. E1M1 in vanilla DOOM uses well under 128
+   drawsegs; this is plenty of slack but freees up enough heap to
+   bump the DOOM zone past the R_InitSprites 612-byte wall. Other
+   maps with dense geometry might overflow; revisit if we expand
+   scope past E1M1. */
+#ifdef PICO2_TINY_BUFFERS_HARDER
+#define MAXDRAWSEGS		128
+#else
 #define MAXDRAWSEGS		256
+#endif
 
 
 
