@@ -655,25 +655,46 @@ void R_InitFlats (void)
 void R_InitSpriteLumps (void)
 {
     int		i;
+#ifndef PICO2_R_INIT_LITE
     patch_t	*patch;
-	
+#endif
+
     firstspritelump = W_GetNumForName (DEH_String("S_START")) + 1;
     lastspritelump = W_GetNumForName (DEH_String("S_END")) - 1;
-    
+
     numspritelumps = lastspritelump - firstspritelump + 1;
     spritewidth = Z_Malloc (numspritelumps*sizeof(*spritewidth), PU_STATIC, 0);
     spriteoffset = Z_Malloc (numspritelumps*sizeof(*spriteoffset), PU_STATIC, 0);
     spritetopoffset = Z_Malloc (numspritelumps*sizeof(*spritetopoffset), PU_STATIC, 0);
-	
+
     for (i=0 ; i< numspritelumps ; i++)
     {
 	if (!(i&63))
 	    printf (".");
 
+#ifdef PICO2_R_INIT_LITE
+	/* K22 Phase 5 stage 2a — read only the 8-byte patch header
+	   straight from the WAD into a stack buffer, skipping the
+	   ~1-100 KB W_CacheLumpNum(PU_CACHE) per sprite that vanilla
+	   R_InitSpriteLumps does. Each sprite header read is one
+	   PL011 fread; no zone allocation. Won't unblock the current
+	   pico2 wall (that's earlier, inside R_InitTextures' per-
+	   texture loop allocating 13-patch texture_t structs into
+	   an already-tight zone), but removes ~14 KB of PU_CACHE
+	   thrashing once the zone has room to reach this point. */
+	short hdr[4];   /* width, height, leftoffset, topoffset */
+	int   lump = firstspritelump + i;
+	W_Read (lumpinfo[lump].wad_file, lumpinfo[lump].position,
+	        hdr, sizeof(hdr));
+	spritewidth[i]     = SHORT(hdr[0]) << FRACBITS;
+	spriteoffset[i]    = SHORT(hdr[2]) << FRACBITS;
+	spritetopoffset[i] = SHORT(hdr[3]) << FRACBITS;
+#else
 	patch = W_CacheLumpNum (firstspritelump+i, PU_CACHE);
 	spritewidth[i] = SHORT(patch->width)<<FRACBITS;
 	spriteoffset[i] = SHORT(patch->leftoffset)<<FRACBITS;
 	spritetopoffset[i] = SHORT(patch->topoffset)<<FRACBITS;
+#endif
     }
 }
 
