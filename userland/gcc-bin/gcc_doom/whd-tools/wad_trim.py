@@ -63,6 +63,12 @@ INSTRUMENT_BANK_NAMES = {"GENMIDI", "DMXGUS"}
 # title-screen state machine plays them after a few seconds of idle;
 # we don't sit on the menu long enough for that to matter on pico2.
 DEMO_RE = re.compile(r"^DEMO[1-9]$")
+# WI* are intermission-screen patches drawn between maps. With only
+# E1M1 in the kept-maps set, the inter-map screen is unreachable.
+INTERMISSION_RE = re.compile(r"^WI[A-Z0-9]+$")
+# HELP* are the F1 help screens, ENDOOM is the exit text screen,
+# CREDIT is the credits screen. All optional UI.
+HELP_NAMES = {"HELP", "HELP1", "HELP2", "ENDOOM", "CREDIT"}
 
 
 def lump_name(raw: bytes) -> str:
@@ -105,7 +111,8 @@ def find_level_runs(entries):
 
 
 def trim(input_path: Path, output_path: Path, keep_maps: set[str],
-         drop_music: bool, drop_audio: bool, drop_demos: bool):
+         drop_music: bool, drop_audio: bool, drop_demos: bool,
+         drop_intermission: bool, drop_help: bool):
     data = input_path.read_bytes()
     magic, entries = parse_directory(data)
 
@@ -143,6 +150,16 @@ def trim(input_path: Path, output_path: Path, keep_maps: set[str],
     if drop_demos:
         for idx, (_, _, name, _) in enumerate(entries):
             if DEMO_RE.match(name):
+                drop_indices.add(idx)
+
+    if drop_intermission:
+        for idx, (_, _, name, _) in enumerate(entries):
+            if INTERMISSION_RE.match(name):
+                drop_indices.add(idx)
+
+    if drop_help:
+        for idx, (_, _, name, _) in enumerate(entries):
+            if name in HELP_NAMES:
                 drop_indices.add(idx)
 
     # Emit new WAD: header + lump bytes + directory.
@@ -187,17 +204,27 @@ def main(argv: list[str] | None = None) -> int:
                         "when the runtime has FEATURE_SOUND disabled.")
     p.add_argument("--no-demos", action="store_true",
                    help="drop DEMO1..DEMO3 title-screen attract reels")
+    p.add_argument("--no-intermission", action="store_true",
+                   help="drop WI* inter-map screen graphics. Safe when "
+                        "only one map is kept — DOOM never reaches the "
+                        "intermission state with E1M1-only.")
+    p.add_argument("--no-help", action="store_true",
+                   help="drop HELP1/HELP2/CREDIT/ENDOOM. UI-only screens "
+                        "we don't navigate to on pico2.")
     p.add_argument("--minimal", action="store_true",
-                   help="alias for --no-audio --no-demos. K22 pico2 "
-                        "build defaults if you just want it small.")
+                   help="alias for --no-audio --no-demos --no-intermission "
+                        "--no-help. K22 pico2 default if you want small.")
     args = p.parse_args(argv)
     keep_maps = {m.strip().upper() for m in args.keep.split(",") if m.strip()}
     no_audio = args.no_audio or args.minimal
     no_demos = args.no_demos or args.minimal
+    no_intermission = args.no_intermission or args.minimal
+    no_help = args.no_help or args.minimal
     # --no-audio already covers all music, so only forward
     # --no-music when audio is staying.
     no_music = args.no_music and not no_audio
-    trim(args.input, args.output, keep_maps, no_music, no_audio, no_demos)
+    trim(args.input, args.output, keep_maps, no_music, no_audio,
+         no_demos, no_intermission, no_help)
     return 0
 
 
