@@ -53,7 +53,15 @@ static const char *player_colors[] =
 
 // Array of end-of-level statistics that have been captured.
 
+/* K22 Phase 5 stage 6: -statdump is never passed in our build so
+   captured_stats[] is always zero-filled and untouched, but it
+   still costs ~6.4 KB of .bss for the 32-entry default. Pin it
+   to 1 entry on pico2 to free that .bss for the picolibc heap. */
+#ifdef PICO2_TINY_BUFFERS_HARDER
+#define MAX_CAPTURES 1
+#else
 #define MAX_CAPTURES 32
+#endif
 static wbstartstruct_t captured_stats[MAX_CAPTURES];
 static int num_captured_stats = 0;
 
