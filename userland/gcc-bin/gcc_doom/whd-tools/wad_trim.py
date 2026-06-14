@@ -49,6 +49,20 @@ LEVEL_DATA_LUMPS = (
 )
 LEVEL_MARKER_RE = re.compile(r"^(?:E[1-4]M[1-9]|MAP\d{2})$")
 MUSIC_LEVEL_RE = re.compile(r"^D_(E[1-4]M[1-9]|RUNNI[N]|STALK[S]|COUNTD|BETWEE|DOOM|E2M[1-9])$")
+# Audio lump prefixes. With FEATURE_SOUND off in our doomgeneric
+# build (gcc_doom/doomfeatures.h) none of these get referenced at
+# runtime; --no-audio drops them outright.
+#   DS<name>   — digital sound effect (PCM)
+#   DP<name>   — PC-speaker variant of the same effect
+#   D_<name>   — MUS-format music track
+# Plus the two instrument banks for the music player (we don't use):
+SFX_PREFIX_RE = re.compile(r"^(?:DS|DP)[A-Z0-9_]+$")
+MUSIC_RE = re.compile(r"^D_[A-Z0-9]+$")
+INSTRUMENT_BANK_NAMES = {"GENMIDI", "DMXGUS"}
+# DEMO1..DEMO3 are recorded title-screen attract demos. The vanilla
+# title-screen state machine plays them after a few seconds of idle;
+# we don't sit on the menu long enough for that to matter on pico2.
+DEMO_RE = re.compile(r"^DEMO[1-9]$")
 
 
 def lump_name(raw: bytes) -> str:
@@ -90,7 +104,8 @@ def find_level_runs(entries):
     return runs
 
 
-def trim(input_path: Path, output_path: Path, keep_maps: set[str], drop_music: bool):
+def trim(input_path: Path, output_path: Path, keep_maps: set[str],
+         drop_music: bool, drop_audio: bool, drop_demos: bool):
     data = input_path.read_bytes()
     magic, entries = parse_directory(data)
 
@@ -109,11 +124,25 @@ def trim(input_path: Path, output_path: Path, keep_maps: set[str], drop_music: b
         raise SystemExit(f"requested maps not found in input WAD: {sorted(missing)}")
 
     if drop_music:
-        # Drop per-level music for dropped maps. Music lump name is D_<map>
+        # Per-level music for dropped maps. Music lump name is D_<map>
         # except for D_INTROA / D_INTROS / D_VICTOR etc., which we keep.
         kept_music_names = {f"D_{m}" for m in kept_maps}
         for idx, (_, _, name, _) in enumerate(entries):
             if MUSIC_LEVEL_RE.match(name) and name not in kept_music_names:
+                drop_indices.add(idx)
+
+    if drop_audio:
+        # Strip every audio-shaped lump (DS*, DP*, D_*, GENMIDI, DMXGUS).
+        # Implies --no-music (and goes further by also dropping the menu
+        # tracks like D_INTRO that --no-music keeps).
+        for idx, (_, _, name, _) in enumerate(entries):
+            if SFX_PREFIX_RE.match(name) or MUSIC_RE.match(name) \
+                    or name in INSTRUMENT_BANK_NAMES:
+                drop_indices.add(idx)
+
+    if drop_demos:
+        for idx, (_, _, name, _) in enumerate(entries):
+            if DEMO_RE.match(name):
                 drop_indices.add(idx)
 
     # Emit new WAD: header + lump bytes + directory.
@@ -150,10 +179,25 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--keep", default="E1M1",
                    help="comma-separated map list to keep (default E1M1)")
     p.add_argument("--no-music", action="store_true",
-                   help="also drop level music lumps for dropped maps")
+                   help="drop level music lumps for dropped maps "
+                        "(keeps menu / intermission music)")
+    p.add_argument("--no-audio", action="store_true",
+                   help="drop ALL audio lumps (DS*, DP*, D_*, "
+                        "GENMIDI, DMXGUS). Implies --no-music. Use "
+                        "when the runtime has FEATURE_SOUND disabled.")
+    p.add_argument("--no-demos", action="store_true",
+                   help="drop DEMO1..DEMO3 title-screen attract reels")
+    p.add_argument("--minimal", action="store_true",
+                   help="alias for --no-audio --no-demos. K22 pico2 "
+                        "build defaults if you just want it small.")
     args = p.parse_args(argv)
     keep_maps = {m.strip().upper() for m in args.keep.split(",") if m.strip()}
-    trim(args.input, args.output, keep_maps, args.no_music)
+    no_audio = args.no_audio or args.minimal
+    no_demos = args.no_demos or args.minimal
+    # --no-audio already covers all music, so only forward
+    # --no-music when audio is staying.
+    no_music = args.no_music and not no_audio
+    trim(args.input, args.output, keep_maps, no_music, no_audio, no_demos)
     return 0
 
 
