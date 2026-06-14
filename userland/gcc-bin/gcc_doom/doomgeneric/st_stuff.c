@@ -1128,6 +1128,21 @@ static void ST_loadUnloadGraphics(load_callback_t callback)
 
     // face states
     facenum = 0;
+#ifdef PICO2_TINY_HUD
+    /* K22 Phase 5 stage 7 — skip HUD face loading on pico2. The ~46
+       STF* face patches at ~800 bytes each (~38 KB total) fragmented
+       the zone past the 832-byte contiguous threshold in ST_Init.
+       The face widget gets STFST00 as a single fallback; the face
+       state machine in ST_updateFaceWidget still picks an index
+       from {0..ST_NUMFACES} based on player health/damage, but
+       every index now points at the same patch. Cost: no animated
+       face on the status bar. */
+    callback(DEH_String("STFST00"), &faces[0]);
+    for (j = 1; j < ST_NUMFACES; j++)
+        faces[j] = faces[0];
+    (void) i;
+    facenum = ST_NUMFACES;
+#else
     for (i=0; i<ST_NUMPAINFACES; i++)
     {
 	for (j=0; j<ST_NUMSTRAIGHTFACES; j++)
@@ -1157,6 +1172,7 @@ static void ST_loadUnloadGraphics(load_callback_t callback)
     ++facenum;
     callback(DEH_String("STFDEAD0"), &faces[facenum]);
     ++facenum;
+#endif
 }
 
 static void ST_loadCallback(char *lumpname, patch_t **variable)
@@ -1411,6 +1427,16 @@ void ST_Stop (void)
 void ST_Init (void)
 {
     ST_loadData();
+#ifdef PICO2_TINY_HUD
+    /* K22 Phase 5 stage 7 — Z_Malloc(ST_WIDTH * ST_HEIGHT) = 10240
+       fails on a zone fragmented by R_Init + HU_Init + ST_loadData.
+       Put the status-bar backing screen in .bss instead, single
+       contiguous allocation and no zone pressure. ST_WIDTH 320 ×
+       ST_HEIGHT 32 = 10 KB up front. */
+    static byte _pico2_st_backing[ST_WIDTH * ST_HEIGHT];
+    st_backing_screen = _pico2_st_backing;
+#else
     st_backing_screen = (byte *) Z_Malloc(ST_WIDTH * ST_HEIGHT, PU_STATIC, 0);
+#endif
 }
 
