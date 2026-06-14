@@ -49,12 +49,14 @@ planefunction_t		ceilingfunc;
 // and SCREENWIDTH*32 openings holds for the same map; rooms with more
 // dense overlap may glitch but won't crash. Tune up if E1M1 misrenders.
 #ifdef PICO2_TINY_BUFFERS_HARDER
-/* Another step down once we hit the R_Init zone wall: openings 16
-   gets us ~10 KB of .bss back so DEFAULT_RAM can grow without
-   pushing past the picolibc heap. visplane count stays at 64 —
-   shrinking it further started biting into E1M1's actual span
-   count in dense rooms. */
-#define MAXVISPLANES	64
+/* K22 Phase 5 stage 7 — final step down to fit ST_Init's status
+   bar patch pile in the zone: MAXVISPLANES 64 → 32 (-21 KB .bss
+   for picolibc heap, which lets DEFAULT_RAM bump again). E1M1
+   never gets close to 32 visplanes per frame in vanilla logging,
+   but other maps would overflow. The MAXOPENINGS pool stays at
+   16×width — couldn't shrink further without dropping spans in
+   the test corridors. */
+#define MAXVISPLANES	32
 #define OPENINGS_FACTOR	16
 #elif defined(PICO2_TINY_BUFFERS)
 #define MAXVISPLANES	64
