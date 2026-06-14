@@ -321,6 +321,51 @@ void R_GenerateLookup (int texnum)
     memset (patchcount, 0, texture->width);
     patch = texture->patches;
 
+#ifdef PICO2_R_INIT_LITE
+    /* K22 Phase 5 stage 4 — same shape as the R_InitSpriteLumps fast
+       path: R_GenerateLookup only reads the patch's first 8 bytes
+       (width + height + offsets) and its columnofs[width] table.
+       The column pixel data isn't touched here. Vanilla pulls the
+       whole patch through PU_CACHE for that — which on pico2
+       fragmented out the contiguous 17.5 KB needed by patches like
+       WALL62_1 and W94_1, killing R_InitTextures' 2nd loop. With
+       a focused W_Read we never touch the pixel bytes.
+       Max patch width in shareware DOOM is 256 (SKY1); 257*4 = 1028
+       columnofs bytes fit comfortably on the 16 KB task stack. */
+    static int rgl_columnofs[257];   /* +1 slack */
+    short rgl_hdr[4];                /* width, height, leftoffset, topoffset */
+    int realwidth;
+    for (i=0 , patch = texture->patches;
+	 i<texture->patchcount;
+	 i++, patch++)
+    {
+	int patch_lump = patch->patch;
+	W_Read (LUMP_WAD(patch_lump), lumpinfo[patch_lump].position,
+	        rgl_hdr, sizeof(rgl_hdr));
+	realwidth = (unsigned short)SHORT(rgl_hdr[0]);
+	if (realwidth > 256)
+	    I_Error ("R_GenerateLookup: patch width %d > 256", realwidth);
+	W_Read (LUMP_WAD(patch_lump), lumpinfo[patch_lump].position + 8,
+	        rgl_columnofs, realwidth * 4);
+
+	x1 = patch->originx;
+	x2 = x1 + realwidth;
+
+	if (x1 < 0)
+	    x = 0;
+	else
+	    x = x1;
+
+	if (x2 > texture->width)
+	    x2 = texture->width;
+	for ( ; x<x2 ; x++)
+	{
+	    patchcount[x]++;
+	    collump[x] = patch_lump;
+	    colofs[x] = LONG(rgl_columnofs[x-x1])+3;
+	}
+    }
+#else
     for (i=0 , patch = texture->patches;
 	 i<texture->patchcount;
 	 i++, patch++)
@@ -328,7 +373,7 @@ void R_GenerateLookup (int texnum)
 	realpatch = W_CacheLumpNum (patch->patch, PU_CACHE);
 	x1 = patch->originx;
 	x2 = x1 + SHORT(realpatch->width);
-	
+
 	if (x1 < 0)
 	    x = 0;
 	else
@@ -343,6 +388,7 @@ void R_GenerateLookup (int texnum)
 	    colofs[x] = LONG(realpatch->columnofs[x-x1])+3;
 	}
     }
+#endif
 	
     for (x=0 ; x<texture->width ; x++)
     {
