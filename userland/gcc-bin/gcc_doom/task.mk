@@ -66,15 +66,29 @@ GCC_INCLUDES_gcc_doom := $(GCC_DOOM_INCLUDES)
 # flash/SRAM split layout. .bss stays NOLOAD (gcc_crt0_pico2.s zeros
 # it from crt0 instead of carrying ~240 KB of zero bytes in the flash
 # image), so the .data.zero rewrite is dropped.
-GCC_SOURCES_gcc_doom_pico2  := $(GCC_DOOM_SOURCES)
+# Phase 5 stage 1 also pulls the whd-runtime building blocks
+# (tiny_huff, image_decoder) into the source list. They have no
+# in-tree callers yet (USE_WHD wiring lands in stage 2+), so the
+# linker's --gc-sections drops them out of the final binary — but
+# the build still proves they compile clean under our gcc_libc.c +
+# picolibc stack.
+GCC_DOOM_WHD_SOURCES := \
+    $(ROOT)/userland/gcc-bin/gcc_doom/doomgeneric/whd/tiny_huff.c \
+    $(ROOT)/userland/gcc-bin/gcc_doom/doomgeneric/whd/image_decoder.c
+GCC_SOURCES_gcc_doom_pico2  := $(GCC_DOOM_SOURCES) $(GCC_DOOM_WHD_SOURCES)
 # -DPICO2_TINY_ZONE switches i_system.c's zone unit from MiB to KiB.
 # -DPICO2_TINY_BUFFERS halves r_plane.c's MAXVISPLANES (128→64) and
 # OPENINGS_FACTOR (64→32) so the resulting .bss leaves ~50 KB more
 # heap (visplanes 84→32 KB, openings 40→20 KB). Combined: the
 # picolibc heap goes from ~28 KB to ~78 KB, which fits a 64 KB DOOM
 # zone for early bootstrap (lumpinfo + a couple of PU_STATIC allocs).
+# -DUSE_WHD=1 turns the WHD code paths on inside whddata.h. None of
+# our existing .c calls into them yet — stage 1 just verifies that
+# the runtime whd files compile + link under our toolchain.
 GCC_INCLUDES_gcc_doom_pico2 := $(GCC_DOOM_INCLUDES) \
-    -DPICO2_TINY_ZONE -DPICO2_TINY_BUFFERS -DPICO2_TINY_BUFFERS_HARDER
+    -I$(ROOT)/userland/gcc-bin/gcc_doom/doomgeneric/whd \
+    -DPICO2_TINY_ZONE -DPICO2_TINY_BUFFERS -DPICO2_TINY_BUFFERS_HARDER \
+    -DUSE_WHD=1
 GCC_LD_gcc_doom_pico2       := $(ROOT)/compiler/runtime/mtos/gcc_task_pico2.ld
 GCC_CRT0_gcc_doom_pico2     := $(ROOT)/compiler/runtime/mtos/gcc_crt0_pico2.s
 GCC_OBJCOPY_FLAGS_gcc_doom_pico2 :=
