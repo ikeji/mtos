@@ -48,7 +48,15 @@ planefunction_t		ceilingfunc;
 // (sampled empirically in vanilla DOOM ranged 30-50 for that map),
 // and SCREENWIDTH*32 openings holds for the same map; rooms with more
 // dense overlap may glitch but won't crash. Tune up if E1M1 misrenders.
-#ifdef PICO2_TINY_BUFFERS
+#ifdef PICO2_TINY_BUFFERS_HARDER
+/* Another step down once we hit the R_Init zone wall: openings 16
+   gets us ~10 KB of .bss back so DEFAULT_RAM can grow without
+   pushing past the picolibc heap. visplane count stays at 64 —
+   shrinking it further started biting into E1M1's actual span
+   count in dense rooms. */
+#define MAXVISPLANES	64
+#define OPENINGS_FACTOR	16
+#elif defined(PICO2_TINY_BUFFERS)
 #define MAXVISPLANES	64
 #define OPENINGS_FACTOR	32
 #else

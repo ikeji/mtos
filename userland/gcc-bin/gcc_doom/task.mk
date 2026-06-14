@@ -74,7 +74,7 @@ GCC_SOURCES_gcc_doom_pico2  := $(GCC_DOOM_SOURCES)
 # picolibc heap goes from ~28 KB to ~78 KB, which fits a 64 KB DOOM
 # zone for early bootstrap (lumpinfo + a couple of PU_STATIC allocs).
 GCC_INCLUDES_gcc_doom_pico2 := $(GCC_DOOM_INCLUDES) \
-    -DPICO2_TINY_ZONE -DPICO2_TINY_BUFFERS
+    -DPICO2_TINY_ZONE -DPICO2_TINY_BUFFERS -DPICO2_TINY_BUFFERS_HARDER
 GCC_LD_gcc_doom_pico2       := $(ROOT)/compiler/runtime/mtos/gcc_task_pico2.ld
 GCC_CRT0_gcc_doom_pico2     := $(ROOT)/compiler/runtime/mtos/gcc_crt0_pico2.s
 GCC_OBJCOPY_FLAGS_gcc_doom_pico2 :=

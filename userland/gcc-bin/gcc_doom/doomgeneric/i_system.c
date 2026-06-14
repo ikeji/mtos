@@ -62,17 +62,16 @@
    probe past Z_Init for the next failure mode while we plan the whd
    path. Leave the defaults alone for non-pico2 builds. */
 #ifdef PICO2_TINY_ZONE
-/* 32 KiB zone — needs to be small enough that the picolibc heap
-   left over after `malloc(DOOM_zone)` still fits lumpinfo[~1200]
-   (~33 KB), which w_wad.c's ExtendLumpInfo allocates via plain
-   calloc (NOT through the DOOM zone). With ~80 KB heap (after
-   PICO2_TINY_BUFFERS halves visplanes/openings) and 32 KB zone,
-   ~48 KB stays in the heap pool — comfortably above the
-   ExtendLumpInfo high-water mark.
-   Won't survive an actual P_SetupLevel for E1M1, but unblocks
-   W_AddFile so the next zone-side failure mode is exposed. */
-#define DEFAULT_RAM 32 /* KiB */
-#define MIN_RAM     8  /* KiB */
+/* 64 KiB zone. Fits because: (1) the wider --minimal trim cut
+   lumpinfo to ~26 KB (was 33 KB), (2) PICO2_TINY_BUFFERS_HARDER
+   halves r_plane.c's OPENINGS pool again (32→16 of SCREENWIDTH),
+   freeing ~10 KB more .bss. picolibc heap is then ~101 KB; a
+   malloc(64 KB) for the zone leaves 37 KB for the 26 KB
+   lumpinfo plus ~11 KB margin for fopen FILE* state, fread
+   buffer, save-game scratch, etc.
+   Past the R_Init wall at 48 KB (R_InitFlats died on 536 B). */
+#define DEFAULT_RAM 64 /* KiB */
+#define MIN_RAM     16 /* KiB */
 #define ZONE_UNIT   1024
 #else
 #define DEFAULT_RAM 6 /* MiB */
