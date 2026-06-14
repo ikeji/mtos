@@ -62,15 +62,16 @@
    probe past Z_Init for the next failure mode while we plan the whd
    path. Leave the defaults alone for non-pico2 builds. */
 #ifdef PICO2_TINY_ZONE
-/* 64 KiB zone. Fits because: (1) the wider --minimal trim cut
-   lumpinfo to ~26 KB (was 33 KB), (2) PICO2_TINY_BUFFERS_HARDER
-   halves r_plane.c's OPENINGS pool again (32→16 of SCREENWIDTH),
-   freeing ~10 KB more .bss. picolibc heap is then ~101 KB; a
-   malloc(64 KB) for the zone leaves 37 KB for the 26 KB
-   lumpinfo plus ~11 KB margin for fopen FILE* state, fread
-   buffer, save-game scratch, etc.
-   Past the R_Init wall at 48 KB (R_InitFlats died on 536 B). */
-#define DEFAULT_RAM 64 /* KiB */
+/* 96 KiB zone. PICO2_TINY_BACKUPTICS shrinks ticdata[128]→ticdata[8]
+   in net_defs.h (-19 KB .bss, single-player only needs a few tics
+   of slack). Combined with PICO2_LUMPINFO_SHRUNK (-3.8 KB) and
+   PICO2_TINY_BUFFERS_HARDER, the picolibc heap is now ~121 KB —
+   plenty for a malloc(96 KB) DOOM zone alongside the ~22.7 KB
+   lumpinfo for our 947-lump trimmed WAD. The R_InitTextures wall
+   (R_GenerateLookup allocating patchcount[texture->width] under
+   accumulated PU_CACHE pressure from per-patch W_CacheLumpNum)
+   has ~30 KB more contiguous zone to chew through. */
+#define DEFAULT_RAM 88 /* KiB */
 #define MIN_RAM     16 /* KiB */
 #define ZONE_UNIT   1024
 #else

@@ -42,7 +42,17 @@
 
 // Networking and tick handling related.
 
+/* K22 Phase 5 stage 3b: BACKUPTICS controls the ticdata ring used by
+   the predict/resimulate path in d_loop.c. Vanilla 128 sizes the
+   ring for net-game rewind; single-player only needs a couple of
+   tics of slack. Halve it (or shrink further) to claw back .bss for
+   the SRAM-bound pico2 build — ticdata is the biggest single-player-
+   unnecessary array left in our .bss audit. */
+#ifdef PICO2_TINY_BACKUPTICS
+#define BACKUPTICS 8
+#else
 #define BACKUPTICS 128
+#endif
 
 typedef struct _net_module_s net_module_t;
 typedef struct _net_packet_s net_packet_t;

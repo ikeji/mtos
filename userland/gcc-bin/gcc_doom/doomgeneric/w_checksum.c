@@ -60,7 +60,11 @@ static void ChecksumAddLump(sha1_context_t *sha1_context, lumpinfo_t *lump)
 
     M_StringCopy(buf, lump->name, sizeof(buf));
     SHA1_UpdateString(sha1_context, buf);
+#ifdef PICO2_LUMPINFO_SHRUNK
+    SHA1_UpdateInt32(sha1_context, GetFileNumber(g_lump_wad));
+#else
     SHA1_UpdateInt32(sha1_context, GetFileNumber(lump->wad_file));
+#endif
     SHA1_UpdateInt32(sha1_context, lump->position);
     SHA1_UpdateInt32(sha1_context, lump->size);
 }

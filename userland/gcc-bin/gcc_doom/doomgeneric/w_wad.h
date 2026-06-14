@@ -41,7 +41,9 @@ typedef struct lumpinfo_s lumpinfo_t;
 struct lumpinfo_s
 {
     char	name[8];
+#ifndef PICO2_LUMPINFO_SHRUNK
     wad_file_t *wad_file;
+#endif
     int		position;
     int		size;
     void       *cache;
@@ -54,6 +56,17 @@ struct lumpinfo_s
 
 extern lumpinfo_t *lumpinfo;
 extern unsigned int numlumps;
+#ifdef PICO2_LUMPINFO_SHRUNK
+/* K22 Phase 5 stage 3: single-WAD pico2 build drops the per-lump
+   wad_file_t* (4 B/lump) and stores the only active WAD as a
+   global. With 947 lumps in the trimmed shareware IWAD that's ~3.8
+   KB more picolibc heap, which is enough headroom to grow the
+   Z_Init zone past R_InitTextures' per-texture allocation wall. */
+extern wad_file_t *g_lump_wad;
+#define LUMP_WAD(_lump_idx) g_lump_wad
+#else
+#define LUMP_WAD(_lump_idx) (lumpinfo[_lump_idx].wad_file)
+#endif
 
 wad_file_t *W_AddFile (char *filename);
 

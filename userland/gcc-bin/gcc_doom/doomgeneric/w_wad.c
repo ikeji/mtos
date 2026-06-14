@@ -58,8 +58,14 @@ typedef struct
 
 // Location of each lump on disk.
 
-lumpinfo_t *lumpinfo;		
+lumpinfo_t *lumpinfo;
 unsigned int numlumps = 0;
+
+#ifdef PICO2_LUMPINFO_SHRUNK
+/* Set by W_AddFile when PICO2_LUMPINFO_SHRUNK is on; consumed by the
+   LUMP_WAD() macro from w_wad.h. Single-WAD only. */
+wad_file_t *g_lump_wad = NULL;
+#endif
 
 // Hash table for fast lookups
 
@@ -213,9 +219,16 @@ wad_file_t *W_AddFile (char *filename)
 
     filerover = fileinfo;
 
+#ifdef PICO2_LUMPINFO_SHRUNK
+    /* Single-WAD pico2 build: store the wad_file_t* once in a global
+       so per-lump storage can drop the 4-byte wad_file field. */
+    g_lump_wad = wad_file;
+#endif
     for (i=startlump; i<numlumps; ++i)
     {
+#ifndef PICO2_LUMPINFO_SHRUNK
 		lump_p->wad_file = wad_file;
+#endif
 		lump_p->position = LONG(filerover->filepos);
 		lump_p->size = LONG(filerover->size);
 			lump_p->cache = NULL;
@@ -353,7 +366,7 @@ void W_ReadLump(unsigned int lump, void *dest)
 	
     I_BeginRead ();
 	
-    c = W_Read(l->wad_file, l->position, dest, l->size);
+    c = W_Read(LUMP_WAD(lump), l->position, dest, l->size);
 
     if (c < l->size)
     {
@@ -396,11 +409,11 @@ void *W_CacheLumpNum(int lumpnum, int tag)
     // region.  If the lump is in an ordinary file, we may already
     // have it cached; otherwise, load it into memory.
 
-    if (lump->wad_file->mapped != NULL)
+    if (LUMP_WAD(lumpnum)->mapped != NULL)
     {
         // Memory mapped file, return from the mmapped region.
 
-        result = lump->wad_file->mapped + lump->position;
+        result = LUMP_WAD(lumpnum)->mapped + lump->position;
     }
     else if (lump->cache != NULL)
     {
@@ -452,7 +465,7 @@ void W_ReleaseLumpNum(int lumpnum)
 
     lump = &lumpinfo[lumpnum];
 
-    if (lump->wad_file->mapped != NULL)
+    if (LUMP_WAD(lumpnum)->mapped != NULL)
     {
         // Memory-mapped file, so nothing needs to be done here.
     }

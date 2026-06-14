@@ -684,7 +684,7 @@ void R_InitSpriteLumps (void)
 	   thrashing once the zone has room to reach this point. */
 	short hdr[4];   /* width, height, leftoffset, topoffset */
 	int   lump = firstspritelump + i;
-	W_Read (lumpinfo[lump].wad_file, lumpinfo[lump].position,
+	W_Read (LUMP_WAD(lump), lumpinfo[lump].position,
 	        hdr, sizeof(hdr));
 	spritewidth[i]     = SHORT(hdr[0]) << FRACBITS;
 	spriteoffset[i]    = SHORT(hdr[2]) << FRACBITS;

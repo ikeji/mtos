@@ -88,7 +88,8 @@ GCC_SOURCES_gcc_doom_pico2  := $(GCC_DOOM_SOURCES) $(GCC_DOOM_WHD_SOURCES)
 GCC_INCLUDES_gcc_doom_pico2 := $(GCC_DOOM_INCLUDES) \
     -I$(ROOT)/userland/gcc-bin/gcc_doom/doomgeneric/whd \
     -DPICO2_TINY_ZONE -DPICO2_TINY_BUFFERS -DPICO2_TINY_BUFFERS_HARDER \
-    -DPICO2_R_INIT_LITE -DUSE_WHD=1
+    -DPICO2_R_INIT_LITE -DPICO2_LUMPINFO_SHRUNK -DPICO2_TINY_BACKUPTICS \
+    -DUSE_WHD=1
 GCC_LD_gcc_doom_pico2       := $(ROOT)/compiler/runtime/mtos/gcc_task_pico2.ld
 GCC_CRT0_gcc_doom_pico2     := $(ROOT)/compiler/runtime/mtos/gcc_crt0_pico2.s
 GCC_OBJCOPY_FLAGS_gcc_doom_pico2 :=
