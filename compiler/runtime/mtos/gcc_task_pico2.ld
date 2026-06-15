@@ -134,10 +134,22 @@ SECTIONS {
 
     __bss_size  = __bss_end  - __bss_start;
 
+    /* K22 Phase 6: own stack at top of RAM, not the tiny kernel-supplied
+       one. TASK_STACK_gcc_doom_pico2 needs to be at TASK_STACK_MIN
+       (1 KB) to satisfy the spawn check; gcc_crt0_pico2.s switches sp
+       to __stack_top immediately on entry so we get 16 KB instead.
+       This lets DOOM's R_RenderPlayerView / R_DrawColumn call chain
+       run without overflowing into adjacent heap. */
+    __stack_size = 16K;
+    __stack_top  = ORIGIN(RAM) + LENGTH(RAM);
+    __stack_base = __stack_top - __stack_size;
+
     /* picolibc's _sbrk fallback path references these. We override
-       _sbrk in gcc_libc.c, but the link needs them defined. */
+       _sbrk in gcc_libc.c, but the link needs them defined. The heap
+       has to end below __stack_base so malloc never grows into the
+       stack region. */
     PROVIDE(__heap_start = __bss_end);
-    PROVIDE(__heap_end   = ORIGIN(RAM) + LENGTH(RAM));
+    PROVIDE(__heap_end   = __stack_base);
 
     /DISCARD/ : { *(.comment) *(.note*) *(.eh_frame) }
 }

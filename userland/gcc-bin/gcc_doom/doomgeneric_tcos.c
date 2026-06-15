@@ -25,16 +25,16 @@ extern long read(int fd, void *buf, unsigned long n);
 extern long close(int fd);
 extern int  open(const char *path, int flags, ...);
 
-/* Syscall 153: do_uptime_us — microseconds since kernel boot. The TC
+/* Syscall 270: sys_uptime_us — microseconds since kernel boot. The TC
    userland exposes this via libtc; for GCC tasks we hit ecall directly. */
 static unsigned long long _uptime_us(void)
 {
     register long _a __asm__("a0") = 0;
-    register long _n __asm__("a7") = 153;
+    register long _n __asm__("a7") = 270;
     __asm__ volatile("ecall" : "+r"(_a) : "r"(_n) : "memory");
     return (unsigned long long)(unsigned long)_a;
-    /* TODO: kernel returns u32 today; for game time we just need
-       monotonic ms which u32 us is plenty (≈70 minutes wrap). */
+    /* Kernel returns u32 us so the value wraps every ~70 minutes —
+       enough for monotonic game time. */
 }
 
 /* Syscall 101: nanosleep. Our kernel takes (sec, nsec) split args

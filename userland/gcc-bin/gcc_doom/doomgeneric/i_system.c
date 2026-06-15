@@ -83,7 +83,12 @@
    heap ended up ~3 KB after Z_Init and fopen() returned NULL —
    D_FindWADByName then reported "IWAD file '/sd/...' not found!"
    even though the file was on /sd. */
-#define DEFAULT_RAM 96  /* KiB */
+/* K22 Phase 6: empirical heap = ~175 KB after stack moved to top of
+   __gcc_sram + r_plane shrunk + I_VideoBuffer aliased. 144 KB zone
+   left only ~31 KB heap and W_Init's lumpinfo realloc failed; 128 KB
+   gives ~47 KB heap which leaves headroom for both lumpinfo realloc
+   and the title-pic Z_Malloc(64 KB) in doomgeneric_Tick. */
+#define DEFAULT_RAM 128 /* KiB */
 #define MIN_RAM     16  /* KiB */
 #define ZONE_UNIT   1024
 #else

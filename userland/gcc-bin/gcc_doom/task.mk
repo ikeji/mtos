@@ -51,7 +51,7 @@ TASK_STACK_gcc_doom := 65536
 # in ~20 KB of kmalloc headroom after sh, so we trade R_DrawColumn
 # recursion margin for a chance at booting at all.
 TASK_ARENA_gcc_doom_pico2 := 4096
-TASK_STACK_gcc_doom_pico2 := 8192
+TASK_STACK_gcc_doom_pico2 := 1024
 
 # Sources: our two top-level files plus every vendored .c except
 #   * mus2mid.c — standalone host-side utility with its own main()

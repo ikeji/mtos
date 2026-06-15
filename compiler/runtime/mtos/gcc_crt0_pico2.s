@@ -31,6 +31,15 @@
     .section .text.start, "ax", @progbits
     .globl _start
 _start:
+    # K22 Phase 6: switch from the kernel-supplied 1 KB bootstrap stack
+    # to a 16 KB stack at the top of __gcc_sram so DOOM's deep render
+    # call chain (R_RenderPlayerView → R_DrawColumn) doesn't overflow.
+    # __stack_top / __stack_base are defined in gcc_task_pico2.ld and
+    # the heap is configured to end below __stack_base so malloc never
+    # collides with the stack.
+    lui  sp, %hi(__stack_top)
+    addi sp, sp, %lo(__stack_top)
+
     # Save kernel-passed args; the data copy / bss zero loops clobber
     # the temp registers but not s*.
     mv   s0, a0                              # s0 = arena addr

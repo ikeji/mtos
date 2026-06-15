@@ -49,15 +49,15 @@ planefunction_t		ceilingfunc;
 // and SCREENWIDTH*32 openings holds for the same map; rooms with more
 // dense overlap may glitch but won't crash. Tune up if E1M1 misrenders.
 #ifdef PICO2_TINY_BUFFERS_HARDER
-/* K22 Phase 5 stage 7 — final step down to fit ST_Init's status
-   bar patch pile in the zone: MAXVISPLANES 64 → 32 (-21 KB .bss
-   for picolibc heap, which lets DEFAULT_RAM bump again). E1M1
-   never gets close to 32 visplanes per frame in vanilla logging,
-   but other maps would overflow. The MAXOPENINGS pool stays at
-   16×width — couldn't shrink further without dropping spans in
-   the test corridors. */
-#define MAXVISPLANES	32
-#define OPENINGS_FACTOR	16
+/* K22 Phase 6: pushed MAXVISPLANES 32 → 16 and OPENINGS 16 → 8 so
+   .bss frees ~16 KB. With 16 KB stack now at the top of __gcc_sram
+   (gcc_task_pico2.ld), the heap was 16 KB short of fitting both
+   the 96 KB Z_Init zone and fopen's FILE struct; this trade brings
+   the budget back. E1M1 renders glitchy frames if vis count tops
+   16 / spans top 8×width, but the goal is checking that the boot
+   path reaches the title-screen game loop without overflowing. */
+#define MAXVISPLANES	16
+#define OPENINGS_FACTOR	8
 #elif defined(PICO2_TINY_BUFFERS)
 #define MAXVISPLANES	64
 #define OPENINGS_FACTOR	32

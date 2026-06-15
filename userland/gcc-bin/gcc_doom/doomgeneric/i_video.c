@@ -286,8 +286,17 @@ void I_InitGraphics (void)
     }
 
 
-    /* Allocate screen to draw to */
+    /* K22 Phase 6: alias I_VideoBuffer onto DG_ScreenBuffer instead
+       of Z_Malloc'ing a second 64 KB buffer. CMAP256 makes both
+       320*200*1 byte, and PICO2_TINY_HUD pins DG_ScreenBuffer to
+       .bss (doomgeneric.c), so there's no point keeping two. Saves
+       64 KB of DOOM zone — the room I_VideoBuffer used to need. */
+#if defined(CMAP256) && defined(PICO2_TINY_HUD)
+    extern pixel_t* DG_ScreenBuffer;
+    I_VideoBuffer = (byte*)DG_ScreenBuffer;
+#else
 	I_VideoBuffer = (byte*)Z_Malloc (SCREENWIDTH * SCREENHEIGHT, PU_STATIC, NULL);  // For DOOM to draw on
+#endif
 
 	screenvisible = true;
 
@@ -332,6 +341,15 @@ void I_FinishUpdate (void)
     x_offset     = (((s_Fb.xres - (SCREENWIDTH  * fb_scaling)) * s_Fb.bits_per_pixel/8)) / 2; // XXX: siglent FB hack: /4 instead of /2, since it seems to handle the resolution in a funny way
     //x_offset     = 0;
     x_offset_end = ((s_Fb.xres - (SCREENWIDTH  * fb_scaling)) * s_Fb.bits_per_pixel/8) - x_offset;
+
+#if defined(CMAP256) && defined(PICO2_TINY_HUD)
+    /* K22 Phase 6: I_VideoBuffer is aliased onto DG_ScreenBuffer
+       (see I_InitGraphics), so the per-line memcpy below would be
+       memcpy(p, p, SCREENWIDTH) — undefined behavior, and even when
+       it works it's pure waste. Hand off straight to DG_DrawFrame. */
+    DG_DrawFrame();
+    return;
+#endif
 
     /* DRAW SCREEN */
     line_in  = (unsigned char *) I_VideoBuffer;

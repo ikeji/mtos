@@ -39,5 +39,14 @@ int main(int argc, char **argv)
     }
 
     doomgeneric_Create(new_argc, new_argv);
-    return 0;   /* unreachable; D_DoomMain runs forever */
+
+    /* K22 Phase 6: doomgeneric_Create's D_DoomLoop runs exactly one
+       doomgeneric_Tick before returning — the loop is the platform's
+       responsibility. Spin here so the game keeps ticking instead of
+       exiting after the first frame. */
+    extern void doomgeneric_Tick(void);
+    while (1) {
+        doomgeneric_Tick();
+    }
+    return 0;
 }
