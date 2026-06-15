@@ -520,6 +520,19 @@ void D_DoAdvanceDemo (void)
     paused = false;
     gameaction = ga_nothing;
 
+#ifdef PICO2_TINY_HUD
+    /* K22 Phase 6: never play demo lumps — each one is a 20 KB
+       PU_STATIC Z_Malloc that fights with R_Init's static residue
+       inside the 128 KB zone. Pin the sequence to case 0 (TITLEPIC
+       page, no demo) and bail. Combined with D_PageDrawer being a
+       no-op under PICO2_TINY_HUD, this turns the title loop into
+       a stable idle. */
+    gamestate = GS_DEMOSCREEN;
+    pagetic = TICRATE * 11;
+    pagename = "TITLEPIC";
+    return;
+#endif
+
     // The Ultimate Doom executable changed the demo sequence to add
     // a DEMO4 demo.  Final Doom was based on Ultimate, so also
     // includes this change; however, the Final Doom IWADs do not
