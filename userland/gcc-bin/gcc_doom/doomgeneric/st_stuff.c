@@ -21,6 +21,9 @@
 
 
 #include <stdio.h>
+#ifdef PICO2_TINY_HUD
+#include <stdlib.h>     /* malloc */
+#endif
 
 #include "i_system.h"
 #include "i_video.h"
@@ -1185,11 +1188,18 @@ static void ST_loadUnloadGraphics(load_callback_t callback)
    larger STBAR we'll need to bump it. */
 #define ST_BACKBUF_SIZE 14336
 static byte _pico2_stbar_buf[ST_BACKBUF_SIZE];
+/* STARMS (1648 B) and STFB[0..3] (1408 B each, only the current
+   player's gets loaded) — also pre-allocate to avoid pressuring
+   picolibc heap with chunks above 1.4 KB during ST_loadGraphics. */
+static byte _pico2_starms_buf[1664];
+static byte _pico2_stfb_buf[1408];
 #endif
 
 static void ST_loadCallback(char *lumpname, patch_t **variable)
 {
 #ifdef PICO2_TINY_HUD
+    /* STBAR / STARMS / STFB% all land in dedicated .bss buffers —
+       too big to want fragmenting either zone or picolibc heap. */
     if (lumpname[0]=='S' && lumpname[1]=='T' && lumpname[2]=='B'
         && lumpname[3]=='A' && lumpname[4]=='R' && lumpname[5]==0)
     {
@@ -1202,8 +1212,48 @@ static void ST_loadCallback(char *lumpname, patch_t **variable)
         *variable = (patch_t *) _pico2_stbar_buf;
         return;
     }
-#endif
+    if (lumpname[0]=='S' && lumpname[1]=='T' && lumpname[2]=='A'
+        && lumpname[3]=='R' && lumpname[4]=='M' && lumpname[5]=='S')
+    {
+        int lump = W_GetNumForName(lumpname);
+        int sz = W_LumpLength(lump);
+        if (sz > (int)sizeof(_pico2_starms_buf))
+            I_Error("STARMS too big: %d", sz);
+        W_ReadLump(lump, _pico2_starms_buf);
+        *variable = (patch_t *) _pico2_starms_buf;
+        return;
+    }
+    if (lumpname[0]=='S' && lumpname[1]=='T' && lumpname[2]=='F'
+        && lumpname[3]=='B' && lumpname[5]==0)   /* STFB0..3 */
+    {
+        int lump = W_GetNumForName(lumpname);
+        int sz = W_LumpLength(lump);
+        if (sz > (int)sizeof(_pico2_stfb_buf))
+            I_Error("STFB%c too big: %d", lumpname[4], sz);
+        W_ReadLump(lump, _pico2_stfb_buf);
+        *variable = (patch_t *) _pico2_stfb_buf;
+        return;
+    }
+    /* K22 Phase 5 stage 8 — load every other ST_ HUD patch from
+       the picolibc heap instead of the DOOM zone. The 30-odd small
+       allocations (STTNUM, STG, STKEYS, STARMS, STFB, STDISK, ...)
+       fragment the zone past the contiguous-block thresholds the
+       smaller allocs later need, even though their total size
+       (~10 KB) is well under what's nominally free. Picolibc's
+       nano-malloc has more even fit semantics and the chunks land
+       in a separate pool from the zone. */
+    {
+        int lump = W_GetNumForName(lumpname);
+        int sz = W_LumpLength(lump);
+        void *buf = malloc(sz);
+        if (!buf)
+            I_Error("malloc(%d) failed for HUD lump %s", sz, lumpname);
+        W_ReadLump(lump, buf);
+        *variable = (patch_t *) buf;
+    }
+#else
     *variable = W_CacheLumpName(lumpname, PU_STATIC);
+#endif
 }
 
 void ST_loadGraphics(void)

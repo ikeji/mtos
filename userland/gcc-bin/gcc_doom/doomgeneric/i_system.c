@@ -71,8 +71,8 @@
    (R_GenerateLookup allocating patchcount[texture->width] under
    accumulated PU_CACHE pressure from per-patch W_CacheLumpNum)
    has ~30 KB more contiguous zone to chew through. */
-#define DEFAULT_RAM 104 /* KiB */
-#define MIN_RAM     16  /* KiB */
+#define DEFAULT_RAM 92 /* KiB */
+#define MIN_RAM     16 /* KiB */
 #define ZONE_UNIT   1024
 #else
 #define DEFAULT_RAM 6 /* MiB */

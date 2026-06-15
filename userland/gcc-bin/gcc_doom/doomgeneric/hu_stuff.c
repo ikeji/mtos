@@ -17,6 +17,11 @@
 
 
 #include <ctype.h>
+#ifdef PICO2_TINY_HUD
+#include <stdlib.h>     /* malloc */
+#include "i_system.h"   /* I_Error */
+#include "w_wad.h"      /* W_GetNumForName / W_ReadLump / W_LumpLength */
+#endif
 
 #include "doomdef.h"
 #include "doomkeys.h"
@@ -295,7 +300,24 @@ void HU_Init(void)
     for (i=0;i<HU_FONTSIZE;i++)
     {
 	DEH_snprintf(buffer, 9, "STCFN%.3d", j++);
+#ifdef PICO2_TINY_HUD
+	/* K22 Phase 5 stage 8 — same trick as ST_loadCallback: the
+	   64 HUD font characters fragment the DOOM zone enough to
+	   starve later small allocs in ST_loadGraphics. Pull each
+	   one straight onto picolibc heap so they don't touch the
+	   zone allocator at all. */
+	{
+	    int lump = W_GetNumForName(buffer);
+	    int sz = W_LumpLength(lump);
+	    void *buf = malloc(sz);
+	    if (!buf)
+		I_Error("malloc(%d) failed for HU font %s", sz, buffer);
+	    W_ReadLump(lump, buf);
+	    hu_font[i] = (patch_t *) buf;
+	}
+#else
 	hu_font[i] = (patch_t *) W_CacheLumpName(buffer, PU_STATIC);
+#endif
     }
 
 }
