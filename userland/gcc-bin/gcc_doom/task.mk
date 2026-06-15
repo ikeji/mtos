@@ -38,7 +38,16 @@ TASK_STACK_gcc_doom := 65536
 # wants 6 MiB, so this build is expected to print the DOOM banner
 # and bail at "Unable to allocate 5 MiB of RAM for zone" — that's
 # the Phase 3c smoke-test endpoint. Phase 5 lifts it.
-TASK_ARENA_gcc_doom_pico2 := 65536
+# K22 Phase 5 stage 9: kernel-side task arena needs only enough to
+# hold the task struct + a few small kernel-internal buffers. Our
+# gcc_crt0_pico2 hands the arena to _libc_init_heap, but picolibc's
+# actual malloc uses its own sbrk that walks the gcc_task_pico2.ld
+# __heap_start / __heap_end region (= the __gcc_sram block), not
+# this arena. With __arena trimmed to 128 KB and the kmalloc bucket
+# tree topping out around 64 KB, an 80 KB combined arena+stack
+# spawn won't fit — drop the arena to 8 KB to keep the spawn cost
+# small. 16 KB stack stays the same; R_DrawColumn recursion needs it.
+TASK_ARENA_gcc_doom_pico2 := 8192
 TASK_STACK_gcc_doom_pico2 := 16384
 
 # Sources: our two top-level files plus every vendored .c except

@@ -66,7 +66,11 @@ ENTRY(_start)
    re-links gcc_doom_pico2 after mkfs decides its position. */
 MEMORY {
     FLASH (rx)  : ORIGIN = 0x100f64f0, LENGTH = 512K
-    RAM   (rwx) : ORIGIN = 0x20030000, LENGTH = 320K
+    /* K22 Phase 5 stage 9: __gcc_sram in the kernel grew from 320 KB
+       to 384 KB by carving an extra 64 KB out of __arena (which had
+       almost nothing in it during a gcc_doom_pico2 boot anyway). RAM
+       ORIGIN follows down to match __gcc_sram's new start address. */
+    RAM   (rwx) : ORIGIN = 0x20020000, LENGTH = 384K
 }
 
 SECTIONS {
