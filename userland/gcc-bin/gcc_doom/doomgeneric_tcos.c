@@ -23,6 +23,7 @@
 extern long write(int fd, const void *buf, unsigned long n);
 extern long read(int fd, void *buf, unsigned long n);
 extern long close(int fd);
+extern int  open(const char *path, int flags, ...);
 
 /* Syscall 153: do_uptime_us — microseconds since kernel boot. The TC
    userland exposes this via libtc; for GCC tasks we hit ecall directly. */
@@ -48,16 +49,102 @@ static void _nanosleep_ms(uint32_t ms)
     __asm__ volatile("ecall" : "+r"(_a) : "r"(_b), "r"(_n) : "memory");
 }
 
+/* /dev/fb mode-0 band-blit protocol: 10-byte header (x, y, w, h,
+   mode as LE u16) followed by w*h u16 RGB565 pixels. The kernel
+   devfs side hands the frame through the platform's display
+   driver (kernel/platform/pico2/display_ili9488.tc → SPI on
+   PIO2). ILI9488 panel is 480x320 in landscape; DOOM renders 320x200
+   so the band lands letterboxed at x=80, y=60.
+
+   CMAP256: DG_ScreenBuffer holds palette indices (uint8_t per pixel),
+   not full ARGB. We look up the converted RGB triple from i_video.c's
+   `colors[]` global, which I_SetPalette populates from PLAYPAL +
+   gammatable. */
+#define FB_X_OFFSET   80
+#define FB_Y_OFFSET   60
+#define FB_BAND_H     8
+#define FB_BAND_BYTES (10 + DOOMGENERIC_RESX * FB_BAND_H * 2)
+
+#ifdef CMAP256
+struct _dg_color { unsigned char a, r, g, b; };
+extern struct _dg_color colors[256];   /* defined in i_video.c */
+#endif
+
+static int           _fb_fd = -1;
+static unsigned char _fb_band[FB_BAND_BYTES];
+
+static void _put_u16le(unsigned char *b, int off, unsigned int v)
+{
+    b[off]     = (unsigned char)(v & 0xFF);
+    b[off + 1] = (unsigned char)((v >> 8) & 0xFF);
+}
+
 void DG_Init(void)
 {
-    /* Phase 2 will: do_openat("/dev/fb", O_WRONLY) and stash the fd.
-       Phase 3 will: do_openat("/dev/kbd", O_RDONLY | O_NONBLOCK). */
+    /* Phase 2: opens /dev/fb. Failure is non-fatal — DG_DrawFrame
+       checks the fd and silently no-ops if it never opened. */
+    _fb_fd = open("/dev/fb", 1 /* O_WRONLY */);
+
+    /* Phase 3 will: do_openat("/dev/kbd", O_RDONLY | O_NONBLOCK). */
 }
+
+/* Trace counter so we can tell from UART that we're at least
+   entering DG_DrawFrame. Printed every 30 calls (~1 sec at 30 fps)
+   from PICO2_DG_DRAW_DEBUG to keep noise down. */
+#ifdef PICO2_DG_DRAW_DEBUG
+extern int printf(const char *, ...);
+static unsigned _dg_frame_count = 0;
+#endif
 
 void DG_DrawFrame(void)
 {
-    /* Phase 2: convert DG_ScreenBuffer (DOOMGENERIC_RESX *
-       DOOMGENERIC_RESY pixel_t, ARGB8888) → RGB565, band-blit to fb. */
+#ifdef PICO2_DG_DRAW_DEBUG
+    if ((_dg_frame_count++ % 30) == 0)
+        printf("[df %u]", _dg_frame_count);
+#endif
+
+    if (_fb_fd < 0 || DG_ScreenBuffer == 0)
+        return;
+
+    /* Convert DG_ScreenBuffer (320x200 ARGB8888, pixel_t = uint32_t)
+       to RGB565 and emit one band-blit per 8 scanlines. The band
+       buffer is reused across all 25 bands to keep .bss small. */
+    int by;
+    for (by = 0; by < DOOMGENERIC_RESY; by += FB_BAND_H) {
+        int rows = FB_BAND_H;
+        if (by + rows > DOOMGENERIC_RESY)
+            rows = DOOMGENERIC_RESY - by;
+
+        _put_u16le(_fb_band, 0, FB_X_OFFSET);
+        _put_u16le(_fb_band, 2, FB_Y_OFFSET + by);
+        _put_u16le(_fb_band, 4, DOOMGENERIC_RESX);
+        _put_u16le(_fb_band, 6, rows);
+        _put_u16le(_fb_band, 8, 0);             /* mode 0 = blit */
+
+        unsigned short *out = (unsigned short *)(_fb_band + 10);
+        const pixel_t  *src = DG_ScreenBuffer + by * DOOMGENERIC_RESX;
+        int            count = rows * DOOMGENERIC_RESX;
+        int            i;
+        for (i = 0; i < count; i++) {
+#ifdef CMAP256
+            /* src[i] is a palette index; convert via the colors[]
+               table I_SetPalette filled from PLAYPAL. */
+            struct _dg_color c = colors[src[i]];
+            out[i] = (unsigned short)(((c.r & 0xF8) << 8) |
+                                       ((c.g & 0xFC) << 3) |
+                                       (c.b >> 3));
+#else
+            /* ARGB8888 → RGB565 (qemu virt / no-CMAP path) */
+            pixel_t c = src[i];
+            unsigned int r = (c >> 19) & 0x1F;
+            unsigned int g = (c >> 10) & 0x3F;
+            unsigned int b = (c >>  3) & 0x1F;
+            out[i] = (unsigned short)((r << 11) | (g << 5) | b);
+#endif
+        }
+
+        write(_fb_fd, _fb_band, 10 + count * 2);
+    }
 }
 
 int DG_GetKey(int *pressed, unsigned char *key)

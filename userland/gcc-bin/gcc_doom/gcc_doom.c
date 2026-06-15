@@ -35,7 +35,7 @@ int main(int argc, char **argv)
     }
     if (!has_iwad && new_argc + 2 <= 8) {
         new_argv[new_argc++] = (char *)"-iwad";
-        new_argv[new_argc++] = (char *)"/sd/doom1_e1m1.wad";
+        new_argv[new_argc++] = (char *)"/sd/doom1.wad";
     }
 
     doomgeneric_Create(new_argc, new_argv);

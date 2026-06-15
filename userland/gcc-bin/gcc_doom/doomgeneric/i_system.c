@@ -77,7 +77,13 @@
    the 22.7 KB lumpinfo + the ~30 KB of .bss buffers (STBAR +
    STARMS + STFB + HUD pool). 120 KiB is comfortable for the full
    R_Init / P_Init / S_Init / HU_Init / ST_Init pipeline. */
-#define DEFAULT_RAM 120 /* KiB */
+/* K22 Phase 6: 80 KiB zone with the 448 KB gcc_sram layout. Sized so
+   the heap left over (~22 KB after Z_Init) is enough for fopen()'s
+   FILE struct + buffer in D_FindWADByName / W_File. With 120 KiB the
+   heap ended up ~3 KB after Z_Init and fopen() returned NULL —
+   D_FindWADByName then reported "IWAD file '/sd/...' not found!"
+   even though the file was on /sd. */
+#define DEFAULT_RAM 96  /* KiB */
 #define MIN_RAM     16  /* KiB */
 #define ZONE_UNIT   1024
 #else

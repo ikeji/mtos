@@ -6,8 +6,11 @@
 #   0x20000000 .. 0x20000120: .data (small, copied from flash, ~288 B)
 #   0x20000120 .. 0x200001E4: kernel .bss head (_trap_frame +
 #                              _kern_save + _switch_frame ≈ 196 B)
-#   0x200001E4 .. 0x20020000: __arena, ~127 KB kmalloc pool
-#   0x20020000 .. 0x20080000: __gcc_sram, 384 KB SRAM block reserved
+#   0x200001E4 .. 0x20010000: __arena, ~63 KB kmalloc pool (small —
+#                              just enough for sh + minimal redir; new
+#                              mr -a uploads will OOM, so the WAD must
+#                              already be on /sd before flashing this)
+#   0x20010000 .. 0x20080000: __gcc_sram, 448 KB SRAM block reserved
 #                              for one gcc-built guest task at a time
 #                              (gcc_doom_pico2's .data + .bss live
 #                              here at link-time VMA). Not part of
@@ -41,7 +44,7 @@ _switch_frame:
     .space 4
     .globl __arena
 __arena:
-    .space 130588
+    .space 64988
     .globl __gcc_sram
 __gcc_sram:
-    .space 393216
+    .space 458752

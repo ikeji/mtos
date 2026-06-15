@@ -43,7 +43,7 @@ fn main(argv: StringArray) -> i32 {
 
     var hdr: U8Array = U8Array(2);
     var sum_buf: U8Array = U8Array(4);
-    var buf: U8Array = U8Array(65536);
+    var buf: U8Array = U8Array(4096);
     var ack_buf: U8Array = U8Array(1);
     set(ack_buf, 0, '.' as u8);
     var nak_buf: U8Array = U8Array(1);

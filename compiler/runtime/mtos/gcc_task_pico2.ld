@@ -66,11 +66,14 @@ ENTRY(_start)
    re-links gcc_doom_pico2 after mkfs decides its position. */
 MEMORY {
     FLASH (rx)  : ORIGIN = 0x100f64f0, LENGTH = 512K
-    /* K22 Phase 5 stage 9: __gcc_sram in the kernel grew from 320 KB
-       to 384 KB by carving an extra 64 KB out of __arena (which had
-       almost nothing in it during a gcc_doom_pico2 boot anyway). RAM
-       ORIGIN follows down to match __gcc_sram's new start address. */
-    RAM   (rwx) : ORIGIN = 0x20020000, LENGTH = 384K
+    /* K22 Phase 6: DOOM zone (Z_Init's malloc(N KiB)) + picolibc heap
+       headroom for fopen()'s FILE struct + DG_ScreenBuffer (64 KB
+       .bss) + ~280 KB .data/.bss all fight for the gcc_sram budget.
+       448 KB gives us 80 KB zone + ~22 KB fopen scratch comfortably,
+       at the cost of shrinking kernel __arena back to 64 KB — mr -a
+       uploads now need a different kernel build with a larger arena.
+       Run the upload first, then re-flash this for DOOM. */
+    RAM   (rwx) : ORIGIN = 0x20010000, LENGTH = 448K
 }
 
 SECTIONS {

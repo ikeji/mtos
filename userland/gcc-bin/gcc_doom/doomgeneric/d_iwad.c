@@ -629,7 +629,7 @@ char *D_FindWADByName(char *name)
 {
     char *path;
     int i;
-    
+
     // Absolute path?
 
     if (M_FileExists(name))

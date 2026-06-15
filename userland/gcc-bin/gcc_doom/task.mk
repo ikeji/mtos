@@ -46,9 +46,12 @@ TASK_STACK_gcc_doom := 65536
 # this arena. With __arena trimmed to 128 KB and the kmalloc bucket
 # tree topping out around 64 KB, an 80 KB combined arena+stack
 # spawn won't fit — drop the arena to 8 KB to keep the spawn cost
-# small. 16 KB stack stays the same; R_DrawColumn recursion needs it.
-TASK_ARENA_gcc_doom_pico2 := 8192
-TASK_STACK_gcc_doom_pico2 := 16384
+# small. K22 Phase 6: stack also halved to 8 KB after arena went down
+# to 64 KB (gcc_sram grew to 448 KB) — total spawn allocation must fit
+# in ~20 KB of kmalloc headroom after sh, so we trade R_DrawColumn
+# recursion margin for a chance at booting at all.
+TASK_ARENA_gcc_doom_pico2 := 4096
+TASK_STACK_gcc_doom_pico2 := 8192
 
 # Sources: our two top-level files plus every vendored .c except
 #   * mus2mid.c — standalone host-side utility with its own main()
@@ -98,7 +101,9 @@ GCC_INCLUDES_gcc_doom_pico2 := $(GCC_DOOM_INCLUDES) \
     -I$(ROOT)/userland/gcc-bin/gcc_doom/doomgeneric/whd \
     -DPICO2_TINY_ZONE -DPICO2_TINY_BUFFERS -DPICO2_TINY_BUFFERS_HARDER \
     -DPICO2_R_INIT_LITE -DPICO2_LUMPINFO_SHRUNK -DPICO2_TINY_BACKUPTICS \
-    -DPICO2_TINY_HUD -DUSE_WHD=1
+    -DPICO2_TINY_HUD -DUSE_WHD=1 \
+    -DDOOMGENERIC_RESX=320 -DDOOMGENERIC_RESY=200 \
+    -DCMAP256=1
 GCC_LD_gcc_doom_pico2       := $(ROOT)/compiler/runtime/mtos/gcc_task_pico2.ld
 GCC_CRT0_gcc_doom_pico2     := $(ROOT)/compiler/runtime/mtos/gcc_crt0_pico2.s
 GCC_OBJCOPY_FLAGS_gcc_doom_pico2 :=

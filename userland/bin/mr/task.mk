@@ -4,5 +4,5 @@
 # workflows can stay self-contained on the small flash budget.
 GUEST_TASKS       += mr
 EXTRA_GUEST_TASKS += mr
-TASK_ARENA_mr := 131072
+TASK_ARENA_mr := 65536
 TASK_STACK_mr := 8192
