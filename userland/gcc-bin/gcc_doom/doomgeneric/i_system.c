@@ -71,7 +71,17 @@
    (R_GenerateLookup allocating patchcount[texture->width] under
    accumulated PU_CACHE pressure from per-patch W_CacheLumpNum)
    has ~30 KB more contiguous zone to chew through. */
-#define DEFAULT_RAM 92 /* KiB */
+/* 87 KiB hits the tight spot in the K22 Phase 5 stage 8 regime:
+   88+ KiB overflows the picolibc heap, so ExtendLumpInfo's calloc
+   for the lumpinfo[] array fails; 86 KiB or below leaves R_Init +
+   P_Init's PU_STATIC pile (~88 KB) short of zone, so R_InitSprites
+   dies on its small per-sprite spriteframe alloc. The next step
+   to break out is kernel-side: grow __gcc_sram by carving more out
+   of __arena (currently 196 KB; kmalloc live usage is ~45 KB so
+   most of it is idle), giving the picolibc heap enough slack that
+   the zone can grow past 88 KiB without the lumpinfo allocation
+   getting starved. */
+#define DEFAULT_RAM 87 /* KiB */
 #define MIN_RAM     16 /* KiB */
 #define ZONE_UNIT   1024
 #else

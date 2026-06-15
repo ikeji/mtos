@@ -1193,6 +1193,27 @@ static byte _pico2_stbar_buf[ST_BACKBUF_SIZE];
    picolibc heap with chunks above 1.4 KB during ST_loadGraphics. */
 static byte _pico2_starms_buf[1664];
 static byte _pico2_stfb_buf[1408];
+
+/* K22 Phase 5 stage 8b — pure bump allocator for the small HU+ST
+   patches. Avoids both DOOM zone fragmentation (the original wall)
+   and picolibc heap fragmentation (where stage 8a moved it). The
+   HUD lifetime is "for the whole program", so we never free, and
+   bump alloc is the most space-efficient policy possible.
+   16 KB is sized for shareware DOOM: HU font ≈ 7 KB, ST small
+   patches ≈ 7 KB, plus alignment slack. Bump on I_Error if a
+   future WAD makes it larger. */
+byte  _pico2_hudpool[15360];   /* 15 KB: ~7.3 KB HU font + ~7 KB ST small */
+int   _pico2_hudpool_off = 0;
+void *_pico2_hud_alloc(int sz)
+{
+    sz = (sz + 3) & ~3;
+    if (_pico2_hudpool_off + sz > (int)sizeof(_pico2_hudpool))
+        I_Error("pico2 HUD pool exhausted at +%d (size=%d)",
+                _pico2_hudpool_off, sz);
+    void *p = &_pico2_hudpool[_pico2_hudpool_off];
+    _pico2_hudpool_off += sz;
+    return p;
+}
 #endif
 
 static void ST_loadCallback(char *lumpname, patch_t **variable)
@@ -1245,9 +1266,7 @@ static void ST_loadCallback(char *lumpname, patch_t **variable)
     {
         int lump = W_GetNumForName(lumpname);
         int sz = W_LumpLength(lump);
-        void *buf = malloc(sz);
-        if (!buf)
-            I_Error("malloc(%d) failed for HUD lump %s", sz, lumpname);
+        void *buf = _pico2_hud_alloc(sz);
         W_ReadLump(lump, buf);
         *variable = (patch_t *) buf;
     }
