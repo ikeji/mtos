@@ -1175,8 +1175,34 @@ static void ST_loadUnloadGraphics(load_callback_t callback)
 #endif
 }
 
+#ifdef PICO2_TINY_HUD
+/* K22 Phase 5 stage 7 — STBAR is the status bar background, a
+   single 13128-byte lump. Zone fragmentation by the time ST_Init
+   tries to W_CacheLumpName it consistently leaves no contiguous
+   block large enough. Read it into a static .bss buffer instead;
+   skip the zone entirely for this one big lump. ST_BACKBUF_SIZE
+   is sized for shareware DOOM's STBAR; if a future WAD has a
+   larger STBAR we'll need to bump it. */
+#define ST_BACKBUF_SIZE 14336
+static byte _pico2_stbar_buf[ST_BACKBUF_SIZE];
+#endif
+
 static void ST_loadCallback(char *lumpname, patch_t **variable)
 {
+#ifdef PICO2_TINY_HUD
+    if (lumpname[0]=='S' && lumpname[1]=='T' && lumpname[2]=='B'
+        && lumpname[3]=='A' && lumpname[4]=='R' && lumpname[5]==0)
+    {
+        int lump = W_GetNumForName(lumpname);
+        int sz = W_LumpLength(lump);
+        if (sz > ST_BACKBUF_SIZE)
+            I_Error("STBAR too big for pico2 buffer: %d > %d",
+                    sz, ST_BACKBUF_SIZE);
+        W_ReadLump(lump, _pico2_stbar_buf);
+        *variable = (patch_t *) _pico2_stbar_buf;
+        return;
+    }
+#endif
     *variable = W_CacheLumpName(lumpname, PU_STATIC);
 }
 
