@@ -445,26 +445,25 @@ void D_DoomLoop (void)
 
     main_loop_started = true;
 
-#define _PT(s) do { extern long write(int, const void*, unsigned long); \
-                    static const char _t[] = s; write(2, _t, sizeof(_t)-1); } while (0)
-    _PT("[T0]\n"); TryRunTics();
-    _PT("[T1]\n"); I_SetWindowTitle(gamedescription);
-    _PT("[T2]\n"); I_GraphicsCheckCommandLine();
-    _PT("[T3]\n"); I_SetGrabMouseCallback(D_GrabMouseCallback);
-    _PT("[T4]\n"); I_InitGraphics();
-    _PT("[T5]\n"); I_EnableLoadingDisk();
-    _PT("[T6]\n"); V_RestoreBuffer();
-    _PT("[T7]\n"); R_ExecuteSetViewSize();
-    _PT("[T8]\n"); D_StartGameLoop();
+    TryRunTics();
+
+    I_SetWindowTitle(gamedescription);
+    I_GraphicsCheckCommandLine();
+    I_SetGrabMouseCallback(D_GrabMouseCallback);
+    I_InitGraphics();
+    I_EnableLoadingDisk();
+
+    V_RestoreBuffer();
+    R_ExecuteSetViewSize();
+
+    D_StartGameLoop();
 
     if (testcontrols)
     {
         wipegamestate = gamestate;
     }
 
-    _PT("[T9 tick]\n"); doomgeneric_Tick();
-    _PT("[T10 done]\n");
-#undef _PT
+    doomgeneric_Tick();
 }
 
 

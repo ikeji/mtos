@@ -194,16 +194,6 @@ Z_Malloc
     memblock_t*	base;
     void *result;
 
-#ifdef PICO2_TINY_HUD
-    /* K22 Phase 6: log every alloc >= 4 KB so we can see what's eating
-       the DOOM zone during ticks. Remove once the allocations are
-       traced and either moved to .bss or shrunk. */
-    if (size >= 4096) {
-        extern int printf(const char*, ...);
-        printf("[Z_Malloc sz=%d tag=%d]\n", size, tag);
-    }
-#endif
-
     size = (size + MEM_ALIGN - 1) & ~(MEM_ALIGN - 1);
     
     // scan through the block list,

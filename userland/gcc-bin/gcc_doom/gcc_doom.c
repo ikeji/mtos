@@ -37,6 +37,12 @@ int main(int argc, char **argv)
         new_argv[new_argc++] = (char *)"-iwad";
         new_argv[new_argc++] = (char *)"/sd/doom1.wad";
     }
+    /* K22 Phase 6 stage 12 probe: tried -warp 1 1 to autostart E1M1 —
+       P_SetupLevel allocates ~17 KB blockmap (PU_STATIC) + ~7 KB of
+       PU_LEVEL data, then dies on the next 1892-byte alloc because
+       the 112 KiB zone is fragmented past the point where a fresh
+       map fits. Sticking to the title-screen path (no -warp) until
+       either zone grows or more PU_LEVEL allocs move to .bss. */
 
     doomgeneric_Create(new_argc, new_argv);
 
