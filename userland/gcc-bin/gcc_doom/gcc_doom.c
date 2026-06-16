@@ -9,9 +9,16 @@
  * Boot command (eventual): /bin/gcc_doom /sd/doom1.wad
  */
 
+#include <stdlib.h>
+#include <string.h>
+
 #include "doomgeneric/doomgeneric.h"
+#include "doomgeneric/doomtype.h"
+#include "doomgeneric/v_patch.h"
+#include "doomgeneric/w_wad.h"
 
 void doomgeneric_Create(int argc, char **argv);
+extern void V_DrawPatch(int x, int y, patch_t *patch);
 
 /* When run with no `-iwad`, point doomgeneric at the WAD we expect to
    be sitting on the SD card. Saves the user from typing the full path
@@ -52,20 +59,24 @@ int main(int argc, char **argv)
        exiting after the first frame. */
     extern void doomgeneric_Tick(void);
 
-    /* Paint a visible "alive" pattern into DG_ScreenBuffer so we can
-       confirm DG_DrawFrame is shipping real pixel data to the LCD.
-       The title-screen path under PICO2_TINY_HUD makes D_PageDrawer a
-       no-op, so DG_ScreenBuffer would otherwise stay at .bss-zero
-       (palette index 0 = black). Horizontal palette bars cycle every
-       row through every PLAYPAL entry — easy to recognize as "real
-       output" on the ILI9488. */
+    /* K22 Phase 6 stage 12: draw TITLEPIC into DG_ScreenBuffer once,
+       then let the silent tick loop keep blitting it. D_PageDrawer
+       is a no-op under PICO2_TINY_HUD (the vanilla path would
+       W_CacheLumpName + Z_Malloc ~64 KB) so the buffer never gets
+       overwritten by DOOM itself. We read the patch lump into
+       picolibc malloc (heap ~150 KB so room for the ~50 KB patch
+       is comfortable), V_DrawPatch through I_VideoBuffer (aliased
+       onto DG_ScreenBuffer), then free the buffer. */
     {
-        int y, x;
-        unsigned char *buf = (unsigned char *)DG_ScreenBuffer;
-        for (y = 0; y < 200; y++) {
-            unsigned char idx = (unsigned char)((y * 256) / 200);
-            for (x = 0; x < 320; x++)
-                buf[y * 320 + x] = idx;
+        int lump = W_CheckNumForName("TITLEPIC");
+        if (lump >= 0) {
+            int sz = W_LumpLength(lump);
+            void *buf = malloc((unsigned long)sz);
+            if (buf != NULL) {
+                W_ReadLump((unsigned int)lump, buf);
+                V_DrawPatch(0, 0, (patch_t *)buf);
+                free(buf);
+            }
         }
     }
 
