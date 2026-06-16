@@ -69,7 +69,16 @@ wad_file_t *g_lump_wad = NULL;
 
 // Hash table for fast lookups
 
+#if defined(PICO2_TINY_HUD)
+/* K22 Phase 6 stage 11: pin the lump-name hash table in .bss instead
+   of Z_Malloc'ing 4672 PU_STATIC bytes that stay live the entire
+   game. DOOM Shareware has 1168 lumps; ceil at 1280 for headroom. */
+#define PICO2_LUMPHASH_MAX 1280
+static lumpinfo_t *_pico2_lumphash_buf[PICO2_LUMPHASH_MAX];
+static lumpinfo_t **lumphash = _pico2_lumphash_buf;
+#else
 static lumpinfo_t **lumphash;
+#endif
 
 // Hash function used for lump names.
 
@@ -240,11 +249,17 @@ wad_file_t *W_AddFile (char *filename)
 
     Z_Free(fileinfo);
 
+#if defined(PICO2_TINY_HUD)
+    /* lumphash is .bss-backed under PICO2_TINY_HUD; never Z_Free it
+       and never NULL the pointer — W_GenerateHashTable will fill
+       the existing buffer on the next call. */
+#else
     if (lumphash != NULL)
     {
         Z_Free(lumphash);
         lumphash = NULL;
     }
+#endif
 
     return wad_file;
 }
@@ -553,6 +568,19 @@ void W_GenerateHashTable(void)
 {
     unsigned int i;
 
+#if defined(PICO2_TINY_HUD)
+    /* K22 Phase 6 stage 11: lumphash lives in .bss now — skip the
+       Z_Free(old) + Z_Malloc(new) dance entirely. Just zero the
+       table and refill it. Guard the bounds in case a different
+       WAD ever pushes us past PICO2_LUMPHASH_MAX. */
+    if (numlumps > PICO2_LUMPHASH_MAX) {
+        I_Error("W_GenerateHashTable: numlumps %u over hash cap %d",
+                (unsigned)numlumps, PICO2_LUMPHASH_MAX);
+    }
+    memset(lumphash, 0, sizeof(lumpinfo_t *) * numlumps);
+    if (numlumps > 0)
+    {
+#else
     // Free the old hash table, if there is one
 
     if (lumphash != NULL)
@@ -565,6 +593,7 @@ void W_GenerateHashTable(void)
     {
         lumphash = Z_Malloc(sizeof(lumpinfo_t *) * numlumps, PU_STATIC, NULL);
         memset(lumphash, 0, sizeof(lumpinfo_t *) * numlumps);
+#endif
 
         for (i=0; i<numlumps; ++i)
         {

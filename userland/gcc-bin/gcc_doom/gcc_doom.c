@@ -45,6 +45,24 @@ int main(int argc, char **argv)
        responsibility. Spin here so the game keeps ticking instead of
        exiting after the first frame. */
     extern void doomgeneric_Tick(void);
+
+    /* Paint a visible "alive" pattern into DG_ScreenBuffer so we can
+       confirm DG_DrawFrame is shipping real pixel data to the LCD.
+       The title-screen path under PICO2_TINY_HUD makes D_PageDrawer a
+       no-op, so DG_ScreenBuffer would otherwise stay at .bss-zero
+       (palette index 0 = black). Horizontal palette bars cycle every
+       row through every PLAYPAL entry — easy to recognize as "real
+       output" on the ILI9488. */
+    {
+        int y, x;
+        unsigned char *buf = (unsigned char *)DG_ScreenBuffer;
+        for (y = 0; y < 200; y++) {
+            unsigned char idx = (unsigned char)((y * 256) / 200);
+            for (x = 0; x < 320; x++)
+                buf[y * 320 + x] = idx;
+        }
+    }
+
     while (1) {
         doomgeneric_Tick();
     }
