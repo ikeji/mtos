@@ -234,9 +234,20 @@ wipe_StartScreen
   int	width,
   int	height )
 {
+#ifdef PICO2_TINY_HUD
+    /* K22 Phase 6: skip the screen-melt transition. Each call to
+       wipe_StartScreen / wipe_EndScreen Z_Malloc(64 KB, PU_STATIC)
+       which doesn't fit even with COLORMAP + TEXTURE1 moved to
+       .bss. The melt is purely cosmetic — losing it lets the title
+       loop survive the first D_Display call before gamestate
+       settles to GS_DEMOSCREEN. */
+    (void)x; (void)y; (void)width; (void)height;
+    return 0;
+#else
     wipe_scr_start = Z_Malloc(SCREENWIDTH * SCREENHEIGHT, PU_STATIC, NULL);
     I_ReadScreen(wipe_scr_start);
     return 0;
+#endif
 }
 
 int
@@ -246,10 +257,15 @@ wipe_EndScreen
   int	width,
   int	height )
 {
+#ifdef PICO2_TINY_HUD
+    (void)x; (void)y; (void)width; (void)height;
+    return 0;
+#else
     wipe_scr_end = Z_Malloc(SCREENWIDTH * SCREENHEIGHT, PU_STATIC, NULL);
     I_ReadScreen(wipe_scr_end);
     V_DrawBlock(x, y, width, height, wipe_scr_start); // restore start scr.
     return 0;
+#endif
 }
 
 int

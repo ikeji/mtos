@@ -160,7 +160,17 @@ fixed_t*	spritewidth;
 fixed_t*	spriteoffset;
 fixed_t*	spritetopoffset;
 
+/* K22 Phase 6 stage 10: pin COLORMAP into .bss so R_InitColormaps
+   doesn't sink an 8704-byte PU_STATIC block into the DOOM zone.
+   COLORMAP for DOOM Shareware is fixed: 34 colormaps × 256 bytes,
+   loaded once and never freed. .bss is the right home. */
+#define PICO2_COLORMAP_BYTES (34 * 256)
+#if defined(PICO2_TINY_HUD)
+static lighttable_t _pico2_colormaps[PICO2_COLORMAP_BYTES];
+lighttable_t	*colormaps = _pico2_colormaps;
+#else
 lighttable_t	*colormaps;
+#endif
 
 
 //
@@ -546,7 +556,31 @@ void R_InitTextures (void)
     // Load the map texture definitions from textures.lmp.
     // The data is contained in one or two lumps,
     //  TEXTURE1 for shareware, plus TEXTURE2 for commercial.
+#if defined(PICO2_TINY_HUD)
+    /* K22 Phase 6 stage 10: TEXTURE1 is ~9 KB on DOOM Shareware and
+       Z_Malloc'd as PU_STATIC until W_ReleaseLumpName flips it to
+       PU_CACHE near the end of R_InitTextures. That leaves it pinned
+       in the DOOM zone for almost all of R_Init, eating the room
+       texturecolumnlump[] / texturecolumnofs[] arrays need. Stash a
+       16 KB .bss buffer and W_Read straight into it instead. */
+    /* DOOM Shareware TEXTURE1 measures ~9234 bytes; 12 KB gives a
+       little headroom without wasting heap. Anything bigger only
+       hurts the picolibc heap budget (lumpinfo realloc is the
+       tightest customer). */
+    static unsigned char _pico2_texture1_buf[12288];
+    {
+        extern wad_file_t *g_lump_wad;
+        int t1lump = W_GetNumForName(DEH_String("TEXTURE1"));
+        int t1sz = lumpinfo[t1lump].size;
+        if (t1sz > (int)sizeof(_pico2_texture1_buf))
+            t1sz = sizeof(_pico2_texture1_buf);
+        W_Read(g_lump_wad, lumpinfo[t1lump].position,
+               _pico2_texture1_buf, t1sz);
+        maptex = maptex1 = (int *)_pico2_texture1_buf;
+    }
+#else
     maptex = maptex1 = W_CacheLumpName (DEH_String("TEXTURE1"), PU_STATIC);
+#endif
     numtextures1 = LONG(*maptex);
     maxoff = W_LumpLength (W_GetNumForName (DEH_String("TEXTURE1")));
     directory = maptex+1;
@@ -653,9 +687,15 @@ void R_InitTextures (void)
 
     Z_Free(patchlookup);
 
+#if defined(PICO2_TINY_HUD)
+    /* K22 Phase 6 stage 10: TEXTURE1 was W_Read into .bss, never
+       went through W_CacheLumpNum, so W_ReleaseLumpName would tag
+       a NULL lump->cache and crash inside Z_ChangeTag. Skip it. */
+#else
     W_ReleaseLumpName(DEH_String("TEXTURE1"));
     if (maptex2)
         W_ReleaseLumpName(DEH_String("TEXTURE2"));
+#endif
     
     // Precalculate whatever possible.	
 
@@ -753,10 +793,24 @@ void R_InitColormaps (void)
 {
     int	lump;
 
-    // Load in the light tables, 
+    // Load in the light tables,
     //  256 byte align tables.
     lump = W_GetNumForName(DEH_String("COLORMAP"));
+#if defined(PICO2_TINY_HUD)
+    /* K22 Phase 6 stage 10: target buffer is in .bss (8704 bytes) —
+       read straight there via W_Read instead of W_CacheLumpNum's
+       PU_STATIC Z_Malloc. wad_file_t bookkeeping for the lump's
+       offset lives in lumpinfo[]. */
+    extern wad_file_t *g_lump_wad;
+    if (g_lump_wad != NULL && lumpinfo != NULL) {
+        W_Read(g_lump_wad, lumpinfo[lump].position,
+               colormaps, lumpinfo[lump].size > PICO2_COLORMAP_BYTES
+                              ? PICO2_COLORMAP_BYTES
+                              : lumpinfo[lump].size);
+    }
+#else
     colormaps = W_CacheLumpNum(lump, PU_STATIC);
+#endif
 }
 
 

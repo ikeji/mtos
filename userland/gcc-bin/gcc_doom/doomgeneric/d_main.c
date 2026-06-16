@@ -198,8 +198,16 @@ void D_Display (void)
     // save the current screen if about to wipe
     if (gamestate != wipegamestate)
 		{
+#ifdef PICO2_TINY_HUD
+        /* K22 Phase 6: screen-melt transition is cosmetic and the
+           64 KB Z_Malloc(PU_STATIC) it triggers per wipe doesn't
+           fit in our zone. Suppress wipes entirely. */
+        wipe = false;
+        wipegamestate = gamestate;
+#else
 		wipe = true;
 		wipe_StartScreen(0, 0, SCREENWIDTH, SCREENHEIGHT);
+#endif
     }
     else
     	wipe = false;
