@@ -114,27 +114,6 @@ void DG_DrawFrame(void)
     if (_fb_fd < 0 || DG_ScreenBuffer == 0)
         return;
 
-    /* Stage 13 probe: dump the first byte we'll be shipping, so we
-       can correlate against the [memset done] trace upstream. */
-    {
-        static int _dg_dbg_count = 0;
-        if (_dg_dbg_count < 3) {
-            extern int printf(const char *, ...);
-            unsigned char *p = (unsigned char *)DG_ScreenBuffer;
-#ifdef CMAP256
-            struct _dg_color c0 = colors[0];
-            struct _dg_color cff = colors[0xFF];
-            printf("[DG_DrawFrame] DG[0]=0x%02x DG[100]=0x%02x col0=(%d,%d,%d) col255=(%d,%d,%d)\n",
-                   p[0], p[100],
-                   c0.r, c0.g, c0.b, cff.r, cff.g, cff.b);
-#else
-            printf("[DG_DrawFrame] DG[0]=0x%02x DG[100]=0x%02x\n",
-                   p[0], p[100]);
-#endif
-            _dg_dbg_count++;
-        }
-    }
-
     /* Convert DG_ScreenBuffer (320x200 ARGB8888, pixel_t = uint32_t)
        to RGB565 and emit one band-blit per 8 scanlines. The band
        buffer is reused across all 25 bands to keep .bss small. */
