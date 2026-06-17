@@ -16,6 +16,7 @@
 #include "doomgeneric/doomtype.h"
 #include "doomgeneric/v_patch.h"
 #include "doomgeneric/w_wad.h"
+#include "doomgeneric/z_zone.h"
 
 void doomgeneric_Create(int argc, char **argv);
 extern void V_DrawPatch(int x, int y, patch_t *patch);
@@ -86,24 +87,88 @@ int main(int argc, char **argv)
                       "[paint] enter lump=%d DG=%p\n",
                       lump, (void *)DG_ScreenBuffer);
         write(1, dbg, (unsigned long)dn);
+#ifdef PICO2_LUMPINFO_SHRUNK
         if (lump >= 0) {
             int sz = W_LumpLength(lump);
-            void *buf = malloc((unsigned long)sz);
             dn = snprintf(dbg, sizeof(dbg),
-                          "[paint] sz=%d buf=%p\n", sz, buf);
+                          "[paint] sz=%d (column-stream decode)\n", sz);
             write(1, dbg, (unsigned long)dn);
-            if (buf != NULL) {
-                W_ReadLump((unsigned int)lump, buf);
-                short *hdr = (short *)buf;
+            /* K22 Phase 6 stage 14: stream the TITLEPIC patch one
+               column at a time. The 68 KB patch lump doesn't fit in
+               either picolibc heap (~30 KB free) or the DOOM zone
+               (~50 KB largest contiguous chunk after R_Init); reading
+               column-by-column drops the peak working set to ~1.5 KB
+               (column-offset table 1280 B + per-column post buffer
+               256 B). Slow over SPI 6 MHz SD but it's a one-shot
+               title draw. */
+            extern wad_file_t *g_lump_wad;
+            extern lumpinfo_t *lumpinfo;
+            if (g_lump_wad != NULL && lumpinfo != NULL) {
+                /* Header: width, height, leftoffset, topoffset (8 B). */
+                unsigned char hdr[8];
+                unsigned int lumppos = (unsigned int)lumpinfo[lump].position;
+                W_Read(g_lump_wad, lumppos, hdr, 8);
+                int pw = hdr[0] | (hdr[1] << 8);
+                int ph = hdr[2] | (hdr[3] << 8);
                 dn = snprintf(dbg, sizeof(dbg),
-                              "[paint] w=%d h=%d lo=%d to=%d\n",
-                              hdr[0], hdr[1], hdr[2], hdr[3]);
+                              "[paint] w=%d h=%d\n", pw, ph);
                 write(1, dbg, (unsigned long)dn);
-                V_DrawPatch(0, 0, (patch_t *)buf);
-                write(1, "[paint] V_DrawPatch done\n", 25);
-                free(buf);
+                if (pw > 0 && pw <= 320 && ph > 0 && ph <= 200) {
+                    /* columnofs[pw] follows header. */
+                    static unsigned int col_ofs[320];
+                    W_Read(g_lump_wad, lumppos + 8,
+                           col_ofs, (unsigned long)(pw * 4));
+                    dn = snprintf(dbg, sizeof(dbg),
+                                  "[paint] col_ofs[0..3]=%u %u %u %u col_ofs[319]=%u lumppos=%u\n",
+                                  col_ofs[0], col_ofs[1], col_ofs[2], col_ofs[3],
+                                  col_ofs[319], lumppos);
+                    write(1, dbg, (unsigned long)dn);
+                    {
+                        unsigned char first[32];
+                        W_Read(g_lump_wad, lumppos + col_ofs[0], first, 32);
+                        dn = snprintf(dbg, sizeof(dbg),
+                                      "[paint] col0[0..15]=%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
+                                      first[0], first[1], first[2], first[3],
+                                      first[4], first[5], first[6], first[7],
+                                      first[8], first[9], first[10], first[11],
+                                      first[12], first[13], first[14], first[15]);
+                        write(1, dbg, (unsigned long)dn);
+                    }
+                    unsigned char *dest = (unsigned char *)DG_ScreenBuffer;
+                    int col;
+                    static unsigned char colbuf[4096];
+                    for (col = 0; col < pw; col++) {
+                        /* Read up to 4 KB of column data (typically
+                           ph + posts overhead < 256). */
+                        unsigned int cofs = lumppos + col_ofs[col];
+                        int max_read = ph * 2 + 64;
+                        if (max_read > (int)sizeof(colbuf))
+                            max_read = sizeof(colbuf);
+                        W_Read(g_lump_wad, cofs, colbuf,
+                               (unsigned long)max_read);
+                        /* Decode posts: byte topdelta, byte length, pad,
+                           data[length], pad. End when topdelta == 0xFF. */
+                        unsigned char *p = colbuf;
+                        while (*p != 0xFF) {
+                            int top = *p++;
+                            int len = *p++;
+                            p++;        /* pad */
+                            int row;
+                            for (row = 0; row < len; row++) {
+                                int y = top + row;
+                                if (y >= 0 && y < ph)
+                                    dest[y * 320 + col] = p[row];
+                            }
+                            p += len;
+                            p++;        /* pad */
+                            if (p >= colbuf + sizeof(colbuf)) break;
+                        }
+                    }
+                    write(1, "[paint] column-stream done\n", 27);
+                }
             }
         }
+#endif /* PICO2_LUMPINFO_SHRUNK */
     }
 
     /* K22 Phase 6 stage 13b: paint a DOOM-themed frame around the
@@ -166,12 +231,6 @@ int main(int argc, char **argv)
         } else {
             write(1, "[fbprobe open failed]\n", 22);
         }
-    }
-    {
-        volatile unsigned char *vb = (volatile unsigned char *)DG_ScreenBuffer;
-        int i;
-        for (i = 0; i < 320 * 200; i++)
-            vb[i] = 0xFF;
     }
 
     while (1) {
