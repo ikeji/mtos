@@ -405,6 +405,21 @@ void I_ReadScreen (byte* scr)
 
 void I_SetPalette (byte* palette)
 {
+    {
+        static int _spc = 0;
+        if (_spc < 3) {
+            extern int printf(const char *, ...);
+            printf("[I_SetPalette] pal=%p first=(%d,%d,%d) last=(%d,%d,%d)\n",
+                   (void *)palette,
+                   palette ? palette[0] : -1,
+                   palette ? palette[1] : -1,
+                   palette ? palette[2] : -1,
+                   palette ? palette[765] : -1,
+                   palette ? palette[766] : -1,
+                   palette ? palette[767] : -1);
+            _spc++;
+        }
+    }
 	int i;
 	//col_t* c;
 

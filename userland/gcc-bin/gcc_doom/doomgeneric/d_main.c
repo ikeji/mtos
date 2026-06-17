@@ -445,17 +445,17 @@ void D_DoomLoop (void)
 
     main_loop_started = true;
 
+    printf("[DL begin]\n");
     TryRunTics();
-
+    printf("[DL after trytics]\n");
     I_SetWindowTitle(gamedescription);
     I_GraphicsCheckCommandLine();
     I_SetGrabMouseCallback(D_GrabMouseCallback);
     I_InitGraphics();
+    printf("[DL after gfx]\n");
     I_EnableLoadingDisk();
-
     V_RestoreBuffer();
     R_ExecuteSetViewSize();
-
     D_StartGameLoop();
 
     if (testcontrols)
@@ -463,7 +463,9 @@ void D_DoomLoop (void)
         wipegamestate = gamestate;
     }
 
+    printf("[DL pre tick]\n");
     doomgeneric_Tick();
+    printf("[DL post tick]\n");
 }
 
 
