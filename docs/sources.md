@@ -213,6 +213,32 @@ TASK_ARENA_<name> / TASK_STACK_<name>) を置く。
 これらは `EXTRA_GUEST_TASKS` に登録されており、`make -C kernel pico2-extra` 等で
 disk-extra.img に組み込まれる。
 
+**GCC タスク (`userland/gcc-bin/`)**:
+
+`userland/bin/` の TC タスクとは別ビルドルート。`compiler/runtime/mtos/`
+の `gcc_crt0_pico2.s` + `gcc_libc.c` + `gcc_task_pico2.ld` を使い、
+picolibc-linked C コードをそのまま MTOS タスクとして動かす。
+
+| タスク | 説明 |
+|---|---|
+| `gcc_hello/` | "hello from gcc" を puts (picolibc + syscall shim の smoke test) |
+| `gcc_doom/` | doomgeneric ベースの DOOM port。qemu virt 用は `EXTRA_GUEST_TASKS`、pico2 実機用 `gcc_doom_pico2` は `GUEST_TASKS` (~374 KB)。`/sd/doom1.wad` を読んで TITLEPIC を ILI9488 に描画する所まで動作 (K22、2026-06-18、`docs/solved.md` 参照) |
+
+`gcc_doom/` の中身:
+- `gcc_doom.c` — task entry (`-iwad /sd/doom1.wad` をデフォルト引数、
+  ILI9488 を MADCTL 0x28 で landscape に切替、TITLEPIC を column-stream
+  decoder で DG_ScreenBuffer に描画、最後に `while (1) doomgeneric_Tick()`)
+- `doomgeneric_tcos.c` — `DG_Init` / `DG_DrawFrame` 等の callback
+  実装。`DG_DrawFrame` は palette index → RGB565 変換 + 8 行 band
+  単位で `/dev/fb` mode=0 blit
+- `doomgeneric/*.c` — vendor された doomgeneric (chocolate-doom 派生)。
+  `PICO2_TINY_HUD` / `PICO2_LUMPINFO_SHRUNK` / `PICO2_R_INIT_LITE`
+  などの define で zone / heap 使用量を削減
+- `doomgeneric/whd/*` — rp2040-doom 由来の WHD 圧縮形式ヘッダ
+  (現状 R_Init の参照のみ、実 lump cache は未統合)
+- `task.mk` — `GCC_SOURCES_gcc_doom_pico2 := $(GCC_DOOM_SOURCES) $(GCC_DOOM_WHD_SOURCES)`、
+  `-DPICO2_TINY_HUD -DCMAP256=1` 等の define セット
+
 ---
 
 ## サブプロジェクト 3: カーネル `kernel/`

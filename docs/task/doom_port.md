@@ -1,5 +1,16 @@
 # DOOM on TinyC-OS — K22 milestone plan
 
+> **状態 (2026-06-18)**: Phase 6 完了 — pico2 実機の ILI9488 LCD に
+> DOOM Shareware TITLEPIC (赤い "DOOM" ロゴ + Doomguy) が描画される
+> 所まで到達。`D_DoomMain` 全 init を完走し、`DG_DrawFrame` から
+> band-blit で LCD に届く。詳細・落とし穴は `docs/solved.md` K22。
+> 残課題: **autostart E1M1** (`P_SetupLevel` の PU_LEVEL alloc が
+> ~24 KB で zone 不足、blockmap など .bss 化が必要)。
+>
+> 本ドキュメントの Phase 5 までの設計詳細は、実装が当初の計画とは
+> 違うルート (WHD ではなく R_Init PU_STATIC を片っ端から .bss 化、
+> TITLEPIC は column-stream 描画) に分岐したので、史料として読む。
+
 ## Goal
 
 shareware DOOM の **E1M1 "Hangar"** を、我々の TinyC-OS の guest task

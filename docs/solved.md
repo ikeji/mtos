@@ -136,6 +136,109 @@ while i < n_in_sec {
 
 ## カーネル / OS
 
+### K22. DOOM Shareware TITLEPIC が pico2 実機の ILI9488 LCD に出る — 完了 (2026-06-18)
+
+doomgeneric ベースの DOOM port (`userland/gcc-bin/gcc_doom/`、
+`gcc_doom_pico2.bin` ~374 KB) が pico2 実機で起動し、`/sd/doom1.wad`
+を load → `D_DoomMain` 全 init 完走 → `DG_DrawFrame` 経由で band-blit
+→ ILI9488 LCD に TITLEPIC (赤い "DOOM" ロゴ + 緑装甲の Doomguy) を
+表示するまで到達。
+
+**到達 ladder** (Phase 6 stage 単位):
+
+| stage | 解決した壁 |
+|---|---|
+| 6 | DG_DrawFrame end-to-end (1 frame to LCD) |
+| 8〜10 | R_Init PU_STATIC の 30+ KB を .bss に逃がして zone 確保 |
+| 11 | lumphash (4672 B) を .bss、demo / wipe / D_PageDrawer の zone 食いを no-op 化 |
+| 12 | `while (1) doomgeneric_Tick()` で safe loop 化 |
+| 13 | **MADCTL 0x28 で landscape 化**、`struct _dg_color` のバイト順を `{ b, g, r, a }` に修正 |
+| 14 | TITLEPIC (68 KB) を column-by-column ストリーミングで描画、peak ~5.5 KB |
+
+**メモリ予算** (`__gcc_sram` 448 KB を gcc_doom_pico2 が占有):
+
+- `.data + .bss`: ~280 KB
+  - DG_ScreenBuffer (.bss、CMAP256 で 64 KB) は I_VideoBuffer と alias
+- DOOM zone (`Z_Init` の picolibc `malloc`): 112 KiB
+- picolibc heap 残: ~30 KiB (fopen FILE struct + lumpinfo realloc に消費)
+- 16 KB stack: `gcc_task_pico2.ld` 末尾に確保、`gcc_crt0_pico2.s` で
+  `sp = __stack_top` に切り替え (kernel-supplied 1 KB の bootstrap stack
+  は `_start` 冒頭で捨てる)
+
+`__arena` (kernel kmalloc pool) は 64988 B (63 KB) まで縮小。`mr -a`
+の new SD upload はこの kernel では OOM するため、WAD upload を先に
+別 kernel build (arena 130588) で済ませてから DOOM kernel を flash
+する 2-pass フロー。
+
+**最後に判明した二つの実バグ** (stage 13):
+
+1. **LCD orientation**: ILI9488 はデフォルトで portrait 320×480
+   (kernel `display_ili9488.tc::lcd_init` の MADCTL=0x48)。実機 LCD は
+   landscape mount なので、user task が `/dev/fb` に `mode=3`
+   `MADCTL=0x28` を投げて切り替える必要があった。送らないと
+   `DG_DrawFrame` が portrait window を上書きして変な position に
+   貼り付けてしまう。`console-land` build は kernel 内でこの切り替えを
+   やっているが、gcc task は別途自分で送る (`memory/pico2_lcd_madctl.md`
+   参照)。
+
+2. **`struct _dg_color` のバイト順**: `i_video.h` の `struct color`
+   は `{ b:8; g:8; r:8; a:8 }` ビットフィールド → little-endian で
+   メモリ順 `[b][g][r][a]`。`doomgeneric_tcos.c` 初版は
+   `{ a, r, g, b }` でフィールド宣言していて、`.r` を読むと
+   実際は g バイトを読んでいた。CMAP256 の palette lookup が
+   R/G swap で全色 wrong。`{ b, g, r, a }` に直して全 PLAYPAL が
+   正しく出るようになった。
+
+**TITLEPIC ストリーミング decoder**:
+
+`gcc_doom.c` の `PICO2_LUMPINFO_SHRUNK` ガード内で、patch lump を
+1 column ずつ SD から W_Read。
+
+1. lump 先頭 8 B (`short width, height, leftoffset, topoffset`)
+2. `int columnofs[width]` (1280 B、`col_ofs[320]` .bss に置く)
+3. 各 col 0..319 について:
+   - `lumppos + col_ofs[col]` から最大 4 KB を `colbuf[4096]` に読む
+   - post 列をデコード (`topdelta / length / pad / data / pad`,
+     `topdelta == 0xFF` で終端)、`DG_ScreenBuffer[y*320 + col]` に
+     palette index を書き込む
+
+peak working memory = `col_ofs` 1.3 KB + `colbuf` 4 KB ≈ 5.5 KB。
+zone も heap も使わない。SD SPI 6 MHz × 320 reads で数秒かかるが
+one-shot title draw なので可。
+
+**過程で見えた debug**:
+
+- **build cache の罠**: `userland/build/tasks/gcc_doom_pico2.bin` の
+  `.o` が古いと `.c` 変更が反映されず、何時間も古いバイナリを debug
+  していた。`rm -rf userland/build kernel/build` で強制 full rebuild
+  しないと最新コードがリンクされないケースに何度か遭遇
+- **`malloc(64 KB)` が NULL を返す**: D_FindWADByName 内の fopen が
+  NULL を返すのは IWAD missing ではなく picolibc heap 枯渇。
+  Z_Init の zone allocation 後、FILE struct 用の ~1 KB すら取れない
+  状態だった (`__gcc_sram` 320 → 448 KB 拡張 + `DG_ScreenBuffer` を
+  .bss に移して heap headroom 確保)
+- **`p[0..15]` dump で col0 のピクセル indices が brown 系**: 期待した
+  TITLEPIC のパターンなのに LCD が blue→gray gradient → 上で書いた
+  struct byte order のバグだった
+- **`memset(0xFF, 320*200)` が TITLEPIC を上書き**: cleanup の途中で
+  test 用 memset を残していて、column-stream の結果が全部消えていた
+
+参考: commits `cd848b7` (DG_DrawFrame + D_DoomMain pipeline)、
+`212ce25` (first frame to LCD)、`87a544c` (stable tick loop)、
+`0d90716` (R_Init PU_STATIC → .bss)、`9cd5f09` (lumphash → .bss)、
+`3d97af4` (landscape MADCTL + struct order)、`b5bd104` (column-stream
+TITLEPIC)、`1f9119e` (diagnostic traces 削除)。`memory/pico2_lcd_madctl.md`
+に MADCTL flip の経緯。
+
+**残課題**:
+
+- Autostart (E1M1) は `P_SetupLevel` が ~24 KB の PU_LEVEL alloc を
+  要求 → zone 112 KB 不足。blockmap (17 KB) など PU_LEVEL の大物を
+  .bss に固定するか zone をさらに拡張する大手術が必要
+- TITLEPIC 描画の左半分が letterbox 色のまま見える件 (`/tmp/lcd_v109.jpg`
+  webcam 写真)。webcam の遠近かもしれないし、`DG_DrawFrame` が
+  幅 320 全部書ききっていないかも。次セッションで要確認
+
 ### K21. boot < 1 秒 + mr -a CRC で byte-exact 維持 — 完了 (2026-05-30)
 
 K20 で self_replicate byte-exact を復活させた後、実機 boot に毎回

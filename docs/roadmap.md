@@ -702,6 +702,58 @@ self-host loop が成立した。
   を実機の物理配列に合わせて編集。
 GPIO 割り当ては `docs/pico2_hardware.md`「GPIO 割り当て一覧」。
 
+## K22: DOOM Shareware を pico2 実機で動かす — Phase 6 完了 (2026-06-18)
+
+doomgeneric ベースの DOOM port (`userland/gcc-bin/gcc_doom/`、
+`gcc_doom_pico2.bin` ~374 KB) が pico2 実機で起動し、`/sd/doom1.wad`
+を読み込み、`D_DoomMain` 全 init を完走、`DG_DrawFrame` から
+ILI9488 LCD に TITLEPIC を描画するまで到達。設計と背景は
+`docs/task/doom_port.md`、各段階の詳細と落とし穴は `docs/solved.md`
+K22 エントリ。
+
+**到達した stage** (`docs/solved.md` K22 内の ladder):
+
+- Phase 5 stage 1〜9: WHD 統合方針案 → 採用せず、代わりに R_Init の
+  PU_STATIC を .bss に逃がし続ける方針へ。`__gcc_sram` を 384→448 KB
+  に拡張、kernel `__arena` は 64 KB まで縮小
+- Phase 6 stage 6: DG_DrawFrame end-to-end で 1 frame を LCD まで
+  運ぶ path を validate
+- Phase 6 stage 10〜11: COLORMAP (8.5 KB) / TEXTURE1 (12 KB) / lumphash
+  (4.7 KB) を .bss に固定、demo / wipe / D_PageDrawer の zone 食いを
+  `PICO2_TINY_HUD` で no-op 化、`while (1) doomgeneric_Tick()` で
+  loop 安定
+- Phase 6 stage 13: ILI9488 を mode=3 MADCTL=0x28 で landscape に
+  flip、`struct _dg_color` のフィールド順を `{ b, g, r, a }` に
+  修正 (CMAP256 palette の R/G swap バグ解消)
+- Phase 6 stage 14: TITLEPIC (68 KB) を column-by-column streaming
+  で描画 (peak working set ~5.5 KB、zone/heap どちらも未使用)
+
+**メモリ予算** (pico2 RP2350 SRAM 520 KB):
+
+- kernel `.data + .bss head`: 196 B
+- kernel `__arena` (kmalloc pool): 64988 B (~63 KB)
+- `__gcc_sram` (gcc task の RAM): 458752 B (448 KB)
+  - gcc task .data + .bss: ~280 KB
+  - DG_ScreenBuffer .bss (CMAP256 で 320*200*1B): 64 KB
+  - DOOM zone (`Z_Init` の picolibc `malloc`): 112 KB
+  - picolibc heap 残: ~30 KB
+  - 16 KB stack (ld script で末尾固定、`gcc_crt0_pico2.s` で `sp` 切替)
+- kernel stack: 8 KB
+
+**残課題**:
+
+- **autostart E1M1**: `P_SetupLevel` が ~24 KB の PU_LEVEL alloc を
+  要求 (blockmap 17 KB ほか)。zone 112 KB では大物が入らないので
+  blockmap など PU_LEVEL の固定サイズを .bss に追い出すか、
+  zone をさらに拡張する大手術が必要
+- **TITLEPIC 描画位置の左半分が letterbox 色に見える**件
+  (`/tmp/lcd_v109.jpg` webcam 写真)。`DG_DrawFrame` が width=320 を
+  ちゃんと書ききっているかの確認
+
+参考: `docs/solved.md` K22、`memory/pico2_lcd_madctl.md`、`docs/task/doom_port.md`、
+`userland/gcc-bin/gcc_doom/`、commits cd848b7 / 212ce25 / 87a544c /
+0d90716 / 9cd5f09 / 3d97af4 / b5bd104 / 1f9119e。
+
 ## 技術的リスクと対策
 
 | リスク | 対策 |

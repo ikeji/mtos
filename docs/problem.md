@@ -18,6 +18,29 @@
 
 ## 後回し
 
+### K22 残件: DOOM autostart E1M1 が zone 不足 (limitation、2026-06-18)
+
+`gcc_doom_pico2` は title screen (TITLEPIC) までは描画できているが、
+`-warp 1 1` を渡して autostart させると `P_SetupLevel` の中で
+~17 KB の blockmap (PU_STATIC) + ~7 KB の PU_LEVEL 群を要求し、
+次の 1892-byte alloc で `Z_Malloc: failed` する。zone は 112 KiB しか
+無く、`R_Init` の PU_STATIC residue (~30 KB) + その他の init で半分
+以上が埋まっているため、新規 map がフラットに入らない。
+
+対策候補 (どれも非自明):
+- blockmap など PU_LEVEL の大物を `__gcc_sram` の .bss に固定
+  (E1M1 専用サイズで pre-allocate)。`p_setup.c` 改修
+- zone を 112 → 160+ KiB に拡張。`__gcc_sram` 内訳の見直し
+  (DG_ScreenBuffer 64 KB をどう削るか) と、`__arena` をさらに削って
+  zone に回すか
+- rp2040-doom 流に renderer + level loader を WHD 風に書き換える
+  本格 port (元々の K22 plan)。`docs/task/doom_port.md`
+
+現状はタイトル画面で停止していて遊べないが、Phase 6 の目的
+(DG_DrawFrame end-to-end + LCD 描画) は達成済み。
+
+参考: `docs/solved.md` K22、`userland/gcc-bin/gcc_doom/`。
+
 ### 38. ILI9488 SPI で 12-bit / 3-bit pixel format が動かない (limitation、2026-05-24)
 
 データシート 5.2.34 (Interface Pixel Format) では DBI[2:0] = 001

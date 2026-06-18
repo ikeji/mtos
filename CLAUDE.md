@@ -8,14 +8,31 @@
 
 # 現在のフェーズ
 
-`docs/roadmap.md` 参照。**boot < 1 秒 + byte-exact self-replicate
-維持 (K21、2026-05-30)**: pico2 実機が host wall clock で
-`KERN: starting → sh spawned` を 61 ms (openocd reset 込みでも
-423 ms) でこなしつつ、`CLEAN_SD=1 REFRESH_KERN_MODS=1 NORESET=1
-./integration/pico2_self_replicate.sh` が end-to-end ~50 min で
-kernel.bin/uf2 を host build と byte-exact 一致で再生成する。
+`docs/roadmap.md` 参照。**DOOM Shareware TITLEPIC が pico2 実機の
+ILI9488 LCD に表示 (K22、2026-06-18)**: doomgeneric ベースの DOOM
+port (`userland/gcc-bin/gcc_doom/`、`gcc_doom_pico2.bin` ~374 KB)
+が `/sd/doom1.wad` を読み、`D_DoomMain` 全 init (Z_Init / W_Init /
+R_Init / P_Init / S_Init / D_CheckNetGame / HU_Init / ST_Init /
+I_InitGraphics) を完走、`DG_DrawFrame` から `/dev/fb` mode=0
+band-blit 経由で LCD に DOOM ロゴ + Doomguy を表示するまで到達。
 
-**最近の改善 (K20 / K21)**:
+**最近の改善 (K21 / K22)**:
+- K21 (2026-05-30): `dump_mtfs_to_sd` を boot から削除 (~6 秒短縮)。
+  orchestrator が `mr -a` で /sd/dx.img と /sd/wrap.s を upload
+  する経路に切り替え。`mr -a` は ACK + sum32 checksum + NAK retry
+  プロトコル (frame: `[len:u16][data][sum:u32]`、ACK `.` / NAK `!`)
+  で K11 を回避しつつ UART bit error も検出/再送 (`docs/solved.md`
+  K21、commits fbf75b6 / d24ac4d / 7f22244)。
+- K22 (2026-06-18): DOOM port の Phase 6 (DG_DrawFrame end-to-end
+  + TITLEPIC) を完走。R_Init の PU_STATIC を 30+ KB 分 .bss に逃がし
+  (COLORMAP / TEXTURE1 / lumphash)、demo / wipe / D_PageDrawer の
+  zone 食いを no-op 化、`__gcc_sram` 448 KB + 16 KB stack を ld
+  script で末尾固定、ILI9488 を mode=3 で landscape (MADCTL 0x28)
+  に切り替え、TITLEPIC は column-by-column streaming で peak ~5.5 KB
+  に抑える。`struct _dg_color` のバイト順を `{ b, g, r, a }` に直し
+  CMAP256 palette を正しく lookup。詳細は `docs/solved.md` K22、
+  `memory/pico2_lcd_madctl.md`、commits cd848b7 / 212ce25 /
+  87a544c / 0d90716 / 9cd5f09 / 3d97af4 / b5bd104。
 - K20 (2026-05-27): K18 以降に kernel_pico2.tc が 11 → 16 module
   (rtc, devfs, rtc_ds3231, display_ili9488, keyboard_matrix を追加
   した) ことに self_replicate orchestrator + device fixture が
@@ -28,12 +45,13 @@ kernel.bin/uf2 を host build と byte-exact 一致で再生成する。
   `make self-replicate-fixtures-check` で drift を検出。
   kernel boot trace 用に `kputs_t` (kernel_pico2.tc) /
   `eputs_t` (console.tc) も追加。
-- K21 (2026-05-30): `dump_mtfs_to_sd` を boot から削除 (~6 秒短縮)。
-  orchestrator が `mr -a` で /sd/dx.img と /sd/wrap.s を upload
-  する経路に切り替え。`mr -a` は ACK + sum32 checksum + NAK retry
-  プロトコル (frame: `[len:u16][data][sum:u32]`、ACK `.` / NAK `!`)
-  で K11 を回避しつつ UART bit error も検出/再送 (`docs/solved.md`
-  K21、commits fbf75b6 / d24ac4d / 7f22244)。
+
+完了済の前段マイルストーン: **boot < 1 秒 + byte-exact self-replicate
+維持 (K21、2026-05-30)** — pico2 実機が host wall clock で
+`KERN: starting → sh spawned` を 61 ms (openocd reset 込みでも
+423 ms) でこなしつつ、`CLEAN_SD=1 REFRESH_KERN_MODS=1 NORESET=1
+./integration/pico2_self_replicate.sh` が end-to-end ~50 min で
+kernel.bin/uf2 を host build と byte-exact 一致で再生成。
 
 完了済の前段マイルストーン (K13 〜 K18):
 - **K18 (2026-05-14)**: 全 8 コンパイラ binary (parse / sigscan
@@ -68,6 +86,10 @@ as-String 片付け (`path: String` syscall ABI)、フェーズ 8 部分着手
 
 **次の候補** (どれも独立):
 
+- **K22 続編 (DOOM 実プレイ)**: TITLEPIC まで来たので autostart E1M1
+  を狙う。`P_SetupLevel` が ~24 KB の PU_LEVEL を要求 (blockmap 17 KB
+  ほか) するので zone 112 KB 不足。blockmap など大物を .bss に固定
+  するか zone をさらに拡張する必要 (`docs/solved.md` K22 残課題)
 - **フェーズ 8 残り**: 手書き asm は `platform_*.s` の boot/CSR 部分、
   `trap_common.s`, `crt0_*_data.s`, `task_crt0.s` のみ
 - **K11 (mr UART upload hang) を本格解決**: 実用上は `mr -a` の ACK
@@ -117,14 +139,19 @@ compiler/   サブプロジェクト 1: TinyC コンパイラ
 
 userland/   サブプロジェクト 2: MTOS ユーザータスク
   lib/libtc/   共通ユーザライブラリ (puts/eputs/print/syscall stub forward decl)
-  bin/<task>/  各タスク (40 個) + task.mk (GUEST_TASKS / EXTRA_GUEST_TASKS 宣言)
+  bin/<task>/  TC タスク (40 個) + task.mk (GUEST_TASKS / EXTRA_GUEST_TASKS 宣言)
     sh, msh, ls, cat, echo, wc, head, cp, du, grep, rm, mkdir, rmdir,
     md5sum, vi, neofetch, console, fbtest, count, seq, mx, mr, muxon, muxoff,
     sdprobe, kbdump, bin2uf2, launcher, hello, hello2, catfile, tmpdemo
     parse/, sigscan/, tcheck/, codegen/, bc2asm/, asm_pass{1,2,3}/
       → compiler/src/<name>.tc への symlink (compiler-on-MTOS)。
         EXTRA_GUEST_TASKS なので default ビルドには含まれない
-  Makefile     `make -C userland test` で全 40 タスク build smoke
+  gcc-bin/<task>/ picolibc-linked GCC タスク (TC ではなく C で書いたもの)
+    gcc_hello/   smoke test: "hello from gcc"
+    gcc_doom/    doomgeneric ベース DOOM port (K22)。qemu virt 用 = gcc_doom、
+                 pico2 実機用 = gcc_doom_pico2 (~374 KB、GUEST_TASKS)。
+                 /sd/doom1.wad を読み TITLEPIC を ILI9488 LCD に描画
+  Makefile     `make -C userland test` で全タスク build smoke
 
 kernel/     サブプロジェクト 3: OS カーネル (virt + pico2)
   src/         kernel core (両 platform 共通)
