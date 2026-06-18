@@ -88,11 +88,12 @@
    left only ~31 KB heap and W_Init's lumpinfo realloc failed; 128 KB
    gives ~47 KB heap which leaves headroom for both lumpinfo realloc
    and the title-pic Z_Malloc(64 KB) in doomgeneric_Tick. */
-/* K22 Phase 6 stage 10: COLORMAP (8.5 KB) + TEXTURE1 (12 KB) moved
-   to .bss, so the picolibc heap dropped by ~20 KB. Compensate by
-   shrinking the DOOM zone — the data we just moved is no longer
-   stored there anyway. Net: zone has ~20 KB MORE room for runtime
-   PU_CACHE / PU_STATIC, and heap still fits lumpinfo realloc. */
+/* K22 Phase 6 stage 15: BLOCKMAP / sides / lines pinned to .bss
+   plus the ScreenBuffer + lumphash + COLORMAP + TEXTURE1 chunks
+   leave little heap headroom. 88 KiB worked through W_Init for
+   the title-screen path; autostart needs ~112 KiB to fit all
+   PU_LEVEL allocs (still fails) so the trade-off remained title
+   only for now. */
 #define DEFAULT_RAM 112 /* KiB */
 #define MIN_RAM     16  /* KiB */
 #define ZONE_UNIT   1024

@@ -600,6 +600,14 @@ void S_StartMusic(int m_id)
 
 void S_ChangeMusic(int musicnum, int looping)
 {
+#ifdef PICO2_TINY_HUD
+    /* K22 Phase 6 stage 15: skip music loading. The lump is ~17 KB
+       PU_STATIC and there's no sound output anyway. Lets autostart
+       fit in the 96 KiB zone. */
+    (void)musicnum;
+    (void)looping;
+    return;
+#else
     musicinfo_t *music = NULL;
     char namebuf[9];
     void *handle;
@@ -644,6 +652,7 @@ void S_ChangeMusic(int musicnum, int looping)
     I_PlaySong(handle, looping);
 
     mus_playing = music;
+#endif /* PICO2_TINY_HUD */
 }
 
 boolean S_MusicPlaying(void)

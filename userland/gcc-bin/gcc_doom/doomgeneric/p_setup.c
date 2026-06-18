@@ -399,7 +399,16 @@ void P_LoadLineDefs (int lump)
     vertex_t*		v2;
 	
     numlines = W_LumpLength (lump) / sizeof(maplinedef_t);
-    lines = Z_Malloc (numlines*sizeof(line_t),PU_LEVEL,0);	
+#ifdef PICO2_TINY_HUD
+    /* E1M1 ≈ 270 lines × sizeof(line_t) ≈ 60 B = 16 KB. */
+    static line_t _pico2_lines_buf[400];
+    if (numlines > (int)(sizeof(_pico2_lines_buf)/sizeof(line_t)))
+        I_Error("lines %d > %d", numlines,
+                (int)(sizeof(_pico2_lines_buf)/sizeof(line_t)));
+    lines = _pico2_lines_buf;
+#else
+    lines = Z_Malloc (numlines*sizeof(line_t),PU_LEVEL,0);
+#endif
     memset (lines, 0, numlines*sizeof(line_t));
     data = W_CacheLumpNum (lump,PU_STATIC);
 	
@@ -478,7 +487,20 @@ void P_LoadSideDefs (int lump)
     side_t*		sd;
 	
     numsides = W_LumpLength (lump) / sizeof(mapsidedef_t);
-    sides = Z_Malloc (numsides*sizeof(side_t),PU_LEVEL,0);	
+#ifdef PICO2_TINY_HUD
+    /* K22 Phase 6 stage 15: sides[] is the biggest single PU_LEVEL
+       alloc that fits in our zone budget — pin to .bss for E1M1
+       (target ~300 sides × 28 B = 8400 B; round up to 16 KB to
+       cover any reasonable shareware map). */
+    /* 384 × 20 B = 7.5 KB; E1M1 has ~270 sides so fits comfortably. */
+    static side_t _pico2_sides_buf[384];
+    if (numsides > (int)(sizeof(_pico2_sides_buf)/sizeof(side_t)))
+        I_Error("sides %d > %d", numsides,
+                (int)(sizeof(_pico2_sides_buf)/sizeof(side_t)));
+    sides = _pico2_sides_buf;
+#else
+    sides = Z_Malloc (numsides*sizeof(side_t),PU_LEVEL,0);
+#endif
     memset (sides, 0, numsides*sizeof(side_t));
     data = W_CacheLumpNum (lump,PU_STATIC);
 	
@@ -515,7 +537,7 @@ void P_LoadBlockMap (int lump)
        BLOCKMAP lump is ~12 KB; reserve 24 KB to cover other small
        maps too. Without this the 112 KiB zone can't fit a fresh
        P_SetupLevel alongside R_Init's PU_STATIC residue. */
-    static short _pico2_blockmap_buf[24 * 512];   /* 24 KB shorts */
+    static short _pico2_blockmap_buf[7 * 1024];   /* 14 KB shorts */
     if (lumplen > (int)sizeof(_pico2_blockmap_buf))
         I_Error("BLOCKMAP %d > %d", lumplen, (int)sizeof(_pico2_blockmap_buf));
     blockmaplump = _pico2_blockmap_buf;
@@ -777,7 +799,7 @@ P_SetupLevel
     players[consoleplayer].viewz = 1; 
 
     // Make sure all sounds are stopped before Z_FreeTags.
-    S_Start ();			
+    S_Start ();
 
     Z_FreeTags (PU_LEVEL, PU_PURGELEVEL-1);
 
