@@ -105,11 +105,10 @@ static void ExtendLumpInfo(int newnumlumps)
     unsigned int i;
 
 #ifdef PICO2_TINY_HUD
-    /* Real doom1.wad shareware has 1168 lumps × sizeof(lumpinfo_t)
-       (= 24 B under PICO2_LUMPINFO_SHRUNK) = 28 KB. Pin 1280 entries
-       (30 KB) to .bss instead of calloc — picolibc heap can only
-       hand out ~8 KB after Z_Init takes ~28 KB. */
-    static lumpinfo_t _pico2_lumpinfo_buf[1280];
+    /* Real doom1.wad shareware has 1168 lumps × 24 B = 28 KB. Pin
+       1184 (= 28.4 KB) — tight to E1M1 but every byte counts in
+       the K22 path-A budget. */
+    static lumpinfo_t _pico2_lumpinfo_buf[1184];
     if (newnumlumps > (int)(sizeof(_pico2_lumpinfo_buf)/sizeof(lumpinfo_t)))
         I_Error("lumpinfo %d > %d", newnumlumps,
                 (int)(sizeof(_pico2_lumpinfo_buf)/sizeof(lumpinfo_t)));
@@ -237,10 +236,18 @@ wad_file_t *W_AddFile (char *filename)
 
 		header.numlumps = LONG(header.numlumps);
 		header.infotableofs = LONG(header.infotableofs);
+#ifdef PICO2_TINY_HUD
+		/* K22 path-A: stream the directory in fixed-size chunks
+		   straight into lumpinfo[]. The vanilla path Z_Malloc'd
+		   the entire 18 KB directory into PU_STATIC zone; with
+		   our 16 KB zone that's an OOM. */
+		length = 0;
+#else
 		length = header.numlumps*sizeof(filelump_t);
 		fileinfo = Z_Malloc(length, PU_STATIC, 0);
 
         W_Read(wad_file, header.infotableofs, fileinfo, length);
+#endif
         newnumlumps += header.numlumps;
     }
 
@@ -250,13 +257,37 @@ wad_file_t *W_AddFile (char *filename)
 
     lump_p = &lumpinfo[startlump];
 
-    filerover = fileinfo;
-
 #ifdef PICO2_LUMPINFO_SHRUNK
     /* Single-WAD pico2 build: store the wad_file_t* once in a global
        so per-lump storage can drop the 4-byte wad_file field. */
     g_lump_wad = wad_file;
 #endif
+
+#ifdef PICO2_TINY_HUD
+    /* Stream directory entries into the (already pinned) lumpinfo
+       buffer. 256 entries × 16 B = 4 KB stack chunk. */
+    {
+        filelump_t chunk[256];
+        unsigned int pos = header.infotableofs;
+        int processed = 0;
+        int total = (int)(newnumlumps - startlump);
+        while (processed < total) {
+            int n = total - processed;
+            if (n > 256) n = 256;
+            W_Read(wad_file, pos + processed * (unsigned int)sizeof(filelump_t),
+                   chunk, n * sizeof(filelump_t));
+            for (int k = 0; k < n; k++) {
+                lump_p->position = LONG(chunk[k].filepos);
+                lump_p->size     = LONG(chunk[k].size);
+                lump_p->cache    = NULL;
+                strncpy(lump_p->name, chunk[k].name, 8);
+                ++lump_p;
+            }
+            processed += n;
+        }
+    }
+#else
+    filerover = fileinfo;
     for (i=startlump; i<numlumps; ++i)
     {
 #ifndef PICO2_LUMPINFO_SHRUNK
@@ -272,6 +303,7 @@ wad_file_t *W_AddFile (char *filename)
     }
 
     Z_Free(fileinfo);
+#endif
 
 #if defined(PICO2_TINY_HUD)
     /* lumphash is .bss-backed under PICO2_TINY_HUD; never Z_Free it

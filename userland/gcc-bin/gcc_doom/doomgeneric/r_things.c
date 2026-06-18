@@ -188,8 +188,19 @@ void R_InitSpriteDefs (char** namelist)
 	
     if (!numsprites)
 	return;
-		
+
+#ifdef PICO2_TINY_HUD
+    /* K22 path-A B2: pin sprites[] to .bss instead of PU_STATIC zone.
+       DOOM has NUMSPRITES = 138; 8 B per spritedef_t = 1104 B. */
+    static spritedef_t _pico2_sprites_buf[160];
+    if (numsprites > (int)(sizeof(_pico2_sprites_buf)/sizeof(spritedef_t)))
+        I_Error("sprites %d > %d", numsprites,
+                (int)(sizeof(_pico2_sprites_buf)/sizeof(spritedef_t)));
+    sprites = _pico2_sprites_buf;
+    memset(sprites, 0, numsprites * sizeof(*sprites));
+#else
     sprites = Z_Malloc(numsprites *sizeof(*sprites), PU_STATIC, NULL);
+#endif
 	
     start = firstspritelump-1;
     end = lastspritelump+1;
@@ -265,8 +276,25 @@ void R_InitSpriteDefs (char** namelist)
 	
 	// allocate space for the frames present and copy sprtemp to it
 	sprites[i].numframes = maxframe;
-	sprites[i].spriteframes = 
+#ifdef PICO2_TINY_HUD
+	/* K22 path-A B2: bump-alloc from a shared sprite-frame pool.
+	   DOOM shareware totals ≈ 500 frames × 28 B = 14 KB. Pin 528
+	   tight (14.8 KB). */
+	{
+	    static spriteframe_t _pico2_spriteframes_pool[528];
+	    static int           _pico2_spriteframes_off = 0;
+	    if (_pico2_spriteframes_off + maxframe >
+	        (int)(sizeof(_pico2_spriteframes_pool)/sizeof(spriteframe_t)))
+	        I_Error("spriteframes pool overflow at sprite %d (off %d)",
+	                i, _pico2_spriteframes_off);
+	    sprites[i].spriteframes =
+	        &_pico2_spriteframes_pool[_pico2_spriteframes_off];
+	    _pico2_spriteframes_off += maxframe;
+	}
+#else
+	sprites[i].spriteframes =
 	    Z_Malloc (maxframe * sizeof(spriteframe_t), PU_STATIC, NULL);
+#endif
 	memcpy (sprites[i].spriteframes, sprtemp, maxframe*sizeof(spriteframe_t));
     }
 

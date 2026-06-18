@@ -50,7 +50,11 @@ TASK_STACK_gcc_doom := 65536
 # to 64 KB (gcc_sram grew to 448 KB) — total spawn allocation must fit
 # in ~20 KB of kmalloc headroom after sh, so we trade R_DrawColumn
 # recursion margin for a chance at booting at all.
-TASK_ARENA_gcc_doom_pico2 := 4096
+# K22 path-A: GCC tasks don't use the K3 arena — picolibc malloc
+# lives in __gcc_sram via gcc_task_pico2.ld's __heap_start. Set to
+# TASK_ARENA_MIN (1 KB) so make_task's total_size stays under the
+# 4-KB KM_PAGE rounding boundary and fits in a kmalloc bucket.
+TASK_ARENA_gcc_doom_pico2 := 1024
 TASK_STACK_gcc_doom_pico2 := 1024
 
 # Sources: our two top-level files plus every vendored .c except

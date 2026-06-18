@@ -133,14 +133,34 @@ void P_LoadVertexes (int lump)
         I_Error("vertexes %d > %d", numvertexes,
                 (int)(sizeof(_pico2_vertexes_buf)/sizeof(vertex_t)));
     vertexes = _pico2_vertexes_buf;
+    /* K22 path-A: stream VERTEXES lump in chunks (E1M1 ~1.9 KB) to
+       avoid the transient W_CacheLumpNum PU_STATIC alloc that blows
+       the zone budget at P_SetupLevel time. */
+    {
+        mapvertex_t chunk[256];
+        extern wad_file_t *g_lump_wad;
+        unsigned int pos = (unsigned int)lumpinfo[lump].position;
+        int processed = 0;
+        li = vertexes;
+        while (processed < numvertexes) {
+            int n = numvertexes - processed;
+            if (n > 256) n = 256;
+            W_Read(g_lump_wad, pos + processed * sizeof(mapvertex_t),
+                   chunk, n * sizeof(mapvertex_t));
+            ml = chunk;
+            for (i = 0; i < n; i++, ml++, li++) {
+                li->x = SHORT(ml->x) << FRACBITS;
+                li->y = SHORT(ml->y) << FRACBITS;
+            }
+            processed += n;
+        }
+    }
 #else
     // Allocate zone memory for buffer.
     vertexes = Z_Malloc (numvertexes*sizeof(vertex_t),PU_LEVEL,0);
-#endif
-
     // Load data into cache.
     data = W_CacheLumpNum (lump, PU_STATIC);
-	
+
     ml = (mapvertex_t *)data;
     li = vertexes;
 
@@ -154,6 +174,7 @@ void P_LoadVertexes (int lump)
 
     // Free buffer memory.
     W_ReleaseLumpNum(lump);
+#endif
 }
 
 //
@@ -191,18 +212,55 @@ void P_LoadSegs (int lump)
 	
     numsegs = W_LumpLength (lump) / sizeof(mapseg_t);
 #ifdef PICO2_TINY_HUD
-    /* E1M1 ≈ 248 segs × 32 B = 8 KB. Pin 320 for headroom. */
-    static seg_t _pico2_segs_buf[320];
+    /* E1M1 actually has 732 segs (not 248). Pin 768 × 32 = 24 KB. */
+    static seg_t _pico2_segs_buf[768];
     if (numsegs > (int)(sizeof(_pico2_segs_buf)/sizeof(seg_t)))
         I_Error("segs %d > %d", numsegs,
                 (int)(sizeof(_pico2_segs_buf)/sizeof(seg_t)));
     segs = _pico2_segs_buf;
+    memset(segs, 0, numsegs * sizeof(seg_t));
+    /* Stream SEGS — E1M1 ~3 KB transient. */
+    {
+        mapseg_t chunk[128];
+        extern wad_file_t *g_lump_wad;
+        unsigned int pos = (unsigned int)lumpinfo[lump].position;
+        int processed = 0;
+        li = segs;
+        while (processed < numsegs) {
+            int n = numsegs - processed;
+            if (n > 128) n = 128;
+            W_Read(g_lump_wad, pos + processed * sizeof(mapseg_t),
+                   chunk, n * sizeof(mapseg_t));
+            ml = chunk;
+            for (i = 0; i < n; i++, li++, ml++) {
+                li->v1 = &vertexes[SHORT(ml->v1)];
+                li->v2 = &vertexes[SHORT(ml->v2)];
+                li->angle  = (SHORT(ml->angle))  << 16;
+                li->offset = (SHORT(ml->offset)) << 16;
+                linedef = SHORT(ml->linedef);
+                ldef = &lines[linedef];
+                li->linedef = ldef;
+                side = SHORT(ml->side);
+                li->sidedef = &sides[ldef->sidenum[side]];
+                li->frontsector = sides[ldef->sidenum[side]].sector;
+                if (ldef->flags & ML_TWOSIDED) {
+                    sidenum = ldef->sidenum[side ^ 1];
+                    if (sidenum < 0 || sidenum >= numsides)
+                        li->backsector = GetSectorAtNullAddress();
+                    else
+                        li->backsector = sides[sidenum].sector;
+                } else {
+                    li->backsector = 0;
+                }
+            }
+            processed += n;
+        }
+    }
 #else
     segs = Z_Malloc (numsegs*sizeof(seg_t),PU_LEVEL,0);
-#endif
     memset (segs, 0, numsegs*sizeof(seg_t));
     data = W_CacheLumpNum (lump,PU_STATIC);
-	
+
     ml = (mapseg_t *)data;
     li = segs;
     for (i=0 ; i<numsegs ; i++, li++, ml++)
@@ -223,12 +281,6 @@ void P_LoadSegs (int lump)
         {
             sidenum = ldef->sidenum[side ^ 1];
 
-            // If the sidenum is out of range, this may be a "glass hack"
-            // impassible window.  Point at side #0 (this may not be
-            // the correct Vanilla behavior; however, it seems to work for
-            // OTTAWAU.WAD, which is the one place I've seen this trick
-            // used).
-
             if (sidenum < 0 || sidenum >= numsides)
             {
                 li->backsector = GetSectorAtNullAddress();
@@ -243,8 +295,9 @@ void P_LoadSegs (int lump)
 	    li->backsector = 0;
         }
     }
-	
+
     W_ReleaseLumpNum(lump);
+#endif
 }
 
 
@@ -266,22 +319,43 @@ void P_LoadSubsectors (int lump)
         I_Error("subsectors %d > %d", numsubsectors,
                 (int)(sizeof(_pico2_subsectors_buf)/sizeof(subsector_t)));
     subsectors = _pico2_subsectors_buf;
+    /* Stream SUBSECTORS lump too — ~768 B at E1M1 size. */
+    memset(subsectors, 0, numsubsectors * sizeof(subsector_t));
+    {
+        mapsubsector_t chunk[256];
+        extern wad_file_t *g_lump_wad;
+        unsigned int pos = (unsigned int)lumpinfo[lump].position;
+        int processed = 0;
+        ss = subsectors;
+        while (processed < numsubsectors) {
+            int n = numsubsectors - processed;
+            if (n > 256) n = 256;
+            W_Read(g_lump_wad, pos + processed * sizeof(mapsubsector_t),
+                   chunk, n * sizeof(mapsubsector_t));
+            ms = chunk;
+            for (i = 0; i < n; i++, ss++, ms++) {
+                ss->numlines  = SHORT(ms->numsegs);
+                ss->firstline = SHORT(ms->firstseg);
+            }
+            processed += n;
+        }
+    }
 #else
     subsectors = Z_Malloc (numsubsectors*sizeof(subsector_t),PU_LEVEL,0);
-#endif
     data = W_CacheLumpNum (lump,PU_STATIC);
-	
+
     ms = (mapsubsector_t *)data;
     memset (subsectors,0, numsubsectors*sizeof(subsector_t));
     ss = subsectors;
-    
+
     for (i=0 ; i<numsubsectors ; i++, ss++, ms++)
     {
 	ss->numlines = SHORT(ms->numsegs);
 	ss->firstline = SHORT(ms->firstseg);
     }
-	
+
     W_ReleaseLumpNum(lump);
+#endif
 }
 
 
@@ -298,18 +372,44 @@ void P_LoadSectors (int lump)
 	
     numsectors = W_LumpLength (lump) / sizeof(mapsector_t);
 #ifdef PICO2_TINY_HUD
-    /* E1M1 ≈ 89 sectors × 88 B = 7.8 KB. Pin 100. */
-    static sector_t _pico2_sectors_buf[100];
+    /* E1M1 has 89 sectors. Pin 92 × 88 B = 8.1 KB tight. */
+    static sector_t _pico2_sectors_buf[92];
     if (numsectors > (int)(sizeof(_pico2_sectors_buf)/sizeof(sector_t)))
         I_Error("sectors %d > %d", numsectors,
                 (int)(sizeof(_pico2_sectors_buf)/sizeof(sector_t)));
     sectors = _pico2_sectors_buf;
+    memset(sectors, 0, numsectors * sizeof(sector_t));
+    /* Stream SECTORS — E1M1 ~2.3 KB, peak transient otherwise. */
+    {
+        mapsector_t chunk[64];
+        extern wad_file_t *g_lump_wad;
+        unsigned int pos = (unsigned int)lumpinfo[lump].position;
+        int processed = 0;
+        ss = sectors;
+        while (processed < numsectors) {
+            int n = numsectors - processed;
+            if (n > 64) n = 64;
+            W_Read(g_lump_wad, pos + processed * sizeof(mapsector_t),
+                   chunk, n * sizeof(mapsector_t));
+            ms = chunk;
+            for (i = 0; i < n; i++, ss++, ms++) {
+                ss->floorheight   = SHORT(ms->floorheight)   << FRACBITS;
+                ss->ceilingheight = SHORT(ms->ceilingheight) << FRACBITS;
+                ss->floorpic   = R_FlatNumForName(ms->floorpic);
+                ss->ceilingpic = R_FlatNumForName(ms->ceilingpic);
+                ss->lightlevel = SHORT(ms->lightlevel);
+                ss->special    = SHORT(ms->special);
+                ss->tag        = SHORT(ms->tag);
+                ss->thinglist  = NULL;
+            }
+            processed += n;
+        }
+    }
 #else
     sectors = Z_Malloc (numsectors*sizeof(sector_t),PU_LEVEL,0);
-#endif
     memset (sectors, 0, numsectors*sizeof(sector_t));
     data = W_CacheLumpNum (lump,PU_STATIC);
-	
+
     ms = (mapsector_t *)data;
     ss = sectors;
     for (i=0 ; i<numsectors ; i++, ss++, ms++)
@@ -323,8 +423,9 @@ void P_LoadSectors (int lump)
 	ss->tag = SHORT(ms->tag);
 	ss->thinglist = NULL;
     }
-	
+
     W_ReleaseLumpNum(lump);
+#endif
 }
 
 
@@ -342,20 +443,46 @@ void P_LoadNodes (int lump)
 	
     numnodes = W_LumpLength (lump) / sizeof(mapnode_t);
 #ifdef PICO2_TINY_HUD
-    /* E1M1 ≈ 191 nodes × 52 B = 10 KB. Pin 240 for headroom. */
-    static node_t _pico2_nodes_buf[240];
+    /* E1M1 has 191 nodes. Pin 200 × 52 B = 10.4 KB. */
+    static node_t _pico2_nodes_buf[200];
     if (numnodes > (int)(sizeof(_pico2_nodes_buf)/sizeof(node_t)))
         I_Error("nodes %d > %d", numnodes,
                 (int)(sizeof(_pico2_nodes_buf)/sizeof(node_t)));
     nodes = _pico2_nodes_buf;
+    /* Stream NODES — E1M1 ~5.3 KB transient. */
+    {
+        mapnode_t chunk[64];
+        extern wad_file_t *g_lump_wad;
+        unsigned int pos = (unsigned int)lumpinfo[lump].position;
+        int processed = 0;
+        no = nodes;
+        while (processed < numnodes) {
+            int n = numnodes - processed;
+            if (n > 64) n = 64;
+            W_Read(g_lump_wad, pos + processed * sizeof(mapnode_t),
+                   chunk, n * sizeof(mapnode_t));
+            mn = chunk;
+            for (i = 0; i < n; i++, no++, mn++) {
+                no->x  = SHORT(mn->x)  << FRACBITS;
+                no->y  = SHORT(mn->y)  << FRACBITS;
+                no->dx = SHORT(mn->dx) << FRACBITS;
+                no->dy = SHORT(mn->dy) << FRACBITS;
+                for (j = 0; j < 2; j++) {
+                    no->children[j] = SHORT(mn->children[j]);
+                    for (k = 0; k < 4; k++)
+                        no->bbox[j][k] = SHORT(mn->bbox[j][k]) << FRACBITS;
+                }
+            }
+            processed += n;
+        }
+    }
 #else
     nodes = Z_Malloc (numnodes*sizeof(node_t),PU_LEVEL,0);
-#endif
     data = W_CacheLumpNum (lump,PU_STATIC);
-	
+
     mn = (mapnode_t *)data;
     no = nodes;
-    
+
     for (i=0 ; i<numnodes ; i++, no++, mn++)
     {
 	no->x = SHORT(mn->x)<<FRACBITS;
@@ -369,8 +496,9 @@ void P_LoadNodes (int lump)
 		no->bbox[j][k] = SHORT(mn->bbox[j][k])<<FRACBITS;
 	}
     }
-	
+
     W_ReleaseLumpNum(lump);
+#endif
 }
 
 
@@ -445,9 +573,8 @@ void P_LoadLineDefs (int lump)
 	
     numlines = W_LumpLength (lump) / sizeof(maplinedef_t);
 #ifdef PICO2_TINY_HUD
-    /* E1M1 actually has 475 linedefs (not 270 — comment was wrong).
-       Pin 512 × 64 B = 32 KB. */
-    static line_t _pico2_lines_buf[512];
+    /* E1M1 has 475 linedefs. Pin 480 × 64 B = 30 KB tight. */
+    static line_t _pico2_lines_buf[480];
     if (numlines > (int)(sizeof(_pico2_lines_buf)/sizeof(line_t)))
         I_Error("lines %d > %d", numlines,
                 (int)(sizeof(_pico2_lines_buf)/sizeof(line_t)));
@@ -597,9 +724,8 @@ void P_LoadSideDefs (int lump)
        alloc that fits in our zone budget — pin to .bss for E1M1
        (target ~300 sides × 28 B = 8400 B; round up to 16 KB to
        cover any reasonable shareware map). */
-    /* 720 × 20 B = 14.4 KB; E1M1 has ~666 sidedefs so 384 was way
-       too small. 720 covers other shareware maps too. */
-    static side_t _pico2_sides_buf[720];
+    /* E1M1 has 648 sidedefs. Pin 672 × 20 B = 13.4 KB tight. */
+    static side_t _pico2_sides_buf[672];
     if (numsides > (int)(sizeof(_pico2_sides_buf)/sizeof(side_t)))
         I_Error("sides %d > %d", numsides,
                 (int)(sizeof(_pico2_sides_buf)/sizeof(side_t)));

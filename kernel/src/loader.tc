@@ -64,7 +64,12 @@ fn read_task_header_stack(img_addr: u32) -> i32 {
 // which would kmalloc megabytes and OOM the kernel arena.
 var TASK_ARENA_MAX: i32 = 16777216;  // 16 MB (DOOM zone wants ~5 MB up front)
 var TASK_STACK_MAX: i32 = 131072;   // 128 KB
-var TASK_ARENA_MIN: i32 = 4096;     // 4 KB
+// K22 path-A: lowered from 4096 to 1024 so gcc_doom_pico2 (which uses
+// picolibc-managed heap, not the K3 arena) can declare a tiny arena
+// and keep make_task's single allocation under the 4-KB KM_PAGE
+// rounding boundary. TC tasks that genuinely need a 4-KB runtime
+// arena still declare 4096 in their task.mk.
+var TASK_ARENA_MIN: i32 = 1024;     // 1 KB
 var TASK_STACK_MIN: i32 = 1024;     // 1 KB
 
 fn load_fd_header_ok(arena: i32, stack: i32) -> bool {

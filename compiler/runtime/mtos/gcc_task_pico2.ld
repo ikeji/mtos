@@ -66,11 +66,10 @@ ENTRY(_start)
    re-links gcc_doom_pico2 after mkfs decides its position. */
 MEMORY {
     FLASH (rx)  : ORIGIN = 0x100f66f0, LENGTH = 512K
-    /* K22 path-A: kernel __arena shrunk 64 → 40 KB to grow gcc_sram
-       by 24 KB. heap now ~85 KB; supports DEFAULT_RAM 80 KB zone +
-       picolibc slack so R_Init (60 KB PU_STATIC residue) +
-       R_InitSprites (~19 KB) all fit. */
-    RAM   (rwx) : ORIGIN = 0x2000A000, LENGTH = 472K
+    /* K22 path-A B1: __arena 32 KB (smallest that doesn't kernel-
+       OOM at boot) and gcc_sram 480 KB. heap ~18 KB after the
+       segs[768] / colcache 22 KB / lumpinfo / etc .bss tax. */
+    RAM   (rwx) : ORIGIN = 0x20008000, LENGTH = 480K
 }
 
 SECTIONS {

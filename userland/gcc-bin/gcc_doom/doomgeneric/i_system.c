@@ -100,11 +100,13 @@
    slack for the rest of R_Init (R_InitFlats / R_InitSpriteLumps /
    R_InitColormaps / R_InitLightTables). picolibc has 7 KB left for
    FILE struct + small mallocs. */
-/* heap = 78 KB. Leave 5 KB for picolibc fopen FILE struct +
-   printf buffer; zone takes 73 KB. SIDEDEFS/LINEDEFS lump caches
-   are now streamed so peak zone demand = R_Init PU_STATIC (~60 KB)
-   + smaller lump caches (~7 KB) + PU_LEVEL bookkeeping (~5 KB). */
-#define DEFAULT_RAM 73  /* KiB */
+/* K22 path-A B2 (colcache + sprites pinned): heap ≈ 25 KB. R_Init
+   residue ~20 KB (with colcache removed) - sprites pinned ~3 KB =
+   ~17 KB residue. zone 22 KB + 3 KB picolibc fits. */
+/* heap = 23.6 KB. zone = 22 KB leaves ~1.6 KB picolibc — that just
+   barely fits fopen + printf scratch. Pushing to 24 starves fopen
+   (saw "IWAD not found"). */
+#define DEFAULT_RAM 22  /* KiB */
 #define MIN_RAM     16  /* KiB */
 #define ZONE_UNIT   1024
 #else

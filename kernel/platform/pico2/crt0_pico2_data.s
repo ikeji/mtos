@@ -6,10 +6,10 @@
 #   0x20000000 .. 0x20000120: .data (small, copied from flash, ~288 B)
 #   0x20000120 .. 0x200001E4: kernel .bss head (_trap_frame +
 #                              _kern_save + _switch_frame ≈ 196 B)
-#   0x200001E4 .. 0x2000A000: __arena, ~39.5 KB kmalloc pool (just
-#                              enough for sh + minimal redir + DOOM
-#                              spawn; mr -a uploads will OOM)
-#   0x2000A000 .. 0x20080000: __gcc_sram, 472 KB SRAM block reserved
+#   0x200001E4 .. 0x20008000: __arena, ~31.5 KB kmalloc pool (just
+#                              enough for kernel startup + DOOM spawn;
+#                              console/sh boot still OOM)
+#   0x20008000 .. 0x20080000: __gcc_sram, 480 KB SRAM block reserved
 #                              for one gcc-built guest task at a time.
 #                              K22 path-A: 64 KB DG_ScreenBuffer +
 #                              ~280 KB other .bss + 16 KB stack + 60+
@@ -27,7 +27,7 @@
 # li a1 below) before re-running pico2 self-replicate.
 #
 # Must stay in sync with platform_pico2.s's `li a1, N` runtime_init
-# argument (currently 40412).
+# argument (currently 32284).
     .data
     .globl __data_end
 __data_end:
@@ -41,7 +41,7 @@ _switch_frame:
     .space 4
     .globl __arena
 __arena:
-    .space 40412
+    .space 32284
     .globl __gcc_sram
 __gcc_sram:
-    .space 483328
+    .space 491520

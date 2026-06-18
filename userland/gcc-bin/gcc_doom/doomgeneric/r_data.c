@@ -567,7 +567,8 @@ void R_InitTextures (void)
        little headroom without wasting heap. Anything bigger only
        hurts the picolibc heap budget (lumpinfo realloc is the
        tightest customer). */
-    static unsigned char _pico2_texture1_buf[12288];
+    /* DOOM Shareware TEXTURE1 ≈ 9234 B. Pin 10240 for tightness. */
+    static unsigned char _pico2_texture1_buf[10240];
     {
         extern wad_file_t *g_lump_wad;
         int t1lump = W_GetNumForName(DEH_String("TEXTURE1"));
@@ -672,8 +673,34 @@ void R_InitTextures (void)
 			 texture->name);
 	    }
 	}		
+#ifdef PICO2_TINY_HUD
+	/* K22 path-A B1: bump-allocate the per-texture column tables from
+	   a single .bss arena instead of 125 individual Z_Malloc PU_STATIC
+	   allocations. Each Z_Malloc carries a 24-byte memblock_t header;
+	   eliminating 250 of them frees ~6 KB header overhead on top of
+	   the data payload. Empirical: E1M1 reached tex 68 with 6104
+	   cols consumed, so ~125 textures need ~11.3k cols total. Pin
+	   11264 shorts (22 KB each table = 44 KB total .bss). */
+	{
+	    /* K22 path-A: 11008 shorts (21.5 KB each table = 43 KB total).
+	       Empirical: shareware DOOM E1M1 used 10776 cols total
+	       (tex 124 ended at off 10776). Bump to next 256-aligned
+	       size with a tiny margin. */
+	    static short          _pico2_colcache_lump[11008];
+	    static unsigned short _pico2_colcache_ofs[11008];
+	    static int            _pico2_colcache_off  = 0;
+	    if (_pico2_colcache_off + texture->width >
+	        (int)(sizeof(_pico2_colcache_lump)/sizeof(short)))
+	        I_Error("colcache overflow at tex %d width %d (off %d)",
+	                i, texture->width, _pico2_colcache_off);
+	    texturecolumnlump[i] = &_pico2_colcache_lump[_pico2_colcache_off];
+	    texturecolumnofs[i]  = &_pico2_colcache_ofs[_pico2_colcache_off];
+	    _pico2_colcache_off += texture->width;
+	}
+#else
 	texturecolumnlump[i] = Z_Malloc (texture->width*sizeof(**texturecolumnlump), PU_STATIC,0);
 	texturecolumnofs[i] = Z_Malloc (texture->width*sizeof(**texturecolumnofs), PU_STATIC,0);
+#endif
 
 	j = 1;
 	while (j*2 <= texture->width)
