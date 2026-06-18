@@ -812,19 +812,24 @@ void P_SpawnMapThing (mapthing_t* mthing)
     }
 
 #ifdef PICO2_TINY_HUD
-    /* K22 path-A B5: skip decorations / non-essential mobjs to stay
-       under the 22 KB PU_LEVEL zone budget. Keep only the player +
-       items (MF_SPECIAL pickups) + monsters (MF_COUNTKILL). E1M1
-       has 138 things; only ~36 are player+items in skill 2 + no
-       monsters. Pure-decoration corpses, lamps, hangars (~88) are
-       skipped — the map looks empty but renders. */
+    /* K22 path-A B5: skip ALL non-essential mobjs to stay under the
+       18 KB PU_LEVEL zone budget. Keep ONLY the player + MF_SPECIAL
+       (pickup) items. Monsters are off via -nomonsters; decorations
+       (corpses, lamps, hangars, candles) get skipped here. E1M1
+       drops from 138 to ~31 mobjs (1 player + ~30 items). */
     {
         int flags = mobjinfo[i].flags;
-        if (i != MT_PLAYER
-            && !(flags & MF_SPECIAL)
-            && !(flags & MF_COUNTKILL)
-            && !(flags & MF_COUNTITEM))
+        if (i != MT_PLAYER && !(flags & MF_SPECIAL))
             return;
+    }
+    /* Hard cap on map-thing mobjs to fit the 14 KB zone after
+       R_Init residue (~11.6 KB). 8 items × 168 = 1.3 KB; rest
+       silently drop. Player is via P_SpawnPlayer (uncapped). */
+    {
+        static int _pico2_thing_spawn_count = 0;
+        if (_pico2_thing_spawn_count >= 8)
+            return;
+        _pico2_thing_spawn_count++;
     }
 #endif
 

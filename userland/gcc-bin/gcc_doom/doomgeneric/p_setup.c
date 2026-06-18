@@ -1211,8 +1211,18 @@ P_SetupLevel
     //	UNUSED P_ConnectSubsectors ();
 
     // preload graphics
+#ifdef PICO2_TINY_HUD
+    /* K22 path-A C3: R_PrecacheLevel W_CacheLumpNum's every flat,
+       wall patch, and sprite patch as PU_CACHE — 4 KB each, dozens
+       of them. Our 14 KB zone can't fit even one, so the first
+       FLOOR alloc OOMs. We've pinned the relevant patch/flat/sprite
+       buffers in .bss for on-demand load, so the precache is
+       unnecessary anyway. */
+    (void)precache;
+#else
     if (precache)
 	R_PrecacheLevel ();
+#endif
 
     //printf ("free memory: 0x%x\n", Z_FreeMemory());
 

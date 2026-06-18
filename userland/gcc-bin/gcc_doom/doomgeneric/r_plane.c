@@ -436,7 +436,26 @@ void R_DrawPlanes (void)
 	
 	// regular flat
         lumpnum = firstflat + flattranslation[pl->picnum];
+#ifdef PICO2_TINY_HUD
+	/* K22 path-A C3: read flat (64×64 = 4096 B) into a pinned
+	   .bss buffer instead of W_CacheLumpNum-ing it into the
+	   PU_STATIC zone. The zone can't fit a 4 KB alloc after
+	   R_Init residue + PU_LEVEL mobjs. The buffer is reused
+	   plane-by-plane — by the time we move to the next plane
+	   ds_source's contents from the previous one are no longer
+	   referenced. */
+	{
+	    static unsigned char _pico2_flat_buf[4096];
+	    int sz = lumpinfo[lumpnum].size;
+	    if (sz > (int)sizeof(_pico2_flat_buf))
+	        I_Error("flat %d > %d", sz,
+	                (int)sizeof(_pico2_flat_buf));
+	    W_ReadLump(lumpnum, _pico2_flat_buf);
+	    ds_source = _pico2_flat_buf;
+	}
+#else
 	ds_source = W_CacheLumpNum(lumpnum, PU_STATIC);
+#endif
 	
 	planeheight = abs(pl->height-viewz);
 	light = (pl->lightlevel >> LIGHTSEGSHIFT)+extralight;
@@ -462,6 +481,10 @@ void R_DrawPlanes (void)
 			pl->bottom[x]);
 	}
 	
+#ifdef PICO2_TINY_HUD
+	/* flat lives in .bss; no zone alloc to release. */
+#else
         W_ReleaseLumpNum(lumpnum);
+#endif
     }
 }

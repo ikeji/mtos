@@ -103,12 +103,12 @@
 /* K22 path-A B2 (colcache + sprites pinned): heap ≈ 25 KB. R_Init
    residue ~20 KB (with colcache removed) - sprites pinned ~3 KB =
    ~17 KB residue. zone 22 KB + 3 KB picolibc fits. */
-/* K22 path-A B4+B3: B4 pinned textures[i] (.bss +8 KB, zone -10 KB)
-   and B3 shrunk DG_ScreenBuffer to 320×168 (-10 KB .bss). heap is
-   now ~26 KB. DEFAULT_RAM = 22 covers R_Init residue (~7 KB after
-   B4) + P_SetupLevel mobj spawns (~21 KB for E1M1 things). */
-#define DEFAULT_RAM 22  /* KiB */
-#define MIN_RAM     10  /* KiB */
+/* K22 path-A C3 (+sprite pin): heap → 16.6 KB after flat 4 KB +
+   sprite 4 KB pins. Zone 14 KB leaves ~2.6 KB picolibc. zone now
+   only needs R_Init residue ~11.6 KB + 12 mobjs ~2 KB + thinkers
+   = ~13.7 KB. */
+#define DEFAULT_RAM 14  /* KiB */
+#define MIN_RAM     8   /* KiB */
 #define ZONE_UNIT   1024
 #else
 #define DEFAULT_RAM 6 /* MiB */

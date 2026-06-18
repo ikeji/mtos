@@ -409,21 +409,33 @@ void R_GenerateLookup (int texnum)
 	    return;
 	}
 	// I_Error ("R_GenerateLookup: column without a patch");
-	
+
+#ifdef PICO2_TINY_HUD
+	/* K22 path-A C3: skip the composite-cache path entirely.
+	   Multi-patch columns normally trigger an R_GenerateComposite
+	   call that Z_Malloc's texture->width*height bytes — too big
+	   for the 22 KB zone (one composite easily blows 4-32 KB).
+	   By keeping collump[x] pointing at the last patch that
+	   covered the column, R_GetColumn reads patch data directly
+	   from the WAD instead. Visually wrong for multi-patch
+	   textures (sky overlays, door bolt overlays) but the
+	   geometry renders. */
+#else
 	if (patchcount[x] > 1)
 	{
 	    // Use the cached block.
-	    collump[x] = -1;	
+	    collump[x] = -1;
 	    colofs[x] = texturecompositesize[texnum];
-	    
+
 	    if (texturecompositesize[texnum] > 0x10000-texture->height)
 	    {
 		I_Error ("R_GenerateLookup: texture %i is >64k",
 			 texnum);
 	    }
-	    
+
 	    texturecompositesize[texnum] += texture->height;
 	}
+#endif
     }
 
     Z_Free(patchcount);
@@ -435,6 +447,18 @@ void R_GenerateLookup (int texnum)
 //
 // R_GetColumn
 //
+#ifdef PICO2_TINY_HUD
+/* K22 path-A C3: per-column stream. The W_CacheLumpNum(PU_CACHE)
+   path is the last big zone consumer in the render loop — wall
+   patches are 1-8 KB each and the zone (18 KB total, 14 KB live
+   after R_Init residue + 12 mobjs) can't fit one. Reading one
+   column at a time from the patch's file position keeps draw-time
+   memory to a single 512-byte .bss scratch. Per-frame disk I/O
+   goes up substantially but the scene renders. */
+#define _PICO2_COL_BUF_SIZE 512
+static unsigned char _pico2_col_buf[_PICO2_COL_BUF_SIZE];
+#endif
+
 byte*
 R_GetColumn
 ( int		tex,
@@ -442,13 +466,25 @@ R_GetColumn
 {
     int		lump;
     int		ofs;
-	
+
     col &= texturewidthmask[tex];
     lump = texturecolumnlump[tex][col];
     ofs = texturecolumnofs[tex][col];
-    
-    if (lump > 0)
+
+    if (lump > 0) {
+#ifdef PICO2_TINY_HUD
+        /* ofs = (column position inside patch) + 3. Read the column
+           starting at the post header. The caller (R_DrawColumn etc.)
+           uses ofs's "+3" to skip topdelta/length/pad and land on
+           pixel data — so we return the buffer + 3 to preserve that. */
+        extern wad_file_t *g_lump_wad;
+        unsigned int pos = (unsigned int)(lumpinfo[lump].position + ofs - 3);
+        W_Read(g_lump_wad, pos, _pico2_col_buf, _PICO2_COL_BUF_SIZE);
+        return _pico2_col_buf + 3;
+#else
 	return (byte *)W_CacheLumpNum(lump,PU_CACHE)+ofs;
+#endif
+    }
 
     if (!texturecomposite[tex])
 	R_GenerateComposite (tex);

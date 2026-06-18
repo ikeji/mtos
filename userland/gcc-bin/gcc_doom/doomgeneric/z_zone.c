@@ -195,7 +195,7 @@ Z_Malloc
     void *result;
 
     size = (size + MEM_ALIGN - 1) & ~(MEM_ALIGN - 1);
-    
+
     // scan through the block list,
     // looking for the first free block
     // of sufficient size,
