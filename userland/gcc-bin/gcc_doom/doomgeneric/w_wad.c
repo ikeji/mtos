@@ -104,36 +104,60 @@ static void ExtendLumpInfo(int newnumlumps)
     lumpinfo_t *newlumpinfo;
     unsigned int i;
 
+#ifdef PICO2_TINY_HUD
+    /* Real doom1.wad shareware has 1168 lumps × sizeof(lumpinfo_t)
+       (= 24 B under PICO2_LUMPINFO_SHRUNK) = 28 KB. Pin 1280 entries
+       (30 KB) to .bss instead of calloc — picolibc heap can only
+       hand out ~8 KB after Z_Init takes ~28 KB. */
+    static lumpinfo_t _pico2_lumpinfo_buf[1280];
+    if (newnumlumps > (int)(sizeof(_pico2_lumpinfo_buf)/sizeof(lumpinfo_t)))
+        I_Error("lumpinfo %d > %d", newnumlumps,
+                (int)(sizeof(_pico2_lumpinfo_buf)/sizeof(lumpinfo_t)));
+    newlumpinfo = _pico2_lumpinfo_buf;
+    if (lumpinfo == newlumpinfo) {
+        /* Already pinned; just extend in place (memcpy below would be
+           a no-op self-copy). Zero the freshly grown tail. */
+        memset(&newlumpinfo[numlumps], 0,
+               (newnumlumps - numlumps) * sizeof(lumpinfo_t));
+    } else {
+        memset(newlumpinfo, 0, newnumlumps * sizeof(lumpinfo_t));
+    }
+#else
     newlumpinfo = calloc(newnumlumps, sizeof(lumpinfo_t));
 
     if (newlumpinfo == NULL)
     {
 	I_Error ("Couldn't realloc lumpinfo");
     }
+#endif
 
     // Copy over lumpinfo_t structures from the old array. If any of
     // these lumps have been cached, we need to update the user
     // pointers to the new location.
-    for (i = 0; i < numlumps && i < newnumlumps; ++i)
-    {
-        memcpy(&newlumpinfo[i], &lumpinfo[i], sizeof(lumpinfo_t));
-
-        if (newlumpinfo[i].cache != NULL)
+    if (newlumpinfo != lumpinfo) {
+        for (i = 0; i < numlumps && i < (unsigned)newnumlumps; ++i)
         {
-            Z_ChangeUser(newlumpinfo[i].cache, &newlumpinfo[i].cache);
-        }
+            memcpy(&newlumpinfo[i], &lumpinfo[i], sizeof(lumpinfo_t));
 
-        // We shouldn't be generating a hash table until after all WADs have
-        // been loaded, but just in case...
-        if (lumpinfo[i].next != NULL)
-        {
-            int nextlumpnum = lumpinfo[i].next - lumpinfo;
-            newlumpinfo[i].next = &newlumpinfo[nextlumpnum];
+            if (newlumpinfo[i].cache != NULL)
+            {
+                Z_ChangeUser(newlumpinfo[i].cache, &newlumpinfo[i].cache);
+            }
+
+            // We shouldn't be generating a hash table until after all WADs have
+            // been loaded, but just in case...
+            if (lumpinfo[i].next != NULL)
+            {
+                int nextlumpnum = lumpinfo[i].next - lumpinfo;
+                newlumpinfo[i].next = &newlumpinfo[nextlumpnum];
+            }
         }
+#ifndef PICO2_TINY_HUD
+        free(lumpinfo);
+#endif
     }
 
     // All done.
-    free(lumpinfo);
     lumpinfo = newlumpinfo;
     numlumps = newnumlumps;
 }

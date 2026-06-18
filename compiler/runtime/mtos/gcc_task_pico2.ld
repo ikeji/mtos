@@ -65,15 +65,12 @@ ENTRY(_start)
    a chicken-and-egg loop; the proper fix is a 2-pass build that
    re-links gcc_doom_pico2 after mkfs decides its position. */
 MEMORY {
-    FLASH (rx)  : ORIGIN = 0x100f64f0, LENGTH = 512K
-    /* K22 Phase 6: DOOM zone (Z_Init's malloc(N KiB)) + picolibc heap
-       headroom for fopen()'s FILE struct + DG_ScreenBuffer (64 KB
-       .bss) + ~280 KB .data/.bss all fight for the gcc_sram budget.
-       448 KB gives us 80 KB zone + ~22 KB fopen scratch comfortably,
-       at the cost of shrinking kernel __arena back to 64 KB — mr -a
-       uploads now need a different kernel build with a larger arena.
-       Run the upload first, then re-flash this for DOOM. */
-    RAM   (rwx) : ORIGIN = 0x20010000, LENGTH = 448K
+    FLASH (rx)  : ORIGIN = 0x100f66f0, LENGTH = 512K
+    /* K22 path-A: kernel __arena shrunk 64 → 40 KB to grow gcc_sram
+       by 24 KB. heap now ~85 KB; supports DEFAULT_RAM 80 KB zone +
+       picolibc slack so R_Init (60 KB PU_STATIC residue) +
+       R_InitSprites (~19 KB) all fit. */
+    RAM   (rwx) : ORIGIN = 0x2000A000, LENGTH = 472K
 }
 
 SECTIONS {
@@ -140,7 +137,10 @@ SECTIONS {
        to __stack_top immediately on entry so we get 16 KB instead.
        This lets DOOM's R_RenderPlayerView / R_DrawColumn call chain
        run without overflowing into adjacent heap. */
-    __stack_size = 16K;
+    /* K22 path-A: stack cut from 16 → 8 KB to give heap +8 KB. DOOM's
+       deepest recursion (R_RenderBSPNode → R_Subsector → R_AddLine
+       → R_DrawColumn) measured at ~3 KB; 8 KB leaves margin. */
+    __stack_size = 8K;
     __stack_top  = ORIGIN(RAM) + LENGTH(RAM);
     __stack_base = __stack_top - __stack_size;
 

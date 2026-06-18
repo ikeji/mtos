@@ -6,17 +6,14 @@
 #   0x20000000 .. 0x20000120: .data (small, copied from flash, ~288 B)
 #   0x20000120 .. 0x200001E4: kernel .bss head (_trap_frame +
 #                              _kern_save + _switch_frame ≈ 196 B)
-#   0x200001E4 .. 0x20010000: __arena, ~63 KB kmalloc pool (small —
-#                              just enough for sh + minimal redir; new
-#                              mr -a uploads will OOM, so the WAD must
-#                              already be on /sd before flashing this)
-#   0x20010000 .. 0x20080000: __gcc_sram, 448 KB SRAM block reserved
-#                              for one gcc-built guest task at a time
-#                              (gcc_doom_pico2's .data + .bss live
-#                              here at link-time VMA). Not part of
-#                              kmalloc's working set — gcc tasks write
-#                              to it directly via absolute lui+addi
-#                              addressing baked at link time.
+#   0x200001E4 .. 0x2000A000: __arena, ~39.5 KB kmalloc pool (just
+#                              enough for sh + minimal redir + DOOM
+#                              spawn; mr -a uploads will OOM)
+#   0x2000A000 .. 0x20080000: __gcc_sram, 472 KB SRAM block reserved
+#                              for one gcc-built guest task at a time.
+#                              K22 path-A: 64 KB DG_ScreenBuffer +
+#                              ~280 KB other .bss + 16 KB stack + 60+
+#                              KB DOOM zone = fits with picolibc slack.
 #   0x20080000 .. 0x20082000: kernel stack (8 KB reserved in
 #                              platform_pico2.s, sp starts at 0x20082000)
 #
@@ -30,7 +27,7 @@
 # li a1 below) before re-running pico2 self-replicate.
 #
 # Must stay in sync with platform_pico2.s's `li a1, N` runtime_init
-# argument (currently 196124).
+# argument (currently 40412).
     .data
     .globl __data_end
 __data_end:
@@ -44,7 +41,7 @@ _switch_frame:
     .space 4
     .globl __arena
 __arena:
-    .space 64988
+    .space 40412
     .globl __gcc_sram
 __gcc_sram:
-    .space 458752
+    .space 483328

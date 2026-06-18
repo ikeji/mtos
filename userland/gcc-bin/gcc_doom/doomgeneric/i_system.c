@@ -94,7 +94,17 @@
    the title-screen path; autostart needs ~112 KiB to fit all
    PU_LEVEL allocs (still fails) so the trade-off remained title
    only for now. */
-#define DEFAULT_RAM 112 /* KiB */
+/* K22 path-A: PICO2_DISABLE_HUD freed 42 KB .bss → heap is now
+   ~61 KB. Push DEFAULT_RAM to 54 KB so R_InitTextures' 125-iteration
+   PU_STATIC sequence (each texture ≈ 300 B Z_Malloc) clears with
+   slack for the rest of R_Init (R_InitFlats / R_InitSpriteLumps /
+   R_InitColormaps / R_InitLightTables). picolibc has 7 KB left for
+   FILE struct + small mallocs. */
+/* heap = 78 KB. Leave 5 KB for picolibc fopen FILE struct +
+   printf buffer; zone takes 73 KB. SIDEDEFS/LINEDEFS lump caches
+   are now streamed so peak zone demand = R_Init PU_STATIC (~60 KB)
+   + smaller lump caches (~7 KB) + PU_LEVEL bookkeeping (~5 KB). */
+#define DEFAULT_RAM 73  /* KiB */
 #define MIN_RAM     16  /* KiB */
 #define ZONE_UNIT   1024
 #else

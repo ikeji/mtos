@@ -60,8 +60,12 @@ static void _nanosleep_ms(uint32_t ms)
    not full ARGB. We look up the converted RGB triple from i_video.c's
    `colors[]` global, which I_SetPalette populates from PLAYPAL +
    gammatable. */
-#define FB_X_OFFSET   80
-#define FB_Y_OFFSET   60
+/* LCD landscape is 480×320. DOOM renders at DOOMGENERIC_RESX×RESY;
+   center it: x_offset = (480 - RESX) / 2, y_offset = (320 - RESY) / 2.
+   K22 path-A dropped from 320×200 (80,60 offsets) to 256×160 to free
+   22 KB .bss for the picolibc heap. */
+#define FB_X_OFFSET   ((480 - DOOMGENERIC_RESX) / 2)
+#define FB_Y_OFFSET   ((320 - DOOMGENERIC_RESY) / 2)
 #define FB_BAND_H     8
 #define FB_BAND_BYTES (10 + DOOMGENERIC_RESX * FB_BAND_H * 2)
 

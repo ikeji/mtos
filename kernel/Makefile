@@ -38,6 +38,14 @@ EXTRA_TASK_BINS := $(foreach t,$(EXTRA_GUEST_TASKS),$(USERLAND_BUILD)/tasks/$(t)
 ALL_TASK_BINS   := $(GUEST_TASK_BINS) $(EXTRA_TASK_BINS)
 
 # ----- Cross-sub delegation: build artifacts in compiler / userland on demand -----
+# IMPORTANT: do NOT make these order-only prerequisites (| _userland-tasks).
+# Order-only deps only fire when the target file doesn't exist — once a
+# .bin lands the sub-make is never invoked again, so .c-level changes
+# in userland never propagate into the kernel image. K22 burned hours
+# on stale-binary debugging because of exactly that. Use a normal
+# (non-order-only) prerequisite so the .PHONY target re-runs on every
+# build; the sub-make then does the real dependency tracking inside
+# userland.
 .PHONY: _compiler-gen2 _compiler-kern-tools _userland-tasks _userland-shared
 _compiler-gen2:
 	$(MAKE) -C $(ROOT)/compiler gen2
@@ -48,10 +56,10 @@ _userland-tasks:
 _userland-shared:
 	$(MAKE) -C $(ROOT)/userland shared
 
-$(GEN2_TOOLS):     | _compiler-gen2
-$(KERN_TOOLS):     | _compiler-kern-tools
-$(ALL_TASK_BINS):  | _userland-tasks
-$(SHARED_S):       | _userland-shared
+$(GEN2_TOOLS):     _compiler-gen2
+$(KERN_TOOLS):     _compiler-kern-tools
+$(ALL_TASK_BINS):  _userland-tasks
+$(SHARED_S):       _userland-shared
 
 # ----- Kernel sources -----
 KERNEL_TC_SOURCES := $(wildcard $(ROOT)/kernel/src/*.tc) \

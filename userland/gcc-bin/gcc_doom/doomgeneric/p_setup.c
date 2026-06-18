@@ -126,8 +126,17 @@ void P_LoadVertexes (int lump)
     //  total lump length / vertex record length.
     numvertexes = W_LumpLength (lump) / sizeof(mapvertex_t);
 
+#ifdef PICO2_TINY_HUD
+    /* E1M1 ≈ 470 vertexes × 8 B = 3.8 KB. Pin 560 for headroom. */
+    static vertex_t _pico2_vertexes_buf[560];
+    if (numvertexes > (int)(sizeof(_pico2_vertexes_buf)/sizeof(vertex_t)))
+        I_Error("vertexes %d > %d", numvertexes,
+                (int)(sizeof(_pico2_vertexes_buf)/sizeof(vertex_t)));
+    vertexes = _pico2_vertexes_buf;
+#else
     // Allocate zone memory for buffer.
-    vertexes = Z_Malloc (numvertexes*sizeof(vertex_t),PU_LEVEL,0);	
+    vertexes = Z_Malloc (numvertexes*sizeof(vertex_t),PU_LEVEL,0);
+#endif
 
     // Load data into cache.
     data = W_CacheLumpNum (lump, PU_STATIC);
@@ -181,7 +190,16 @@ void P_LoadSegs (int lump)
     int                 sidenum;
 	
     numsegs = W_LumpLength (lump) / sizeof(mapseg_t);
-    segs = Z_Malloc (numsegs*sizeof(seg_t),PU_LEVEL,0);	
+#ifdef PICO2_TINY_HUD
+    /* E1M1 ≈ 248 segs × 32 B = 8 KB. Pin 320 for headroom. */
+    static seg_t _pico2_segs_buf[320];
+    if (numsegs > (int)(sizeof(_pico2_segs_buf)/sizeof(seg_t)))
+        I_Error("segs %d > %d", numsegs,
+                (int)(sizeof(_pico2_segs_buf)/sizeof(seg_t)));
+    segs = _pico2_segs_buf;
+#else
+    segs = Z_Malloc (numsegs*sizeof(seg_t),PU_LEVEL,0);
+#endif
     memset (segs, 0, numsegs*sizeof(seg_t));
     data = W_CacheLumpNum (lump,PU_STATIC);
 	
@@ -241,7 +259,16 @@ void P_LoadSubsectors (int lump)
     subsector_t*	ss;
 	
     numsubsectors = W_LumpLength (lump) / sizeof(mapsubsector_t);
-    subsectors = Z_Malloc (numsubsectors*sizeof(subsector_t),PU_LEVEL,0);	
+#ifdef PICO2_TINY_HUD
+    /* E1M1 ≈ 192 subsectors × 8 B = 1.5 KB. Pin 256. */
+    static subsector_t _pico2_subsectors_buf[256];
+    if (numsubsectors > (int)(sizeof(_pico2_subsectors_buf)/sizeof(subsector_t)))
+        I_Error("subsectors %d > %d", numsubsectors,
+                (int)(sizeof(_pico2_subsectors_buf)/sizeof(subsector_t)));
+    subsectors = _pico2_subsectors_buf;
+#else
+    subsectors = Z_Malloc (numsubsectors*sizeof(subsector_t),PU_LEVEL,0);
+#endif
     data = W_CacheLumpNum (lump,PU_STATIC);
 	
     ms = (mapsubsector_t *)data;
@@ -270,7 +297,16 @@ void P_LoadSectors (int lump)
     sector_t*		ss;
 	
     numsectors = W_LumpLength (lump) / sizeof(mapsector_t);
-    sectors = Z_Malloc (numsectors*sizeof(sector_t),PU_LEVEL,0);	
+#ifdef PICO2_TINY_HUD
+    /* E1M1 ≈ 89 sectors × 88 B = 7.8 KB. Pin 100. */
+    static sector_t _pico2_sectors_buf[100];
+    if (numsectors > (int)(sizeof(_pico2_sectors_buf)/sizeof(sector_t)))
+        I_Error("sectors %d > %d", numsectors,
+                (int)(sizeof(_pico2_sectors_buf)/sizeof(sector_t)));
+    sectors = _pico2_sectors_buf;
+#else
+    sectors = Z_Malloc (numsectors*sizeof(sector_t),PU_LEVEL,0);
+#endif
     memset (sectors, 0, numsectors*sizeof(sector_t));
     data = W_CacheLumpNum (lump,PU_STATIC);
 	
@@ -305,7 +341,16 @@ void P_LoadNodes (int lump)
     node_t*	no;
 	
     numnodes = W_LumpLength (lump) / sizeof(mapnode_t);
-    nodes = Z_Malloc (numnodes*sizeof(node_t),PU_LEVEL,0);	
+#ifdef PICO2_TINY_HUD
+    /* E1M1 ≈ 191 nodes × 52 B = 10 KB. Pin 240 for headroom. */
+    static node_t _pico2_nodes_buf[240];
+    if (numnodes > (int)(sizeof(_pico2_nodes_buf)/sizeof(node_t)))
+        I_Error("nodes %d > %d", numnodes,
+                (int)(sizeof(_pico2_nodes_buf)/sizeof(node_t)));
+    nodes = _pico2_nodes_buf;
+#else
+    nodes = Z_Malloc (numnodes*sizeof(node_t),PU_LEVEL,0);
+#endif
     data = W_CacheLumpNum (lump,PU_STATIC);
 	
     mn = (mapnode_t *)data;
@@ -400,8 +445,9 @@ void P_LoadLineDefs (int lump)
 	
     numlines = W_LumpLength (lump) / sizeof(maplinedef_t);
 #ifdef PICO2_TINY_HUD
-    /* E1M1 ≈ 270 lines × sizeof(line_t) ≈ 60 B = 16 KB. */
-    static line_t _pico2_lines_buf[400];
+    /* E1M1 actually has 475 linedefs (not 270 — comment was wrong).
+       Pin 512 × 64 B = 32 KB. */
+    static line_t _pico2_lines_buf[512];
     if (numlines > (int)(sizeof(_pico2_lines_buf)/sizeof(line_t)))
         I_Error("lines %d > %d", numlines,
                 (int)(sizeof(_pico2_lines_buf)/sizeof(line_t)));
@@ -410,8 +456,66 @@ void P_LoadLineDefs (int lump)
     lines = Z_Malloc (numlines*sizeof(line_t),PU_LEVEL,0);
 #endif
     memset (lines, 0, numlines*sizeof(line_t));
+#ifdef PICO2_TINY_HUD
+    /* K22 path-A: stream LINEDEFS lump in chunks (≈ 6.7 KB total at
+       E1M1 size; ~14 B per maplinedef_t). 128 entries × 14 B = 1.75 KB
+       chunk. Skips a transient W_CacheLumpNum PU_STATIC alloc that
+       overflows the zone. */
+    {
+        maplinedef_t chunk[128];
+        extern wad_file_t *g_lump_wad;
+        unsigned int pos = (unsigned int)lumpinfo[lump].position;
+        int processed = 0;
+        ld = lines;
+        while (processed < numlines) {
+            int n = numlines - processed;
+            if (n > 128) n = 128;
+            W_Read(g_lump_wad, pos + processed * sizeof(maplinedef_t),
+                   chunk, n * sizeof(maplinedef_t));
+            mld = chunk;
+            for (i = 0; i < n; i++, mld++, ld++) {
+                ld->flags = SHORT(mld->flags);
+                ld->special = SHORT(mld->special);
+                ld->tag = SHORT(mld->tag);
+                v1 = ld->v1 = &vertexes[SHORT(mld->v1)];
+                v2 = ld->v2 = &vertexes[SHORT(mld->v2)];
+                ld->dx = v2->x - v1->x;
+                ld->dy = v2->y - v1->y;
+                if (!ld->dx)
+                    ld->slopetype = ST_VERTICAL;
+                else if (!ld->dy)
+                    ld->slopetype = ST_HORIZONTAL;
+                else if (FixedDiv(ld->dy, ld->dx) > 0)
+                    ld->slopetype = ST_POSITIVE;
+                else
+                    ld->slopetype = ST_NEGATIVE;
+                if (v1->x < v2->x) {
+                    ld->bbox[BOXLEFT]  = v1->x;
+                    ld->bbox[BOXRIGHT] = v2->x;
+                } else {
+                    ld->bbox[BOXLEFT]  = v2->x;
+                    ld->bbox[BOXRIGHT] = v1->x;
+                }
+                if (v1->y < v2->y) {
+                    ld->bbox[BOXBOTTOM] = v1->y;
+                    ld->bbox[BOXTOP]    = v2->y;
+                } else {
+                    ld->bbox[BOXBOTTOM] = v2->y;
+                    ld->bbox[BOXTOP]    = v1->y;
+                }
+                ld->sidenum[0] = SHORT(mld->sidenum[0]);
+                ld->sidenum[1] = SHORT(mld->sidenum[1]);
+                ld->frontsector = (ld->sidenum[0] != -1)
+                    ? sides[ld->sidenum[0]].sector : NULL;
+                ld->backsector  = (ld->sidenum[1] != -1)
+                    ? sides[ld->sidenum[1]].sector : NULL;
+            }
+            processed += n;
+        }
+    }
+#else
     data = W_CacheLumpNum (lump,PU_STATIC);
-	
+
     mld = (maplinedef_t *)data;
     ld = lines;
     for (i=0 ; i<numlines ; i++, mld++, ld++)
@@ -423,7 +527,7 @@ void P_LoadLineDefs (int lump)
 	v2 = ld->v2 = &vertexes[SHORT(mld->v2)];
 	ld->dx = v2->x - v1->x;
 	ld->dy = v2->y - v1->y;
-	
+
 	if (!ld->dx)
 	    ld->slopetype = ST_VERTICAL;
 	else if (!ld->dy)
@@ -435,7 +539,7 @@ void P_LoadLineDefs (int lump)
 	    else
 		ld->slopetype = ST_NEGATIVE;
 	}
-		
+
 	if (v1->x < v2->x)
 	{
 	    ld->bbox[BOXLEFT] = v1->x;
@@ -473,6 +577,7 @@ void P_LoadLineDefs (int lump)
     }
 
     W_ReleaseLumpNum(lump);
+#endif
 }
 
 
@@ -492,8 +597,9 @@ void P_LoadSideDefs (int lump)
        alloc that fits in our zone budget — pin to .bss for E1M1
        (target ~300 sides × 28 B = 8400 B; round up to 16 KB to
        cover any reasonable shareware map). */
-    /* 384 × 20 B = 7.5 KB; E1M1 has ~270 sides so fits comfortably. */
-    static side_t _pico2_sides_buf[384];
+    /* 720 × 20 B = 14.4 KB; E1M1 has ~666 sidedefs so 384 was way
+       too small. 720 covers other shareware maps too. */
+    static side_t _pico2_sides_buf[720];
     if (numsides > (int)(sizeof(_pico2_sides_buf)/sizeof(side_t)))
         I_Error("sides %d > %d", numsides,
                 (int)(sizeof(_pico2_sides_buf)/sizeof(side_t)));
@@ -502,8 +608,38 @@ void P_LoadSideDefs (int lump)
     sides = Z_Malloc (numsides*sizeof(side_t),PU_LEVEL,0);
 #endif
     memset (sides, 0, numsides*sizeof(side_t));
+#ifdef PICO2_TINY_HUD
+    /* K22 path-A: stream-read the SIDEDEFS lump in chunks instead of
+       W_CacheLumpNum (= W_CacheLumpNum allocates the whole 19 KB
+       SIDEDEFS lump into PU_STATIC zone, which overflows the budget).
+       64 entries × 30 B = 1920 B chunk; reads through ~10 chunks for
+       E1M1 (~666 sidedefs). */
+    {
+        mapsidedef_t chunk[64];
+        extern wad_file_t *g_lump_wad;
+        unsigned int pos = (unsigned int)lumpinfo[lump].position;
+        int processed = 0;
+        sd = sides;
+        while (processed < numsides) {
+            int n = numsides - processed;
+            if (n > 64) n = 64;
+            W_Read(g_lump_wad, pos + processed * sizeof(mapsidedef_t),
+                   chunk, n * sizeof(mapsidedef_t));
+            msd = chunk;
+            for (i = 0; i < n; i++, msd++, sd++) {
+                sd->textureoffset = SHORT(msd->textureoffset)<<FRACBITS;
+                sd->rowoffset = SHORT(msd->rowoffset)<<FRACBITS;
+                sd->toptexture = R_TextureNumForName(msd->toptexture);
+                sd->bottomtexture = R_TextureNumForName(msd->bottomtexture);
+                sd->midtexture = R_TextureNumForName(msd->midtexture);
+                sd->sector = &sectors[SHORT(msd->sector)];
+            }
+            processed += n;
+        }
+    }
+#else
     data = W_CacheLumpNum (lump,PU_STATIC);
-	
+
     msd = (mapsidedef_t *)data;
     sd = sides;
     for (i=0 ; i<numsides ; i++, msd++, sd++)
@@ -517,6 +653,7 @@ void P_LoadSideDefs (int lump)
     }
 
     W_ReleaseLumpNum(lump);
+#endif
 }
 
 
@@ -537,7 +674,9 @@ void P_LoadBlockMap (int lump)
        BLOCKMAP lump is ~12 KB; reserve 24 KB to cover other small
        maps too. Without this the 112 KiB zone can't fit a fresh
        P_SetupLevel alongside R_Init's PU_STATIC residue. */
-    static short _pico2_blockmap_buf[7 * 1024];   /* 14 KB shorts */
+    /* K22 path-A: shrunk 7×1024 → 4608 shorts (9 KB) to free 5 KB
+       heap for the DOOM zone. E1M1 BLOCKMAP is ~7.6 KB. */
+    static short _pico2_blockmap_buf[4608];
     if (lumplen > (int)sizeof(_pico2_blockmap_buf))
         I_Error("BLOCKMAP %d > %d", lumplen, (int)sizeof(_pico2_blockmap_buf));
     blockmaplump = _pico2_blockmap_buf;
@@ -566,7 +705,16 @@ void P_LoadBlockMap (int lump)
     // Clear out mobj chains
 
     count = sizeof(*blocklinks) * bmapwidth * bmapheight;
+#ifdef PICO2_TINY_HUD
+    /* E1M1 ≈ 50×50 cells × 4 B ptr = 10 KB. Pin 2800 cells = 11 KB. */
+    static unsigned long _pico2_blocklinks_buf[2800];
+    if (count > (int)sizeof(_pico2_blocklinks_buf))
+        I_Error("blocklinks %d > %d", count,
+                (int)sizeof(_pico2_blocklinks_buf));
+    blocklinks = (mobj_t **)_pico2_blocklinks_buf;
+#else
     blocklinks = Z_Malloc(count, PU_LEVEL, 0);
+#endif
     memset(blocklinks, 0, count);
 }
 
@@ -612,8 +760,19 @@ void P_GroupLines (void)
 	}
     }
 
-    // build line tables for each sector	
+    // build line tables for each sector
+#ifdef PICO2_TINY_HUD
+    /* E1M1 totallines ≈ 700 × 4 B ptr = 2.8 KB. Pin 800. */
+    {
+        static line_t *_pico2_linebuf[800];
+        if (totallines > (int)(sizeof(_pico2_linebuf)/sizeof(line_t *)))
+            I_Error("linebuffer %d > %d", totallines,
+                    (int)(sizeof(_pico2_linebuf)/sizeof(line_t *)));
+        linebuffer = _pico2_linebuf;
+    }
+#else
     linebuffer = Z_Malloc (totallines*sizeof(line_t *), PU_LEVEL, 0);
+#endif
 
     for (i=0; i<numsectors; ++i)
     {
@@ -759,6 +918,22 @@ static void P_LoadReject(int lumpnum)
 
     lumplen = W_LumpLength(lumpnum);
 
+#ifdef PICO2_TINY_HUD
+    /* E1M1 rejectmatrix = (89×89+7)/8 = 991 B. Pin 1.25 KB to cover
+       up to ~100 sectors. Avoids both W_CacheLumpNum's PU_LEVEL alloc
+       and the explicit Z_Malloc path. */
+    {
+        static unsigned char _pico2_rejectmatrix_buf[1280];
+        int copylen = (lumplen < minlength) ? lumplen : minlength;
+        if (minlength > (int)sizeof(_pico2_rejectmatrix_buf))
+            I_Error("rejectmatrix %d > %d", minlength,
+                    (int)sizeof(_pico2_rejectmatrix_buf));
+        rejectmatrix = _pico2_rejectmatrix_buf;
+        W_ReadLump(lumpnum, rejectmatrix);
+        if (copylen < minlength)
+            PadRejectArray(rejectmatrix + copylen, minlength - copylen);
+    }
+#else
     if (lumplen >= minlength)
     {
         rejectmatrix = W_CacheLumpNum(lumpnum, PU_LEVEL);
@@ -770,6 +945,7 @@ static void P_LoadReject(int lumpnum)
 
         PadRejectArray(rejectmatrix + lumplen, minlength - lumplen);
     }
+#endif
 }
 
 //

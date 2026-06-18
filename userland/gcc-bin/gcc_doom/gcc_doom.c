@@ -45,27 +45,16 @@ int main(int argc, char **argv)
         new_argv[new_argc++] = (char *)"-iwad";
         new_argv[new_argc++] = (char *)"/sd/doom1.wad";
     }
-    /* K22 Phase 6 stage 15 probe: tried -warp 1 1 with BLOCKMAP
-       pinned to .bss (p_setup.c). No Z_Malloc failure, no TRAP, but
-       doomgeneric_Create never returned — `[gcc_doom] gamestate=...`
-       never prints after a 2-minute wait. P_SetupLevel is probably
-       hanging on one of the PU_LEVEL allocs that still goes through
-       the zone (~50 KB headroom isn't enough after fragmentation),
-       or an infinite loop in the level decode. Leaving the -warp
-       trigger off for now; the BLOCKMAP .bss patch in p_setup.c
-       still helps zone footprint when autostart eventually does
-       land. */
-    /* -warp 1 1 autostart still hangs because PU_LEVEL allocs don't
-       fit in the 80 KiB zone the heap budget allows (anything bigger
-       fails lumpinfo realloc during W_Init). Stage 15 nailed down
-       the S_ChangeMusic hang and showed BLOCKMAP / sides / lines as
-       worth pinning to .bss; the rest needs either screen-resolution
-       shrink or a deeper PU_STATIC purge to free zone room. */
-    /* if (new_argc + 3 <= 8) {                                  */
-    /*     new_argv[new_argc++] = (char *)"-warp";               */
-    /*     new_argv[new_argc++] = (char *)"1";                   */
-    /*     new_argv[new_argc++] = (char *)"1";                   */
-    /* }                                                          */
+    /* K22 path-A: vertexes/segs/subsectors/sectors/nodes/sides/
+       blocklinks/linebuffer/rejectmatrix all pinned to .bss in
+       p_setup.c. PU_LEVEL demand drops from ~60 KB to ~mobjs only
+       (~21 KB for E1M1's 138 things). DEFAULT_RAM dropped to 28 KB
+       (i_system.c) to match the new ~36 KB heap. Try autostart again. */
+    if (new_argc + 3 <= 8) {
+        new_argv[new_argc++] = (char *)"-warp";
+        new_argv[new_argc++] = (char *)"1";
+        new_argv[new_argc++] = (char *)"1";
+    }
 
     doomgeneric_Create(new_argc, new_argv);
 
@@ -75,24 +64,15 @@ int main(int argc, char **argv)
        exiting after the first frame. */
     extern void doomgeneric_Tick(void);
 
-    /* K22 Phase 6 stage 13: flip the ILI9488 to landscape and paint a
-       red letterbox border around the 320×200 DOOM area. The kernel
-       boots the panel in its default portrait 320×480 orientation
-       (display_ili9488.tc lcd_init line ~379); the physical LCD is
-       mounted landscape on the pico2 board so every fb write before
-       this point was painted into a portrait window with the
-       band-blits overflowing the 240-pixel-wide visible area. The
-       four border fills mark the letterbox so the DOOM image inside
-       has a clear visual frame. */
+    /* K22 path-A: flip ILI9488 to landscape + paint brown letterbox.
+       LCD is 480×320; DOOM at 320×200 lands at (80, 60). */
     {
         extern long write(int, const void *, unsigned long);
         extern int open(const char *, int, ...);
         int fd = open("/dev/fb", 1);
         if (fd >= 0) {
-            /* mode=3 sets MADCTL via the low byte of the payload u16. */
             unsigned char m3[12] = {0,0, 0,0, 0,0, 0,0, 3,0, 0x28,0};
             write(fd, m3, 12);
-            /* mode=1: u16 LE x, y, w, h, mode=1, color (RGB565). */
             #define FILL(_x, _y, _w, _h, _c) do { \
                 unsigned char h[12]; \
                 h[0]=(_x)&0xFF; h[1]=((_x)>>8)&0xFF; \
@@ -103,8 +83,7 @@ int main(int argc, char **argv)
                 h[10]=(_c)&0xFF; h[11]=((_c)>>8)&0xFF; \
                 write(fd, h, 12); \
             } while (0)
-            /* Saddle brown (RGB 139,69,19) → RGB565 0x8A22. DOOM-y
-               leather/wood feel, easier on the eyes than pure red. */
+            /* Saddle brown (RGB 139,69,19) → RGB565 0x8A22 */
             FILL(0,   0,   480, 60,  0x8A22);  /* top    */
             FILL(0,   260, 480, 60,  0x8A22);  /* bottom */
             FILL(0,   60,  80,  200, 0x8A22);  /* left   */

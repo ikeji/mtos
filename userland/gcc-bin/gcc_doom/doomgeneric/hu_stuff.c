@@ -300,11 +300,13 @@ void HU_Init(void)
     for (i=0;i<HU_FONTSIZE;i++)
     {
 	DEH_snprintf(buffer, 9, "STCFN%.3d", j++);
-#ifdef PICO2_TINY_HUD
+#if defined(PICO2_DISABLE_HUD)
+	/* K22 path-A: skip the font load. HU_Drawer is gated below
+	   so hu_font[i] stays NULL. */
+	hu_font[i] = NULL;
+#elif defined(PICO2_TINY_HUD)
 	/* K22 Phase 5 stage 8b — pure-bump-alloc from the shared
-	   HUD pool (st_stuff.c). The 64 font characters are loaded
-	   for the whole program lifetime; no free path is ever
-	   exercised. */
+	   HUD pool (st_stuff.c). */
 	{
 	    int lump = W_GetNumForName(buffer);
 	    int sz = W_LumpLength(lump);
@@ -401,12 +403,15 @@ void HU_Start(void)
 
 void HU_Drawer(void)
 {
-
+#ifdef PICO2_DISABLE_HUD
+    /* K22 path-A: hu_font is NULL; skip the draw to avoid deref. */
+    return;
+#else
     HUlib_drawSText(&w_message);
     HUlib_drawIText(&w_chat);
     if (automapactive)
 	HUlib_drawTextLine(&w_title, false);
-
+#endif
 }
 
 void HU_Erase(void)

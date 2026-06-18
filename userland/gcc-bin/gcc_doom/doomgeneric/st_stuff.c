@@ -1057,7 +1057,15 @@ void ST_diffDraw(void)
 
 void ST_Drawer (boolean fullscreen, boolean refresh)
 {
-  
+#ifdef PICO2_DISABLE_HUD
+    /* K22 path-A: status bar widgets need ST_loadGraphics's patches
+       (uninitialized in this build). Skip the draw entirely; the 3D
+       view occupies the full DOOM viewport. */
+    (void)fullscreen;
+    (void)refresh;
+    st_statusbaron = false;
+    return;
+#else
     st_statusbaron = (!fullscreen) || automapactive;
     st_firsttime = st_firsttime || refresh;
 
@@ -1068,7 +1076,7 @@ void ST_Drawer (boolean fullscreen, boolean refresh)
     if (st_firsttime) ST_doRefresh();
     // Otherwise, update as little as possible
     else ST_diffDraw();
-
+#endif
 }
 
 typedef void (*load_callback_t)(char *lumpname, patch_t **variable); 
@@ -1178,7 +1186,7 @@ static void ST_loadUnloadGraphics(load_callback_t callback)
 #endif
 }
 
-#ifdef PICO2_TINY_HUD
+#if defined(PICO2_TINY_HUD) && !defined(PICO2_DISABLE_HUD)
 /* K22 Phase 5 stage 7 — STBAR is the status bar background, a
    single 13128-byte lump. Zone fragmentation by the time ST_Init
    tries to W_CacheLumpName it consistently leaves no contiguous
@@ -1214,11 +1222,29 @@ void *_pico2_hud_alloc(int sz)
     _pico2_hudpool_off += sz;
     return p;
 }
+#elif defined(PICO2_DISABLE_HUD)
+/* K22 path-A: HUD/STBAR disabled entirely to free ~42 KB heap for
+   the DOOM zone. ST_loadData / ST_Drawer / HU_Drawer become no-ops.
+   The player sees the raw 320×200 3D view; no status bar, no HUD
+   font, no on-screen messages. */
+byte  _pico2_hudpool[1];           /* unused but referenced by extern */
+int   _pico2_hudpool_off = 0;
+void *_pico2_hud_alloc(int sz)
+{
+    (void)sz;
+    return NULL;
+}
 #endif
 
 static void ST_loadCallback(char *lumpname, patch_t **variable)
 {
-#ifdef PICO2_TINY_HUD
+#if defined(PICO2_DISABLE_HUD)
+    /* K22 path-A: HUD disabled. ST_loadData skips ST_loadGraphics so
+       this is never called, but keep a safe no-op fallback. */
+    (void)lumpname;
+    *variable = NULL;
+    return;
+#elif defined(PICO2_TINY_HUD)
     /* STBAR / STARMS / STFB% all land in dedicated .bss buffers —
        too big to want fragmenting either zone or picolibc heap. */
     if (lumpname[0]=='S' && lumpname[1]=='T' && lumpname[2]=='B'
@@ -1283,7 +1309,9 @@ void ST_loadGraphics(void)
 void ST_loadData(void)
 {
     lu_palette = W_GetNumForName (DEH_String("PLAYPAL"));
+#ifndef PICO2_DISABLE_HUD
     ST_loadGraphics();
+#endif
 }
 
 static void ST_unloadCallback(char *lumpname, patch_t **variable)
@@ -1522,12 +1550,13 @@ void ST_Stop (void)
 void ST_Init (void)
 {
     ST_loadData();
-#ifdef PICO2_TINY_HUD
+#if defined(PICO2_DISABLE_HUD)
+    st_backing_screen = NULL;       /* unused; ST_Drawer/Refresh no-op below */
+#elif defined(PICO2_TINY_HUD)
     /* K22 Phase 5 stage 7 — Z_Malloc(ST_WIDTH * ST_HEIGHT) = 10240
        fails on a zone fragmented by R_Init + HU_Init + ST_loadData.
        Put the status-bar backing screen in .bss instead, single
-       contiguous allocation and no zone pressure. ST_WIDTH 320 ×
-       ST_HEIGHT 32 = 10 KB up front. */
+       contiguous allocation and no zone pressure. */
     static byte _pico2_st_backing[ST_WIDTH * ST_HEIGHT];
     st_backing_screen = _pico2_st_backing;
 #else
