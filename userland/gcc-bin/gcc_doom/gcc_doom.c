@@ -55,6 +55,10 @@ int main(int argc, char **argv)
        trigger off for now; the BLOCKMAP .bss patch in p_setup.c
        still helps zone footprint when autostart eventually does
        land. */
+    /* -warp 1 1 (autostart) is tantalisingly close but still hangs
+       silently inside the load path after stage 15. Commented out
+       so the title-screen build keeps shipping; flip on when the
+       hang is debugged. */
     /* if (new_argc + 3 <= 8) {                                  */
     /*     new_argv[new_argc++] = (char *)"-warp";               */
     /*     new_argv[new_argc++] = (char *)"1";                   */

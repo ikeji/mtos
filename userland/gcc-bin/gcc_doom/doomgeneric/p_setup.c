@@ -516,7 +516,6 @@ void P_LoadBlockMap (int lump)
        maps too. Without this the 112 KiB zone can't fit a fresh
        P_SetupLevel alongside R_Init's PU_STATIC residue. */
     static short _pico2_blockmap_buf[24 * 512];   /* 24 KB shorts */
-    extern void I_Error(const char *fmt, ...);
     if (lumplen > (int)sizeof(_pico2_blockmap_buf))
         I_Error("BLOCKMAP %d > %d", lumplen, (int)sizeof(_pico2_blockmap_buf));
     blockmaplump = _pico2_blockmap_buf;
@@ -803,10 +802,10 @@ P_SetupLevel
     }
 
     lumpnum = W_GetNumForName (lumpname);
-	
+
     leveltime = 0;
-	
-    // note: most of this ordering is important	
+
+    // note: most of this ordering is important
     P_LoadBlockMap (lumpnum+ML_BLOCKMAP);
     P_LoadVertexes (lumpnum+ML_VERTEXES);
     P_LoadSectors (lumpnum+ML_SECTORS);
