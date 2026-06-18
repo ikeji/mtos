@@ -212,8 +212,8 @@ void P_LoadSegs (int lump)
 	
     numsegs = W_LumpLength (lump) / sizeof(mapseg_t);
 #ifdef PICO2_TINY_HUD
-    /* E1M1 actually has 732 segs (not 248). Pin 768 × 32 = 24 KB. */
-    static seg_t _pico2_segs_buf[768];
+    /* E1M1 has 732 segs. Pin 736 × 32 = 23 KB tight. */
+    static seg_t _pico2_segs_buf[736];
     if (numsegs > (int)(sizeof(_pico2_segs_buf)/sizeof(seg_t)))
         I_Error("segs %d > %d", numsegs,
                 (int)(sizeof(_pico2_segs_buf)/sizeof(seg_t)));
@@ -313,7 +313,7 @@ void P_LoadSubsectors (int lump)
 	
     numsubsectors = W_LumpLength (lump) / sizeof(mapsubsector_t);
 #ifdef PICO2_TINY_HUD
-    /* E1M1 ≈ 192 subsectors × 8 B = 1.5 KB. Pin 256. */
+    /* E1M1 has 237 subsectors (doomwiki's 192 was misleading). Pin 256. */
     static subsector_t _pico2_subsectors_buf[256];
     if (numsubsectors > (int)(sizeof(_pico2_subsectors_buf)/sizeof(subsector_t)))
         I_Error("subsectors %d > %d", numsubsectors,
@@ -443,8 +443,8 @@ void P_LoadNodes (int lump)
 	
     numnodes = W_LumpLength (lump) / sizeof(mapnode_t);
 #ifdef PICO2_TINY_HUD
-    /* E1M1 has 191 nodes. Pin 200 × 52 B = 10.4 KB. */
-    static node_t _pico2_nodes_buf[200];
+    /* E1M1 actually has 236 nodes (BSP-build dependent). Pin 256. */
+    static node_t _pico2_nodes_buf[256];
     if (numnodes > (int)(sizeof(_pico2_nodes_buf)/sizeof(node_t)))
         I_Error("nodes %d > %d", numnodes,
                 (int)(sizeof(_pico2_nodes_buf)/sizeof(node_t)));
@@ -507,16 +507,57 @@ void P_LoadNodes (int lump)
 //
 void P_LoadThings (int lump)
 {
+#ifndef PICO2_TINY_HUD
     byte               *data;
+#endif
     int			i;
     mapthing_t         *mt;
     mapthing_t          spawnthing;
     int			numthings;
     boolean		spawn;
 
-    data = W_CacheLumpNum (lump,PU_STATIC);
     numthings = W_LumpLength (lump) / sizeof(mapthing_t);
-	
+#ifdef PICO2_TINY_HUD
+    /* K22 path-A: stream THINGS in chunks. E1M1 has 138 things ×
+       10 B = 1380 B which overflows our 12 KB zone if loaded in one
+       shot. 64 entries × 10 = 640 B stack chunk. */
+    {
+        mapthing_t chunk[64];
+        extern wad_file_t *g_lump_wad;
+        unsigned int pos = (unsigned int)lumpinfo[lump].position;
+        int processed = 0;
+        while (processed < numthings) {
+            int n = numthings - processed;
+            if (n > 64) n = 64;
+            W_Read(g_lump_wad, pos + processed * sizeof(mapthing_t),
+                   chunk, n * sizeof(mapthing_t));
+            mt = chunk;
+            for (i = 0; i < n; i++, mt++) {
+                spawn = true;
+                if (gamemode != commercial) {
+                    switch (SHORT(mt->type)) {
+                      case 68: case 64: case 88: case 89:
+                      case 69: case 67: case 71: case 65:
+                      case 66: case 84:
+                        spawn = false;
+                        break;
+                    }
+                }
+                if (!spawn) goto things_done;
+                spawnthing.x = SHORT(mt->x);
+                spawnthing.y = SHORT(mt->y);
+                spawnthing.angle = SHORT(mt->angle);
+                spawnthing.type = SHORT(mt->type);
+                spawnthing.options = SHORT(mt->options);
+                P_SpawnMapThing(&spawnthing);
+            }
+            processed += n;
+        }
+    }
+things_done:;
+#else
+    data = W_CacheLumpNum (lump,PU_STATIC);
+
     mt = (mapthing_t *)data;
     for (i=0 ; i<numthings ; i++, mt++)
     {
@@ -544,17 +585,18 @@ void P_LoadThings (int lump)
 	if (spawn == false)
 	    break;
 
-	// Do spawn all other stuff. 
+	// Do spawn all other stuff.
 	spawnthing.x = SHORT(mt->x);
 	spawnthing.y = SHORT(mt->y);
 	spawnthing.angle = SHORT(mt->angle);
 	spawnthing.type = SHORT(mt->type);
 	spawnthing.options = SHORT(mt->options);
-	
+
 	P_SpawnMapThing(&spawnthing);
     }
 
     W_ReleaseLumpNum(lump);
+#endif
 }
 
 
@@ -724,8 +766,8 @@ void P_LoadSideDefs (int lump)
        alloc that fits in our zone budget — pin to .bss for E1M1
        (target ~300 sides × 28 B = 8400 B; round up to 16 KB to
        cover any reasonable shareware map). */
-    /* E1M1 has 648 sidedefs. Pin 672 × 20 B = 13.4 KB tight. */
-    static side_t _pico2_sides_buf[672];
+    /* E1M1 has 648 sidedefs. Pin 656 × 20 B = 13.1 KB tight. */
+    static side_t _pico2_sides_buf[656];
     if (numsides > (int)(sizeof(_pico2_sides_buf)/sizeof(side_t)))
         I_Error("sides %d > %d", numsides,
                 (int)(sizeof(_pico2_sides_buf)/sizeof(side_t)));
@@ -832,8 +874,8 @@ void P_LoadBlockMap (int lump)
 
     count = sizeof(*blocklinks) * bmapwidth * bmapheight;
 #ifdef PICO2_TINY_HUD
-    /* E1M1 ≈ 50×50 cells × 4 B ptr = 10 KB. Pin 2800 cells = 11 KB. */
-    static unsigned long _pico2_blocklinks_buf[2800];
+    /* E1M1 ≈ 50×50 cells × 4 B ptr = 10 KB. Pin 2560 cells = 10 KB tight. */
+    static unsigned long _pico2_blocklinks_buf[2560];
     if (count > (int)sizeof(_pico2_blocklinks_buf))
         I_Error("blocklinks %d > %d", count,
                 (int)sizeof(_pico2_blocklinks_buf));

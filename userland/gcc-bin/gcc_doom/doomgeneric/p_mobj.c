@@ -810,7 +810,24 @@ void P_SpawnMapThing (mapthing_t* mthing)
     {
 	return;
     }
-    
+
+#ifdef PICO2_TINY_HUD
+    /* K22 path-A B5: skip decorations / non-essential mobjs to stay
+       under the 22 KB PU_LEVEL zone budget. Keep only the player +
+       items (MF_SPECIAL pickups) + monsters (MF_COUNTKILL). E1M1
+       has 138 things; only ~36 are player+items in skill 2 + no
+       monsters. Pure-decoration corpses, lamps, hangars (~88) are
+       skipped — the map looks empty but renders. */
+    {
+        int flags = mobjinfo[i].flags;
+        if (i != MT_PLAYER
+            && !(flags & MF_SPECIAL)
+            && !(flags & MF_COUNTKILL)
+            && !(flags & MF_COUNTITEM))
+            return;
+    }
+#endif
+
     // spawn it
     x = mthing->x << FRACBITS;
     y = mthing->y << FRACBITS;

@@ -28,20 +28,25 @@ extern void V_DrawPatch(int x, int y, patch_t *patch);
    around four interesting flags in our config). */
 int main(int argc, char **argv)
 {
-    char *new_argv[8];
+    char *new_argv[10];
     int new_argc = 0;
 
     new_argv[new_argc++] = argc > 0 ? argv[0] : (char *)"gcc_doom";
 
     int has_iwad = 0;
-    for (int i = 1; i < argc && new_argc < 6; i++) {
+    /* K22 path-A B4: drop monsters from the spawn list to keep the
+       PU_LEVEL mobj count under the 12 KB zone budget. E1M1 has ~12
+       monsters in skill 2 + ~125 items + 1 player; -nomonsters saves
+       ~2 KB. We'd need a static mobj pool to scale further. */
+    new_argv[new_argc++] = (char *)"-nomonsters";
+    for (int i = 1; i < argc && new_argc < 8; i++) {
         new_argv[new_argc++] = argv[i];
         if (argv[i][0] == '-' && argv[i][1] == 'i' && argv[i][2] == 'w'
             && argv[i][3] == 'a' && argv[i][4] == 'd' && argv[i][5] == 0) {
             has_iwad = 1;
         }
     }
-    if (!has_iwad && new_argc + 2 <= 8) {
+    if (!has_iwad && new_argc + 2 <= 10) {
         new_argv[new_argc++] = (char *)"-iwad";
         new_argv[new_argc++] = (char *)"/sd/doom1.wad";
     }
@@ -50,7 +55,7 @@ int main(int argc, char **argv)
        p_setup.c. PU_LEVEL demand drops from ~60 KB to ~mobjs only
        (~21 KB for E1M1's 138 things). DEFAULT_RAM dropped to 28 KB
        (i_system.c) to match the new ~36 KB heap. Try autostart again. */
-    if (new_argc + 3 <= 8) {
+    if (new_argc + 3 <= 10) {
         new_argv[new_argc++] = (char *)"-warp";
         new_argv[new_argc++] = (char *)"1";
         new_argv[new_argc++] = (char *)"1";
@@ -65,7 +70,7 @@ int main(int argc, char **argv)
     extern void doomgeneric_Tick(void);
 
     /* K22 path-A: flip ILI9488 to landscape + paint brown letterbox.
-       LCD is 480×320; DOOM at 320×200 lands at (80, 60). */
+       LCD is 480×320; DOOM at 320×168 (HUD disabled) lands at (80, 76). */
     {
         extern long write(int, const void *, unsigned long);
         extern int open(const char *, int, ...);
@@ -84,10 +89,10 @@ int main(int argc, char **argv)
                 write(fd, h, 12); \
             } while (0)
             /* Saddle brown (RGB 139,69,19) → RGB565 0x8A22 */
-            FILL(0,   0,   480, 60,  0x8A22);  /* top    */
-            FILL(0,   260, 480, 60,  0x8A22);  /* bottom */
-            FILL(0,   60,  80,  200, 0x8A22);  /* left   */
-            FILL(400, 60,  80,  200, 0x8A22);  /* right  */
+            FILL(0,   0,   480, 76,  0x8A22);  /* top    */
+            FILL(0,   244, 480, 76,  0x8A22);  /* bottom */
+            FILL(0,   76,  80,  168, 0x8A22);  /* left   */
+            FILL(400, 76,  80,  168, 0x8A22);  /* right  */
             #undef FILL
         }
     }
@@ -105,12 +110,15 @@ int main(int argc, char **argv)
             W_Read(g_lump_wad, lumppos, hdr, 8);
             int pw = hdr[0] | (hdr[1] << 8);
             int ph = hdr[2] | (hdr[3] << 8);
+            /* TITLEPIC is 320×200 but DG_ScreenBuffer is now 320×168.
+               Clip writes to the visible band so we don't overflow. */
             if (pw > 0 && pw <= 320 && ph > 0 && ph <= 200) {
                 static unsigned int col_ofs[320];
                 W_Read(g_lump_wad, lumppos + 8,
                        col_ofs, (unsigned long)(pw * 4));
                 unsigned char *dest = (unsigned char *)DG_ScreenBuffer;
                 static unsigned char colbuf[4096];
+                int max_y = DOOMGENERIC_RESY;
                 int col;
                 for (col = 0; col < pw; col++) {
                     unsigned int cofs = lumppos + col_ofs[col];
@@ -127,7 +135,7 @@ int main(int argc, char **argv)
                         int row;
                         for (row = 0; row < len; row++) {
                             int y = top + row;
-                            if (y >= 0 && y < ph)
+                            if (y >= 0 && y < max_y)
                                 dest[y * 320 + col] = p[row];
                         }
                         p += len;

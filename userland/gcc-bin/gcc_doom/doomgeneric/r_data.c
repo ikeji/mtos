@@ -649,10 +649,36 @@ void R_InitTextures (void)
 	
 	mtexture = (maptexture_t *) ( (byte *)maptex + offset);
 
+#ifdef PICO2_TINY_HUD
+	/* K22 path-A B4: bump-allocate texture_t from a .bss pool. The
+	   variable-length tail (texpatch_t[patchcount]) makes it awkward
+	   for a fixed array, but a single contiguous byte pool with a
+	   bump cursor suits the lifetime (these allocations live until
+	   shutdown, never freed individually). 125 textures × ~60 B avg
+	   = ~7.5 KB; pin 9 KB with margin. Each saves a 24-byte Z header
+	   on top of the per-texture data so the zone gain is ~7.5 KB +
+	   3 KB = ~10.5 KB. */
+	{
+	    int n_patches = SHORT(mtexture->patchcount);
+	    int tex_size = (int)(sizeof(texture_t)
+	                          + sizeof(texpatch_t) * (n_patches - 1));
+	    tex_size = (tex_size + 3) & ~3;
+	    static unsigned char _pico2_textures_pool[8192];
+	    static int           _pico2_textures_off = 0;
+	    if (_pico2_textures_off + tex_size >
+	        (int)sizeof(_pico2_textures_pool))
+	        I_Error("textures pool overflow at tex %d size %d (off %d)",
+	                i, tex_size, _pico2_textures_off);
+	    texture = textures[i] = (texture_t *)
+	        (_pico2_textures_pool + _pico2_textures_off);
+	    _pico2_textures_off += tex_size;
+	}
+#else
 	texture = textures[i] =
 	    Z_Malloc (sizeof(texture_t)
 		      + sizeof(texpatch_t)*(SHORT(mtexture->patchcount)-1),
 		      PU_STATIC, 0);
+#endif
 	
 	texture->width = SHORT(mtexture->width);
 	texture->height = SHORT(mtexture->height);
