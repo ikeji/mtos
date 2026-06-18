@@ -45,12 +45,21 @@ int main(int argc, char **argv)
         new_argv[new_argc++] = (char *)"-iwad";
         new_argv[new_argc++] = (char *)"/sd/doom1.wad";
     }
-    /* K22 Phase 6 stage 12 probe: tried -warp 1 1 to autostart E1M1 —
-       P_SetupLevel allocates ~17 KB blockmap (PU_STATIC) + ~7 KB of
-       PU_LEVEL data, then dies on the next 1892-byte alloc because
-       the 112 KiB zone is fragmented past the point where a fresh
-       map fits. Sticking to the title-screen path (no -warp) until
-       either zone grows or more PU_LEVEL allocs move to .bss. */
+    /* K22 Phase 6 stage 15 probe: tried -warp 1 1 with BLOCKMAP
+       pinned to .bss (p_setup.c). No Z_Malloc failure, no TRAP, but
+       doomgeneric_Create never returned — `[gcc_doom] gamestate=...`
+       never prints after a 2-minute wait. P_SetupLevel is probably
+       hanging on one of the PU_LEVEL allocs that still goes through
+       the zone (~50 KB headroom isn't enough after fragmentation),
+       or an infinite loop in the level decode. Leaving the -warp
+       trigger off for now; the BLOCKMAP .bss patch in p_setup.c
+       still helps zone footprint when autostart eventually does
+       land. */
+    /* if (new_argc + 3 <= 8) {                                  */
+    /*     new_argv[new_argc++] = (char *)"-warp";               */
+    /*     new_argv[new_argc++] = (char *)"1";                   */
+    /*     new_argv[new_argc++] = (char *)"1";                   */
+    /* }                                                          */
 
     doomgeneric_Create(new_argc, new_argv);
 
@@ -88,26 +97,18 @@ int main(int argc, char **argv)
                 h[10]=(_c)&0xFF; h[11]=((_c)>>8)&0xFF; \
                 write(fd, h, 12); \
             } while (0)
-            FILL(0,   0,   480, 60,  0xF800);  /* top    */
-            FILL(0,   260, 480, 60,  0xF800);  /* bottom */
-            FILL(0,   60,  80,  200, 0xF800);  /* left   */
-            FILL(400, 60,  80,  200, 0xF800);  /* right  */
+            /* Saddle brown (RGB 139,69,19) → RGB565 0x8A22. DOOM-y
+               leather/wood feel, easier on the eyes than pure red. */
+            FILL(0,   0,   480, 60,  0x8A22);  /* top    */
+            FILL(0,   260, 480, 60,  0x8A22);  /* bottom */
+            FILL(0,   60,  80,  200, 0x8A22);  /* left   */
+            FILL(400, 60,  80,  200, 0x8A22);  /* right  */
             #undef FILL
         }
     }
 
     /* K22 Phase 6 stage 14: paint TITLEPIC into DG_ScreenBuffer by
-       streaming the patch one column at a time. The 68 KiB patch
-       lump doesn't fit in either picolibc heap (~30 KiB after Z_Init
-       takes the DOOM zone) or the DOOM zone itself (~50 KiB largest
-       contiguous chunk after R_Init). Column-stream peak working
-       set is ~5.5 KiB (col_ofs[320] 1.3 KiB + colbuf 4 KiB), no
-       zone/heap allocation. ~320 SD reads × few hundred bytes each
-       takes a couple of seconds over SPI 6 MHz; fine for a one-shot
-       title draw. After this, the silent doomgeneric_Tick() loop
-       below ships the same DG_ScreenBuffer contents on every frame
-       (D_PageDrawer is a no-op under PICO2_TINY_HUD so DOOM never
-       overwrites our paint). */
+       streaming the patch one column at a time. */
 #ifdef PICO2_LUMPINFO_SHRUNK
     {
         int lump = W_CheckNumForName("TITLEPIC");
@@ -127,17 +128,12 @@ int main(int argc, char **argv)
                 static unsigned char colbuf[4096];
                 int col;
                 for (col = 0; col < pw; col++) {
-                    /* Read enough for one column's posts (vanilla
-                       DOOM SW TITLEPIC tops out at ~210 B/col; the
-                       4 KiB buffer is overkill but cheap). */
                     unsigned int cofs = lumppos + col_ofs[col];
                     int max_read = ph * 2 + 64;
                     if (max_read > (int)sizeof(colbuf))
                         max_read = sizeof(colbuf);
                     W_Read(g_lump_wad, cofs, colbuf,
                            (unsigned long)max_read);
-                    /* Patch post format: topdelta, length, pad,
-                       data[length], pad. End when topdelta == 0xFF. */
                     unsigned char *p = colbuf;
                     while (*p != 0xFF) {
                         int top = *p++;

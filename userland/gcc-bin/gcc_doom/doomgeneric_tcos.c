@@ -87,13 +87,29 @@ static void _put_u16le(unsigned char *b, int off, unsigned int v)
     b[off + 1] = (unsigned char)((v >> 8) & 0xFF);
 }
 
+/* /dev/kbd backend: rising-edge ASCII bytes since last read (see
+   kernel/platform/pico2/keyboard_matrix.tc::kbd_backend_read). The
+   kernel returns 0 when nothing changed. DG_GetKey wraps this into
+   the press/key pair DOOM expects. We don't currently synthesise
+   release events — most DOOM menu / autorun paths trigger on the
+   press half, which is enough for first-light interaction. */
+static int _kbd_fd = -1;
+
+/* Pending key queue: when /dev/kbd delivers multiple ASCII bytes in
+   one read, queue them so DG_GetKey returns one event per call. */
+#define _DG_KEY_QUEUE 8
+static unsigned char _key_queue[_DG_KEY_QUEUE];
+static int _key_head = 0;
+static int _key_tail = 0;
+static int _key_count = 0;
+
 void DG_Init(void)
 {
-    /* Phase 2: opens /dev/fb. Failure is non-fatal — DG_DrawFrame
-       checks the fd and silently no-ops if it never opened. */
-    _fb_fd = open("/dev/fb", 1 /* O_WRONLY */);
-
-    /* Phase 3 will: do_openat("/dev/kbd", O_RDONLY | O_NONBLOCK). */
+    /* /dev/fb is opened write-only; the kernel fb backend never
+       reads back. Failure is non-fatal — DG_DrawFrame silently
+       no-ops if the fd never opened. */
+    _fb_fd  = open("/dev/fb", 1 /* O_WRONLY */);
+    _kbd_fd = open("/dev/kbd", 0 /* O_RDONLY */);
 }
 
 /* Trace counter so we can tell from UART that we're at least
@@ -155,13 +171,58 @@ void DG_DrawFrame(void)
     }
 }
 
+/* Map an ASCII byte from /dev/kbd to a DOOM keycode (doomkeys.h).
+   Returns 0 if the byte has no DOOM equivalent (caller drops it).
+   Movement is WASD because the physical keymap probably won't have
+   arrow keys; menu navigation also accepts wasd in DOOM. */
+static unsigned char _ascii_to_doomkey(unsigned char c)
+{
+    switch (c) {
+        case 'w': case 'W': return 0xad; /* KEY_UPARROW    */
+        case 'a': case 'A': return 0xac; /* KEY_LEFTARROW  */
+        case 's': case 'S': return 0xaf; /* KEY_DOWNARROW  */
+        case 'd': case 'D': return 0xae; /* KEY_RIGHTARROW */
+        case ' ':           return 0xa2; /* KEY_USE        */
+        case 'f': case 'F': return 0xa3; /* KEY_FIRE       */
+        case 0x0d:          return 13;   /* KEY_ENTER      */
+        case 0x0a:          return 13;   /* LF → ENTER     */
+        case 0x1b:          return 27;   /* KEY_ESCAPE     */
+        case 'q': case 'Q': return 0xa0; /* KEY_STRAFE_L   */
+        case 'e': case 'E': return 0xa1; /* KEY_STRAFE_R   */
+        case 'y': case 'Y': return 'y';  /* menu yes       */
+        case 'n': case 'N': return 'n';  /* menu no        */
+        case 0x09:          return 9;    /* KEY_TAB        */
+        default:            return 0;
+    }
+}
+
 int DG_GetKey(int *pressed, unsigned char *key)
 {
-    /* Phase 3: pop from a kbd → DOOM keycode ring buffer.
-       Return 0 when nothing is queued. */
-    (void)pressed;
-    (void)key;
-    return 0;
+    /* Drain /dev/kbd into the local queue. Each ASCII byte from the
+       kernel = one rising edge on the matrix; map to a DOOM keycode
+       and queue. */
+    if (_kbd_fd >= 0 && _key_count < _DG_KEY_QUEUE) {
+        unsigned char buf[8];
+        long n = read(_kbd_fd, buf, sizeof(buf));
+        if (n > 0) {
+            int i;
+            for (i = 0; i < (int)n && _key_count < _DG_KEY_QUEUE; i++) {
+                unsigned char dk = _ascii_to_doomkey(buf[i]);
+                if (dk != 0) {
+                    _key_queue[_key_tail] = dk;
+                    _key_tail = (_key_tail + 1) % _DG_KEY_QUEUE;
+                    _key_count++;
+                }
+            }
+        }
+    }
+    if (_key_count == 0)
+        return 0;
+    *pressed = 1;
+    *key = _key_queue[_key_head];
+    _key_head = (_key_head + 1) % _DG_KEY_QUEUE;
+    _key_count--;
+    return 1;
 }
 
 uint32_t DG_GetTicksMs(void)

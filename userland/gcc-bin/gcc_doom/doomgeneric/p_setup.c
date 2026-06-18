@@ -509,10 +509,24 @@ void P_LoadBlockMap (int lump)
 
     lumplen = W_LumpLength(lump);
     count = lumplen / 2;
-	
+#ifdef PICO2_TINY_HUD
+    /* K22 Phase 6 stage 15: pin BLOCKMAP into .bss instead of
+       Z_Malloc'ing 17 KiB PU_LEVEL on every map start. E1M1's
+       BLOCKMAP lump is ~12 KB; reserve 24 KB to cover other small
+       maps too. Without this the 112 KiB zone can't fit a fresh
+       P_SetupLevel alongside R_Init's PU_STATIC residue. */
+    static short _pico2_blockmap_buf[24 * 512];   /* 24 KB shorts */
+    extern void I_Error(const char *fmt, ...);
+    if (lumplen > (int)sizeof(_pico2_blockmap_buf))
+        I_Error("BLOCKMAP %d > %d", lumplen, (int)sizeof(_pico2_blockmap_buf));
+    blockmaplump = _pico2_blockmap_buf;
+    W_ReadLump(lump, blockmaplump);
+    blockmap = blockmaplump + 4;
+#else
     blockmaplump = Z_Malloc(lumplen, PU_LEVEL, NULL);
     W_ReadLump(lump, blockmaplump);
     blockmap = blockmaplump + 4;
+#endif
 
     // Swap all short integers to native byte ordering.
   
