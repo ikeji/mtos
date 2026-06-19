@@ -105,10 +105,9 @@ static void ExtendLumpInfo(int newnumlumps)
     unsigned int i;
 
 #ifdef PICO2_TINY_HUD
-    /* Real doom1.wad shareware has 1168 lumps × 24 B = 28 KB. Pin
-       1184 (= 28.4 KB) — tight to E1M1 but every byte counts in
-       the K22 path-A budget. */
-    static lumpinfo_t _pico2_lumpinfo_buf[1184];
+    /* Real doom1.wad shareware has 1264 lumps × 24 B = 30 KB. Pin
+       1280 (= 30.7 KB), matching the lumphash bucket count above. */
+    static lumpinfo_t _pico2_lumpinfo_buf[1280];
     if (newnumlumps > (int)(sizeof(_pico2_lumpinfo_buf)/sizeof(lumpinfo_t)))
         I_Error("lumpinfo %d > %d", newnumlumps,
                 (int)(sizeof(_pico2_lumpinfo_buf)/sizeof(lumpinfo_t)));
@@ -174,6 +173,17 @@ static void ExtendLumpInfo(int newnumlumps)
 // Other files are single lumps with the base filename
 //  for the lump name.
 
+#ifdef PICO2_TINY_HUD
+/* K22 path-A flash-WAD: DOOM1.WAD is `.incbin`'d into the task's
+   .rodata (see doom1_wad.S), so it lives at a fixed XIP flash
+   address. Skip fopen/fread entirely — construct a fake wad_file_t
+   whose `mapped` pointer drops the existing W_CacheLumpNum mmap
+   branch onto flash. W_Read uses mapped → memcpy below. */
+extern unsigned char _doom1_wad_start[];
+extern unsigned int  _doom1_wad_size;
+static wad_file_class_t _pico2_flash_wad_class;   /* defined later */
+#endif
+
 wad_file_t *W_AddFile (char *filename)
 {
     wadinfo_t header;
@@ -186,6 +196,16 @@ wad_file_t *W_AddFile (char *filename)
     filelump_t *filerover;
     int newnumlumps;
 
+#ifdef PICO2_TINY_HUD
+    /* Match any /sd/*.wad path (the iwadfile assembled by D_FindIWAD).
+       Production builds should restrict to a known filename; for K22
+       path-A the only IWAD we ever feed in is DOOM1.WAD. */
+    static wad_file_t _pico2_flash_wad_file;
+    _pico2_flash_wad_file.file_class = &_pico2_flash_wad_class;
+    _pico2_flash_wad_file.mapped = _doom1_wad_start;
+    _pico2_flash_wad_file.length = (int)_doom1_wad_size;
+    wad_file = &_pico2_flash_wad_file;
+#else
     // open the file and add to directory
 
     wad_file = W_OpenFile(filename);
@@ -195,6 +215,7 @@ wad_file_t *W_AddFile (char *filename)
 		printf (" couldn't open %s\n", filename);
 		return NULL;
     }
+#endif
 
     newnumlumps = numlumps;
 
@@ -320,6 +341,25 @@ wad_file_t *W_AddFile (char *filename)
     return wad_file;
 }
 
+#ifdef PICO2_TINY_HUD
+/* Minimal file-class implementation for the flash-resident WAD.
+   None of the methods should ever be hit — wad_file->mapped is set so
+   the W_Read short-circuit handles all reads, and W_CloseFile is never
+   called on the IWAD during normal play. We still provide stubs so
+   the indirection is safe if some future code path picks it up. */
+static wad_file_t *_pico2_flash_open(char *path) { (void)path; return NULL; }
+static void        _pico2_flash_close(wad_file_t *wad) { (void)wad; }
+static size_t      _pico2_flash_read(wad_file_t *wad, unsigned int offset,
+                                     void *buffer, size_t buffer_len) {
+    (void)wad; (void)offset; (void)buffer;
+    return buffer_len;
+}
+static wad_file_class_t _pico2_flash_wad_class = {
+    _pico2_flash_open,
+    _pico2_flash_close,
+    _pico2_flash_read,
+};
+#endif
 
 
 //

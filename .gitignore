@@ -11,3 +11,6 @@ kernel/kernel_pico2.uf2
 # reference conversion scripts. font.bmp is never committed.
 /tmp/
 /console.bmp
+# DOOM1.WAD shareware — embedded into gcc_doom_pico2.bin at build time
+# via .incbin; not redistributable, so keep it out of git.
+/userland/gcc-bin/gcc_doom/DOOM1.WAD

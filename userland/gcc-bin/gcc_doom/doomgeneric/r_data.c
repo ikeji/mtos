@@ -447,18 +447,6 @@ void R_GenerateLookup (int texnum)
 //
 // R_GetColumn
 //
-#ifdef PICO2_TINY_HUD
-/* K22 path-A C3: per-column stream. The W_CacheLumpNum(PU_CACHE)
-   path is the last big zone consumer in the render loop — wall
-   patches are 1-8 KB each and the zone (18 KB total, 14 KB live
-   after R_Init residue + 12 mobjs) can't fit one. Reading one
-   column at a time from the patch's file position keeps draw-time
-   memory to a single 512-byte .bss scratch. Per-frame disk I/O
-   goes up substantially but the scene renders. */
-#define _PICO2_COL_BUF_SIZE 512
-static unsigned char _pico2_col_buf[_PICO2_COL_BUF_SIZE];
-#endif
-
 byte*
 R_GetColumn
 ( int		tex,
@@ -473,14 +461,12 @@ R_GetColumn
 
     if (lump > 0) {
 #ifdef PICO2_TINY_HUD
-        /* ofs = (column position inside patch) + 3. Read the column
-           starting at the post header. The caller (R_DrawColumn etc.)
-           uses ofs's "+3" to skip topdelta/length/pad and land on
-           pixel data — so we return the buffer + 3 to preserve that. */
+        /* K22 path-A flash-WAD: WAD lives in XIP flash, so we can
+           hand the caller a pointer straight into mapped memory at
+           (wad->mapped + lumpinfo[lump].position + ofs). Replaces
+           the 512-byte _pico2_col_buf streaming scratch from C3. */
         extern wad_file_t *g_lump_wad;
-        unsigned int pos = (unsigned int)(lumpinfo[lump].position + ofs - 3);
-        W_Read(g_lump_wad, pos, _pico2_col_buf, _PICO2_COL_BUF_SIZE);
-        return _pico2_col_buf + 3;
+        return (byte *)g_lump_wad->mapped + lumpinfo[lump].position + ofs;
 #else
 	return (byte *)W_CacheLumpNum(lump,PU_CACHE)+ofs;
 #endif

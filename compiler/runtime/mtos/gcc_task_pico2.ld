@@ -65,7 +65,11 @@ ENTRY(_start)
    a chicken-and-egg loop; the proper fix is a 2-pass build that
    re-links gcc_doom_pico2 after mkfs decides its position. */
 MEMORY {
-    FLASH (rx)  : ORIGIN = 0x100f66f0, LENGTH = 512K
+    /* K22 path-A flash-WAD: 8 MB FLASH region to fit the embedded
+       DOOM1.WAD (~4.2 MB) plus the existing text/rodata/got. The
+       LENGTH only bounds the linker — it doesn't reserve flash;
+       the actual occupied bytes are whatever the binary needs. */
+    FLASH (rx)  : ORIGIN = 0x100f66f0, LENGTH = 8M
     /* K22 path-A B1: __arena 32 KB (smallest that doesn't kernel-
        OOM at boot) and gcc_sram 480 KB. heap ~18 KB after the
        segs[768] / colcache 22 KB / lumpinfo / etc .bss tax. */

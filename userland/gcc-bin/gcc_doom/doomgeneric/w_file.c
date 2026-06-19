@@ -90,6 +90,19 @@ void W_CloseFile(wad_file_t *wad)
 size_t W_Read(wad_file_t *wad, unsigned int offset,
               void *buffer, size_t buffer_len)
 {
+#ifdef PICO2_TINY_HUD
+    /* K22 path-A flash-WAD: when the WAD is XIP-mapped, every read is
+       a memcpy from flash. Bypass the file_class indirection and the
+       fopen/fread path entirely. */
+    if (wad->mapped != NULL) {
+        size_t n = buffer_len;
+        if (offset + n > wad->length)
+            n = (offset < wad->length) ? (wad->length - offset) : 0;
+        if (n > 0)
+            __builtin_memcpy(buffer, wad->mapped + offset, n);
+        return n;
+    }
+#endif
     return wad->file_class->Read(wad, offset, buffer, buffer_len);
 }
 

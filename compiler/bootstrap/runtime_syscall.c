@@ -69,16 +69,20 @@ typedef int32_t* HeapObj;
 
 /* Power-of-2 pool allocator with 19 size classes.
  * See docs/task/pool_allocator.md for sizing rationale. */
-#define NPOOLS 19
+#define NPOOLS 21
 static const int pool_size[NPOOLS] = {
     16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192,
     16384, 32768, 65536, 131072, 262144, 524288,
-    1048576, 2097152, 4194304
+    1048576, 2097152, 4194304, 8388608, 16777216
 };
 static const int pool_count[NPOOLS] = {
     32768, 32768, 32768, 2048, 1024, 512, 256, 128, 32, 64,
-    32, 64, 32, 16, 8, 4, 4, 4, 2
+    32, 64, 32, 16, 8, 4, 4, 4, 2, 2, 1
 };
+/* K22 path-A flash-WAD: added 8 MB and 16 MB buckets so mkfs.tc can
+   hold the 4.5 MB DOOM1.WAD-embedded gcc_doom_pico2.bin in a single
+   U8Array. Without these the 4 MB max bucket silently truncated the
+   buffer, corrupting bytes past 4 MB in the mtfs image. */
 /* Buckets 3-7 (128B..2048B) were undersized for the gen2 self-host
    build of the compiler tasks (notably asm_pass2's link merge of
    bc2asm.s + asm_common.s + dead-strip + reloc state). Bumping them
@@ -90,10 +94,11 @@ static const int pool_count[NPOOLS] = {
    into bucket 2. typecheck.tc routinely allocates 6-7K nodes
    compiling the larger compiler files. Total bucket-2 footprint:
    64 * 32768 = 2 MB out of the 48 MB heap arena. */
-static char heap_mem[100663296]; /* 96MB arena (was 48; bumped 2026-05-06
-                                    so tools/mkfs.tc can hold all
-                                    ~3.3 MB of disk-extra task .bin
-                                    file contents in memory at once) */
+static char heap_mem[134217728]; /* 128MB arena (was 96; bumped for
+                                    the 8 MB / 16 MB buckets added so
+                                    mkfs can hold the 4.5 MB
+                                    DOOM1.WAD-embedded gcc_doom_pico2
+                                    binary intact — K22 path-A). */
 static char *pool_free[NPOOLS];
 static char *pool_base[NPOOLS];
 static char *pool_end[NPOOLS];

@@ -91,7 +91,14 @@ GCC_INCLUDES_gcc_doom := $(GCC_DOOM_INCLUDES)
 GCC_DOOM_WHD_SOURCES := \
     $(ROOT)/userland/gcc-bin/gcc_doom/doomgeneric/whd/tiny_huff.c \
     $(ROOT)/userland/gcc-bin/gcc_doom/doomgeneric/whd/image_decoder.c
-GCC_SOURCES_gcc_doom_pico2  := $(GCC_DOOM_SOURCES) $(GCC_DOOM_WHD_SOURCES)
+# K22 path-A flash-WAD: embed DOOM1.WAD via .incbin so the runtime
+# can XIP-map it instead of fopen/fread from /sd. The .S file's
+# .incbin resolves relative to itself, so the WAD must live next to
+# doom1_wad.S in userland/gcc-bin/gcc_doom/.
+GCC_DOOM_WAD_SOURCE := \
+    $(ROOT)/userland/gcc-bin/gcc_doom/doom1_wad.S
+GCC_SOURCES_gcc_doom_pico2  := $(GCC_DOOM_SOURCES) $(GCC_DOOM_WHD_SOURCES) \
+                               $(GCC_DOOM_WAD_SOURCE)
 # -DPICO2_TINY_ZONE switches i_system.c's zone unit from MiB to KiB.
 # -DPICO2_TINY_BUFFERS halves r_plane.c's MAXVISPLANES (128→64) and
 # OPENINGS_FACTOR (64→32) so the resulting .bss leaves ~50 KB more
@@ -102,10 +109,11 @@ GCC_SOURCES_gcc_doom_pico2  := $(GCC_DOOM_SOURCES) $(GCC_DOOM_WHD_SOURCES)
 # our existing .c calls into them yet — stage 1 just verifies that
 # the runtime whd files compile + link under our toolchain.
 GCC_INCLUDES_gcc_doom_pico2 := $(GCC_DOOM_INCLUDES) \
+    -I$(ROOT)/userland/gcc-bin/gcc_doom \
     -I$(ROOT)/userland/gcc-bin/gcc_doom/doomgeneric/whd \
     -DPICO2_TINY_ZONE -DPICO2_TINY_BUFFERS -DPICO2_TINY_BUFFERS_HARDER \
     -DPICO2_R_INIT_LITE -DPICO2_LUMPINFO_SHRUNK -DPICO2_TINY_BACKUPTICS \
-    -DPICO2_TINY_HUD -DPICO2_DISABLE_HUD -DUSE_WHD=1 \
+    -DPICO2_TINY_HUD -DPICO2_DISABLE_HUD -DPICO2_DG_DRAW_DEBUG -DUSE_WHD=1 \
     -DDOOMGENERIC_RESX=320 -DDOOMGENERIC_RESY=168 \
     -DCMAP256=1
 GCC_LD_gcc_doom_pico2       := $(ROOT)/compiler/runtime/mtos/gcc_task_pico2.ld

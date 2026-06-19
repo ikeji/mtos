@@ -49,15 +49,13 @@ planefunction_t		ceilingfunc;
 // and SCREENWIDTH*32 openings holds for the same map; rooms with more
 // dense overlap may glitch but won't crash. Tune up if E1M1 misrenders.
 #ifdef PICO2_TINY_BUFFERS_HARDER
-/* K22 Phase 6: pushed MAXVISPLANES 32 → 16 and OPENINGS 16 → 8 so
-   .bss frees ~16 KB. With 16 KB stack now at the top of __gcc_sram
-   (gcc_task_pico2.ld), the heap was 16 KB short of fitting both
-   the 96 KB Z_Init zone and fopen's FILE struct; this trade brings
-   the budget back. E1M1 renders glitchy frames if vis count tops
-   16 / spans top 8×width, but the goal is checking that the boot
-   path reaches the title-screen game loop without overflowing. */
-#define MAXVISPLANES	16
-#define OPENINGS_FACTOR	8
+/* K22 path-A flash-WAD: streaming scratches (_pico2_col_buf,
+   _pico2_flat_buf, _pico2_sprite_buf — ~8.7 KB) replaced with
+   direct mapped-WAD pointers. Reuse that .bss budget for a
+   larger visplane / openings pool so E1M1 stops hitting "no
+   more visplanes" / span overflow. */
+#define MAXVISPLANES	24
+#define OPENINGS_FACTOR	12
 #elif defined(PICO2_TINY_BUFFERS)
 #define MAXVISPLANES	64
 #define OPENINGS_FACTOR	32
@@ -437,21 +435,13 @@ void R_DrawPlanes (void)
 	// regular flat
         lumpnum = firstflat + flattranslation[pl->picnum];
 #ifdef PICO2_TINY_HUD
-	/* K22 path-A C3: read flat (64×64 = 4096 B) into a pinned
-	   .bss buffer instead of W_CacheLumpNum-ing it into the
-	   PU_STATIC zone. The zone can't fit a 4 KB alloc after
-	   R_Init residue + PU_LEVEL mobjs. The buffer is reused
-	   plane-by-plane — by the time we move to the next plane
-	   ds_source's contents from the previous one are no longer
-	   referenced. */
+	/* K22 path-A flash-WAD: ds_source can point directly at the
+	   mapped WAD; flats are 64×64 bytes of raw pixels which the
+	   draw loop reads with no modification. Frees the 4 KB
+	   _pico2_flat_buf scratch. */
 	{
-	    static unsigned char _pico2_flat_buf[4096];
-	    int sz = lumpinfo[lumpnum].size;
-	    if (sz > (int)sizeof(_pico2_flat_buf))
-	        I_Error("flat %d > %d", sz,
-	                (int)sizeof(_pico2_flat_buf));
-	    W_ReadLump(lumpnum, _pico2_flat_buf);
-	    ds_source = _pico2_flat_buf;
+	    extern wad_file_t *g_lump_wad;
+	    ds_source = (byte *)g_lump_wad->mapped + lumpinfo[lumpnum].position;
 	}
 #else
 	ds_source = W_CacheLumpNum(lumpnum, PU_STATIC);

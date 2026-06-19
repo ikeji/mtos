@@ -722,14 +722,23 @@ char *D_FindIWAD(int mask, GameMission_t *mission)
 
         iwadfile = myargv[iwadparm + 1];
 
+#ifdef PICO2_TINY_HUD
+        /* K22 path-A: DOOM1.WAD is `.incbin`'d into our task's .rodata
+           and W_AddFile uses the flash-mapped copy regardless of the
+           string passed in. Skip the SD existence check that would
+           otherwise abort us with "IWAD file not found". */
+        result = iwadfile;
+        *mission = doom;
+#else
         result = D_FindWADByName(iwadfile);
 
         if (result == NULL)
         {
             I_Error("IWAD file '%s' not found!", iwadfile);
         }
-        
+
         *mission = IdentifyIWADByName(result, mask);
+#endif
     }
     else
     {

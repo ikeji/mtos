@@ -37,16 +37,14 @@ static unsigned long long _uptime_us(void)
        enough for monotonic game time. */
 }
 
-/* Syscall 101: nanosleep. Our kernel takes (sec, nsec) split args
-   the same way the Linux ABI does. */
+/* Syscall 101: nanosleep — our kernel takes a single `ms` arg in a0
+   (not the Linux struct-timespec pair). Matches the TC do_nanosleep
+   stub in compiler/runtime/mtos/task_crt0.s. */
 static void _nanosleep_ms(uint32_t ms)
 {
-    long sec  = (long)(ms / 1000u);
-    long nsec = (long)(ms % 1000u) * 1000000L;
-    register long _a __asm__("a0") = sec;
-    register long _b __asm__("a1") = nsec;
+    register long _a __asm__("a0") = (long)ms;
     register long _n __asm__("a7") = 101;
-    __asm__ volatile("ecall" : "+r"(_a) : "r"(_b), "r"(_n) : "memory");
+    __asm__ volatile("ecall" : "+r"(_a) : "r"(_n) : "memory");
 }
 
 /* /dev/fb mode-0 band-blit protocol: 10-byte header (x, y, w, h,
@@ -127,8 +125,8 @@ static unsigned _dg_frame_count = 0;
 void DG_DrawFrame(void)
 {
 #ifdef PICO2_DG_DRAW_DEBUG
-    if ((_dg_frame_count++ % 30) == 0)
-        printf("[df %u]", _dg_frame_count);
+    /* Print every frame (rendering is so slow that 1 frame ≈ many sec) */
+    printf("[df %u]", _dg_frame_count++);
 #endif
 
     if (_fb_fd < 0 || DG_ScreenBuffer == 0)
@@ -200,6 +198,21 @@ static unsigned char _ascii_to_doomkey(unsigned char c)
     }
 }
 
+/* Syscall 271: sys_read_nb — like read(2) but returns -2 instead of
+   yielding when no data is available. Critical for the DOOM game loop:
+   read(/dev/kbd) on pico2 sleeps until a key event arrives, which
+   silently hangs TryRunTics's wait loop because we never make it back
+   to I_GetTime to advance. */
+static long _read_nb(int fd, void *buf, unsigned long n)
+{
+    register long _a __asm__("a0") = (long)fd;
+    register long _b __asm__("a1") = (long)buf;
+    register long _c __asm__("a2") = (long)n;
+    register long _s __asm__("a7") = 271;
+    __asm__ volatile("ecall" : "+r"(_a) : "r"(_b), "r"(_c), "r"(_s) : "memory");
+    return _a;
+}
+
 int DG_GetKey(int *pressed, unsigned char *key)
 {
     /* Drain /dev/kbd into the local queue. Each ASCII byte from the
@@ -207,7 +220,7 @@ int DG_GetKey(int *pressed, unsigned char *key)
        and queue. */
     if (_kbd_fd >= 0 && _key_count < _DG_KEY_QUEUE) {
         unsigned char buf[8];
-        long n = read(_kbd_fd, buf, sizeof(buf));
+        long n = _read_nb(_kbd_fd, buf, sizeof(buf));
         if (n > 0) {
             int i;
             for (i = 0; i < (int)n && _key_count < _DG_KEY_QUEUE; i++) {

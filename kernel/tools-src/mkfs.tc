@@ -19,6 +19,7 @@ fn do_openat(dirfd: i32, path: StringLiteral, flags: i32) -> i32;
 fn do_close(fd: i32) -> i32;
 fn do_getdents64(fd: i32, buf: u32, count: i32) -> i32;
 fn do_statx(dirfd: i32, path: String, flags: i32, mask: i32, sxbuf: u32) -> i32;
+fn do_read(fd: i32, buf: u32, count: i32) -> i32;
 
 var BLOCK_SIZE: i32 = 512;
 var INODE_SIZE: i32 = 64;
@@ -211,24 +212,19 @@ fn read_file(path_addr: u32, path_len: i32,
     var buf: U8Array = U8Array((expected_size + 1) as u32);
     var got: i32 = 0;
     var done: i32 = 0;
+    /* Bypass sys_read: it always writes starting at buf+4, so any
+       multi-chunk read (when a single Linux read() returns less than
+       expected — e.g. the 4.5 MB embedded DOOM1.WAD where qemu-user
+       caps reads at ~1-4 MB) would need a manual memcpy after each
+       chunk. The old version did that copy AFTER the next sys_read
+       had already overwritten buf[0..n), losing bytes 0..n2 of the
+       file. Call do_read directly with the target offset baked into
+       the pointer. */
     while got < expected_size && done == 0 {
-        var n: i32 = sys_read(fd, buf, expected_size - got);
-        // sys_read writes from offset 0; we need to compact later.
-        // But here we read the whole thing into buf; if short, retry.
+        var n: i32 = do_read(fd, buf as u32 + 4u32 + (got as u32),
+                             expected_size - got);
         if n <= 0 { done = 1; }
-        else {
-            // Move bytes from [0..n) to [got..got+n) — only when we
-            // need a continuation. On the first iteration got==0 so
-            // they're already in place.
-            if got > 0 {
-                var k: i32 = 0;
-                while k < n {
-                    set(buf, got + k, get(buf, k));
-                    k = k + 1;
-                }
-            }
-            got = got + n;
-        }
+        else { got = got + n; }
     }
     do_close(fd);
     poke32(data_len_out, got as u32);

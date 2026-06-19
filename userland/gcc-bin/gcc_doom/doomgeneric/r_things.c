@@ -425,20 +425,13 @@ R_DrawVisSprite
     patch_t*		patch;
 
 #ifdef PICO2_TINY_HUD
-    /* K22 path-A C3: pin sprite patch buffer to .bss instead of
-       letting W_CacheLumpNum allocate ~1-4 KB PU_CACHE blocks in
-       the zone (which has only ~3.7 KB free max — the OOM blocker).
-       Pin 4 KB to cover most sprite frames; the player + item
-       sprites in E1M1 fit. */
+    /* K22 path-A flash-WAD: sprite lumps live in XIP flash; cast a
+       direct pointer instead of reading into a 4 KB scratch. */
     {
-        static unsigned char _pico2_sprite_buf[4096];
+        extern wad_file_t *g_lump_wad;
         int sprite_lump = vis->patch + firstspritelump;
-        int sz = lumpinfo[sprite_lump].size;
-        if (sz > (int)sizeof(_pico2_sprite_buf))
-            I_Error("sprite lump %d size %d > %d",
-                    sprite_lump, sz, (int)sizeof(_pico2_sprite_buf));
-        W_ReadLump(sprite_lump, _pico2_sprite_buf);
-        patch = (patch_t *)_pico2_sprite_buf;
+        patch = (patch_t *)((byte *)g_lump_wad->mapped +
+                            lumpinfo[sprite_lump].position);
     }
 #else
     patch = W_CacheLumpNum (vis->patch+firstspritelump, PU_CACHE);
