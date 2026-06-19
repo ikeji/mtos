@@ -89,7 +89,14 @@ int main(int argc, char **argv)
         extern int open(const char *, int, ...);
         int fd = open("/dev/fb", 1);
         if (fd >= 0) {
-            unsigned char m3[12] = {0,0, 0,0, 0,0, 0,0, 3,0, 0x28,0};
+            /* MADCTL 0xE8 = MY | MX | MV | BGR — landscape with both
+               row+col reversed (effectively 180° rotated vs 0x28).
+               The pico2 LCD module on this board is mounted so that a
+               plain 0x28 puts the DOOM viewport upside down for the
+               operator. console keeps the kernel default MADCTL (0x48)
+               so this DOOM-only flip doesn't touch the text terminal
+               layout. */
+            unsigned char m3[12] = {0,0, 0,0, 0,0, 0,0, 3,0, 0xE8,0};
             write(fd, m3, 12);
             #define FILL(_x, _y, _w, _h, _c) do { \
                 unsigned char h[12]; \
