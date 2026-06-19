@@ -63,6 +63,19 @@ int main(int argc, char **argv)
 
     doomgeneric_Create(new_argc, new_argv);
 
+    /* K22 path-A D: PICO2_DISABLE_HUD short-circuits ST_Drawer (the
+       only call site for ST_doPaletteStuff → I_SetPalette), so the
+       palette stays zero-init and every pixel converts to RGB565 = 0.
+       Load PLAYPAL ourselves once D_DoomMain has W_Init'd the WAD.
+       In a no-HUD build the per-tic palette flicker (red on damage,
+       gold on item pickup) is gone, which is fine for path-A. */
+    {
+        extern void I_SetPalette(unsigned char *palette);
+        unsigned char *p = (unsigned char *)W_CacheLumpName("PLAYPAL", 1 /* PU_STATIC */);
+        if (p != 0)
+            I_SetPalette(p);
+    }
+
     /* K22 Phase 6: doomgeneric_Create's D_DoomLoop runs exactly one
        doomgeneric_Tick before returning — the loop is the platform's
        responsibility. Spin here so the game keeps ticking instead of
