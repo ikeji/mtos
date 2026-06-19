@@ -382,28 +382,23 @@ fn lcd_init() -> void {
     lcd_cmd(0xB1);  lcd_dat(0xA0);             // frame rate
     lcd_cmd(0xB4);  lcd_dat(0x02);             // display inversion control
     lcd_cmd(0xB6);  lcd_dat(0x02); lcd_dat(0x02); lcd_dat(0x3B);// disp func
-    // K22 path-A F: mild S-curve gamma. The ILI9488 reference values
-    // were too aggressive (E1M1's brown floor washed out to solid blue
-    // through the camera) but the chip's reset default left mid-tones
-    // looking washed and pink. These values midway between identity
-    // and reference give DOOM viewport content reasonable contrast
-    // without crushing PLAYPAL hues.
+    // Positive gamma (0xE0): 15 bytes per ILI9488 reference init.
     lcd_cmd(0xE0);
-    lcd_dat(0x00); lcd_dat(0x07); lcd_dat(0x0F); lcd_dat(0x04);
-    lcd_dat(0x11); lcd_dat(0x04); lcd_dat(0x39); lcd_dat(0x59);
-    lcd_dat(0x4A); lcd_dat(0x04); lcd_dat(0x0C); lcd_dat(0x09);
-    lcd_dat(0x16); lcd_dat(0x18); lcd_dat(0x0F);
+    lcd_dat(0x00); lcd_dat(0x03); lcd_dat(0x09); lcd_dat(0x08);
+    lcd_dat(0x16); lcd_dat(0x0A); lcd_dat(0x3F); lcd_dat(0x78);
+    lcd_dat(0x4C); lcd_dat(0x09); lcd_dat(0x0A); lcd_dat(0x08);
+    lcd_dat(0x16); lcd_dat(0x1A); lcd_dat(0x0F);
+    // Negative gamma (0xE1): 15 bytes, paired with the positive curve.
     lcd_cmd(0xE1);
-    lcd_dat(0x00); lcd_dat(0x0F); lcd_dat(0x13); lcd_dat(0x03);
-    lcd_dat(0x0F); lcd_dat(0x05); lcd_dat(0x2F); lcd_dat(0x43);
-    lcd_dat(0x40); lcd_dat(0x04); lcd_dat(0x0F); lcd_dat(0x10);
-    lcd_dat(0x2F); lcd_dat(0x33); lcd_dat(0x0F);
+    lcd_dat(0x00); lcd_dat(0x16); lcd_dat(0x19); lcd_dat(0x03);
+    lcd_dat(0x0F); lcd_dat(0x05); lcd_dat(0x32); lcd_dat(0x45);
+    lcd_dat(0x46); lcd_dat(0x04); lcd_dat(0x0E); lcd_dat(0x0D);
+    lcd_dat(0x35); lcd_dat(0x37); lcd_dat(0x0F);
     // Vertical scroll: full 480-line area (TFA = 0, VSA = 480, BFA = 0).
     lcd_cmd(0x33);
     lcd_dat(0x00); lcd_dat(0x00);
     lcd_dat(0x01); lcd_dat(0xE0);
     lcd_dat(0x00); lcd_dat(0x00);
-    lcd_cmd(0x20);                             // display inversion OFF
     lcd_cmd(0x11);  lcd_delay_ms(120);         // sleep out
     lcd_cmd(0x29);                             // display on
 
