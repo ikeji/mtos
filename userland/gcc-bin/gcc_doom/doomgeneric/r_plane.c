@@ -53,7 +53,12 @@ planefunction_t		ceilingfunc;
    _pico2_flat_buf, _pico2_sprite_buf — ~8.7 KB) replaced with
    direct mapped-WAD pointers. Reuse that .bss budget for a
    larger visplane / openings pool so E1M1 stops hitting "no
-   more visplanes" / span overflow. */
+   more visplanes" / span overflow. K22 path-A E first tried
+   bumping to 32 but the extra 5.3 KB .bss tax pushed the
+   picolibc heap under what Z_Init needs — booted with a 9 KB
+   zone and R_Init OOM'd. Holding at 24 and softening R_FindPlane
+   to recycle the last plane on overflow (glitch instead of
+   crash) is the better trade. */
 #define MAXVISPLANES	24
 #define OPENINGS_FACTOR	12
 #elif defined(PICO2_TINY_BUFFERS)
@@ -253,10 +258,30 @@ R_FindPlane
 			
     if (check < lastvisplane)
 	return check;
-		
+
+#ifdef PICO2_TINY_BUFFERS_HARDER
+    /* K22 path-A E: a single I_Error on visplane overflow killed the
+       task mid-play whenever the player turned and exposed > MAXVIS
+       planes worth of distinct floor/ceiling/sky pieces (saw (26) on
+       a normal E1M1 walkaround). With the picolibc heap too tight to
+       grow the pool, recycle the last slot instead — the new plane's
+       contents stomp the previous one and render glitchily, but the
+       game keeps running. */
+    if (lastvisplane - visplanes == MAXVISPLANES) {
+        check = lastvisplane - 1;
+        check->height = height;
+        check->picnum = picnum;
+        check->lightlevel = lightlevel;
+        check->minx = SCREENWIDTH;
+        check->maxx = -1;
+        memset(check->top, 0xff, sizeof(check->top));
+        return check;
+    }
+#else
     if (lastvisplane - visplanes == MAXVISPLANES)
 	I_Error ("R_FindPlane: no more visplanes");
-		
+#endif
+
     lastvisplane++;
 
     check->height = height;
@@ -321,17 +346,33 @@ R_CheckPlane
 	return pl;		
     }
 	
+#ifdef PICO2_TINY_BUFFERS_HARDER
+    /* K22 path-A E: R_CheckPlane also creates a fresh visplane and
+       can blow past MAXVISPLANES the same way R_FindPlane could.
+       Recycle the last slot when full — visual glitch, no crash. */
+    if (lastvisplane - visplanes == MAXVISPLANES) {
+        visplane_t *last = lastvisplane - 1;
+        last->height = pl->height;
+        last->picnum = pl->picnum;
+        last->lightlevel = pl->lightlevel;
+        last->minx = start;
+        last->maxx = stop;
+        memset(last->top, 0xff, sizeof(last->top));
+        return last;
+    }
+#endif
+
     // make a new visplane
     lastvisplane->height = pl->height;
     lastvisplane->picnum = pl->picnum;
     lastvisplane->lightlevel = pl->lightlevel;
-    
+
     pl = lastvisplane++;
     pl->minx = start;
     pl->maxx = stop;
 
     memset (pl->top,0xff,sizeof(pl->top));
-		
+
     return pl;
 }
 

@@ -91,19 +91,76 @@ static void _put_u16le(unsigned char *b, int off, unsigned int v)
 
 /* /dev/kbd backend: rising-edge ASCII bytes since last read (see
    kernel/platform/pico2/keyboard_matrix.tc::kbd_backend_read). The
-   kernel returns 0 when nothing changed. DG_GetKey wraps this into
-   the press/key pair DOOM expects. We don't currently synthesise
-   release events — most DOOM menu / autorun paths trigger on the
-   press half, which is enough for first-light interaction. */
+   kernel only reports presses (no release / no key-hold), so
+   DG_GetKey synthesises a held-down window per key by emitting a
+   keydown immediately and queuing a keyup K calls later. Tap the
+   physical key once, DOOM sees the key held for ~0.3 s — enough
+   for ~10 tics of walking / turning. Re-press the same key while
+   it is "down" simply extends the release deadline. */
 static int _kbd_fd = -1;
 
-/* Pending key queue: when /dev/kbd delivers multiple ASCII bytes in
-   one read, queue them so DG_GetKey returns one event per call. */
-#define _DG_KEY_QUEUE 8
-static unsigned char _key_queue[_DG_KEY_QUEUE];
-static int _key_head = 0;
-static int _key_tail = 0;
-static int _key_count = 0;
+/* Active-keys table: each active key carries the count of remaining
+   DG_GetKey calls before we emit its synthetic keyup. The kernel only
+   reports rising edges, so a single tap holds the key for this many
+   DG_GetKey calls — re-pressing the same key while held refreshes
+   the timer (mash a key to walk continuously). ~1 s of game time. */
+#define _DG_ACTIVE_MAX  8
+#define _DG_HOLD_CALLS  35
+static unsigned char _active_key[_DG_ACTIVE_MAX];
+static int           _active_left[_DG_ACTIVE_MAX];
+
+/* Pending events: ev[0..count) holds (pressed, key) pairs that
+   DG_GetKey hands back one at a time. Each kbd byte enqueues a
+   single keydown; the matching keyup is scheduled via _active_*. */
+#define _DG_KEY_QUEUE 16
+static unsigned char _ev_pressed[_DG_KEY_QUEUE];
+static unsigned char _ev_key[_DG_KEY_QUEUE];
+static int _ev_head = 0;
+static int _ev_tail = 0;
+static int _ev_count = 0;
+
+static void _ev_push(int pressed, unsigned char key)
+{
+    if (_ev_count >= _DG_KEY_QUEUE) return;
+    _ev_pressed[_ev_tail] = (unsigned char)pressed;
+    _ev_key[_ev_tail] = key;
+    _ev_tail = (_ev_tail + 1) % _DG_KEY_QUEUE;
+    _ev_count++;
+}
+
+/* Mark `key` as held. If already active, just refresh the timer. */
+static void _hold_press(unsigned char key)
+{
+    int i;
+    for (i = 0; i < _DG_ACTIVE_MAX; i++) {
+        if (_active_left[i] > 0 && _active_key[i] == key) {
+            _active_left[i] = _DG_HOLD_CALLS;
+            return;
+        }
+    }
+    for (i = 0; i < _DG_ACTIVE_MAX; i++) {
+        if (_active_left[i] == 0) {
+            _active_key[i] = key;
+            _active_left[i] = _DG_HOLD_CALLS;
+            return;
+        }
+    }
+    /* table full — drop silently; press still fires (queued above). */
+}
+
+/* Tick active keys; queue a synthetic keyup for any that timed out. */
+static void _hold_tick(void)
+{
+    int i;
+    for (i = 0; i < _DG_ACTIVE_MAX; i++) {
+        if (_active_left[i] > 0) {
+            _active_left[i]--;
+            if (_active_left[i] == 0)
+                _ev_push(0, _active_key[i]);
+        }
+    }
+}
+
 
 void DG_Init(void)
 {
@@ -215,30 +272,37 @@ static long _read_nb(int fd, void *buf, unsigned long n)
 
 int DG_GetKey(int *pressed, unsigned char *key)
 {
-    /* Drain /dev/kbd into the local queue. Each ASCII byte from the
-       kernel = one rising edge on the matrix; map to a DOOM keycode
-       and queue. */
-    if (_kbd_fd >= 0 && _key_count < _DG_KEY_QUEUE) {
+    /* Drain /dev/kbd into the event queue. The kernel only reports
+       rising edges (one ASCII byte per press, nothing on release),
+       so every byte enqueues a keydown event AND arms the synthetic
+       keyup timer in _active_left so the held-key window expires
+       after ~_DG_HOLD_CALLS DG_GetKey invocations. */
+    if (_kbd_fd >= 0 && _ev_count + 2 <= _DG_KEY_QUEUE) {
         unsigned char buf[8];
         long n = _read_nb(_kbd_fd, buf, sizeof(buf));
         if (n > 0) {
             int i;
-            for (i = 0; i < (int)n && _key_count < _DG_KEY_QUEUE; i++) {
+            for (i = 0; i < (int)n && _ev_count + 2 <= _DG_KEY_QUEUE; i++) {
                 unsigned char dk = _ascii_to_doomkey(buf[i]);
                 if (dk != 0) {
-                    _key_queue[_key_tail] = dk;
-                    _key_tail = (_key_tail + 1) % _DG_KEY_QUEUE;
-                    _key_count++;
+                    _ev_push(1, dk);
+                    _hold_press(dk);
                 }
             }
         }
     }
-    if (_key_count == 0)
+    /* Age all held keys by one DG_GetKey call. When one expires, a
+       keyup event is queued for it. Only tick once per "drain cycle"
+       — DOOM keeps calling DG_GetKey until it returns 0, so guarding
+       with _ev_count == 0 limits us to one tick per cycle. */
+    if (_ev_count == 0)
+        _hold_tick();
+    if (_ev_count == 0)
         return 0;
-    *pressed = 1;
-    *key = _key_queue[_key_head];
-    _key_head = (_key_head + 1) % _DG_KEY_QUEUE;
-    _key_count--;
+    *pressed = _ev_pressed[_ev_head];
+    *key     = _ev_key[_ev_head];
+    _ev_head = (_ev_head + 1) % _DG_KEY_QUEUE;
+    _ev_count--;
     return 1;
 }
 
