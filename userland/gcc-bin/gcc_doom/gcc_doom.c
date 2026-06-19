@@ -50,16 +50,10 @@ int main(int argc, char **argv)
         new_argv[new_argc++] = (char *)"-iwad";
         new_argv[new_argc++] = (char *)"/sd/doom1.wad";
     }
-    /* K22 path-A: vertexes/segs/subsectors/sectors/nodes/sides/
-       blocklinks/linebuffer/rejectmatrix all pinned to .bss in
-       p_setup.c. PU_LEVEL demand drops from ~60 KB to ~mobjs only
-       (~21 KB for E1M1's 138 things). DEFAULT_RAM dropped to 28 KB
-       (i_system.c) to match the new ~36 KB heap. Try autostart again. */
-    if (new_argc + 3 <= 10) {
-        new_argv[new_argc++] = (char *)"-warp";
-        new_argv[new_argc++] = (char *)"1";
-        new_argv[new_argc++] = (char *)"1";
-    }
+    /* K22 path-A H: drop the -warp E1M1 autostart so D_DoomMain hands
+       control to D_StartTitle. The user lands on TITLEPIC + the demo
+       attract loop and starts the game from the menu (Enter → Enter
+       → ENTER for "New Game" / "Episode 1" / "Hurt me plenty"). */
 
     doomgeneric_Create(new_argc, new_argv);
 
