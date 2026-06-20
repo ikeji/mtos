@@ -16,14 +16,14 @@
 #     equivalent paths) once the package is installed.
 EXTRA_GUEST_TASKS += gcc_doom
 GCC_TASKS         += gcc_doom
-# Pico 2 variant — text + GOT in flash, .data + .bss live at the
-# fixed link-time SRAM VMA carved out of the kernel arena
-# (__gcc_sram in kernel/platform/pico2/crt0_pico2_data.s).
-# In GUEST_TASKS rather than EXTRA so it ships in the small disk.img
-# (and therefore pico2_kernel.uf2 fits in the 4 MB flash). The qemu
-# virt disk also picks it up but that build never spawns it; the
-# binary's link-time addresses don't match qemu virt's RAM map.
-GUEST_TASKS       += gcc_doom_pico2
+# Pico 2 variant — text + GOT in flash, .data + .bss live at a fixed
+# link-time SRAM VMA. K22 path-A demoed DOOM playable on the LCD but
+# the build needed __gcc_sram carved out of the kernel arena, which
+# OOM'd /bin/console -l on boot. Reverted to EXTRA_GUEST_TASKS so the
+# binary still builds for nostalgia but isn't staged into any disk
+# image — the kernel arena is back to its full 504 KB and console-
+# land boots normally.
+EXTRA_GUEST_TASKS += gcc_doom_pico2
 GCC_TASKS         += gcc_doom_pico2
 
 # 8 MB arena so DOOM's Z_Init can grab its 5 MiB zone (vanilla

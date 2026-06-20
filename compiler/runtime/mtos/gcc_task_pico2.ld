@@ -70,9 +70,14 @@ MEMORY {
        LENGTH only bounds the linker — it doesn't reserve flash;
        the actual occupied bytes are whatever the binary needs. */
     FLASH (rx)  : ORIGIN = 0x100f66f0, LENGTH = 8M
-    /* K22 path-A B1: __arena 32 KB (smallest that doesn't kernel-
-       OOM at boot) and gcc_sram 480 KB. heap ~18 KB after the
-       segs[768] / colcache 22 KB / lumpinfo / etc .bss tax. */
+    /* gcc_doom_pico2 was demoed via __gcc_sram carved out of the kernel
+       arena (0x20008000..0x20080000). That layout starved console-land
+       boot, so the kernel arena is back to its full 508 KB and DOOM is
+       no longer staged in any disk image. The link-time RAM range below
+       now overlaps the kernel arena — gcc_doom_pico2 still BUILDS for
+       reference but must not be spawned in this layout (it would
+       clobber kernel kmalloc state). Re-introducing a guest SRAM
+       region requires reverting the crt0_pico2_data.s arena resize. */
     RAM   (rwx) : ORIGIN = 0x20008000, LENGTH = 480K
 }
 

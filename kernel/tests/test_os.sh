@@ -353,15 +353,8 @@ fi
 #     (software scroll) purely from the boot config, with no shell to
 #     pass argv. Confirms the cfg tokenizer + init-task argv packing. ---
 KERNEL_CONSOLE_LAND_DISK="$ROOT_DIR/kernel/build/disk-console-land.img"
-KERNEL_CONSOLE_LAND_CONF="$ROOT_DIR/kernel/tests/fixtures/kern_console_land.conf"
-# K22 path-A: disk-console-land.img doubles as the pico2 DOOM boot disk
-# (kern_console_land.conf is overridden to init=/bin/gcc_doom_pico2
-# whenever DOOM development is active). When the conf points at a
-# non-console init, this test no longer applies — skip rather than
-# silently fail.
 if command -v qemu-system-riscv32 >/dev/null 2>&1 \
-    && [ -s "$KERNEL_BIN" ] && [ -s "$KERNEL_CONSOLE_LAND_DISK" ] \
-    && grep -q '^init=/bin/console ' "$KERNEL_CONSOLE_LAND_CONF" 2>/dev/null; then
+    && [ -s "$KERNEL_BIN" ] && [ -s "$KERNEL_CONSOLE_LAND_DISK" ]; then
     t0=$(time_ms)
     # seq 5 already overflows the 15-row landscape window once
     # /etc/login's neofetch has filled it — enough to assert "no

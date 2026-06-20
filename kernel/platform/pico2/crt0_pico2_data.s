@@ -4,30 +4,19 @@
 #
 # Pico 2 SRAM: 0x20000000 .. 0x20082000 (520 KB). Layout:
 #   0x20000000 .. 0x20000120: .data (small, copied from flash, ~288 B)
-#   0x20000120 .. 0x200001E4: kernel .bss head (_trap_frame +
-#                              _kern_save + _switch_frame ≈ 196 B)
-#   0x200001E4 .. 0x20008000: __arena, ~31.5 KB kmalloc pool (just
-#                              enough for kernel startup + DOOM spawn;
-#                              console/sh boot still OOM)
-#   0x20008000 .. 0x20080000: __gcc_sram, 480 KB SRAM block reserved
-#                              for one gcc-built guest task at a time.
-#                              K22 path-A: 64 KB DG_ScreenBuffer +
-#                              ~280 KB other .bss + 16 KB stack + 60+
-#                              KB DOOM zone = fits with picolibc slack.
-#   0x20080000 .. 0x20082000: kernel stack (8 KB reserved in
-#                              platform_pico2.s, sp starts at 0x20082000)
+#   0x20000120 .. ~0x2007E100: kernel .bss + __arena
+#   0x20080000 .. 0x20082000:   kernel stack (8 KB reserved in platform_pico2.s)
 #
-# Why __arena shrunk twice — first from 520192 B (504 KB) to
-# 196124 B (~191 KB), then to 130588 B (~127 KB) for K22 Phase 5:
-# carving __gcc_sram out of the high SRAM was the smallest change
-# that let gcc_doom_pico2 boot without rewriting kmalloc. The cost
-# is a ~310 KB drop in the kernel's compiler-task budget — asm_pass2
-# / asm_pass3 (430-440 KB peak) no longer fit, so this layout is for
-# DOOM testing only. Bring back the larger arena (this file + the
-# li a1 below) before re-running pico2 self-replicate.
-#
+# __arena at 520192 B (508 KB). Leaves ~8 KB slack between the end of
+# bss and the kernel stack so the kernel's own scratch has room to grow.
+# Sized to hold one full compiler task (asm_pass2 430 KB / asm_pass3
+# 441 KB peak + stack + img) on pico2 plus headroom for kmalloc
+# fragmentation across many spawn/exit cycles in a compiler pipeline
+# run. Also fits /bin/console -l + /bin/sh side by side, which need
+# ~41 KB combined for arena/stack/frame_buf — the K22 DOOM-only
+# layout that carved __gcc_sram out of this region OOM'd console boot.
 # Must stay in sync with platform_pico2.s's `li a1, N` runtime_init
-# argument (currently 32284).
+# argument.
     .data
     .globl __data_end
 __data_end:
@@ -41,7 +30,4 @@ _switch_frame:
     .space 4
     .globl __arena
 __arena:
-    .space 32284
-    .globl __gcc_sram
-__gcc_sram:
-    .space 491520
+    .space 520192
