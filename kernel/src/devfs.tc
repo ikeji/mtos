@@ -43,10 +43,11 @@ fn uart_rx_pop(buf: u32, len: i32) -> i32;
 fn kfree(ptr: u32) -> void;
 
 // Device ids.
-var DEV_UART: i32 = 0;
-var DEV_RTC:  i32 = 1;
-var DEV_FB:   i32 = 2;
-var DEV_KBD:  i32 = 3;
+var DEV_UART:  i32 = 0;
+var DEV_RTC:   i32 = 1;
+var DEV_FB:    i32 = 2;
+var DEV_KBD:   i32 = 3;
+var DEV_TOUCH: i32 = 4;
 
 var DEVFS_MAX_FDS: i32 = 8;
 // Data capacity of a buffered node's U8Array (after the 4-byte length
@@ -130,6 +131,13 @@ fn devfs_alloc(dev: i32, buf_hdr: u32, size: i32) -> i32 {
 //                      the byte count, 0 when no key is available.
 fn fb_backend_write(buf_addr: u32, n: i32) -> void;
 fn kbd_backend_read(buf_addr: u32, n: i32) -> i32;
+// touch_backend_read — devfs_read routes /dev/touch reads here.
+//   Returns 8 bytes per touch sample [x:u16 LE][y:u16 LE][z:u16 LE]
+//   [state:u8 (1 = down)][reserved:u8] when n >= 8 and pen is down.
+//   Returns 0 (and yields, as -2 at the ecall layer) while idle so a
+//   tap-driven UI blocks cheaply. Platforms without a touch panel link
+//   a stub that always returns 0.
+fn touch_backend_read(buf_addr: u32, n: i32) -> i32;
 
 // Open a /dev node. Returns a devfs slot index (>= 0) used as the
 // VFS inner handle, or -1 if the path names no known device.
@@ -143,6 +151,9 @@ export fn devfs_open(path_addr: u32, plen: i32) -> i32 {
     }
     if dev_path_is(path_addr, plen, "/dev/kbd") {
         return devfs_alloc(DEV_KBD, 0u32, 0);
+    }
+    if dev_path_is(path_addr, plen, "/dev/touch") {
+        return devfs_alloc(DEV_TOUCH, 0u32, 0);
     }
     if dev_path_is(path_addr, plen, "/dev/rtc") {
         var hdr: u32 = devfs_snap_rtc();
@@ -169,6 +180,13 @@ export fn devfs_read(fd: i32, buf_addr: u32, n: i32) -> i32 {
         var nk: i32 = kbd_backend_read(buf_addr, n);
         if nk == 0 { return -2; }
         return nk;
+    }
+    if dev(e) == DEV_TOUCH {
+        // Touchscreen backend (pico2: XPT2046 over bit-bang SPI;
+        // virt: stub returning 0). 0 → yield, otherwise byte count.
+        var nt: i32 = touch_backend_read(buf_addr, n);
+        if nt == 0 { return -2; }
+        return nt;
     }
     // Buffered node: consume from the snapshot, EOF when drained.
     if buf(e) == 0u32 { return -1; }

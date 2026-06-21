@@ -1,0 +1,206 @@
+// kernel/platform/pico2/touch_xpt2046.tc — XPT2046 resistive touchscreen
+// driver for /dev/touch on the Pico 2 (RP2350).
+//
+// Hardware pins (2026-05-21 board):
+//   GP13 = T_CLK         (MCU → controller, MCU drives clock)
+//   GP15 = T_CS          (MCU → controller, active low)
+//   GP16 = T_DO          (controller → MCU, MISO from MCU's view)
+//   GP17 = T_DI          (MCU → controller, MOSI from MCU's view)
+//   GP19 = T_INT         (controller → MCU, active low = pen down)
+//
+// SPI protocol (mode 0, CPOL=0 CPHA=0, MSB first):
+//   CS low → 8-bit command byte → 16-bit data response (top 12 bits valid)
+//
+// Command byte layout:
+//   bit7   = S      (start, always 1)
+//   bit6-4 = A2:A0  (channel)
+//     001 = Y, 011 = Z1, 100 = Z2, 101 = X
+//   bit3   = MODE   (0 = 12-bit, 1 = 8-bit)
+//   bit2   = SER/!DFR (0 = differential — required for X/Y/Z reads)
+//   bit1-0 = PD1:PD0 (00 = power-down between conversions + IRQ on)
+//
+// Useful commands:
+//   0xD0 = X read   (10110000 + PD=00 ... wait, 0xD0 = 1101 0000)
+//   actually 0xD0 = S=1, A=101 (X), MODE=0, DFR=0, PD=00 → ✓
+//   0x90 = Y read   (1001 0000)
+//   0xB0 = Z1       (1011 0000)
+//   0xC0 = Z2       (1100 0000)
+//
+// Raw ADC values are 12-bit (0..4095). Calibration into screen coords
+// is done by the caller; we just expose the raw samples here.
+
+// SIO register offsets (low-GPIO group, GP0-31).
+var TS_IO_BANK0: u32 = 0x40028000u32;
+var TS_PADS_SET: u32 = 0x4003A000u32;
+var TS_PADS_CLR: u32 = 0x4003B000u32;
+var TS_SIO:      u32 = 0xD0000000u32;
+var TS_SIO_IN:      u32 = 0x04u32;
+var TS_SIO_OUT_SET: u32 = 0x18u32;
+var TS_SIO_OUT_CLR: u32 = 0x20u32;
+var TS_SIO_OE_SET:  u32 = 0x38u32;
+var TS_SIO_OE_CLR:  u32 = 0x40u32;
+
+// GPIO numbers (per 2026-05-21 board silk).
+var TS_CLK:  i32 = 13;
+var TS_CS:   i32 = 15;
+var TS_DO:   i32 = 16;
+var TS_DI:   i32 = 17;
+var TS_INT:  i32 = 19;
+
+// Cached bit masks.
+var ts_clk_mask: u32 = 0u32;
+var ts_cs_mask:  u32 = 0u32;
+var ts_do_mask:  u32 = 0u32;
+var ts_di_mask:  u32 = 0u32;
+var ts_int_mask: u32 = 0u32;
+
+var ts_inited: i32 = 0;
+
+// Configure one GPIO pin: funcsel 5 = SIOB_PROC. Caller chooses
+// direction (OE) and pull config separately. Clears ISO + PDE so
+// the line isn't held low by the internal pull-down.
+// pull: 0 = no pull, 1 = pull-up, 2 = pull-down.
+fn ts_setup_pin(gp: i32, pull: i32) -> void {
+    poke32(TS_IO_BANK0 + ((8 * gp + 4) as u32), 5u32);
+    // Clear ISO + PUE + PDE so each call starts from a known state.
+    poke32(TS_PADS_CLR + ((4 + 4 * gp) as u32), 0x10Cu32);
+    if pull == 1 {
+        // IE | PUE
+        poke32(TS_PADS_SET + ((4 + 4 * gp) as u32), 0x48u32);
+    } else if pull == 2 {
+        // IE | PDE
+        poke32(TS_PADS_SET + ((4 + 4 * gp) as u32), 0x44u32);
+    } else {
+        poke32(TS_PADS_SET + ((4 + 4 * gp) as u32), 0x40u32); // IE only
+    }
+    return;
+}
+
+fn ts_init() -> void {
+    if ts_inited != 0 { return; }
+
+    ts_clk_mask = 1u32 << (TS_CLK as u32);
+    ts_cs_mask  = 1u32 << (TS_CS  as u32);
+    ts_do_mask  = 1u32 << (TS_DO  as u32);
+    ts_di_mask  = 1u32 << (TS_DI  as u32);
+    ts_int_mask = 1u32 << (TS_INT as u32);
+
+    // CLK, CS, DI are MCU outputs. DO and INT are inputs (pullup so a
+    // disconnected controller doesn't read random levels).
+    ts_setup_pin(TS_CLK, 0);
+    ts_setup_pin(TS_CS,  0);
+    ts_setup_pin(TS_DI,  0);
+    ts_setup_pin(TS_DO,  1);
+    // INT is open-drain on the XPT2046 side. Idle = high (with our
+    // pull-up; the board may already have one), touch = low.
+    ts_setup_pin(TS_INT, 1);
+
+    // Drive outputs high (CS idle high, CLK idle low for SPI mode 0,
+    // DI doesn't matter while CS is high but set to 0).
+    poke32(TS_SIO + TS_SIO_OE_SET, ts_clk_mask | ts_cs_mask | ts_di_mask);
+    poke32(TS_SIO + TS_SIO_OUT_SET, ts_cs_mask);
+    poke32(TS_SIO + TS_SIO_OUT_CLR, ts_clk_mask | ts_di_mask);
+
+    ts_inited = 1;
+    return;
+}
+
+// Short busy-wait so a driven line settles before being sampled.
+// XPT2046 spec allows 2.5 MHz SPI, so ~200 ns per half-cycle is fine.
+fn ts_settle() -> void {
+    var i: i32 = 0;
+    while i < 20 { i = i + 1; }
+    return;
+}
+
+// Transfer one byte MSB-first, returning the byte we got on DO.
+fn ts_xfer8(tx: i32) -> i32 {
+    var rx: i32 = 0;
+    var b: i32 = 7;
+    while b >= 0 {
+        // Set MOSI = tx[b]
+        if ((tx >> (b as u32)) & 1) != 0 {
+            poke32(TS_SIO + TS_SIO_OUT_SET, ts_di_mask);
+        } else {
+            poke32(TS_SIO + TS_SIO_OUT_CLR, ts_di_mask);
+        }
+        ts_settle();
+        // Clock rising — controller samples DI, drives DO with next bit
+        poke32(TS_SIO + TS_SIO_OUT_SET, ts_clk_mask);
+        ts_settle();
+        // Sample DO
+        var inp: u32 = peek32(TS_SIO + TS_SIO_IN);
+        if (inp & ts_do_mask) != 0u32 {
+            rx = rx | (1 << (b as u32));
+        }
+        // Clock falling
+        poke32(TS_SIO + TS_SIO_OUT_CLR, ts_clk_mask);
+        b = b - 1;
+    }
+    return rx;
+}
+
+// One ADC read: assert CS, send cmd, read 16-bit response, deassert
+// CS. Top 12 bits are the ADC value (right-shifted to 0..4095 range).
+fn ts_read_channel(cmd: i32) -> i32 {
+    if ts_inited == 0 { ts_init(); }
+    poke32(TS_SIO + TS_SIO_OUT_CLR, ts_cs_mask);
+    ts_settle();
+    ts_xfer8(cmd);
+    var hi: i32 = ts_xfer8(0);
+    var lo: i32 = ts_xfer8(0);
+    poke32(TS_SIO + TS_SIO_OUT_SET, ts_cs_mask);
+    var raw: i32 = ((hi << 8) | lo) >> 3;     // top 12 bits, then drop 1 bit pad
+    return raw & 0xFFF;
+}
+
+// Wrappers for the standard channels.
+export fn ts_read_x() -> i32 {
+    return ts_read_channel(0xD0);
+}
+export fn ts_read_y() -> i32 {
+    return ts_read_channel(0x90);
+}
+export fn ts_read_z1() -> i32 {
+    return ts_read_channel(0xB0);
+}
+export fn ts_read_z2() -> i32 {
+    return ts_read_channel(0xC0);
+}
+
+// Pen-down detection. T_INT is open-drain active low; the controller
+// pulls it low when the resistive sheet is being pressed. Returns 1
+// if pressed, 0 otherwise.
+export fn ts_pendown() -> i32 {
+    if ts_inited == 0 { ts_init(); }
+    var inp: u32 = peek32(TS_SIO + TS_SIO_IN);
+    if (inp & ts_int_mask) == 0u32 { return 1; }
+    return 0;
+}
+
+// devfs /dev/touch backend. Frame layout (8 bytes per read):
+//   bytes 0..1: x raw 12-bit ADC, little-endian u16
+//   bytes 2..3: y raw 12-bit ADC, little-endian u16
+//   bytes 4..5: z1 (pressure proxy) raw 12-bit, little-endian u16
+//   bytes 6:   state (1 = pen down)
+//   bytes 7:   reserved (0)
+// Caller can choose whether to apply calibration in user space.
+// Returns 8 when n >= 8 and pen is down, 0 otherwise (devfs maps
+// 0 → -2 so the task yields instead of busy-looping).
+export fn touch_backend_read(buf_addr: u32, n: i32) -> i32 {
+    if ts_inited == 0 { ts_init(); }
+    if ts_pendown() == 0 { return 0; }
+    if n < 8 { return 0; }
+    var x: i32 = ts_read_x();
+    var y: i32 = ts_read_y();
+    var z: i32 = ts_read_z1();
+    poke8(buf_addr + 0u32, (x & 0xFF) as u8);
+    poke8(buf_addr + 1u32, ((x >> 8) & 0xFF) as u8);
+    poke8(buf_addr + 2u32, (y & 0xFF) as u8);
+    poke8(buf_addr + 3u32, ((y >> 8) & 0xFF) as u8);
+    poke8(buf_addr + 4u32, (z & 0xFF) as u8);
+    poke8(buf_addr + 5u32, ((z >> 8) & 0xFF) as u8);
+    poke8(buf_addr + 6u32, 1u8);
+    poke8(buf_addr + 7u32, 0u8);
+    return 8;
+}

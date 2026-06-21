@@ -118,3 +118,10 @@ export fn fb_backend_write(buf_addr: u32, n: i32) -> void {
     delete(b);
     return;
 }
+
+// /dev/touch stub: qemu virt has no touch panel, so always return 0
+// (devfs maps that to -2 = would-block at the syscall layer, which
+// makes any task that reads /dev/touch park indefinitely).
+export fn touch_backend_read(buf_addr: u32, n: i32) -> i32 {
+    return 0;
+}

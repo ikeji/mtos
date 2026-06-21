@@ -1,0 +1,168 @@
+// touchtest.tc — paint demo that reads /dev/touch and draws each
+// pressed sample as a small dot on /dev/fb.
+//
+// The kernel-side /dev/touch driver (kernel/platform/pico2/touch_
+// xpt2046.tc) returns 8 bytes per sample:
+//   [x:u16 LE][y:u16 LE][z:u16 LE][state:u8][reserved:u8]
+// All coordinates are raw 12-bit ADC (0..4095). This task does only a
+// crude linear map onto the LCD's 320x480 portrait frame so the first
+// demo can visually confirm that touches land roughly where the user
+// touched. Real calibration (4-corner sample → least-squares affine)
+// is a follow-up task.
+//
+// We open /dev/fb in portrait (kernel default MADCTL 0x48 = the
+// console-land mode); the touch panel reads in the same orientation
+// even when console renders landscape via software scroll.
+
+import "../../lib/libtc/libtc.tc";
+
+// nanosleep syscall (a7=101): not exported from libtc, declare locally.
+fn do_nanosleep(ms: i32) -> i32;
+
+var O_RDONLY: i32 = 0;
+var O_WRONLY: i32 = 1;
+
+fn put_u16(b: U8Array, pos: i32, v: i32) -> void {
+    set(b, pos,     (v & 0xFF) as u8);
+    set(b, pos + 1, ((v >> 8) & 0xFF) as u8);
+    return;
+}
+
+// Emit the xterm-style alternate-screen toggle. The TinyC parser does
+// not understand \x1b in a string literal (only \n / \t / \r / \\ /
+// \' / \0), so write the ESC byte (27) by hand.
+fn send_alt_screen(on: i32) -> void {
+    var seq: U8Array = U8Array(6u32);
+    set(seq, 0, 27u8);       // ESC
+    set(seq, 1, '[' as u8);
+    set(seq, 2, '?' as u8);
+    set(seq, 3, '4' as u8);
+    set(seq, 4, '7' as u8);
+    if on != 0 { set(seq, 5, 'h' as u8); }
+    else       { set(seq, 5, 'l' as u8); }
+    sys_write(1, seq, 6);
+    delete(seq);
+    return;
+}
+
+// Linear map from raw ADC range to LCD pixel range. Bounds clamped to
+// the LCD dimensions so a misread doesn't try to blit off-screen.
+// Empirical raw bounds from the bring-up scan (touch_xpt2046.tc K22):
+//   raw_x ~ 1036..2960  →  LCD x (320 px portrait)
+//   raw_y ~  836..3821  →  LCD y (480 px portrait)
+var RX_MIN: i32 = 200;
+var RX_MAX: i32 = 3900;
+var RY_MIN: i32 = 200;
+var RY_MAX: i32 = 3900;
+// console-land puts the ILI9488 in landscape orientation, so the
+// LCD coordinate system is 480 wide × 320 tall, not 320 × 480.
+// fb_fill (mode=1) and mode-0 blits both interpret (x, y) in this
+// landscape frame, so touchtest builds its mapping against it too.
+var LCD_W:  i32 = 480;
+var LCD_H:  i32 = 320;
+
+fn map_x(raw: i32) -> i32 {
+    var v: i32 = raw - RX_MIN;
+    if v < 0 { v = 0; }
+    var w: i32 = RX_MAX - RX_MIN;
+    var px: i32 = (v * LCD_W) / w;
+    if px < 0 { px = 0; }
+    if px >= LCD_W { px = LCD_W - 1; }
+    return px;
+}
+
+fn map_y(raw: i32) -> i32 {
+    var v: i32 = raw - RY_MIN;
+    if v < 0 { v = 0; }
+    var w: i32 = RY_MAX - RY_MIN;
+    var py: i32 = (v * LCD_H) / w;
+    if py < 0 { py = 0; }
+    if py >= LCD_H { py = LCD_H - 1; }
+    return py;
+}
+
+fn main() -> i32 {
+    // Ask the console terminal to freeze its own rendering so it stops
+    // painting chrome on top of our dots (xterm-style alternate-screen
+    // toggle). Console drains its sh pipe normally; only /dev/fb writes
+    // are suppressed. On exit we send ?47l to restore the prompt.
+    // Sleep 3s so console has plenty of time to drain the pipe + finish
+    // any in-flight chrome / clock redraws — 100 ms wasn't enough; the
+    // content area was still being overwritten after we started filling.
+    send_alt_screen(1);
+    do_nanosleep(3000);
+
+    var fbfd: i32 = do_openat(0, "/dev/fb", O_WRONLY);
+    if fbfd < 0 { send_alt_screen(0); puts("touchtest: open /dev/fb failed\n"); return 1; }
+    var tfd: i32 = do_openat(0, "/dev/touch", O_RDONLY);
+    if tfd < 0 { send_alt_screen(0); puts("touchtest: open /dev/touch failed\n"); return 1; }
+
+    // Force landscape MADCTL ourselves so the kernel's CASET/PASET window
+    // gets re-evaluated against a known orientation before we start
+    // filling. Without this, the strip fills below were leaving the
+    // chrome content area unfilled — most likely because some prior
+    // CASET/PASET state on the chip clipped our writes.
+    var md: U8Array = U8Array(12u32);
+    put_u16(md, 0, 0); put_u16(md, 2, 0); put_u16(md, 4, 0);
+    put_u16(md, 6, 0); put_u16(md, 8, 3); put_u16(md, 10, 0xE8);
+    sys_write(fbfd, md, 12);
+    delete(md);
+
+    // Paint the LCD black so dots are visible. The combination of a
+    // 3-second freeze-settle wait (above), 20-row strips, and 50 ms
+    // between strips is the minimum that reliably clears the whole
+    // 480×320 area on this board — larger strips or back-to-back
+    // sends left a strip or two unwritten, presumably because the
+    // ILI9488 PIO pipeline / SPI bus can't ingest every byte we'd
+    // otherwise be pushing at it.
+    var clr: U8Array = U8Array(12u32);
+    var strip_h: i32 = 20;
+    var sy: i32 = 0;
+    while sy < LCD_H {
+        put_u16(clr, 0, 0);
+        put_u16(clr, 2, sy);
+        put_u16(clr, 4, LCD_W);
+        put_u16(clr, 6, strip_h);
+        put_u16(clr, 8, 1);
+        put_u16(clr, 10, 0);  // RGB565 black
+        sys_write(fbfd, clr, 12);
+        do_nanosleep(50);
+        sy = sy + strip_h;
+    }
+    delete(clr);
+
+    var buf: U8Array = U8Array(8u32);
+    var dot: U8Array = U8Array(12u32);
+    // Pre-fill the dot header bits that don't change per sample.
+    put_u16(dot, 4, 6);     // w
+    put_u16(dot, 6, 6);     // h
+    put_u16(dot, 8, 1);     // mode = 1 (fill)
+    put_u16(dot, 10, 0xFFFF); // RGB565 white
+
+    var keep_going: i32 = 1;
+    while keep_going != 0 {
+        var n: i32 = sys_read(tfd, buf, 8);
+        if n != 8 { continue; }
+        var rx: i32 = (get(buf, 0) as i32) | ((get(buf, 1) as i32) << 8);
+        var ry: i32 = (get(buf, 2) as i32) | ((get(buf, 3) as i32) << 8);
+        // Touch sensor X/Y axes are rotated 90° vs the LCD as drawn —
+        // swiping the LCD's short edge produces a change on raw_x,
+        // not raw_y. Swap them on the way out so up-down on the screen
+        // produces dots that travel up-down too.
+        var px: i32 = map_x(ry);
+        var py: i32 = map_y(rx);
+        // Center the 6x6 dot on (px, py).
+        var ox: i32 = px - 3;
+        var oy: i32 = py - 3;
+        if ox < 0 { ox = 0; }
+        if oy < 0 { oy = 0; }
+        if ox + 6 > LCD_W { ox = LCD_W - 6; }
+        if oy + 6 > LCD_H { oy = LCD_H - 6; }
+        put_u16(dot, 0, ox);
+        put_u16(dot, 2, oy);
+        sys_write(fbfd, dot, 12);
+    }
+    delete(buf);
+    delete(dot);
+    return 0;
+}
