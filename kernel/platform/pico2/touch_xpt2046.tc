@@ -140,10 +140,12 @@ fn ts_xfer8(tx: i32) -> i32 {
     return rx;
 }
 
-// One ADC read: assert CS, send cmd, read 16-bit response, deassert
-// CS. Top 12 bits are the ADC value (right-shifted to 0..4095 range).
-fn ts_read_channel(cmd: i32) -> i32 {
-    if ts_inited == 0 { ts_init(); }
+// One ADC read at the given channel command. Internal helper for
+// ts_read_channel — the public function below discards the first
+// read after channel switch (XPT2046 app note pattern: the analog
+// switch needs ~1 conversion of settle time after selecting a new
+// channel) and returns the second, which is significantly less noisy.
+fn ts_read_once(cmd: i32) -> i32 {
     poke32(TS_SIO + TS_SIO_OUT_CLR, ts_cs_mask);
     ts_settle();
     ts_xfer8(cmd);
@@ -152,6 +154,12 @@ fn ts_read_channel(cmd: i32) -> i32 {
     poke32(TS_SIO + TS_SIO_OUT_SET, ts_cs_mask);
     var raw: i32 = ((hi << 8) | lo) >> 3;     // top 12 bits, then drop 1 bit pad
     return raw & 0xFFF;
+}
+
+fn ts_read_channel(cmd: i32) -> i32 {
+    if ts_inited == 0 { ts_init(); }
+    ts_read_once(cmd);    // discard first sample (settling)
+    return ts_read_once(cmd);
 }
 
 // Wrappers for the standard channels.

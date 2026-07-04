@@ -48,6 +48,24 @@ fn echo_byte(c: u8) -> void {
     return;
 }
 
+// Emit ESC[?47l on stdout. Console treats this as "the foreground
+// task has released /dev/fb; please reopen it and repaint." sh sends
+// this after every do_wait so a child that took /dev/fb via ESC[?47h
+// and crashed without restoring it can't leave the LCD stuck on the
+// frozen frame.
+fn send_unfreeze_console() -> void {
+    var seq: U8Array = U8Array(6u32);
+    set(seq, 0, 27u8);            // ESC
+    set(seq, 1, '[' as u8);
+    set(seq, 2, '?' as u8);
+    set(seq, 3, '4' as u8);
+    set(seq, 4, '7' as u8);
+    set(seq, 5, 'l' as u8);
+    sys_write(1, seq, 6);
+    delete(seq);
+    return;
+}
+
 // Echo a backspace-space-backspace sequence to erase one char visually.
 fn echo_bs() -> void {
     var three: U8Array = U8Array(3);
@@ -777,6 +795,7 @@ fn exec_command(cmd: U8Array, n: i32, path: U8Array) -> i32 {
                 puts("sh: spawn failed\n");
             } else {
                 do_wait(slot);
+                send_unfreeze_console();
             }
         }
     } else if num_pipes > 4 {
@@ -908,6 +927,7 @@ fn exec_command(cmd: U8Array, n: i32, path: U8Array) -> i32 {
             do_wait(get(slots, wi));
             wi = wi + 1;
         }
+        send_unfreeze_console();
 
         delete(pipe_buf);
         delete(pipe_wfds);

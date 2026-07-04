@@ -147,6 +147,19 @@ export fn devfs_open(path_addr: u32, plen: i32) -> i32 {
         return devfs_alloc(DEV_UART, 0u32, 0);
     }
     if dev_path_is(path_addr, plen, "/dev/fb") {
+        // Single-open: only one fd can hold /dev/fb at a time. A
+        // foreground task that wants exclusive use of the LCD (e.g.
+        // touchtest) asks the current owner (console) to close its
+        // fd via ESC[?47h, retry-opens, then on exit lets sh send
+        // ESC[?47l so console reopens + repaints. A second concurrent
+        // open here means the protocol was skipped — refuse it
+        // rather than have two fds racing on the same panel.
+        var i: i32 = 0;
+        while i < DEVFS_MAX_FDS {
+            var e: DevFD = get(g_devfs_fds, i);
+            if dev(e) == DEV_FB { return -1; }
+            i = i + 1;
+        }
         return devfs_alloc(DEV_FB, 0u32, 0);
     }
     if dev_path_is(path_addr, plen, "/dev/kbd") {

@@ -45,15 +45,17 @@ fn send_alt_screen(on: i32) -> void {
     return;
 }
 
-// Linear map from raw ADC range to LCD pixel range. Bounds clamped to
-// the LCD dimensions so a misread doesn't try to blit off-screen.
-// Empirical raw bounds from the bring-up scan (touch_xpt2046.tc K22):
-//   raw_x ~ 1036..2960  →  LCD x (320 px portrait)
-//   raw_y ~  836..3821  →  LCD y (480 px portrait)
-var RX_MIN: i32 = 200;
-var RX_MAX: i32 = 3900;
-var RY_MIN: i32 = 200;
-var RY_MAX: i32 = 3900;
+// Linear map from raw ADC range to LCD pixel range.
+// Bounds fitted from the 2026-07-05 photo calibration run (raw ADC
+// dot mode revealed the panel's true reach): rx ≈ 650..3780 in the
+// vertical direction, ry ≈ 430..3830 in the horizontal direction.
+// Padded slightly toward the middle so panel-to-panel variance at
+// the extreme corners saturates onto the LCD edges instead of being
+// clipped off-screen.
+var RX_MIN: i32 = 500;
+var RX_MAX: i32 = 3800;
+var RY_MIN: i32 = 700;
+var RY_MAX: i32 = 3700;
 // console-land puts the ILI9488 in landscape orientation, so the
 // LCD coordinate system is 480 wide × 320 tall, not 320 × 480.
 // fb_fill (mode=1) and mode-0 blits both interpret (x, y) in this
@@ -82,18 +84,21 @@ fn map_y(raw: i32) -> i32 {
 }
 
 fn main() -> i32 {
-    // Ask the console terminal to freeze its own rendering so it stops
-    // painting chrome on top of our dots (xterm-style alternate-screen
-    // toggle). Console drains its sh pipe normally; only /dev/fb writes
-    // are suppressed. On exit we send ?47l to restore the prompt.
-    // Sleep 3s so console has plenty of time to drain the pipe + finish
-    // any in-flight chrome / clock redraws — 100 ms wasn't enough; the
-    // content area was still being overwritten after we started filling.
+    // Ask the console terminal to release /dev/fb (close its fd). The
+    // kernel enforces single-open on /dev/fb, so our open will fail
+    // with -1 until console actually closes — retry until success.
+    // Console takes 1-2 read cycles to process the byte, hence the
+    // short sleep between attempts.
     send_alt_screen(1);
-    do_nanosleep(3000);
 
-    var fbfd: i32 = do_openat(0, "/dev/fb", O_WRONLY);
-    if fbfd < 0 { send_alt_screen(0); puts("touchtest: open /dev/fb failed\n"); return 1; }
+    var fbfd: i32 = 0 - 1;
+    var retries: i32 = 0;
+    while fbfd < 0 && retries < 60 {
+        do_nanosleep(50);
+        fbfd = do_openat(0, "/dev/fb", O_WRONLY);
+        retries = retries + 1;
+    }
+    if fbfd < 0 { send_alt_screen(0); puts("touchtest: /dev/fb stayed busy\n"); return 1; }
     var tfd: i32 = do_openat(0, "/dev/touch", O_RDONLY);
     if tfd < 0 { send_alt_screen(0); puts("touchtest: open /dev/touch failed\n"); return 1; }
 
@@ -139,18 +144,101 @@ fn main() -> i32 {
     put_u16(dot, 8, 1);     // mode = 1 (fill)
     put_u16(dot, 10, 0xFFFF); // RGB565 white
 
+    // Debug dot: paints the raw ADC location scaled to the full LCD
+    // (raw 0..4095 → 0..LCD-1). Draws in red so it's distinguishable
+    // from the calibrated white paint dot. When both dots agree, the
+    // calibration is a straight identity; when they disagree, the red
+    // one shows where a linear map without RX/RY clamping would put it.
+    var rawdot: U8Array = U8Array(12u32);
+    put_u16(rawdot, 4, 4);     // w
+    put_u16(rawdot, 6, 4);     // h
+    put_u16(rawdot, 8, 1);     // mode = 1 (fill)
+    put_u16(rawdot, 10, 0xF800); // RGB565 red
+
+    // Debug dot for Z-rejected samples: paints a small blue marker at
+    // the same raw-ADC location as the red dot. If we see a blue trail
+    // at the LCD corners with no adjacent red/white it confirms the
+    // Z pressure threshold is filtering that region out.
+    var zdot: U8Array = U8Array(12u32);
+    put_u16(zdot, 4, 3);
+    put_u16(zdot, 6, 3);
+    put_u16(zdot, 8, 1);
+    put_u16(zdot, 10, 0x001F); // RGB565 blue
+
+    // Z (pressure proxy) threshold for accepting a sample. Z values
+    // below this are typically the noisy first-touch / last-release
+    // moments where X/Y readings are still settling — discarding them
+    // removes most of the scattered stray dots. Resistive panels dip
+    // Z at the extreme corners (short vs long resistive path), so
+    // keep this low enough that a firm corner tap still passes.
+    var Z_MIN: i32 = 0x80;
+    // Outlier rejection: if the new sample jumps more than this many
+    // pixels from the previous one we treat it as a noise spike and
+    // drop it. To keep the user from being trapped — moving the finger
+    // to a different spot would otherwise always look like an outlier
+    // and never paint — we count consecutive drops and reset the
+    // anchor after a few of them, accepting the next sample as a
+    // fresh touch start.
+    var MAX_JUMP: i32 = 60;
+    var MAX_DROPS: i32 = 4;
+    var prev_px: i32 = 0 - 1;
+    var prev_py: i32 = 0 - 1;
+    var drops:   i32 = 0;
     var keep_going: i32 = 1;
     while keep_going != 0 {
         var n: i32 = sys_read(tfd, buf, 8);
-        if n != 8 { continue; }
+        if n != 8 {
+            // sys_read returns 0 on pen-up after a yield. Treat the
+            // pen as lifted: the next touch is unconstrained.
+            prev_px = 0 - 1;
+            prev_py = 0 - 1;
+            continue;
+        }
         var rx: i32 = (get(buf, 0) as i32) | ((get(buf, 1) as i32) << 8);
         var ry: i32 = (get(buf, 2) as i32) | ((get(buf, 3) as i32) << 8);
+        var rz: i32 = (get(buf, 4) as i32) | ((get(buf, 5) as i32) << 8);
+        if rz < Z_MIN {
+            // Paint a small blue marker at the raw position so we can
+            // see whether the corner truly is unresponsive or just
+            // filtered out by Z.
+            var zpx: i32 = (ry * LCD_W) / 4096;
+            var zpy: i32 = (rx * LCD_H) / 4096;
+            if zpx < 0 { zpx = 0; }
+            if zpy < 0 { zpy = 0; }
+            if zpx > LCD_W - 3 { zpx = LCD_W - 3; }
+            if zpy > LCD_H - 3 { zpy = LCD_H - 3; }
+            put_u16(zdot, 0, zpx);
+            put_u16(zdot, 2, zpy);
+            sys_write(fbfd, zdot, 12);
+            continue;
+        }
         // Touch sensor X/Y axes are rotated 90° vs the LCD as drawn —
         // swiping the LCD's short edge produces a change on raw_x,
         // not raw_y. Swap them on the way out so up-down on the screen
         // produces dots that travel up-down too.
         var px: i32 = map_x(ry);
         var py: i32 = map_y(rx);
+        // Outlier check vs previous accepted sample.
+        if prev_px >= 0 {
+            var dx: i32 = px - prev_px;
+            if dx < 0 { dx = 0 - dx; }
+            var dy: i32 = py - prev_py;
+            if dy < 0 { dy = 0 - dy; }
+            if dx > MAX_JUMP || dy > MAX_JUMP {
+                drops = drops + 1;
+                if drops >= MAX_DROPS {
+                    // Too many drops in a row — release the anchor so
+                    // the next sample is unconstrained (user moved).
+                    prev_px = 0 - 1;
+                    prev_py = 0 - 1;
+                    drops = 0;
+                }
+                continue;
+            }
+        }
+        prev_px = px;
+        prev_py = py;
+        drops = 0;
         // Center the 6x6 dot on (px, py).
         var ox: i32 = px - 3;
         var oy: i32 = py - 3;
@@ -161,8 +249,21 @@ fn main() -> i32 {
         put_u16(dot, 0, ox);
         put_u16(dot, 2, oy);
         sys_write(fbfd, dot, 12);
+        // Debug: raw ADC scaled to full LCD, no calibration clamp.
+        // Same axis swap as the paint dot (raw_x → LCD y).
+        var raw_px: i32 = (ry * LCD_W) / 4096;
+        var raw_py: i32 = (rx * LCD_H) / 4096;
+        if raw_px < 0 { raw_px = 0; }
+        if raw_py < 0 { raw_py = 0; }
+        if raw_px > LCD_W - 4 { raw_px = LCD_W - 4; }
+        if raw_py > LCD_H - 4 { raw_py = LCD_H - 4; }
+        put_u16(rawdot, 0, raw_px);
+        put_u16(rawdot, 2, raw_py);
+        sys_write(fbfd, rawdot, 12);
     }
     delete(buf);
     delete(dot);
+    delete(rawdot);
+    delete(zdot);
     return 0;
 }

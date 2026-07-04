@@ -162,7 +162,16 @@ var g_cur_enabled: i32 = 1;
 // paint loop). On unfreeze (?47l) we invalidate g_grid_prev and
 // repaint the whole chrome + content area so the previous look is
 // restored.
+//
+// On top of suppressing writes, the main loop also CLOSES /dev/fb on
+// ?47h and reopens it on ?47l. Kernel devfs enforces single-open on
+// /dev/fb, so this hands exclusive ownership to the foreground task
+// for the duration of the freeze and the kernel rejects any racing
+// open. sh sends ?47l automatically after each spawn it waits on
+// (sh.tc), so a crashing foreground task can't strand the LCD frozen.
 var g_render_frozen: i32 = 0;
+var g_fb_close_req: i32 = 0;     // ESC[?47h dispatched, main loop to close
+var g_fb_open_req:  i32 = 0;     // ESC[?47l dispatched, main loop to open
 
 // Read byte `off` of the embedded jpfont blob.
 fn fbyte(off: i32) -> i32 {
@@ -869,10 +878,19 @@ fn dispatch_csi_private(fb: i32, frame: U8Array, final: i32) -> void {
         //              own /dev/fb without us painting over them
         //   ESC[?47l → resume rendering and repaint the whole window
         if final == ('h' as i32) {
-            g_render_frozen = 1;
+            if g_render_frozen == 0 {
+                g_render_frozen = 1;
+                g_fb_close_req  = 1;
+            }
         } else if final == ('l' as i32) {
-            g_render_frozen = 0;
-            repaint_all(fb, frame);
+            // Only act if we were actually frozen — sh sends ?47l after
+            // every spawn it waits on as a safety net for crashing
+            // foreground tasks, and the no-op case must not trigger a
+            // full chrome repaint on every command.
+            if g_render_frozen != 0 {
+                g_render_frozen = 0;
+                g_fb_open_req   = 1;
+            }
         }
     }
     return;
@@ -1208,6 +1226,16 @@ fn main(argv: StringArray) -> i32 {
             while i < r {
                 render(fb, frame, peek8(buf_data + (i as u32)) as i32);
                 i = i + 1;
+            }
+            // Honor ?47h / ?47l received in this batch.
+            if g_fb_close_req != 0 {
+                if fb >= 0 { do_close(fb); fb = 0 - 1; }
+                g_fb_close_req = 0;
+            }
+            if g_fb_open_req != 0 {
+                if fb < 0 { fb = do_openat(0, "/dev/fb", 1); }
+                g_fb_open_req = 0;
+                if fb >= 0 { repaint_all(fb, frame); }
             }
             draw_cursor(fb, frame);
             draw_clock(fb, frame);
