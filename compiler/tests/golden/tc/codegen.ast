@@ -150,6 +150,24 @@
     (type i32)
     (int 0)
   )
+  (var_decl g_cstr_tab
+    (type I32Array)
+    (cast
+      (int 0)
+      (type I32Array)
+    )
+  )
+  (var_decl g_cstrc
+    (type i32)
+    (int 0)
+  )
+  (var_decl g_cur_locals
+    (type I32Array)
+    (cast
+      (int 0)
+      (type I32Array)
+    )
+  )
   (fn peek_in
     (params)
     (ret
@@ -1722,6 +1740,298 @@
       )
     )
   )
+  (fn cstr_find
+    (params
+      (param strtab
+        (type U8Array)
+      )
+      (param nss
+        (type i32)
+      )
+      (param nsl
+        (type i32)
+      )
+    )
+    (ret
+      (type i32)
+    )
+    (block
+      (comment "var i: i32 = 0;")
+      (var_decl i
+        (type i32)
+        (int 0)
+      )
+      (comment "while i < g_cstrc {")
+      (while
+        (binop <
+          (var i)
+          (var g_cstrc)
+        )
+        (block
+          (comment "var b: i32 = i * 3;")
+          (var_decl b
+            (type i32)
+            (binop *
+              (var i)
+              (int 3)
+            )
+          )
+          (comment "var es: i32 = get(g_cstr_tab, b);")
+          (var_decl es
+            (type i32)
+            (call get
+              (var g_cstr_tab)
+              (var b)
+            )
+          )
+          (comment "var el: i32 = get(g_cstr_tab, (b+1));")
+          (var_decl el
+            (type i32)
+            (call get
+              (var g_cstr_tab)
+              (binop +
+                (var b)
+                (int 1)
+              )
+            )
+          )
+          (comment "if el == nsl {")
+          (if
+            (binop ==
+              (var el)
+              (var nsl)
+            )
+            (block
+              (comment "var match: i32 = 1;")
+              (var_decl match
+                (type i32)
+                (int 1)
+              )
+              (comment "var j: i32 = 0;")
+              (var_decl j
+                (type i32)
+                (int 0)
+              )
+              (comment "while j < nsl && match == 1 {")
+              (while
+                (binop &&
+                  (binop <
+                    (var j)
+                    (var nsl)
+                  )
+                  (binop ==
+                    (var match)
+                    (int 1)
+                  )
+                )
+                (block
+                  (comment "if get(strtab,(nss+j)) != get(strtab,(es+j)) { match = 0; }")
+                  (if
+                    (binop !=
+                      (call get
+                        (var strtab)
+                        (binop +
+                          (var nss)
+                          (var j)
+                        )
+                      )
+                      (call get
+                        (var strtab)
+                        (binop +
+                          (var es)
+                          (var j)
+                        )
+                      )
+                    )
+                    (block
+                      (assign match
+                        (int 0)
+                      )
+                    )
+                  )
+                  (comment "j = j + 1;")
+                  (assign j
+                    (binop +
+                      (var j)
+                      (int 1)
+                    )
+                  )
+                )
+              )
+              (comment "if match == 1 { return i; }")
+              (if
+                (binop ==
+                  (var match)
+                  (int 1)
+                )
+                (block
+                  (return
+                    (var i)
+                  )
+                )
+              )
+            )
+          )
+          (comment "i = i + 1;")
+          (assign i
+            (binop +
+              (var i)
+              (int 1)
+            )
+          )
+        )
+      )
+      (comment "return -1;")
+      (return
+        (unary -
+          (int 1)
+        )
+      )
+    )
+  )
+  (fn cstr_add
+    (params
+      (param strtab
+        (type U8Array)
+      )
+      (param slits
+        (type I32Array)
+      )
+      (param nss
+        (type i32)
+      )
+      (param nsl
+        (type i32)
+      )
+      (param lss
+        (type i32)
+      )
+      (param lsl
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (comment "if g_cstrc >= 64 {")
+      (if
+        (binop >=
+          (var g_cstrc)
+          (int 64)
+        )
+        (block
+          (comment "print_error(\"codegen: too many string-literal globals (max 64)\");")
+          (call_stmt print_error
+            (str "codegen: too many string-literal globals (max 64)")
+          )
+          (comment "sys_exit(1);")
+          (call_stmt sys_exit
+            (int 1)
+          )
+        )
+      )
+      (comment "var perm: i32 = g_sp_perm;")
+      (var_decl perm
+        (type i32)
+        (var g_sp_perm)
+      )
+      (comment "var i: i32 = 0;")
+      (var_decl i
+        (type i32)
+        (int 0)
+      )
+      (comment "while i < nsl {")
+      (while
+        (binop <
+          (var i)
+          (var nsl)
+        )
+        (block
+          (comment "set(strtab, (perm + i), get(strtab, (nss + i)));")
+          (call_stmt set
+            (var strtab)
+            (binop +
+              (var perm)
+              (var i)
+            )
+            (call get
+              (var strtab)
+              (binop +
+                (var nss)
+                (var i)
+              )
+            )
+          )
+          (comment "i = i + 1;")
+          (assign i
+            (binop +
+              (var i)
+              (int 1)
+            )
+          )
+        )
+      )
+      (comment "g_sp_perm = g_sp_perm + nsl;")
+      (assign g_sp_perm
+        (binop +
+          (var g_sp_perm)
+          (var nsl)
+        )
+      )
+      (comment "var sidx: i32 = slit_add(strtab, slits, lss, lsl);")
+      (var_decl sidx
+        (type i32)
+        (call slit_add
+          (var strtab)
+          (var slits)
+          (var lss)
+          (var lsl)
+        )
+      )
+      (comment "var b: i32 = g_cstrc * 3;")
+      (var_decl b
+        (type i32)
+        (binop *
+          (var g_cstrc)
+          (int 3)
+        )
+      )
+      (comment "set(g_cstr_tab, b, perm);")
+      (call_stmt set
+        (var g_cstr_tab)
+        (var b)
+        (var perm)
+      )
+      (comment "set(g_cstr_tab, (b+1), nsl);")
+      (call_stmt set
+        (var g_cstr_tab)
+        (binop +
+          (var b)
+          (int 1)
+        )
+        (var nsl)
+      )
+      (comment "set(g_cstr_tab, (b+2), sidx);")
+      (call_stmt set
+        (var g_cstr_tab)
+        (binop +
+          (var b)
+          (int 2)
+        )
+        (var sidx)
+      )
+      (comment "g_cstrc = g_cstrc + 1;")
+      (assign g_cstrc
+        (binop +
+          (var g_cstrc)
+          (int 1)
+        )
+      )
+      (comment "return;")
+      (return)
+    )
+  )
   (fn locals_find
     (params
       (param strtab
@@ -2393,6 +2703,93 @@
           (var NK_ASSIGN)
         )
         (block
+          (comment "if g_cstrc > 0 {")
+          (if
+            (binop >
+              (var g_cstrc)
+              (int 0)
+            )
+            (block
+              (comment "var nss: i32 = n_ss(nodes,n);")
+              (var_decl nss
+                (type i32)
+                (call n_ss
+                  (var nodes)
+                  (var n)
+                )
+              )
+              (comment "var nsl: i32 = n_sl(nodes,n);")
+              (var_decl nsl
+                (type i32)
+                (call n_sl
+                  (var nodes)
+                  (var n)
+                )
+              )
+              (comment "if cstr_find(strtab, nss, nsl) >= 0 {")
+              (if
+                (binop >=
+                  (call cstr_find
+                    (var strtab)
+                    (var nss)
+                    (var nsl)
+                  )
+                  (int 0)
+                )
+                (block
+                  (comment "if locals_find(strtab, g_cur_locals, nss, nsl) < 0 {")
+                  (if
+                    (binop <
+                      (call locals_find
+                        (var strtab)
+                        (var g_cur_locals)
+                        (var nss)
+                        (var nsl)
+                      )
+                      (int 0)
+                    )
+                    (block
+                      (comment "var eb: StringBuffer = StringBuffer_new();")
+                      (var_decl eb
+                        (type StringBuffer)
+                        (call StringBuffer_new)
+                      )
+                      (comment "emit_string(eb, \"codegen: cannot assign to string-literal global \");")
+                      (call_stmt emit_string
+                        (var eb)
+                        (str "codegen: cannot assign to string-literal global ")
+                      )
+                      (comment "emit_n(eb, strtab, nss, nsl);")
+                      (call_stmt emit_n
+                        (var eb)
+                        (var strtab)
+                        (var nss)
+                        (var nsl)
+                      )
+                      (comment "emit_char(eb, 10u8);")
+                      (call_stmt emit_char
+                        (var eb)
+                        (int:u8 10)
+                      )
+                      (comment "write(eb, 2);")
+                      (call_stmt write
+                        (var eb)
+                        (int 2)
+                      )
+                      (comment "destroy(eb);")
+                      (call_stmt destroy
+                        (var eb)
+                      )
+                      (comment "sys_exit(1);")
+                      (call_stmt sys_exit
+                        (int 1)
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
           (comment "cg_expr(nodes, strtab, slits, ob, n_child(nodes, n));")
           (call_stmt cg_expr
             (var nodes)
@@ -3875,6 +4272,87 @@
           (var NK_VAR)
         )
         (block
+          (comment "if g_cstrc > 0 {")
+          (if
+            (binop >
+              (var g_cstrc)
+              (int 0)
+            )
+            (block
+              (comment "var nss: i32 = n_ss(nodes,n);")
+              (var_decl nss
+                (type i32)
+                (call n_ss
+                  (var nodes)
+                  (var n)
+                )
+              )
+              (comment "var nsl: i32 = n_sl(nodes,n);")
+              (var_decl nsl
+                (type i32)
+                (call n_sl
+                  (var nodes)
+                  (var n)
+                )
+              )
+              (comment "var ci: i32 = cstr_find(strtab, nss, nsl);")
+              (var_decl ci
+                (type i32)
+                (call cstr_find
+                  (var strtab)
+                  (var nss)
+                  (var nsl)
+                )
+              )
+              (comment "if ci >= 0 {")
+              (if
+                (binop >=
+                  (var ci)
+                  (int 0)
+                )
+                (block
+                  (comment "if locals_find(strtab, g_cur_locals, nss, nsl) < 0 {")
+                  (if
+                    (binop <
+                      (call locals_find
+                        (var strtab)
+                        (var g_cur_locals)
+                        (var nss)
+                        (var nsl)
+                      )
+                      (int 0)
+                    )
+                    (block
+                      (comment "emit_string(ob, \"  push_str \");")
+                      (call_stmt emit_string
+                        (var ob)
+                        (str "  push_str ")
+                      )
+                      (comment "emit_int(ob, get(g_cstr_tab, (ci*3+2))); emit_nl(ob);")
+                      (call_stmt emit_int
+                        (var ob)
+                        (call get
+                          (var g_cstr_tab)
+                          (binop +
+                            (binop *
+                              (var ci)
+                              (int 3)
+                            )
+                            (int 2)
+                          )
+                        )
+                      )
+                      (call_stmt emit_nl
+                        (var ob)
+                      )
+                      (comment "return;")
+                      (return)
+                    )
+                  )
+                )
+              )
+            )
+          )
           (comment "emit_string(ob, \"  load \");")
           (call_stmt emit_string
             (var ob)
@@ -5211,6 +5689,58 @@
           )
         )
       )
+      (comment "p = n_child(nodes, params_n);")
+      (assign p
+        (call n_child
+          (var nodes)
+          (var params_n)
+        )
+      )
+      (comment "while p >= 0 {")
+      (while
+        (binop >=
+          (var p)
+          (int 0)
+        )
+        (block
+          (comment "var ptn: i32 = n_child(nodes, p);")
+          (var_decl ptn
+            (type i32)
+            (call n_child
+              (var nodes)
+              (var p)
+            )
+          )
+          (comment "locals_add_entry(strtab, locals,")
+          (call_stmt locals_add_entry
+            (var strtab)
+            (var locals)
+            (call n_ss
+              (var nodes)
+              (var p)
+            )
+            (call n_sl
+              (var nodes)
+              (var p)
+            )
+            (call n_ss
+              (var nodes)
+              (var ptn)
+            )
+            (call n_sl
+              (var nodes)
+              (var ptn)
+            )
+          )
+          (comment "p = n_sib(nodes, p);")
+          (assign p
+            (call n_sib
+              (var nodes)
+              (var p)
+            )
+          )
+        )
+      )
       (comment "g_loop_depth = 0;")
       (assign g_loop_depth
         (int 0)
@@ -5617,6 +6147,16 @@
           (int 1024)
         )
       )
+      (comment "g_cstr_tab = I32Array(192);  // #36: ≤ 64 const-str globals × 3 i32")
+      (assign g_cstr_tab
+        (call I32Array
+          (int 192)
+        )
+      )
+      (comment "g_cur_locals = locals;")
+      (assign g_cur_locals
+        (var locals)
+      )
       (comment "g_reader = SourceReader_new(0);")
       (assign g_reader
         (call SourceReader_new
@@ -5641,6 +6181,10 @@
       )
       (comment "g_locc = 0;")
       (assign g_locc
+        (int 0)
+      )
+      (comment "g_cstrc = 0;")
+      (assign g_cstrc
         (int 0)
       )
       (comment "emit_string(out_buf, \".bc\");emit_nl(out_buf);")
@@ -5743,27 +6287,6 @@
                   (var NK_VAR_DECL)
                 )
                 (block
-                  (comment "if has_global == 0 {")
-                  (if
-                    (binop ==
-                      (var has_global)
-                      (int 0)
-                    )
-                    (block
-                      (comment "emit_string(out_buf, \"; globals\");emit_nl(out_buf);")
-                      (call_stmt emit_string
-                        (var out_buf)
-                        (str "; globals")
-                      )
-                      (call_stmt emit_nl
-                        (var out_buf)
-                      )
-                      (comment "has_global = 1;")
-                      (assign has_global
-                        (int 1)
-                      )
-                    )
-                  )
                   (comment "var type_n: i32 = n_child(nodes, n);")
                   (var_decl type_n
                     (type i32)
@@ -5780,75 +6303,157 @@
                       (var type_n)
                     )
                   )
-                  (comment "var initval: i32 = 0;")
-                  (var_decl initval
+                  (comment "var is_cstr: i32 = 0;")
+                  (var_decl is_cstr
                     (type i32)
                     (int 0)
                   )
-                  (comment "if init_n >= 0 { initval = n_ival(nodes, init_n); }")
+                  (comment "if init_n >= 0 {")
                   (if
                     (binop >=
                       (var init_n)
                       (int 0)
                     )
                     (block
-                      (assign initval
-                        (call n_ival
+                      (comment "if n_kind(nodes, init_n) == NK_STR { is_cstr = 1; }")
+                      (if
+                        (binop ==
+                          (call n_kind
+                            (var nodes)
+                            (var init_n)
+                          )
+                          (var NK_STR)
+                        )
+                        (block
+                          (assign is_cstr
+                            (int 1)
+                          )
+                        )
+                      )
+                    )
+                  )
+                  (comment "if is_cstr == 1 {")
+                  (if
+                    (binop ==
+                      (var is_cstr)
+                      (int 1)
+                    )
+                    (block
+                      (comment "cstr_add(strtab, slits, n_ss(nodes,n), n_sl(nodes,n),")
+                      (call_stmt cstr_add
+                        (var strtab)
+                        (var slits)
+                        (call n_ss
+                          (var nodes)
+                          (var n)
+                        )
+                        (call n_sl
+                          (var nodes)
+                          (var n)
+                        )
+                        (call n_ss
+                          (var nodes)
+                          (var init_n)
+                        )
+                        (call n_sl
                           (var nodes)
                           (var init_n)
                         )
                       )
                     )
-                  )
-                  (comment "emit_string(out_buf, \".global \");")
-                  (call_stmt emit_string
-                    (var out_buf)
-                    (str ".global ")
-                  )
-                  (comment "emit_n(out_buf, strtab, n_ss(nodes,n), n_sl(nodes,n));")
-                  (call_stmt emit_n
-                    (var out_buf)
-                    (var strtab)
-                    (call n_ss
-                      (var nodes)
-                      (var n)
+                    (block
+                      (comment "if has_global == 0 {")
+                      (if
+                        (binop ==
+                          (var has_global)
+                          (int 0)
+                        )
+                        (block
+                          (comment "emit_string(out_buf, \"; globals\");emit_nl(out_buf);")
+                          (call_stmt emit_string
+                            (var out_buf)
+                            (str "; globals")
+                          )
+                          (call_stmt emit_nl
+                            (var out_buf)
+                          )
+                          (comment "has_global = 1;")
+                          (assign has_global
+                            (int 1)
+                          )
+                        )
+                      )
+                      (comment "var initval: i32 = 0;")
+                      (var_decl initval
+                        (type i32)
+                        (int 0)
+                      )
+                      (comment "if init_n >= 0 { initval = n_ival(nodes, init_n); }")
+                      (if
+                        (binop >=
+                          (var init_n)
+                          (int 0)
+                        )
+                        (block
+                          (assign initval
+                            (call n_ival
+                              (var nodes)
+                              (var init_n)
+                            )
+                          )
+                        )
+                      )
+                      (comment "emit_string(out_buf, \".global \");")
+                      (call_stmt emit_string
+                        (var out_buf)
+                        (str ".global ")
+                      )
+                      (comment "emit_n(out_buf, strtab, n_ss(nodes,n), n_sl(nodes,n));")
+                      (call_stmt emit_n
+                        (var out_buf)
+                        (var strtab)
+                        (call n_ss
+                          (var nodes)
+                          (var n)
+                        )
+                        (call n_sl
+                          (var nodes)
+                          (var n)
+                        )
+                      )
+                      (comment "emit_char(out_buf, ' ');")
+                      (call_stmt emit_char
+                        (var out_buf)
+                        (int:u8 32)
+                      )
+                      (comment "emit_n(out_buf, strtab, n_ss(nodes,type_n), n_sl(nodes,type_n));")
+                      (call_stmt emit_n
+                        (var out_buf)
+                        (var strtab)
+                        (call n_ss
+                          (var nodes)
+                          (var type_n)
+                        )
+                        (call n_sl
+                          (var nodes)
+                          (var type_n)
+                        )
+                      )
+                      (comment "emit_char(out_buf, ' ');")
+                      (call_stmt emit_char
+                        (var out_buf)
+                        (int:u8 32)
+                      )
+                      (comment "emit_int(out_buf, initval);")
+                      (call_stmt emit_int
+                        (var out_buf)
+                        (var initval)
+                      )
+                      (comment "emit_nl(out_buf);")
+                      (call_stmt emit_nl
+                        (var out_buf)
+                      )
                     )
-                    (call n_sl
-                      (var nodes)
-                      (var n)
-                    )
-                  )
-                  (comment "emit_char(out_buf, ' ');")
-                  (call_stmt emit_char
-                    (var out_buf)
-                    (int:u8 32)
-                  )
-                  (comment "emit_n(out_buf, strtab, n_ss(nodes,type_n), n_sl(nodes,type_n));")
-                  (call_stmt emit_n
-                    (var out_buf)
-                    (var strtab)
-                    (call n_ss
-                      (var nodes)
-                      (var type_n)
-                    )
-                    (call n_sl
-                      (var nodes)
-                      (var type_n)
-                    )
-                  )
-                  (comment "emit_char(out_buf, ' ');")
-                  (call_stmt emit_char
-                    (var out_buf)
-                    (int:u8 32)
-                  )
-                  (comment "emit_int(out_buf, initval);")
-                  (call_stmt emit_int
-                    (var out_buf)
-                    (var initval)
-                  )
-                  (comment "emit_nl(out_buf);")
-                  (call_stmt emit_nl
-                    (var out_buf)
                   )
                 )
               )
@@ -6130,6 +6735,10 @@
       )
       (call_stmt delete
         (var locals)
+      )
+      (comment "delete(g_cstr_tab);")
+      (call_stmt delete
+        (var g_cstr_tab)
       )
       (comment "km_dump_peak();")
       (call_stmt km_dump_peak)

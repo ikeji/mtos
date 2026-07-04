@@ -42,6 +42,15 @@
   - `var g_arr: U32Array = 0 as U32Array;` で null 宣言
   - `fn main() { g_arr = U32Array(64); }` のように初期化
   - 初期化子に関数呼び出しを書くと codegen が無視するため null のまま
+- **例外: 文字列リテラル初期化のグローバルは定数** (#36 で対応、2026-07-05)
+  - `var GREET: StringLiteral = "hi";` は GREET をリテラルの
+    **定数エイリアス**としてコンパイルする (load が push_str になる)。
+    .data に実体スロットは無いので**再代入はコンパイルエラー**
+  - PIC raw-bin タスクにはロード時 data relocation が無いため、
+    「.data にポインタを置く」形は実現できない — 定数化が正しい下位互換
+  - 宣言は使用より**前**に書くこと (Gen2 codegen はストリーミングの
+    ため、宣言前の使用は `load` にフォールバックしリンク時に
+    undefined label エラーになる)
 
 ## 配列
 

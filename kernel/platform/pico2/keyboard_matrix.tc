@@ -79,20 +79,15 @@ var g_prev_hi: u32 = 0u32;
 //   SFT  z   x   c   v   b   n   m   ,   .   /   SFT
 //   FN   sp  sp  sp  sp  sp  sp  sp  sp  sp  sp  FN
 //
-// Returned as a function literal because `var X: StringLiteral = "..."`
-// in TC emits `.word 0` for X (the literal pointer is dropped in
-// codegen) and `+` between StringLiterals does pointer arithmetic, not
-// string concat — both produce a pointer that lands in random kernel
-// .rodata and pressing a key returns bytes from "Raspberry Pi" etc.
-// Using a single literal inside a fn keeps the literal alive in
-// .rodata and the pointer-to-it is the fn's return value.
+// A string-literal global compiles as a constant alias for the
+// literal since #36 was fixed (loads become push_str → la to the
+// .rodata strobj). Note `+` between StringLiterals is still pointer
+// arithmetic, not concat — keep this a single literal.
 //
 // Underscores are placeholders for keys that need a non-printable byte
 // (BS / ESC / TAB / ENT) or are modifiers with no input byte (CTL /
 // SFT / FN, patched to 0 below so kbd_backend_read skips them).
-fn kbd_keymap() -> StringLiteral {
-    return "_09876_12345'poiuy_qwert_:lkjh_asdfg_/.,mn_zxcvb_     _     ";
-}
+var KBD_KEYMAP: StringLiteral = "_09876_12345'poiuy_qwert_:lkjh_asdfg_/.,mn_zxcvb_     _     ";
 var g_keymap: U8Array = 0 as U8Array;
 
 // Short busy-wait so a driven line settles before it is sampled.
@@ -146,8 +141,8 @@ fn kbd_init() -> void {
         g_kbd_cols_mask = g_kbd_cols_mask | (1u32 << (gp2 as u32));
         c = c + 1;
     }
-    // Build the runtime keymap from kbd_keymap(), then patch controls.
-    var src: StringLiteral = kbd_keymap();
+    // Build the runtime keymap from KBD_KEYMAP, then patch controls.
+    var src: StringLiteral = KBD_KEYMAP;
     g_keymap = U8Array(60u32);
     var i: i32 = 0;
     while i < 60 {

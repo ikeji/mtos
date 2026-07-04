@@ -6,6 +6,12 @@
 /* ---- Code generator state ---- */
 
 typedef struct {
+    char **names;
+    char **types;
+    int count, cap;
+} LocalList;
+
+typedef struct {
     FILE *out;
     int label_counter;
     /* string literal table */
@@ -15,6 +21,15 @@ typedef struct {
     /* loop label stack for break/continue (pairs: lloop, lend) */
     int loop_stack[64];
     int loop_depth;
+    /* #36: globals initialized with a string literal. PIC raw-bin
+       tasks have no load-time data relocation, so such a global is
+       compiled as a constant alias for the literal: loads become
+       push_str, assignment is a compile error. */
+    char **cstr_names;
+    int   *cstr_idx;
+    int    ncstr, cstr_cap;
+    /* locals + params of the fn being compiled (shadowing check) */
+    LocalList *cur_locals;
 } CG;
 
 static int cg_add_string(CG *cg, const char *s) {
@@ -31,16 +46,36 @@ static int cg_add_string(CG *cg, const char *s) {
 
 static int cg_new_label(CG *cg) { return cg->label_counter++; }
 
+static int cstr_find(CG *cg, const char *name) {
+    if (!name) return -1;
+    for (int i = 0; i < cg->ncstr; i++)
+        if (strcmp(cg->cstr_names[i], name) == 0) return i;
+    return -1;
+}
+
+static void cstr_add(CG *cg, const char *name, int slit_idx) {
+    if (cg->ncstr >= cg->cstr_cap) {
+        cg->cstr_cap = cg->cstr_cap ? cg->cstr_cap * 2 : 8;
+        cg->cstr_names = realloc(cg->cstr_names, cg->cstr_cap * sizeof(char*));
+        cg->cstr_idx   = realloc(cg->cstr_idx,   cg->cstr_cap * sizeof(int));
+        if (!cg->cstr_names || !cg->cstr_idx) { fprintf(stderr, "out of memory\n"); exit(1); }
+    }
+    cg->cstr_names[cg->ncstr] = strdup(name);
+    cg->cstr_idx[cg->ncstr] = slit_idx;
+    cg->ncstr++;
+}
+
+static int local_list_has(LocalList *ll, const char *name) {
+    if (!ll || !name) return 0;
+    for (int i = 0; i < ll->count; i++)
+        if (strcmp(ll->names[i], name) == 0) return 1;
+    return 0;
+}
+
 /* String literals are now collected on-the-fly in cg_expr (cg_add_string)
    and emitted at the end of the .bc output. */
 
 /* ---- Local variable collection ---- */
-
-typedef struct {
-    char **names;
-    char **types;
-    int count, cap;
-} LocalList;
 
 static void local_add(LocalList *ll, const char *name, const char *type) {
     for (int i = 0; i < ll->count; i++)
@@ -135,6 +170,15 @@ static void cg_expr(CG *cg, AstNode *node) {
     }
 
     if (strcmp(k, "var") == 0) {
+        /* #36: a const-str global (not shadowed by a local/param)
+           loads as its literal */
+        if (!local_list_has(cg->cur_locals, node->sval)) {
+            int ci = cstr_find(cg, node->sval);
+            if (ci >= 0) {
+                fprintf(cg->out, "  push_str %d\n", cg->cstr_idx[ci]);
+                return;
+            }
+        }
         fprintf(cg->out, "  load %s\n", node->sval);
         return;
     }
@@ -274,6 +318,13 @@ static void cg_stmt(CG *cg, AstNode *node) {
     }
 
     if (strcmp(k, "assign") == 0) {
+        /* #36: const-str globals are constants — reject stores */
+        if (!local_list_has(cg->cur_locals, node->sval) &&
+            cstr_find(cg, node->sval) >= 0) {
+            fprintf(stderr, "codegen: cannot assign to string-literal global %s\n",
+                    node->sval);
+            exit(1);
+        }
         cg_expr(cg, node->children[0]);
         fprintf(cg->out, "  store %s\n", node->sval);
         return;
@@ -386,7 +437,14 @@ static void cg_fn(CG *cg, AstNode *node) {
     for (int i = 0; i < ll.count; i++)
         fprintf(cg->out, ".local %s %s\n", ll.names[i], ll.types[i]);
 
+    /* #36: params join the list (not emitted as .local) so the
+       const-str global shadowing check sees them too */
+    for (int i = 0; i < params->nchildren; i++)
+        local_add(&ll, params->children[i]->sval,
+                  params->children[i]->children[0]->sval);
+    cg->cur_locals = &ll;
     cg_block(cg, body);
+    cg->cur_locals = NULL;
 
     /* implicit fall-through: return void */
     fprintf(cg->out, "  return_void\n");
@@ -410,6 +468,15 @@ void codegen(AstNode *program) {
     for (int i = 0; i < program->nchildren; i++) {
         AstNode *d = program->children[i];
         if (strcmp(d->kind, "var_decl") == 0) {
+            /* #36: a string-literal initializer can't live in a .data
+               word (PIC raw-bin tasks have no load-time relocation) —
+               register the global as a constant alias for the literal
+               instead of emitting .global */
+            if (d->nchildren > 1 && strcmp(d->children[1]->kind, "str") == 0) {
+                int idx = cg_add_string(&cg, d->children[1]->sval ? d->children[1]->sval : "");
+                cstr_add(&cg, d->sval, idx);
+                continue;
+            }
             if (!has_global) { fprintf(cg.out, "; globals\n"); has_global = 1; }
             /* emit initial value if it's a simple integer literal */
             long initval = 0;
@@ -444,4 +511,7 @@ void codegen(AstNode *program) {
     /* cleanup */
     for (int i = 0; i < cg.nstrings; i++) free(cg.strings[i]);
     free(cg.strings);
+    for (int i = 0; i < cg.ncstr; i++) free(cg.cstr_names[i]);
+    free(cg.cstr_names);
+    free(cg.cstr_idx);
 }

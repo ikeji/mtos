@@ -295,7 +295,7 @@ EXAMPLE_FILES=(
     "hello.tc" "hello2.tc" "fib.tc" "fizzbuzz.tc" "calc.tc"
     "elseif_test.tc" "charliteral_test.tc"
     "break_test.tc" "continue_test.tc" "nested_break_test.tc"
-    "type_test.tc" "struct_basic.tc"
+    "type_test.tc" "struct_basic.tc" "global_str.tc"
 )
 
 TC_FILES=("parse.tc" "codegen.tc" "bc2asm.tc" "bcrun.tc")

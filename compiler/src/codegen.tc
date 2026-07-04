@@ -48,6 +48,18 @@ var g_slc: i32 = 0;       // string literal count
 var g_locc: i32 = 0;      // locals count
 var g_loop_depth: i32 = 0; // nesting depth of while loops (for break/continue)
 
+// #36: globals initialized with a string literal. PIC raw-bin tasks
+// have no load-time data relocation, so such a global is compiled as
+// a constant alias for the literal: loads become push_str, assignment
+// is a compile error. Entries are 3 i32 (name perm_ss, name_sl,
+// slit idx); names live in the permanent strtab prefix. The decl must
+// precede its uses — codegen streams top-level items, so a use
+// compiled before the decl falls back to `load` and fails at link
+// time with an undefined-label error.
+var g_cstr_tab: I32Array = 0 as I32Array;   // alloc'd in main (64 entries)
+var g_cstrc: i32 = 0;                       // const-str global count
+var g_cur_locals: I32Array = 0 as I32Array; // = main's locals (shadow check)
+
 // ===== Input reading (via SourceReader) =====
 fn peek_in() -> u8 {
     return peek(g_reader);
@@ -275,6 +287,53 @@ fn slit_add(strtab: U8Array, slits: I32Array, ss: i32, sl: i32) -> i32 {
 // String literals are now collected on-the-fly in cg_expr (slit_add)
 // and emitted at the end of the .bc output.
 
+// ===== Const-str globals (#36) =====
+fn cstr_find(strtab: U8Array, nss: i32, nsl: i32) -> i32 {
+    var i: i32 = 0;
+    while i < g_cstrc {
+        var b: i32 = i * 3;
+        var es: i32 = get(g_cstr_tab, b);
+        var el: i32 = get(g_cstr_tab, (b+1));
+        if el == nsl {
+            var match: i32 = 1;
+            var j: i32 = 0;
+            while j < nsl && match == 1 {
+                if get(strtab,(nss+j)) != get(strtab,(es+j)) { match = 0; }
+                j = j + 1;
+            }
+            if match == 1 { return i; }
+        }
+        i = i + 1;
+    }
+    return -1;
+}
+
+// Register `var NAME: T = "literal";` (top-level). The name is copied
+// into the permanent strtab prefix FIRST — it was parked at the very
+// bottom of the ephemeral region, exactly where the prefix grows, so
+// copying the literal first would clobber it. Both copies are
+// ascending with dest <= src, so overlap is safe.
+fn cstr_add(strtab: U8Array, slits: I32Array, nss: i32, nsl: i32, lss: i32, lsl: i32) -> void {
+    if g_cstrc >= 64 {
+        print_error("codegen: too many string-literal globals (max 64)");
+        sys_exit(1);
+    }
+    var perm: i32 = g_sp_perm;
+    var i: i32 = 0;
+    while i < nsl {
+        set(strtab, (perm + i), get(strtab, (nss + i)));
+        i = i + 1;
+    }
+    g_sp_perm = g_sp_perm + nsl;
+    var sidx: i32 = slit_add(strtab, slits, lss, lsl);
+    var b: i32 = g_cstrc * 3;
+    set(g_cstr_tab, b, perm);
+    set(g_cstr_tab, (b+1), nsl);
+    set(g_cstr_tab, (b+2), sidx);
+    g_cstrc = g_cstrc + 1;
+    return;
+}
+
 // ===== Local variable collection =====
 // locals: 4 ints per entry (name_ss, name_sl, type_ss, type_sl)
 fn locals_find(strtab: U8Array, locals: I32Array, nss: i32, nsl: i32) -> i32 {
@@ -384,6 +443,22 @@ fn cg_stmt(nodes: AstNodeArray, strtab: U8Array, slits: I32Array, ob: StringBuff
     }
 
     if k == NK_ASSIGN {
+        // #36: const-str globals are constants — reject stores
+        if g_cstrc > 0 {
+            var nss: i32 = n_ss(nodes,n);
+            var nsl: i32 = n_sl(nodes,n);
+            if cstr_find(strtab, nss, nsl) >= 0 {
+                if locals_find(strtab, g_cur_locals, nss, nsl) < 0 {
+                    var eb: StringBuffer = StringBuffer_new();
+                    emit_string(eb, "codegen: cannot assign to string-literal global ");
+                    emit_n(eb, strtab, nss, nsl);
+                    emit_char(eb, 10u8);
+                    write(eb, 2);
+                    destroy(eb);
+                    sys_exit(1);
+                }
+            }
+        }
         cg_expr(nodes, strtab, slits, ob, n_child(nodes, n));
         emit_string(ob, "  store ");
         emit_n(ob, strtab, n_ss(nodes,n), n_sl(nodes,n)); emit_nl(ob);
@@ -610,6 +685,20 @@ fn cg_expr(nodes: AstNodeArray, strtab: U8Array, slits: I32Array, ob: StringBuff
     }
 
     if k == NK_VAR {
+        // #36: a const-str global (not shadowed by a local/param)
+        // loads as its literal
+        if g_cstrc > 0 {
+            var nss: i32 = n_ss(nodes,n);
+            var nsl: i32 = n_sl(nodes,n);
+            var ci: i32 = cstr_find(strtab, nss, nsl);
+            if ci >= 0 {
+                if locals_find(strtab, g_cur_locals, nss, nsl) < 0 {
+                    emit_string(ob, "  push_str ");
+                    emit_int(ob, get(g_cstr_tab, (ci*3+2))); emit_nl(ob);
+                    return;
+                }
+            }
+        }
         emit_string(ob, "  load ");
         emit_n(ob, strtab, n_ss(nodes,n), n_sl(nodes,n)); emit_nl(ob);
         return;
@@ -799,6 +888,17 @@ fn cg_fn(nodes: AstNodeArray, strtab: U8Array, slits: I32Array, locals: I32Array
         i = i + 1;
     }
 
+    // #36: params join the locals table (not emitted as .local) so
+    // the const-str global shadowing check in cg_expr sees them.
+    p = n_child(nodes, params_n);
+    while p >= 0 {
+        var ptn: i32 = n_child(nodes, p);
+        locals_add_entry(strtab, locals,
+            n_ss(nodes, p), n_sl(nodes, p),
+            n_ss(nodes, ptn), n_sl(nodes, ptn));
+        p = n_sib(nodes, p);
+    }
+
     g_loop_depth = 0;
     var loop_stk: I32Array = I32Array(32); // up to 16 nested while loops
     cg_block(nodes, strtab, slits, ob, loop_stk, body_n);
@@ -878,6 +978,8 @@ fn main() -> i32 {
     var strtab: U8Array = U8Array(32768);
     var slits: I32Array = I32Array(512);
     var locals: I32Array = I32Array(1024);
+    g_cstr_tab = I32Array(192);  // #36: ≤ 64 const-str globals × 3 i32
+    g_cur_locals = locals;
 
     g_reader = SourceReader_new(0);
     ast_set_count(0);
@@ -885,6 +987,7 @@ fn main() -> i32 {
     g_lc = 0;
     g_slc = 0;
     g_locc = 0;
+    g_cstrc = 0;
 
     // ".bc\n" header
     emit_string(out_buf, ".bc");emit_nl(out_buf);
@@ -912,21 +1015,32 @@ fn main() -> i32 {
         if n >= 0 {
             var k: i32 = n_kind(nodes, n);
             if k == NK_VAR_DECL {
-                if has_global == 0 {
-                    emit_string(out_buf, "; globals");emit_nl(out_buf);
-                    has_global = 1;
-                }
                 var type_n: i32 = n_child(nodes, n);
                 var init_n: i32 = n_sib(nodes, type_n);
-                var initval: i32 = 0;
-                if init_n >= 0 { initval = n_ival(nodes, init_n); }
-                emit_string(out_buf, ".global ");
-                emit_n(out_buf, strtab, n_ss(nodes,n), n_sl(nodes,n));
-                emit_char(out_buf, ' ');
-                emit_n(out_buf, strtab, n_ss(nodes,type_n), n_sl(nodes,type_n));
-                emit_char(out_buf, ' ');
-                emit_int(out_buf, initval);
-                emit_nl(out_buf);
+                var is_cstr: i32 = 0;
+                if init_n >= 0 {
+                    if n_kind(nodes, init_n) == NK_STR { is_cstr = 1; }
+                }
+                if is_cstr == 1 {
+                    // #36: string-literal initializer — register the
+                    // global as a constant alias, emit no .global
+                    cstr_add(strtab, slits, n_ss(nodes,n), n_sl(nodes,n),
+                             n_ss(nodes,init_n), n_sl(nodes,init_n));
+                } else {
+                    if has_global == 0 {
+                        emit_string(out_buf, "; globals");emit_nl(out_buf);
+                        has_global = 1;
+                    }
+                    var initval: i32 = 0;
+                    if init_n >= 0 { initval = n_ival(nodes, init_n); }
+                    emit_string(out_buf, ".global ");
+                    emit_n(out_buf, strtab, n_ss(nodes,n), n_sl(nodes,n));
+                    emit_char(out_buf, ' ');
+                    emit_n(out_buf, strtab, n_ss(nodes,type_n), n_sl(nodes,type_n));
+                    emit_char(out_buf, ' ');
+                    emit_int(out_buf, initval);
+                    emit_nl(out_buf);
+                }
             }
             if k == NK_FN {
                 if has_global == 1 { emit_nl(out_buf); has_global = 2; }
@@ -970,6 +1084,7 @@ fn main() -> i32 {
 
     close(g_reader); delete(atom_buf); destroy(out_buf);
     delete(nodes); delete(strtab); delete(slits); delete(locals);
+    delete(g_cstr_tab);
     km_dump_peak();
     return 0;
 }

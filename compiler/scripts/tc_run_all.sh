@@ -6,7 +6,7 @@
 #   [stdin]  string passed as program stdin; prefix '@' to read from file
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-TC_RUN="$ROOT_DIR/tc_run.sh"
+TC_RUN="$ROOT_DIR/compiler/scripts/tc_run.sh"
 
 TC_FILE="${1:-}"
 STDIN_ARG="${2:-}"
@@ -33,6 +33,7 @@ run_method() {
 }
 
 FIRST_OUTPUT=""
+FIRST_SET=false
 ALL_SAME=true
 
 for method in "${METHODS[@]}"; do
@@ -43,9 +44,21 @@ for method in "${METHODS[@]}"; do
     printf '%s\n' "$output"
     echo ""
 
-    if [ -z "$FIRST_OUTPUT" ]; then
-        FIRST_OUTPUT="$output"
-    elif [ "$output" != "$FIRST_OUTPUT" ]; then
+    # A method that fails to launch must not count as "agreeing" (a
+    # stale TC_RUN path once made every method exit 127 with empty
+    # output, which the old empty-string sentinel scored as a pass).
+    # Other exit codes are part of the program result (fib.tc returns
+    # 55) and must agree across methods like the output does.
+    if [ $ec -eq 126 ] || [ $ec -eq 127 ]; then
+        ALL_SAME=false
+        continue
+    fi
+    combined="exit=$ec
+$output"
+    if ! $FIRST_SET; then
+        FIRST_OUTPUT="$combined"
+        FIRST_SET=true
+    elif [ "$combined" != "$FIRST_OUTPUT" ]; then
         ALL_SAME=false
     fi
 done

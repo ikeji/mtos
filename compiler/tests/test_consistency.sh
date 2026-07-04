@@ -43,5 +43,6 @@ run_consistency "charliteral_test.tc" "$SCRIPT_DIR/charliteral_test.tc"
 run_consistency "break_test.tc" "$SCRIPT_DIR/break_test.tc"
 run_consistency "continue_test.tc" "$SCRIPT_DIR/continue_test.tc"
 run_consistency "nested_break_test.tc" "$SCRIPT_DIR/nested_break_test.tc"
+run_consistency "global_str.tc" "$SCRIPT_DIR/global_str.tc"
 
 print_results

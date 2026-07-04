@@ -1,0 +1,42 @@
+// #36 regression: globals initialized with a string literal compile
+// as constant aliases of the literal (push_str), because PIC raw-bin
+// tasks have no load-time data relocation. Covers: load via get/len,
+// two globals sharing one literal (slit dedup), and an int global
+// living in the same file (still a .data word).
+
+var GREET: StringLiteral = "hi, global str!";
+var SAME: StringLiteral = "hi, global str!";
+var TAIL: StringLiteral = "tail";
+var G_ADD: i32 = 10;
+
+fn put_sl(s: StringLiteral) -> void {
+    var n: i32 = len(s);
+    var buf: U8Array = U8Array(64u32);
+    var i: i32 = 0;
+    while i < n {
+        set(buf, i, get(s, i));
+        i = i + 1;
+    }
+    set(buf, n, 10u8);
+    sys_write(1, buf, n + 1);
+    delete(buf);
+    return;
+}
+
+fn put2(v: i32) -> void {
+    var buf: U8Array = U8Array(4u32);
+    set(buf, 0, (48 + v / 10) as u8);
+    set(buf, 1, (48 + v % 10) as u8);
+    set(buf, 2, 10u8);
+    sys_write(1, buf, 3);
+    delete(buf);
+    return;
+}
+
+fn main() -> i32 {
+    put_sl(GREET);
+    put_sl(SAME);
+    put_sl(TAIL);
+    put2(len(GREET) + G_ADD);
+    return 0;
+}

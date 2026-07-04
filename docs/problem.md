@@ -111,37 +111,19 @@ redraw + per-cell fill 戦略で実用範囲内。
 参考: `kernel/platform/pico2/display_ili9488.tc` の `pio_lcd_init`、in-tree。GDB
 session 例は session log 参照。
 
-### 36. `var X: StringLiteral = "..."` で literal が `.word 0` に落ちる (bug、2026-05-23)
+### 36b. `"abc" + "def"` がポインタ加算になる (limitation、2026-05-23)
 
-グローバル変数を文字列リテラルで初期化する構文が壊れている:
-
-```tc
-var KBD_KEYMAP: StringLiteral = "abcdef";   // ← X は 0 (NULL)
-```
-
-AST には `(str "abcdef")` が正しく載っているが、codegen が無視して
-`X: .word 0` を吐く。実行時 `get(X, i)` は `peek8(0 + 4 + i)` →
-低位カーネルデータの不定値を返す。
-
-加えて `"abc" + "def"` は **ポインタ加算** (= 「add」命令) を emit
+StringLiteral 同士の `+` は **ポインタ加算** (「add」命令) を emit
 するだけ。コンパイル時 string concat はない。文字列リテラルを行
-分割して書きたい場合は単一リテラルとして連結するしかない (TC は
-C 風の隣接リテラル concat も未実装)。
+分割して書きたい場合は単一リテラルとして書くしかない (TC は C 風の
+隣接リテラル concat も未実装)。
 
-回避策: literal を関数経由で参照する。
+対処案: tcheck で StringLiteral + StringLiteral を型エラーにすれば
+誤用だけは防げる (concat 実装より大幅に安い)。
 
-```tc
-fn keymap() -> StringLiteral { return "abcdef"; }
-// 使う側:
-var b: u8 = get(keymap(), i);
-```
-
-関数の return path だと literal が .rodata に正しく置かれ、ポインタ
-も returnable。実機で確認済 (commit aa54b0c、`kernel/platform/pico2/keyboard_matrix.tc`
-の KBD_KEYMAP)。
-
-根本治療: codegen の var_decl + str init 経路を直す。`compiler/src/codegen.tc`
-の cg_var_decl まわり。
+なお #36 本体 (グローバル var の文字列リテラル初期化が `.word 0` に
+落ちる bug) は 2026-07-05 に解決 — 定数エイリアス化。
+`docs/solved.md` #36 参照。
 
 ### 5. Gen2 typecheck のエラーメッセージ: 段階 2 (AST line info) のみ残 (ergonomics)
 

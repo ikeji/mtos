@@ -185,6 +185,49 @@ boot で無出力ハング、pico2 カーネルから埋め込み mtfs image が
 
 ---
 
+## codegen
+
+### 36. `var X: StringLiteral = "..."` で literal が `.word 0` に落ちる — 完了 (2026-07-05)
+
+**症状**: グローバル変数を文字列リテラルで初期化すると、AST には
+`(str "...")` が正しく載っているのに codegen が無視して
+`X: .word 0` を吐く。実行時 `get(X, i)` は `peek8(0 + 4 + i)` →
+低位カーネルデータの不定値を返す (実例: keyboard_matrix の keymap が
+"Raspberry Pi" 等の .rodata 断片を返した)。長らくの回避策は literal
+を関数の return 経由で参照するイディオム (commit aa54b0c)。
+
+**設計判断**: PIC raw-bin タスクにはロード時 data relocation が無い
+ので、「.data のワードに .rodata strobj のランタイムアドレスを置く」
+形はそもそも実現できない。修正は **定数エイリアス化**: 文字列リテラル
+初期化のグローバルは `.global`/.data スロットを持たず、
+
+- load は `push_str <slit idx>` (→ asm では `la t0, strobj`) に置換
+- 再代入は「codegen: cannot assign to string-literal global X」で
+  コンパイルエラー
+- ローカル/パラメータが同名でシャドーする場合は従来どおり `load`
+  (cg_fn がパラメータも locals 表に足して判定)
+- 同一リテラルの複数グローバルは slit dedup で同じ strobj を指す
+
+Gen1 (`compiler/bootstrap/codegen.c`) と Gen2 (`compiler/src/codegen.tc`) の両方に
+同一セマンティクスで実装。interp は元々 init 式を評価していたので
+無変更で一致。制限: Gen2 codegen はトップレベルをストリーミング処理
+するため、**宣言は使用より前に書く必要がある** (宣言前の使用は
+`load` のまま → リンク時 undefined label で loud に失敗する)。
+
+テスト: `compiler/tests/global_str.tc` (EXAMPLE_FILES golden +
+test_consistency 5 メソッド一致)。kernel 側は keyboard_matrix.tc の
+ワークアラウンドを撤去して `var KBD_KEYMAP: StringLiteral = "..."`
+直書きに戻した。
+
+**副産物**: この検証中に `compiler/scripts/tc_run_all.sh` が
+subproject split 以前の `$ROOT/tc_run.sh` パスを参照したままで、
+全メソッドが exit 127 + 空出力 → 「空 == 空」で test_consistency が
+**空振り合格**していたことが判明。パス修正 + 「起動失敗 (exit
+126/127) は不一致扱い」「exit code も出力と同様に一致比較」の
+ハーネス修正を実施。
+
+---
+
 ## カーネル / OS
 
 ### K22. DOOM Shareware TITLEPIC が pico2 実機の ILI9488 LCD に出る — 完了 (2026-06-18)
