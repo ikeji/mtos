@@ -15,11 +15,11 @@ K22 (DOOM TITLEPIC 表示) 到達時点で、`docs/problem.md` /
 
 | # | 項目 | 分類 | 優先度 | 規模 |
 |---|---|---|---|---|
-| 1 | codegen: グローバル var の StringLiteral 初期化バグ修正 (#36) | バグ | P1 | S |
-| 2 | SD 書き込み高速化 (CMD25 / SPI クロック) | 性能 | P1 | M |
-| 3 | ドキュメントの stale 記述掃除 (パス・解決済エントリ) | docs | P1 | S |
+| 1 | codegen: グローバル var の StringLiteral 初期化バグ修正 (#36) | バグ | **済 2026-07-05** | S |
+| 2 | SD 書き込み高速化 (CMD25 / SPI クロック) | 性能 | **済 2026-07-05** | M |
+| 3 | ドキュメントの stale 記述掃除 (パス・解決済エントリ) | docs | **済 2026-07-05** | S |
 | 4 | PL011 RX IRQ + nested trap (K11 根本解決) | 信頼性 | P2 | L |
-| 5 | peek/poke/get/set の intrinsic 化 (#20) → get 境界チェック (#6) | 性能+安全 | P2 | M |
+| 5 | peek/poke/get/set intrinsic 化 (#20) → 実は解決済みだった (§2-2) | 性能+安全 | **済 (stale)** | — |
 | 6 | tmpfs_unlink 追加 (#30) | 機能 | P2 | S |
 | 7 | userland タスクの単体テスト整備 | テスト | P2 | M |
 | 8 | tcheck vartab / fntab の動的化 (#10, Q5) | limitation | P2 | M |
@@ -72,7 +72,17 @@ K22 (DOOM TITLEPIC 表示) 到達時点で、`docs/problem.md` /
 
 ## 2. 性能
 
-### 2-1. SD 書き込みの高速化 — P1 / M
+### 2-1. SD 書き込みの高速化 — 済み (2026-07-05、read/write とも ~1.45×)
+
+**実施結果**: 現ボードは 6 MHz ハード SPI ではなく bit-bang SIO
+駆動だった (下の記述は旧ボード前提で一部 stale)。実施した 2 点:
+(1) `sd_spi_xfer` の bit ループからラッパー関数呼び出しを排除して
+peek32/poke32 直呼び (bc2asm inline) に、(2) CMD24 単発書き込みを
+CMD25 バースト化 (連続セクタは CS 保持で追記、vfs の write 系出口の
+`fat_block_sync` で確定)。実測 (81 KB cp): read 34→49 KB/s、write
+21→32 KB/s (2 回目) / 6.4→9.5 KB/s (初回、FAT scan 支配)。詳細は
+`docs/pico2_hardware.md` SD 節。残る伸びしろは per-byte TC 呼び出し
+コスト → asm 化 or PIO (#37 GPIOBASE が塞ぐ)。以下は着手前の記述:
 
 self_replicate ~50 min の支配項は全部 SD 書き込み
 (asm_pass3 link ~10 min + bin2uf2 ~9 min + dx.img upload ~6 min、
@@ -94,13 +104,14 @@ self_replicate ~50 min の支配項は全部 SD 書き込み
 wall-clock がそのまま使える。self_replicate が 50 min → 20 min 台に
 なると開発イテレーションが体感で変わる。
 
-### 2-2. peek/poke/get/set の intrinsic 化 (#20) — P2 / M
+### 2-2. peek/poke/get/set の intrinsic 化 (#20) — 済み (棚卸しで判明、2026-07-05)
 
-1 命令相当の操作に 5-6 命令のオーバーヘッド。bc2asm で intrinsic
-展開すれば、コンパイラ自身も (self-host なので) 速くなる。
-これが解決すると封印されている **get の境界チェック (#6)** を
-`make test` 1 分制約内で入れられるようになり、安全性も上がる。
-性能と安全性の両方に効く連鎖なので P2 の中では先頭。
+着手時の調査で、**既に解決済み**と判明: bc2asm の
+`try_inline_builtin` が peek/poke を 1 命令、get/set を数命令に
+インライン展開しており (2026-04〜05 実装)、get の境界チェック (#6)
+も 2026-05-11 (8501f6d) に入っていた。problem.md の #6 / #20 が
+stale なまま残っていただけ。両エントリは `docs/solved.md` へ移動
+済み。本項は「ドキュメント台帳の棚卸しが必要」の実例として残す。
 
 ### 2-3. realloc 式 in-place grow — P2 / M
 

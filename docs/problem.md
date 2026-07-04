@@ -147,19 +147,6 @@ struct のフィールド名は getter/setter 関数としてマングルされ�
 回避策: フィールド名にプレフィックスをつける (`t_ram_sz` など)。
 良い解決法が見つかるまで後回し。
 
-### 6. 配列境界エラー: get の境界チェック未実装 (ergonomics)
-
-set には境界チェックがあるが get にはない。入れようとしたら
-#20 (peek/poke が遅い) のせいで `make test` が 60 秒を超えた。
-**#20 の解決が先。**
-
-### 20. `peek*` / `poke*` / `get` / `set` が関数呼び出しで遅い (ergonomics)
-
-peek/poke は 1 命令の操作に 5-6 命令のオーバーヘッド。bc2asm で
-intrinsic 化すれば解消。解決すれば #6 (get 境界チェック) も入れられる。
-
-いつやるか: 「遅くてどうしようもない」状態になったら。現状は実害なし。
-
 ### 30. tmpfs に unlink が無い (limitation)
 
 `kernel/src/vfs.tc::vfs_unlink` は `is_sd_path` (FATFS) しか扱わず、

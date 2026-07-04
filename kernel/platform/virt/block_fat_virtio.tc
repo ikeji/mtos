@@ -225,3 +225,7 @@ export fn fat_block_read(sector: u32, buf: U8Array) -> i32 {
 export fn fat_block_write(sector: u32, buf: U8Array) -> i32 {
     return fat_blk_request(FAT_VBLK_T_OUT, sector, buf);
 }
+
+// virtio-blk writes complete synchronously in fat_blk_request; there
+// is no write burst to flush (the hook exists for block_sd's CMD25).
+export fn fat_block_sync() -> i32 { return 0; }

@@ -163,6 +163,20 @@ export CACHED_S_DIR="$CACHE_DIR"
 
 # --- Step 1: Build task binaries ---
 for task in $TASKS; do
+    # GCC tasks (userland/gcc-bin/*) have no .tc source — they are
+    # built by `make -C userland` into userland/build/tasks/<task>.bin
+    # (K3 header included). Reuse that binary; error out if it hasn't
+    # been built rather than silently shipping a disk without it.
+    if [ ! -f "$ROOT_DIR/userland/bin/$task/$task.tc" ]; then
+        prebuilt="$ROOT_DIR/userland/build/tasks/$task.bin"
+        if [ -s "$prebuilt" ]; then
+            echo "Using prebuilt task: $task" >&2
+            cp "$prebuilt" "$TMP/$task.bin"
+            continue
+        fi
+        echo "Error: $task has no .tc source and no prebuilt $prebuilt (run make -C userland)" >&2
+        exit 1
+    fi
     echo "Building task: $task" >&2
     # Emit a per-task 8-byte header + prepend to task_crt0.s via a
     # temp CRT0 file. This puts `.word arena_size; .word stack_size`

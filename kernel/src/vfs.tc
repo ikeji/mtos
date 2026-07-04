@@ -24,6 +24,12 @@ import "kernel_common.tc";
 fn do_uart_write(buf: u32, len: i32) -> i32;
 fn uart_rx_pop(buf: u32, len: i32) -> i32;
 
+// SD block-layer flush (block_sd.tc on pico2; no-op on virt). Closes
+// any open CMD25 write burst so every fatfs write-y vfs entry point
+// leaves the card fully committed — same per-syscall durability as
+// the old single-block CMD24 path.
+fn fat_block_sync() -> i32;
+
 // Runtime allocator (compiler/runtime.tc)
 fn kfree(ptr: u32) -> void;
 
@@ -177,6 +183,7 @@ export fn vfs_open_owned(path: String, flags: i32, owner_slot: i32) -> i32 {
         var nlen: i32 = plen - 4;  // "/sd/" is 4 bytes
         if nlen == 0 { return -1; }
         var inner_fd: i32 = fatfs_open(path_addr + 4u32, nlen, flags);
+        fat_block_sync();  // O_CREAT / O_TRUNC write dir + FAT sectors
         if inner_fd < 0 { return -1; }
         var fd: i32 = alloc_vfs_fd(FS_FATFS, inner_fd, owner_slot);
         if fd < 0 { fatfs_close(inner_fd); return -1; }
@@ -368,7 +375,11 @@ export fn vfs_write(fd: i32, buf_addr: u32, n: i32) -> i32 {
     var t: i32 = fs_type(e);
     if t == FS_TMPFS { return tmpfs_write(inner(e), buf_addr, n); }
     if t == FS_PIPE  { return pipe_write(inner(e), buf_addr, n); }
-    if t == FS_FATFS { return fatfs_write(inner(e), buf_addr, n); }
+    if t == FS_FATFS {
+        var wr: i32 = fatfs_write(inner(e), buf_addr, n);
+        fat_block_sync();
+        return wr;
+    }
     if t == FS_DEVFS { return devfs_write(inner(e), buf_addr, n); }
     return -1;
 }
@@ -487,7 +498,9 @@ export fn vfs_unlink(path: String) -> i32 {
     if plen <= 0 { return -1; }
     var path_addr: u32 = path as u32 + 4u32;
     if is_sd_path(path_addr, plen) && g_fatfs_ready != 0 {
-        return fatfs_delete(path_addr + 4u32, plen - 4);
+        var dr: i32 = fatfs_delete(path_addr + 4u32, plen - 4);
+        fat_block_sync();
+        return dr;
     }
     return -1;
 }
@@ -501,7 +514,9 @@ export fn vfs_mkdir(path: String) -> i32 {
     if plen <= 0 { return -1; }
     var path_addr: u32 = path as u32 + 4u32;
     if is_sd_path(path_addr, plen) && g_fatfs_ready != 0 {
-        return fatfs_mkdir(path_addr + 4u32, plen - 4);
+        var mr: i32 = fatfs_mkdir(path_addr + 4u32, plen - 4);
+        fat_block_sync();
+        return mr;
     }
     return -1;
 }
@@ -515,7 +530,9 @@ export fn vfs_rmdir(path: String) -> i32 {
     if plen <= 0 { return -1; }
     var path_addr: u32 = path as u32 + 4u32;
     if is_sd_path(path_addr, plen) && g_fatfs_ready != 0 {
-        return fatfs_rmdir(path_addr + 4u32, plen - 4);
+        var rr: i32 = fatfs_rmdir(path_addr + 4u32, plen - 4);
+        fat_block_sync();
+        return rr;
     }
     return -1;
 }
@@ -531,7 +548,7 @@ export fn vfs_close(fd: i32) -> i32 {
     if t == FS_TMPFS  { tmpfs_close(inner(e)); }
     if t == FS_PROCFS { procfs_close(inner(e)); }
     if t == FS_PIPE   { pipe_close(inner(e)); }
-    if t == FS_FATFS  { fatfs_close(inner(e)); }
+    if t == FS_FATFS  { fatfs_close(inner(e)); fat_block_sync(); }
     if t == FS_DEVFS  { devfs_close(inner(e)); }
     fs_type(e, FS_NONE);
     inner(e, 0);

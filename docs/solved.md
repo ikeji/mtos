@@ -185,7 +185,26 @@ boot で無出力ハング、pico2 カーネルから埋め込み mtfs image が
 
 ---
 
-## codegen
+## codegen / bc2asm
+
+### 6 + 20. peek/poke/get/set の intrinsic 化 + get 境界チェック — 完了 (実装 2026-04〜05、台帳整理 2026-07-05)
+
+problem.md に「未実装」のまま残っていたが、実際にはとっくに解決
+していた 2 エントリ (2026-07-05 の棚卸しで判明):
+
+- **#20 (peek/poke/get/set が関数呼び出しで遅い)**: bc2asm の
+  `try_inline_builtin` が peek8/16/32 → `lbu/lhu/lw`、poke8/16/32 →
+  `sb/sh/sw` の 1 命令に、typed array の get/set → shift+add+load/
+  store 数命令にインライン展開する。peek/poke は builtin mangled-name
+  化 (2026-04-06〜08) の頃から、get/set は commit a4de8bf
+  (2026-05-01、-19 s / -25%)。len() だけは null チェック semantics
+  維持のため call のまま (意図的)。
+- **#6 (get の境界チェック未実装)**: commit 8501f6d (2026-05-11) で
+  `emit_inline_get/set` の両方に bound check (+2 insns: `lw` count +
+  `bltu`、OOB は `__array_oob_get/set` へ jump) が入った。K14 の
+  silent overflow footgun 修正の一環。
+
+### 36. `var X: StringLiteral = "..."` で literal が `.word 0` に落ちる — 完了 (2026-07-05)
 
 ### 36. `var X: StringLiteral = "..."` で literal が `.word 0` に落ちる — 完了 (2026-07-05)
 
@@ -229,6 +248,40 @@ subproject split 以前の `$ROOT/tc_run.sh` パスを参照したままで、
 ---
 
 ## カーネル / OS
+
+### 39. SD 読み書きを ~1.45× 高速化: CMD25 バースト + sd_spi_xfer インライン化 — 完了 (2026-07-05)
+
+improvements_2026_07.md §2-1 の実施。self_replicate ~50 min の
+支配項が SD 書き込みだったため着手。2 つの変更:
+
+1. **sd_spi_xfer の bit ループからラッパー呼び出しを排除**
+   (`kernel/platform/pico2/block_sd.tc`): `sd_sck_high()` 等の 1 行ラッパーは
+   TC では call + prologue で 1 pin 操作 ~25 命令。SIO アドレスと
+   マスクをローカルに hoist して peek32/poke32 直呼びに (bc2asm が
+   1 命令に inline 展開する)。
+2. **CMD24 単発書き込みを CMD25 (WRITE_MULTIPLE_BLOCK) バースト化**:
+   `fat_block_write` は書き込み後も CS を保持し、次が連続セクタなら
+   同一バーストに 0xFC トークンで追記。`fat_block_read` と新設
+   `fat_block_sync` がバーストを 0xFD で close する。vfs.tc の
+   write 系出口 (write / close / unlink / mkdir / rmdir / open) が
+   毎回 `fat_block_sync()` を呼ぶので、**syscall 単位の durability
+   は CMD24 時代と同一** (virt backend は no-op sync を export)。
+   `kernel/tests/test_pico2_sd.sh` の Phase B (リブート永続性) で
+   実機確認済み。
+
+実測 (81 KB `cp /bin/vi /sd/`、実機 150 MHz): read 34.2→49.0 KB/s
+(1.43×)、write 2 回目 21.1→31.6 KB/s (1.50×)、write 初回 6.4→9.5
+KB/s (FAT free-cluster scan が支配)。数値表は
+`docs/pico2_hardware.md` SD 節。
+
+**副産物**: `kernel/scripts/build.sh` の task ループが gcc-bin task
+(gcc_hello 等、.tc ソース無し) で silent fail していたのを修正 —
+`userland/build/tasks/<task>.bin` のプレビルドを使う。gcc task 追加
+(K22) 以降 `test_pico2*.sh` 系の standalone build 経路が壊れていた。
+
+残る伸びしろ: per-byte の sd_spi_xfer 呼び出し自体と eval-stack
+codegen のオーバーヘッド。さらに削るなら asm 化か PIO (#37 GPIOBASE
+問題が塞ぐ)。
 
 ### K22. DOOM Shareware TITLEPIC が pico2 実機の ILI9488 LCD に出る — 完了 (2026-06-18)
 

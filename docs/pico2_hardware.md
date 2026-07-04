@@ -121,19 +121,19 @@ I2C0 を使う。
 | GP29 | AUX8 | 拡張用 | — |
 | GP30 | UART0 TX | UART0 funcsel 11 | 実装済み |
 | GP31 | UART0 RX | UART0 funcsel 11 | 実装済み |
-| GP32 | RTC SDA | I2C0 SDA funcsel 3 | 実装済 (実機未検証) |
-| GP33 | RTC SCL | I2C0 SCL funcsel 3 | 実装済 (実機未検証) |
-| GP34 | SD MISO | SIO bit-bang | 実装済 (実機未検証) |
-| GP35 | SD CS | SIO 出力 (手動 CS) | 実装済 (実機未検証) |
-| GP36 | SD SCK | SIO bit-bang | 実装済 (実機未検証) |
-| GP37 | SD MOSI | SIO bit-bang | 実装済 (実機未検証) |
-| GP38 | LCD DC | SIO 出力 | 実装済 (実機未検証) |
-| GP39 | LCD CS | SIO 出力 (手動 CS) | 実装済 (実機未検証) |
-| GP40 | LCD SCK | SIO bit-bang | 実装済 (実機未検証) |
-| GP41 | LCD MOSI | SIO bit-bang | 実装済 (実機未検証) |
-| GP42 | LCD MISO | SIO bit-bang (未使用) | 実装済 (実機未検証) |
-| GP43 | LCD RST | SIO 出力 | 実装済 (実機未検証) |
-| GP44 | LCD BL (バックライト) | SIO 出力 | 実装済 (実機未検証) |
+| GP32 | RTC SDA | SIO bit-bang I²C | 実機検証済 (2026-05-24) |
+| GP33 | RTC SCL | SIO bit-bang I²C | 実機検証済 (2026-05-24) |
+| GP34 | SD MISO | SIO bit-bang | 実機検証済 (2026-05-22) |
+| GP35 | SD CS | SIO 出力 (手動 CS) | 実機検証済 (2026-05-22) |
+| GP36 | SD SCK | SIO bit-bang | 実機検証済 (2026-05-22) |
+| GP37 | SD MOSI | SIO bit-bang | 実機検証済 (2026-05-22) |
+| GP38 | LCD DC | SIO 出力 | 実機検証済 (2026-05-23) |
+| GP39 | LCD CS | SIO 出力 (手動 CS) | 実機検証済 (2026-05-23) |
+| GP40 | LCD SCK | SIO bit-bang | 実機検証済 (2026-05-23) |
+| GP41 | LCD MOSI | SIO bit-bang | 実機検証済 (2026-05-23) |
+| GP42 | LCD MISO | SIO bit-bang (未使用) | 実装済 |
+| GP43 | LCD RST | SIO 出力 | 実機検証済 (2026-05-23) |
+| GP44 | LCD BL (バックライト) | SIO 出力 | 実機検証済 (2026-05-23) |
 | GP45 | — | 未使用 | — |
 | GP46 | — | 未使用 | — |
 | GP47 | — | 未使用 | — |
@@ -143,9 +143,11 @@ I2C0 を使う。
   が基板の物理ラベル (MISO/CS/SCK/MOSI) と一致しないため、ハードウェア
   ペリフェラルを使わず SIO で軟件駆動する。SD は ~1-2 MB/s 程度、
   LCD は書き込み専用なので速度低下が体感に出にくい。
-- **RTC は外付け DS3231** (GP32/33、I2C0、アドレス 0x68)。
-  `kernel/platform/pico2/rtc_ds3231.tc` が RP2350 I2C0 ハードウェアブロックで
+- **RTC は外付け DS3231** (GP32/33、アドレス 0x68)。
+  `kernel/platform/pico2/rtc_ds3231.tc` が **bit-bang I²C** (~100 kHz) で
   DS3231 の BCD カレンダーレジスタを読み書きし `/dev/rtc` を駆動する。
+  RP2350 の DW I²C master は TX FIFO をバスに流してくれず断念
+  (commit 3333795、2026-05-24)。
 - **キーボードは論理 12 列 × 5 行 = 60 キー**。物理線は行 5 本 + 列 6
   本の計 11 本だけ。新基板では行/列の GPIO 番号がスクランブルされて
   いる (ROW0=GP2 / ROW1=GP1 / ROW2=GP4 / ROW3=GP3 / ROW4=GP6 と、
@@ -157,20 +159,42 @@ I2C0 を使う。
   - フェーズ B: 列を駆動し行を読む → ダイオードが逆向きの残り半分
     (右 6 列) を検出。
 - **スピーカー** は SPK−/SPK+ の差動 PWM 駆動 (GP11/14、未割当)。
-- **タッチパネルは独立 SPI** (GP13/15/16/17/19、XPT2046 系想定)。
-  bit-bang か PIO で駆動する。INT (GP19) はペンダウン検出。
+- **タッチパネルは独立 SPI** (GP13/15/16/17/19、XPT2046)。
+  bit-bang 駆動のドライバ + `/dev/touch` + `touchtest` デモ実装済
+  (2026-06-21〜07-05、commits 7359110 / b398dcf)。INT (GP19) は
+  ペンダウン検出。
 - **AUX0–9** (GP20-29) は拡張用に引き出した未割り当てピン。
 - **PSRAM** は搭載なし。
-- RTC / LCD / キーボード / SD のドライバは新ピン配置で更新済だが
-  **実機未検証** (SD は flash-backed MTFS まで boot 成功を 2026-05-22
-  に確認)。スピーカー・タッチのドライバは未実装。
+- RTC / LCD / キーボード / SD / タッチのドライバは新ピン配置で
+  実機検証済 (2026-05-22〜24 + touch 2026-07)。スピーカーのドライバは
+  未実装。
 
-### SD カード (SPI0、実装済み 2026-04-29)
+### SD カード (bit-bang SPI、実装 2026-04-29 / CMD25 化 2026-07-05)
 
-実装は `kernel/platform/pico2/block_sd.tc` (CMD0/CMD8/ACMD41/CMD58 init + CMD17/CMD24
-read/write) + `kernel/src/fatfs.tc` (MBR / superfloppy 対応 FAT32) で完成。
-`/sd/<path>` で OS から読み書き可能。`kernel/tests/test_pico2_sd.sh` が永続性
-を検証。詳細は `docs/solved.md` の K7 エントリ。
+実装は `kernel/platform/pico2/block_sd.tc` (CMD0/CMD8/ACMD41/CMD58 init +
+CMD17 read + **CMD25 multi-block write**) + `kernel/src/fatfs.tc`
+(MBR / superfloppy 対応 FAT32) で完成。`/sd/<path>` で OS から
+読み書き可能。`kernel/tests/test_pico2_sd.sh` が永続性を検証。
+
+書き込みは CMD25 バースト: 連続セクタの `fat_block_write` は CS を
+保持したまま同一バーストに追記し、`fat_block_read` / `fat_block_sync`
+(vfs の write 系出口が毎回呼ぶ) で確定する。per-syscall の durability
+は CMD24 時代と同じ。
+
+実測スループット (2026-07-05、`cp /bin/vi /sd/` 81 KB、150 MHz):
+
+| 経路 | CMD24 + wrapper 呼び出し | CMD25 + inline xfer | 倍率 |
+|---|---:|---:|---:|
+| write (初回、FAT free scan 込み) | 6.4 KB/s | 9.5 KB/s | 1.48× |
+| write (2 回目) | 21.1 KB/s | 31.6 KB/s | 1.50× |
+| read | 34.2 KB/s | 49.0 KB/s | 1.43× |
+
+sd_spi_xfer の bit ループも wrapper 関数呼び出し (1 pin 操作 ~25
+命令) を peek32/poke32 直呼び (bc2asm が inline 展開) に書き換えて
+ある。残りのボトルネックは per-byte の関数呼び出し + eval-stack
+codegen のオーバーヘッドで、これ以上は asm 化か PIO (GPIOBASE 問題
+#37 が塞ぐ) が必要。詳細は `docs/solved.md` の K7 エントリと
+improvements_2026_07.md §2-1。
 
 ### SD カード フォーマット注意
 

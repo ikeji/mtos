@@ -4,8 +4,10 @@
 // MISO/CS/SCK/MOSI — which does NOT match RP2350's SPI0 hardware funcsel
 // pin layout on those pins (SPI0 is SCK/MOSI/MISO/CS at GP34/35/36/37).
 // So we drive the bus with software bit-bang via SIO instead of using
-// the PL022 SPI peripheral. Expect roughly 1–2 MB/s vs the previous
-// 6 MHz hardware SPI; sufficient for fatfs mount + small-file IO.
+// the PL022 SPI peripheral. Effective end-to-end throughput through
+// fatfs is ~49 KB/s read / ~32 KB/s write (2026-07-05 measurement,
+// docs/pico2_hardware.md) — the TC per-byte call overhead dominates,
+// not the wire clock.
 //
 // Pins (all funcsel 5 = SIOB_PROC, high-GPIO group):
 //   GP34 = MISO (input, IE+PUE)
@@ -56,32 +58,39 @@ var SD_PAD_MOSI:    u32 = 0x098u32;  // GP37
 // ----- module state -----
 var g_sd_sdhc:        i32 = 0;     // 1 = SDHC, 0 = SDSC
 var g_sd_inited:      i32 = 0;
+var g_sd_burst_open:  i32 = 0;     // CMD25 multi-block write in flight
+var g_sd_burst_next:  u32 = 0u32;  // next sector the open burst expects
 
 // ----- low level bit-bang -----
 
-fn sd_sck_high() -> void { poke32(SD_SIO + SD_HI_OUT_SET, SD_SCK_MASK); return; }
-fn sd_sck_low()  -> void { poke32(SD_SIO + SD_HI_OUT_CLR, SD_SCK_MASK); return; }
-fn sd_mosi_high() -> void { poke32(SD_SIO + SD_HI_OUT_SET, SD_MOSI_MASK); return; }
-fn sd_mosi_low()  -> void { poke32(SD_SIO + SD_HI_OUT_CLR, SD_MOSI_MASK); return; }
 fn sd_cs_low()  -> void { poke32(SD_SIO + SD_HI_OUT_CLR, SD_CS_MASK); return; }
 fn sd_cs_high() -> void { poke32(SD_SIO + SD_HI_OUT_SET, SD_CS_MASK); return; }
 
-fn sd_miso_read() -> u32 {
-    return peek32(SD_SIO + SD_HI_IN) & SD_MISO_MASK;
-}
-
 // Exchange one byte MSB-first, SPI mode 0 (CPOL=0, CPHA=0).
+//
+// The bit loop uses peek32/poke32 directly with the SIO addresses
+// hoisted into locals. The tidy sd_sck_high()-style wrappers cost a
+// full TC call + prologue each (~25 insns), which at 4 wrapper calls
+// per bit dominated the transfer time; peek32/poke32 themselves are
+// inlined by bc2asm so the direct form is a handful of insns per
+// pin op. Keep the wrappers for the cold paths (init, CS control).
 fn sd_spi_xfer(b: u8) -> u8 {
     var out: u32 = b as u32;
     var rx: u32 = 0u32;
+    var set_a: u32 = SD_SIO + SD_HI_OUT_SET;
+    var clr_a: u32 = SD_SIO + SD_HI_OUT_CLR;
+    var in_a:  u32 = SD_SIO + SD_HI_IN;
+    var mosi:  u32 = SD_MOSI_MASK;
+    var sck:   u32 = SD_SCK_MASK;
+    var miso:  u32 = SD_MISO_MASK;
     var i: i32 = 0;
     while i < 8 {
-        if (out & 0x80u32) == 0u32 { sd_mosi_low(); } else { sd_mosi_high(); }
+        if (out & 0x80u32) == 0u32 { poke32(clr_a, mosi); } else { poke32(set_a, mosi); }
         out = out << 1u32;
-        sd_sck_high();
+        poke32(set_a, sck);
         rx = rx << 1u32;
-        if sd_miso_read() != 0u32 { rx = rx | 1u32; }
-        sd_sck_low();
+        if (peek32(in_a) & miso) != 0u32 { rx = rx | 1u32; }
+        poke32(clr_a, sck);
         i = i + 1;
     }
     // Drain UART RX every SPI byte. Any SD path (block_read /
@@ -124,6 +133,7 @@ fn sd_busy_spin(n: i32) -> void {
 
 export fn fat_block_init() -> i32 {
     if g_sd_inited == 1 { return 0; }
+    g_sd_burst_open = 0;
 
     // 1. Pre-drive CS, MOSI high (idle) and SCK low.
     poke32(SD_SIO + SD_HI_OUT_SET, SD_CS_MASK | SD_MOSI_MASK);
@@ -240,9 +250,55 @@ export fn fat_block_init() -> i32 {
     return 0;
 }
 
+// Send one 512-byte block inside an open CMD25 burst: 0xFC data
+// token, payload, dummy CRC, data response, then wait out card busy.
+fn sd_burst_block(buf: U8Array) -> i32 {
+    sd_spi_xfer(0xFCu8);
+    var i: i32 = 0;
+    while i < 512 {
+        sd_spi_xfer(get(buf, i));
+        i = i + 1;
+    }
+    sd_spi_xfer(0xFFu8);  // CRC dummy
+    sd_spi_xfer(0xFFu8);
+    var resp: u8 = 0xFFu8;
+    var rp: i32 = 0;
+    while rp < 8 {
+        resp = sd_spi_xfer(0xFFu8);
+        if resp != 0xFFu8 { break; }
+        rp = rp + 1;
+    }
+    if (resp as u32 & 0x1Fu32) != 0x05u32 { return -1; }
+    var w: i32 = 0;
+    while w < 1000000 {
+        var bb: u8 = sd_spi_xfer(0xFFu8);
+        if bb == 0xFFu8 { break; }
+        w = w + 1;
+    }
+    return 0;
+}
+
+// Close an open CMD25 burst: 0xFD stop token, 1 byte gap, busy wait,
+// release CS. No-op when no burst is open.
+fn sd_burst_close() -> void {
+    if g_sd_burst_open == 0 { return; }
+    sd_spi_xfer(0xFDu8);
+    sd_spi_xfer(0xFFu8);
+    var w: i32 = 0;
+    while w < 1000000 {
+        var bb: u8 = sd_spi_xfer(0xFFu8);
+        if bb == 0xFFu8 { break; }
+        w = w + 1;
+    }
+    sd_cs_high_clk();
+    g_sd_burst_open = 0;
+    return;
+}
+
 // CMD17 (READ_SINGLE_BLOCK).
 export fn fat_block_read(sector: u32, buf: U8Array) -> i32 {
     if g_sd_inited == 0 { return -1; }
+    if g_sd_burst_open == 1 { sd_burst_close(); }
     var arg: u32 = sector;
     if g_sd_sdhc == 0 { arg = sector * 512u32; }
 
@@ -270,47 +326,44 @@ export fn fat_block_read(sector: u32, buf: U8Array) -> i32 {
     return 512;
 }
 
-// CMD24 (WRITE_BLOCK).
+// CMD25 (WRITE_MULTIPLE_BLOCK) with transparent bursting. CS stays
+// low after a write; a sequential follow-up sector extends the same
+// burst, so the card can pipeline its programming instead of paying
+// the full per-sector program latency that single-block CMD24 did.
+// fat_block_read and fat_block_sync close the burst; fatfs calls
+// fat_block_sync at the end of every write-y operation so on-disk
+// durability per syscall is unchanged.
 export fn fat_block_write(sector: u32, buf: U8Array) -> i32 {
     if g_sd_inited == 0 { return -1; }
+
+    // Sequential continuation of an open burst → just append.
+    if g_sd_burst_open == 1 {
+        if sector == g_sd_burst_next {
+            if sd_burst_block(buf) != 0 { sd_burst_close(); return -1; }
+            g_sd_burst_next = sector + 1u32;
+            return 512;
+        }
+        sd_burst_close();
+    }
+
     var arg: u32 = sector;
     if g_sd_sdhc == 0 { arg = sector * 512u32; }
 
-    var r1: u8 = sd_cmd(24, arg, 0xFFu8);
+    var r1: u8 = sd_cmd(25, arg, 0xFFu8);
     if r1 != 0x00u8 { sd_cs_high_clk(); return -1; }
+    sd_spi_xfer(0xFFu8);  // 1 byte gap before the first data token
 
-    // 1 byte gap, then start token 0xFE.
-    sd_spi_xfer(0xFFu8);
-    sd_spi_xfer(0xFEu8);
-    var i: i32 = 0;
-    while i < 512 {
-        sd_spi_xfer(get(buf, i));
-        i = i + 1;
-    }
-    sd_spi_xfer(0xFFu8);  // CRC dummy
-    sd_spi_xfer(0xFFu8);
-
-    // Data response. 0x05 accepted; anything else aborts (avoid silent
-    // corruption — see comment in the SPI0-era driver).
-    var resp: u8 = 0xFFu8;
-    var rp: i32 = 0;
-    while rp < 8 {
-        resp = sd_spi_xfer(0xFFu8);
-        if resp != 0xFFu8 { break; }
-        rp = rp + 1;
-    }
-    if (resp as u32 & 0x1Fu32) != 0x05u32 {
-        sd_cs_high_clk();
-        return -1;
-    }
-
-    // Wait while card is busy (MISO held low).
-    var w: i32 = 0;
-    while w < 1000000 {
-        var bb: u8 = sd_spi_xfer(0xFFu8);
-        if bb == 0xFFu8 { break; }
-        w = w + 1;
-    }
-    sd_cs_high_clk();
+    g_sd_burst_open = 1;
+    g_sd_burst_next = sector + 1u32;
+    if sd_burst_block(buf) != 0 { sd_burst_close(); return -1; }
     return 512;
+}
+
+// Flush: close any open CMD25 burst so everything written so far is
+// committed on the card. fatfs calls this at the end of each write-y
+// entry point.
+export fn fat_block_sync() -> i32 {
+    if g_sd_inited == 0 { return 0; }
+    sd_burst_close();
+    return 0;
 }
