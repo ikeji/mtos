@@ -147,17 +147,6 @@ struct のフィールド名は getter/setter 関数としてマングルされ�
 回避策: フィールド名にプレフィックスをつける (`t_ram_sz` など)。
 良い解決法が見つかるまで後回し。
 
-### 30. tmpfs に unlink が無い (limitation)
-
-`kernel/src/vfs.tc::vfs_unlink` は `is_sd_path` (FATFS) しか扱わず、
-tmpfs / mtfs / procfs では `-1` を返す。`rm /tmp/x` を実行すると
-"cannot remove" が出る。rm タスク自体は正常で kernel 側に
-`tmpfs_unlink` が無いだけ。
-
-対処: `kernel/src/tmpfs.tc` に `tmpfs_unlink(name_addr, nlen)` を追加、
-`vfs_unlink` が `is_tmp_path` ブランチで呼び出す。mtfs は read-only
-なので -1 のままで良い。
-
 ### 31. sh に CWD 概念が無い → 相対パスが動かない (limitation)
 
 `cat foo.txt` のような相対パスは `/bin/cat foo.txt` として spawn

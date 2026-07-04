@@ -497,11 +497,15 @@ export fn vfs_unlink(path: String) -> i32 {
     var plen: i32 = path_head(path as u32);
     if plen <= 0 { return -1; }
     var path_addr: u32 = path as u32 + 4u32;
+    if is_tmp_path(path_addr, plen) {
+        return tmpfs_unlink(path_addr + 5u32, plen - 5);
+    }
     if is_sd_path(path_addr, plen) && g_fatfs_ready != 0 {
         var dr: i32 = fatfs_delete(path_addr + 4u32, plen - 4);
         fat_block_sync();
         return dr;
     }
+    // mtfs / procfs / devfs are read-only or synthetic — no unlink.
     return -1;
 }
 

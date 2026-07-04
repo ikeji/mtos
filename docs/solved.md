@@ -249,6 +249,20 @@ subproject split 以前の `$ROOT/tc_run.sh` パスを参照したままで、
 
 ## カーネル / OS
 
+### 30. tmpfs に unlink が無い — 完了 (2026-07-05)
+
+`rm /tmp/x` が常に "cannot remove" になっていた。
+`kernel/src/tmpfs.tc` に `tmpfs_unlink(name_addr, n)` を追加
+(name/data ブロックを kfree して inode slot をクリア。open 中の fd
+が残っている場合は -1 — v1 は orphaned-open をサポートしない)、
+`vfs_unlink` に `is_tmp_path` ブランチを追加。mtfs / procfs / devfs
+は read-only / synthetic なので -1 のまま。
+
+回帰テスト: `test_os.sh` fs_virtio に `rm /tmp/redir` × 2 を追加 —
+1 回目は静かに成功、2 回目だけ "cannot remove" が出ることを
+`grep -c == 1` で検証。unlink がメモリを実際に解放するので leak
+canary の live カウントも 137 → 135 に下がった。
+
 ### 39. SD 読み書きを ~1.45× 高速化: CMD25 バースト + sd_spi_xfer インライン化 — 完了 (2026-07-05)
 
 improvements_2026_07.md §2-1 の実施。self_replicate ~50 min の

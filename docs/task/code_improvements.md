@@ -384,5 +384,6 @@ static table 化は将来の課題。
   パフォーマンス意図、keyword 追加時の注意で十分
 - `hello.tc` / `hello2.tc` の重複: smoke test 目的、統合不要
 - `catfile` の 64 byte read 上限: テストハーネス専用
-- `tmpfs` に unlink がない (ファイルが溜まる): 既知制限
+- ~~`tmpfs` に unlink がない (ファイルが溜まる)~~: 2026-07-05 解決
+  (`tmpfs_unlink` 追加、`docs/solved.md` #30)
 - `bcrun.tc` の `fn_table` stride-10 flat array: レガシーだが動作

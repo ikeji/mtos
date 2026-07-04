@@ -112,7 +112,7 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     # kfree path for frame_buf / ram / stack / img / argv / stdio fds;
     # the kernel prints "KERN: live=N" at shutdown so the test asserts
     # the count stays bounded regardless of spawn iterations.
-    fs_out=$(printf 'tmpdemo\ncatfile\ncatfile /hello.txt\necho hi > /tmp/redir\ncatfile /tmp/redir\nls /dev\necho DEVFS_OK > /dev/uart\necho 2031-08-20 09:15:42 > /dev/rtc\ncat /dev/rtc\nfbtest\nkbdump\nKBDTEST_HELLO\necho PIPEWORD | wc\nconsole\necho CTEST\nquit\nquit\n' \
+    fs_out=$(printf 'tmpdemo\ncatfile\ncatfile /hello.txt\necho hi > /tmp/redir\ncatfile /tmp/redir\nrm /tmp/redir\nrm /tmp/redir\nls /dev\necho DEVFS_OK > /dev/uart\necho 2031-08-20 09:15:42 > /dev/rtc\ncat /dev/rtc\nfbtest\nkbdump\nKBDTEST_HELLO\necho PIPEWORD | wc\nconsole\necho CTEST\nquit\nquit\n' \
         | timeout 10 qemu-system-riscv32 -smp 1 -nographic \
         -serial mon:stdio --no-reboot -m 128 \
         -machine virt,aclint=on -bios none \
@@ -153,6 +153,11 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     # (no CAT: prefix because the byte stream is redirected away
     # from the UART), and catfile /tmp/redir prints "CAT[2]:hi".
     fs_has_redir=$(echo "$fs_out" | grep -c 'CAT\[2\]:hi')
+    # tmpfs unlink check (#30): the first `rm /tmp/redir` succeeds
+    # silently, the second prints "rm: cannot remove" because the file
+    # is gone. Exactly one failure message proves both the successful
+    # delete and the post-delete lookup miss.
+    fs_rm_fail_count=$(echo "$fs_out" | grep -c "cannot remove")
     fs_has_sh=$(echo "$fs_out" | grep -c "SH: ready")
     fs_has_bye=$(echo "$fs_out" | grep -c "SH: bye")
     # devfs check: `ls /dev` enumerates "uart" (devfs_readdir), and
@@ -198,6 +203,7 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
                 && [ "$fs_cat2_count" -ge 2 ] && [ "$fs_has_mtfs_msg" -gt 0 ] \
                 && [ "$fs_has_tmpfs_ok" -gt 0 ] && [ "$fs_has_tmpfs_payload" -gt 0 ] \
                 && [ "$fs_has_redir" -gt 0 ] \
+                && [ "$fs_rm_fail_count" -eq 1 ] \
                 && [ "$fs_has_dev" -gt 0 ] && [ "$fs_has_devwrite" -gt 0 ] \
                 && [ "$fs_has_rtc" -gt 0 ] && [ "$fs_has_fb" -gt 0 ] \
                 && [ "$fs_has_kbd" -gt 0 ] && [ "$fs_has_pipe" -gt 0 ] \
@@ -207,7 +213,7 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
                 report_pass "fs_virtio: kern.conf init + tmpdemo + catfile argv + redirect + devfs + rtc + fb + kbd + pipe + console, live=$fs_live" "$elapsed"
             else
                 report_fail_msg "fs_virtio" \
-                    "cat=$fs_cat_count cat2=$fs_cat2_count tmpok=$fs_has_tmpfs_ok tmppayload=$fs_has_tmpfs_payload redir=$fs_has_redir dev=$fs_has_dev devwr=$fs_has_devwrite rtc=$fs_has_rtc fb=$fs_has_fb kbd=$fs_has_kbd pipe=$fs_has_pipe console=$fs_has_console live=$fs_live a=$fs_has_a b=$fs_has_b mtfs=$fs_has_mtfs_msg sh=$fs_has_sh bye=$fs_has_bye; got: $(printf '%s' "$fs_out" | head -c 480)"
+                    "cat=$fs_cat_count cat2=$fs_cat2_count tmpok=$fs_has_tmpfs_ok tmppayload=$fs_has_tmpfs_payload redir=$fs_has_redir rmfail=$fs_rm_fail_count dev=$fs_has_dev devwr=$fs_has_devwrite rtc=$fs_has_rtc fb=$fs_has_fb kbd=$fs_has_kbd pipe=$fs_has_pipe console=$fs_has_console live=$fs_live a=$fs_has_a b=$fs_has_b mtfs=$fs_has_mtfs_msg sh=$fs_has_sh bye=$fs_has_bye; got: $(printf '%s' "$fs_out" | head -c 480)"
             fi
             ;;
         *)

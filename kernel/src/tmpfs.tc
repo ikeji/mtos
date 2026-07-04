@@ -210,6 +210,31 @@ export fn tmpfs_open(name_addr: u32, n: i32, flags: i32) -> i32 {
     return tmpfs_alloc_fd(ino, wr_bit);
 }
 
+// Delete /tmp/<name>: free the name + data blocks and clear the
+// inode slot. Fails if any fd still references the inode — v1 keeps
+// it simple, no orphaned-but-open files.
+export fn tmpfs_unlink(name_addr: u32, n: i32) -> i32 {
+    if g_tmpfs_ready == 0 { return -1; }
+    if n <= 0 || n > TMPFS_NAME_MAX { return -1; }
+    var ino: i32 = tmpfs_lookup(name_addr, n);
+    if ino < 0 { return -1; }
+    var k: i32 = 0;
+    while k < TMPFS_MAX_FDS {
+        if tf_ino(get(g_tmpfs_fds, k)) == ino { return -1; }
+        k = k + 1;
+    }
+    var f: TmpFile = get(g_tmpfs_files, ino);
+    // nm_addr / dp point at [header+4]; kfree needs the [header] base.
+    if dp(f) != 0u32 { kfree(dp(f) - 4u32); }
+    kfree(nm_addr(f) - 4u32);
+    nm_addr(f, 0u32);
+    nlen(f, 0);
+    dp(f, 0);
+    sz(f, 0);
+    cp(f, 0);
+    return 0;
+}
+
 export fn tmpfs_close(fd: i32) -> i32 {
     if fd < 0 || fd >= TMPFS_MAX_FDS { return -1; }
     var e: TmpfsFD = get(g_tmpfs_fds, fd);

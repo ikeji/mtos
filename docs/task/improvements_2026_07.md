@@ -20,7 +20,7 @@ K22 (DOOM TITLEPIC 表示) 到達時点で、`docs/problem.md` /
 | 3 | ドキュメントの stale 記述掃除 (パス・解決済エントリ) | docs | **済 2026-07-05** | S |
 | 4 | PL011 RX IRQ + nested trap (K11 根本解決) | 信頼性 | P2 | L |
 | 5 | peek/poke/get/set intrinsic 化 (#20) → 実は解決済みだった (§2-2) | 性能+安全 | **済 (stale)** | — |
-| 6 | tmpfs_unlink 追加 (#30) | 機能 | P2 | S |
+| 6 | tmpfs_unlink 追加 (#30) | 機能 | **済 2026-07-05** | S |
 | 7 | userland タスクの単体テスト整備 | テスト | P2 | M |
 | 8 | tcheck vartab / fntab の動的化 (#10, Q5) | limitation | P2 | M |
 | 9 | realloc 式 in-place grow (kmalloc 拡張) | 性能 | P2 | M |
@@ -61,12 +61,10 @@ K22 (DOOM TITLEPIC 表示) 到達時点で、`docs/problem.md` /
 
 参照: `docs/problem.md` K8+K9 Phase 2B、K11。
 
-### 1-3. tmpfs_unlink (#30) — P2 / S
+### 1-3. tmpfs_unlink (#30) — 済み (2026-07-05)
 
-`rm /tmp/x` が動かない。対処方針は problem.md に書いてある通り
-(`tmpfs.tc` に `tmpfs_unlink` を足して `vfs_unlink` の `is_tmp_path`
-ブランチから呼ぶ) で、規模も小さい。tmpfs にファイルが溜まり続ける
-問題も同時に解消するので、費用対効果が良い。
+実装した (`tmpfs_unlink` + `vfs_unlink` の is_tmp_path ブランチ +
+test_os.sh fs_virtio に rm × 2 回帰ケース)。`docs/solved.md` #30。
 
 ---
 
