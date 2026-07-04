@@ -112,11 +112,11 @@ integration/qemu_mr_scale.py           ← K11 (mr UART) qemu 再現
 | スクリプト | 説明 |
 |-----------|------|
 | `kernel/scripts/build.sh` | virt / pico2 共通ビルド: `--target virt|pico2` + `-o out` + `--disk-out path` + `EXTRA_TASKS=...`。Step 0 で runtime/libtc を事前コンパイル、各タスクを raw bin 化、mtfs image を生成、platform .s とリンク |
-| `kernel/scripts/bin2s.sh` | raw bin → `.s` データ変換 (`PREFIX_addr` 関数を生成) |
-| `kernel/scripts/bin2s_incbin.sh` | 同上の `.incbin` 版 (size を `wc -c` で測り `.incbin SIZE "path"` を含む `.s` を emit) |
+| `userland/scripts/bin2s.sh` | raw bin → `.s` データ変換 (`PREFIX_addr` 関数を生成) |
+| `userland/scripts/bin2s_incbin.sh` | 同上の `.incbin` 版 (size を `wc -c` で測り `.incbin SIZE "path"` を含む `.s` を emit) |
 | `kernel/scripts/run_pico2.sh` | Debug Probe 経由で pico2 に flash し UART をキャプチャ |
 | `kernel/scripts/run_pico2_interactive.sh` | build + flash + 双方向 UART コンソール (`make -C kernel run-pico2`) |
-| `kernel/scripts/genjpfont.py` | np21w PC-98 `font.bmp` → `jpfont.dat` (console 用) |
+| `userland/scripts/genjpfont.py` | np21w PC-98 `font.bmp` → `jpfont.dat` (console 用) |
 
 ### テストスクリプト (`tests/`)
 
@@ -135,7 +135,7 @@ integration/qemu_mr_scale.py           ← K11 (mr UART) qemu 再現
 | `test_phase7.sh`         | phase 7 自己ホスト実行テスト (手動)。`EXTRA_TASKS="parse sigscan tcheck codegen bc2asm asm_pass2 asm_pass3 cat"` で kernel をビルドし、qemu virt で 2 ステージ検証 (compile → link → run "Hello, World!") |
 | `test_pico2.sh`          | pico2 実機テスト (手動、`make test` に含まれない)。Debug Probe + openocd-rpi で flash し、UART の MTFS / CAT / launcher ログを grep |
 | `test_pico2_sd.sh`       | pico2 実機 SD カードテスト (手動)。Phase A: kernel flash → `echo TAG > /sd/T.TXT` → `cat` で読み返し。Phase B: re-flash せず reset のみで `cat /sd/T.TXT` が同 TAG を返す = 永続化検証 |
-| `test_pico2_phase7_sd.sh`| pico2 実機 phase 7 self-host テスト (手動)。`EXTRA_TASKS` 入りのカーネルを flash し、`pico2_pipeline_drive.py` で `parse → ... → asm_pass3 → /sd/HW → "Hello, World!"` を駆動。`/sd/` に中間ファイル staging。総時間 ~125 秒 (K7 達成版、commit 666d306) — 2026-05-13 再計測で `kernel/kernel/tests/test_pico2_bench.sh` 経由 1 boot ~13.8 秒、`docs/scaling.md` Q1 |
+| `test_pico2_phase7_sd.sh`| pico2 実機 phase 7 self-host テスト (手動)。`EXTRA_TASKS` 入りのカーネルを flash し、`pico2_pipeline_drive.py` で `parse → ... → asm_pass3 → /sd/HW → "Hello, World!"` を駆動。`/sd/` に中間ファイル staging。総時間 ~125 秒 (K7 達成版、commit 666d306) — 2026-05-13 再計測で `kernel/tests/test_pico2_bench.sh` 経由 1 boot ~13.8 秒、`docs/scaling.md` Q1 |
 | `test_pico2_hw.sh`       | pico2 実機 UART pipeline テスト (手動) |
 | `pico2_verify.sh`        | pico2 実機で compile 7 段の byte-exact 検証 (手動、link 段は K7 の UART 問題で skip) |
 | `update_golden.sh`       | golden 再生成 (rv32 ネイティブ高速化) |
@@ -147,7 +147,7 @@ integration/qemu_mr_scale.py           ← K11 (mr UART) qemu 再現
 | `phase3_verify.py` | virt 上で全 9 段 (parse → asm_pass3) + /tmp/hw 実行を Gen2 ホスト参照と byte-exact 検証 |
 | `pico2_hw_driver.py` | pico2 UART pipeline driver (compile + optional link) |
 | `pico2_tty.py` | pico2 双方向 raw UART フォワーダー (Ctrl-a x で終了、LF→CR+LF 変換) |
-| `pico2_pipeline_drive.py` | sh プロンプト同期コマンド送信ドライバ。`sh$ ` を見て次行を送るので PL011 RX FIFO (32 byte) overflow しない。`kernel/kernel/tests/test_pico2_phase7_sd.sh` 等から使用 |
+| `pico2_pipeline_drive.py` | sh プロンプト同期コマンド送信ドライバ。`sh$ ` を見て次行を送るので PL011 RX FIFO (32 byte) overflow しない。`kernel/tests/test_pico2_phase7_sd.sh` 等から使用 |
 | `uart_demux.py` | UART mux 0x1F フレームパーサー |
 
 ### test_common.sh の提供する機能

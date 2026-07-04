@@ -288,7 +288,7 @@ K7 解決の決め手 3 点:
 1. `kernel/platform/pico2/block_sd.tc` + MBR 対応 fatfs で SD カードを永続ストレージ化
 2. PLL_SYS bring-up で CPU 150 MHz 化 (asm_pass2 単独 310 → 27 秒、
    11.5×)
-3. `tests/pico2_pipeline_drive.py` でプロンプト同期 UART (PL011 RX
+3. `integration/pico2_pipeline_drive.py` でプロンプト同期 UART (PL011 RX
    FIFO 32 byte overflow を回避)
 
 - [x] **B**: argc/argv を kernel 側で StringArray として構築し
@@ -397,7 +397,7 @@ K7 解決の決め手 3 点:
       注入する。
 - [x] **Pico 2 self-replicates its own UF2 byte-exact** (2026-05-06、
       2026-05-13 K15 再仕上げ):
-      `[REFRESH_KERN_MODS=1] tests/pico2_self_replicate.sh` で
+      `[REFRESH_KERN_MODS=1] integration/pico2_self_replicate.sh` で
       end-to-end 自動化、host gen2 build と byte-exact 一致した
       kernel.bin + kernel.uf2 を pico2 が自前で生成。最新版で
       **~30 min** (REFRESH 込み) / ~12 min (no REFRESH)。
@@ -443,7 +443,7 @@ K7 解決の決め手 3 点:
         helper 追加 (TC から peek32 不要で size 取得)
       - `DROP_TASKS` Makefile knob で disk-extra.img を 3.5 MB に
         slim 化、kernel + dumper + bin2uf2 が 4 MiB flash に収まる
-      - `tests/pico2_self_replicate.sh` orchestrator が
+      - `integration/pico2_self_replicate.sh` orchestrator が
         `REFRESH_KERN_MODS=1` で /sd の .s 群を必ず最新版に揃え、
         host reference は kernel/build/disk-extra.img + 現ソースから
         compile-gen2.sh で同時生成して比較 (commit 2c648fb, 8a74fe6)
@@ -507,10 +507,10 @@ K7 解決の決め手 3 点:
       asm_pass3 が ~192 s 占める — ここの 3-pass user.s rescan を
       畳み込めればもう一段速くなる
 - [x] **byte-exact self-hosting verify (2026-04-17)**:
-      `tests/phase3_verify.py` が virt 上で全 9 段 (1.ast / 1.th /
+      `integration/phase3_verify.py` が virt 上で全 9 段 (1.ast / 1.th /
       1.wrap / 2.tast / 3.bc / 4.s / full.s / lab.s / hw) を Gen2
       ホスト参照とバイト完全一致確認 + /tmp/hw 実行で Hello World
-      出力を検証。`tests/pico2_verify.sh` が pico2 実機で compile
+      出力を検証。`integration/pico2_verify.sh` が pico2 実機で compile
       7 段 (1.ast 〜 full.s) をバイト完全一致確認 (link 段は pico2
       UART stdin hang = K8 で skip)
 - [x] **UART mux (2026-04-16〜17)**: 0x1F magic + 4B tag + 1B len
@@ -594,10 +594,10 @@ self-host loop が成立した。
 - [x] OS上のコンパイラ＋アセンブラ＋リンカでOSをビルド — pico2 が
       kernel.bin/uf2 + 全 8 コンパイラ binary を byte-exact 再生成
       (K13〜K18、2026-05-06〜2026-05-14)
-- [x] 生成したOSイメージをQEMUで動作確認 — `tests/phase3_verify.py`
+- [x] 生成したOSイメージをQEMUで動作確認 — `integration/phase3_verify.py`
       が virt 上で全段を Gen2 ホスト参照とバイト完全一致確認
 - [x] RP2350実機にフラッシュして動作確認 —
-      `tests/pico2_self_replicate.sh` が end-to-end ~22〜30 min で
+      `integration/pico2_self_replicate.sh` が end-to-end ~22〜30 min で
       完走、生成 kernel.bin/uf2 が host gen2 build と md5 完全一致
 - [x] 自己ホスト完成 — K18 (2026-05-14)。詳細は `docs/solved.md` の
       K13 / K15 / K16 / K17 / K18 エントリ
@@ -627,10 +627,13 @@ self-host loop が成立した。
       <-> カレンダー変換、virt は goldfish-rtc (0x101000) で実装。
       virt で read/write ラウンドトリップを確認、fs_virtio に rtc
       ケース追加。
-  - [x] pico2 backend = DS3231 over I2C1 (2026-05-20、
-        `kernel/rtc_ds3231.tc`)。RP2350 I2C1 ハードウェアブロック
-        (GP2/3) で DS3231 の BCD カレンダーレジスタを読み書き。
-        実機未検証 (qemu virt に DS3231 が無い)
+  - [x] pico2 backend = DS3231 (2026-05-20、
+        `kernel/platform/pico2/rtc_ds3231.tc`)。当初 I2C1 (GP2/3)、
+        新基板で I2C0/GP32-33 に移設 (852f85c)。RP2350 の DW I²C
+        master が TX FIFO をバスに流さない問題を踏み、bit-bang I²C
+        (GP32 SDA / GP33 SCL、~100 kHz) に切替 (3333795、2026-05-24)。
+        実機で `cat /dev/rtc` / `echo ... > /dev/rtc` が end-to-end
+        動作、console のタスクバー時計が毎秒読む (05e3c55)
 - [x] **S3**: ディスプレイドライバ (SPI1 + ILI9488) + `/dev/fb`
       (framed write、mode 0 ピクセル / mode 1 単色)
   - [x] `/dev/fb` UART ダンプ用ブリングアップドライバ + `fbtest`
@@ -638,7 +641,8 @@ self-host loop が成立した。
   - [x] SPI1 + ILI9488 実ドライバ (2026-05-20、commit 8b84348、
         `kernel/platform/pico2/display_ili9488.tc`)。`/dev/fb` バックエンドを
         `fb_backend_write` フックに分離 — pico2 = ILI9488、
-        virt = UART ダンプ。実機未検証。
+        virt = UART ダンプ。実機検証済 (2026-05-23 console 常用、
+        `docs/solved.md` #35。以降 K22 DOOM / touch demo でも使用)。
 - [x] **S4**: `/dev/fb` mode 2 — ILI9488 ハードウェア垂直スクロール
       (VSCRDEF/VSCRSADD、2026-05-20、`display_ili9488.tc` に内包)
 - [x] **S5**: キーボードドライバ (GPIO マトリクス) + `/dev/kbd`
@@ -646,8 +650,9 @@ self-host loop が成立した。
         (2026-05-17、commit cc09e6e)。
   - [x] GPIO マトリクススキャナ実ドライバ (2026-05-20、
         `kernel/platform/pico2/keyboard_matrix.tc`)。2 フェーズスキャンで論理
-        12×5=60 キー。`kbd_backend_read` フック。実機未検証、keymap
-        は要編集。
+        12×5=60 キー。`kbd_backend_read` フック。実機検証済 —
+        keymap を実基板レイアウトに更新 (aa54b0c、2026-05 板)、
+        DOOM の DG_GetKey 入力にも使用 (80ab771)。
 - [x] **S6**: `/bin/console` — userspace ターミナルエミュレータ +
       getty (char グリッド + フォント、`/dev/fb` + `/dev/kbd` を開き
       sh を pipe 配線で spawn)
@@ -663,7 +668,7 @@ self-host loop が成立した。
         水平 run ごとの mode-1 fill で描き、`console.bmp` が
         読めるテキストになることを確認
   - [x] 日本語表示 (2026-05-17、commit 1e110c1)。np21w の PC-98
-        font.bmp から `tests/genjpfont.py` が jpfont.dat (半角
+        font.bmp から `userland/scripts/genjpfont.py` が jpfont.dat (半角
         8x16 + 全角 16x16 + Unicode→区点表) を生成、console が
         UTF-8 デコードしてひらがな/カタカナ/漢字を描画。
         jpfont.dat は `.incbin` で console バイナリに埋め込む
@@ -691,16 +696,11 @@ self-host loop が成立した。
       ターゲット。virt で boot→console 自動起動→/dev/fb 描画→
       クリーン終了を確認、`test_os.sh` に console_init ケース追加
 
-フェーズ9 の S1〜S7 はコード上は全て実装完了 (2026-05-20)。pico2 の
-実ハードウェアドライバ (S2 DS3231 / S3+S4 ILI9488 / S5 キーボード
-マトリクス) も実装済だが、**いずれも実機未検証** — qemu virt に
-対応ハードウェアが無いため `make test` には載らない。残件は実機での
-検証:
-- S2: `cat /dev/rtc` / `echo ... > /dev/rtc` で DS3231 read/write。
-- S3/S4: `fbtest` でディスプレイ描画 + スクロール目視。
-- S5: `kbdump` でキー入力確認。`keyboard_matrix.tc` の `KBD_KEYMAP`
-  を実機の物理配列に合わせて編集。
-GPIO 割り当ては `docs/pico2_hardware.md`「GPIO 割り当て一覧」。
+フェーズ9 の S1〜S7 は実装 + 実機検証とも完了 (実装 2026-05-20、
+実機検証は 2026-05-21〜24 にかけて完了。詳細は上記各サブ項目の注記)。
+qemu virt に対応ハードウェアが無いため `make test` に実機ドライバの
+回帰は載らない — 実機側は console 常用 + K22 DOOM が事実上の smoke
+test。GPIO 割り当ては `docs/pico2_hardware.md`「GPIO 割り当て一覧」。
 
 ## K22: DOOM Shareware を pico2 実機で動かす — Phase 6 完了 (2026-06-18)
 

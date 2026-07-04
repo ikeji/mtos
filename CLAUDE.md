@@ -151,6 +151,7 @@ userland/   サブプロジェクト 2: MTOS ユーザータスク
     gcc_doom/    doomgeneric ベース DOOM port (K22)。qemu virt 用 = gcc_doom、
                  pico2 実機用 = gcc_doom_pico2 (~374 KB、GUEST_TASKS)。
                  /sd/doom1.wad を読み TITLEPIC を ILI9488 LCD に描画
+  scripts/     bin2s{,_incbin}.sh + genjpfont.py (jpfont.dat 生成)
   Makefile     `make -C userland test` で全タスク build smoke
 
 kernel/     サブプロジェクト 3: OS カーネル (virt + pico2)
@@ -164,8 +165,7 @@ kernel/     サブプロジェクト 3: OS カーネル (virt + pico2)
     pico2/      platform_pico2.{s,tc}, crt0_pico2_data.s, block_flash.tc,
                 block_sd.tc, display_ili9488.tc, keyboard_matrix.tc,
                 rtc_ds3231.tc
-  scripts/     build.sh + run_pico2{,_interactive}.sh + bin2s{,_incbin}.sh +
-               genjpfont.py
+  scripts/     build.sh + run_pico2{,_interactive}.sh + stage-fs.sh
   tools-src/   TC で書かれた kernel build 用 host ツール
     mkfs.tc    mtfs ディスクイメージ生成 (qemu-riscv32 で実行)
     bin2uf2.tc raw bin → UF2 コンバータ

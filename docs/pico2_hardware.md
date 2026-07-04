@@ -169,7 +169,7 @@ I2C0 を使う。
 
 実装は `kernel/platform/pico2/block_sd.tc` (CMD0/CMD8/ACMD41/CMD58 init + CMD17/CMD24
 read/write) + `kernel/src/fatfs.tc` (MBR / superfloppy 対応 FAT32) で完成。
-`/sd/<path>` で OS から読み書き可能。`kernel/kernel/tests/test_pico2_sd.sh` が永続性
+`/sd/<path>` で OS から読み書き可能。`kernel/tests/test_pico2_sd.sh` が永続性
 を検証。詳細は `docs/solved.md` の K7 エントリ。
 
 ### SD カード フォーマット注意
@@ -374,7 +374,7 @@ UART を別経路 (Debug Probe 等) で開いていればログが見える。
 1. `make pico2-kernel` で `kernel/build/pico2_kernel.uf2` をビルド
 2. UF2 → raw bin に変換 (`run_pico2_interactive.sh` 内 Python)
 3. openocd で `program $BIN 0x10000000 verify` → `reset run`
-4. `tests/pico2_tty.py` で `/dev/ttyACM0` に raw mode 双方向 UART
+4. `integration/pico2_tty.py` で `/dev/ttyACM0` に raw mode 双方向 UART
    セッションを開く (`Ctrl-a x` で終了)
 
 ```bash
@@ -436,12 +436,12 @@ stty -F /dev/ttyACM0 115200 cs8 -cstopb -parenb raw -echo -crtscts
 
 ### 双方向対話
 
-`tests/pico2_tty.py` がエスケープ ([Ctrl-a] x で終了)、LF → CR+LF
+`integration/pico2_tty.py` がエスケープ ([Ctrl-a] x で終了)、LF → CR+LF
 変換、select 駆動の双方向フォワーダを提供する。`make run-pico2`
 が内部で呼ぶ。
 
 ```bash
-python3 tests/pico2_tty.py /dev/ttyACM0 115200
+python3 integration/pico2_tty.py /dev/ttyACM0 115200
 ```
 
 ### ワンショット送信
@@ -455,7 +455,7 @@ timeout 5 cat /dev/ttyACM0
 ```
 
 シェルが直接 stty を踏むと前回の echo 設定が残ることがあるので、
-`kernel/kernel/tests/test_pico2.sh` のように都度 `stty raw -echo` を打ち直す。
+`kernel/tests/test_pico2.sh` のように都度 `stty raw -echo` を打ち直す。
 
 ### UART 多重化 (任意)
 
@@ -467,7 +467,7 @@ mux 有効時、kernel と各タスクの fd=1 を 1 ストリームに束ねる
 muxon
 
 # host 側でフレームをデコード
-python3 tests/uart_demux.py < /dev/ttyACM0
+python3 integration/uart_demux.py < /dev/ttyACM0
 ```
 
 タスクからは `mx` (length-prefix framing) と `mr` (decode) で
@@ -479,9 +479,9 @@ python3 tests/uart_demux.py < /dev/ttyACM0
 
 | スクリプト | 内容 |
 |---|---|
-| `kernel/kernel/tests/test_pico2.sh` | flash → sh ↔ catfile / launcher / quit を UART で対話検証 (~98 秒) |
-| `tests/pico2_verify.sh` | compile 7 段の中間ファイルを Gen2 ホスト参照と byte-exact 比較 (link 段は K7 で UART hang のため skip) |
-| `kernel/kernel/tests/test_pico2_hw.sh` | UART pipeline driver 経由の end-to-end コンパイル |
+| `kernel/tests/test_pico2.sh` | flash → sh ↔ catfile / launcher / quit を UART で対話検証 (~98 秒) |
+| `integration/pico2_verify.sh` | compile 7 段の中間ファイルを Gen2 ホスト参照と byte-exact 比較 (link 段は K7 で UART hang のため skip) |
+| `kernel/tests/test_pico2_hw.sh` | UART pipeline driver 経由の end-to-end コンパイル |
 
 すべて `GEN2_DIR=build/gen2 ./kernel/tests/test_pico2.sh` のように起動。
 SKIP 条件: `GEN2_DIR` 未設定 / `openocd` 未存在 / `/dev/ttyACM0`
@@ -550,7 +550,7 @@ SKIP 条件: `GEN2_DIR` 未設定 / `openocd` 未存在 / `/dev/ttyACM0`
 確認方法:
 - テスタでピンヘッダのオス端子と Pico 2 基板上のスルーホールの
   ランド (反対側) を導通テスト → 1 Ω 未満なら OK
-- `tests/pico2_tty.py` でログ眺めながら基板を軽く押すと一瞬だけ
+- `integration/pico2_tty.py` でログ眺めながら基板を軽く押すと一瞬だけ
   動く / 動かなくなるなら接触不良確定
 
 実際にこのプロジェクトで `hardware-check/sd_probe` 開発中、Pin 28

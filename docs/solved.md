@@ -132,6 +132,57 @@ while i < n_in_sec {
 
 回帰確認: `make test` 143 passed / 0 failed。
 
+### 32. dead-strip が最後の dead text ラベルの dead range を誤計算 — 完了 (2026-05-18)
+
+**症状**: text セクションの最後の実ラベルが dead だと、その dead
+range が rodata 全体を巻き込んで巨大化し、`new_text = orig_text -
+total_dead` が**負値**になる (観測例: 314 KB の `.incbin` フォントを
+持つ `/bin/console` で `sec 0 0 -278288`)。.lab のセクションレイアウト
+が破綻し、asm_pass3 が壊れたバイナリを吐いてタスクが起動直後にクラッシュ。
+
+**原因**: `__global_pointer$` は section 0 (text) に登録されているが
+addr は data 範囲 (`gp_abs = data_base + 2048`) にある。
+`ds_compact` Phase 1 が section 0 のラベルを addr 順にソートすると
+`__global_pointer$` が全実 text ラベルより後ろに来るため、最後の実
+text ラベルの `next_addr` が `gp_abs` になる。そのラベルが dead だと
+dead range = `[last_text_addr, gp_abs]` = rodata 全域ぶんになる。
+incbin で rodata が巨大なほど被害が大きい。発症は「最後の text
+ラベルが dead」のときだけなので、それが live な通常ビルドでは顕在化
+しなかった。
+
+**修正**: `ds_sort_section` が `__global_pointer$` を section 0 の
+コンパクション walk から除外 (`ds_is_global_pointer`)。gp は root で
+常に live、かつ addr は `ds_compact` Phase 3 が専用パスで書き換える
+ので workspace から外して安全。
+
+### 33. asm_pass2 の link 入力数が EXTRAS_CAP を超えると末尾を黙って落とす — 完了 (2026-05-20)
+
+**症状**: カーネルに `.tc` モジュールを 1 個足したら virt カーネルが
+boot で無出力ハング、pico2 カーネルから埋め込み mtfs image が消えた。
+`.lab` を見ると最後の入力 (`crt0_data` / `mtfs_image`) が link から
+丸ごと脱落していた。
+
+**原因**: `asm_common.tc::EXTRAS_CAP` は asm_pass2 の link 入力
+(prelude + user 以降の `--add` 入力) の上限。これが **16** で、
+カーネルの link はちょうど 16 個 (ぎりぎり) だった。モジュールを
+1 個追加すると 17 個になり、`asm_add_extra_input` が 17 個目で
+`-1` を返す — が呼び出し側 (`asm_pass2_lib.tc::run_link`) がそれを
+無視するため、末尾入力 (bss の `.space __arena` を持つ `crt0_data`)
+が黙って捨てられていた。bss=0 のカーネルは最初の kmalloc で即死し
+無出力。
+
+**修正**:
+1. `EXTRAS_CAP` を 16 → 48 に引き上げ (kernel link の現状は ~17、
+   余裕を持たせた)。
+2. `run_link` が `asm_add_extra_input` の `-1` を検出した時点で
+   `"asm_pass2: link inputs exceed EXTRAS_CAP — bump compiler/
+   asm_common.tc::EXTRAS_CAP"` を stderr に出力して `-1` を返す
+   (silent drop → loud error)。これで cap を超えても link が
+   nonzero exit するので、下流の asm_pass3 が full.lab を作れず
+   build.sh が "kernel compilation failed" で止まる。
+   なお `compile-gen2.sh` は asm_pass2 を `2>/dev/null` で起動する
+   ため stderr メッセージ自体は見えないが、exit code は伝播する。
+
 ---
 
 ## カーネル / OS
@@ -666,7 +717,7 @@ root cause: **`compiler/src/tcheck.tc` Phase 3 の fd_t leak**。tcheck は
 加えて K17 調査中に整備した道具立て (commit a5752c2):
 - `rm -f` flag (`userland/bin/rm/rm.tc`)、missing file で abort しない
 - `integration/fixtures/pico2_cleanup_sd.sh` を ~150 entry 分の `rm -f` に
-- `tests/pico2_self_replicate.sh` に `CLEAN_SD=1` option
+- `integration/pico2_self_replicate.sh` に `CLEAN_SD=1` option
 
 **実機検証** (`CLEAN_SD=1 REFRESH_KERN_MODS=1 NORESET=1`):
 
@@ -859,7 +910,7 @@ live=234680]` を吐いて正常完走 (前回 46 ms から 2300× 長い)。
 
 CLAUDE.md に残っていた古い記述 (echo hello world ~11 sec、
 self_replicate ~3 h) を確認するため device で
-`tests/pico2_self_replicate.sh` を回したところ ~35 min で完走
+`integration/pico2_self_replicate.sh` を回したところ ~35 min で完走
 したが md5 mismatch。「stale k.bin が偶然一致」して見える挙動
 を発見し、asm_pass3 task binary を逆アセしたところ
 `run_pass3` が定義されていないことが判明。compile-gen2.sh
@@ -872,7 +923,7 @@ Q1 の表参照)。
 
 ### K14. device self_replicate byte-exact — 完了 (2026-05-11)
 
-実機 pico2 で `REFRESH_KERN_MODS=1 tests/pico2_self_replicate.sh` が
+実機 pico2 で `REFRESH_KERN_MODS=1 integration/pico2_self_replicate.sh` が
 per-file pre-encode + `asm_pass2` 経路で完走し、生成された
 `/sd/k.bin` と `/sd/k.uf2` の md5 が host build
 (`compile-gen2.sh kernel/src/kernel_pico2.tc`) と byte-exact 一致。
@@ -984,7 +1035,7 @@ host   kernel.uf2 md5: 4a639e26b7fbd057654ec5ac63fbf09a
 device /sd/k.uf2 md5:  4a639e26b7fbd057654ec5ac63fbf09a
 ```
 
-`tests/pico2_self_replicate.sh` orchestrator が openocd reset で
+`integration/pico2_self_replicate.sh` orchestrator が openocd reset で
 ステップ間を区切りつつ:
 
 1. boot dumper (`kernel_pico2.tc::dump_mtfs_to_sd`) が起動時に
@@ -1076,7 +1127,7 @@ parse → sigscan → cat → tcheck → codegen → bc2asm → cat
 3. **プロンプト同期 UART ドライブ** (commit 5dfa631)
    PL011 RX FIFO は 32 byte。sh が `sys_wait` 中は drain されない
    ので fixed-sleep のテストでは長行が捨てられた。
-   `tests/pico2_pipeline_drive.py` が `sh$ ` プロンプトを見て次行を
+   `integration/pico2_pipeline_drive.py` が `sh$ ` プロンプトを見て次行を
    送る方式に切替えて回避。
 
 旁ら必要だった副次修正:
@@ -1087,6 +1138,8 @@ parse → sigscan → cat → tcheck → codegen → bc2asm → cat
 副次の運用 limitation (phase 8 で再検討):
 - UART RX FIFO に IRQ + ring buffer は未対応 (K8+K9 と統合)
 - task arena 絶対サイズの限界 (asm_pass3 で 320 KB) は維持
+- 達成直後に観測された「part 3 OOM 中継」は後続テストで再現せず、
+  別テストの状態残りだった疑い (要再現確認のまま closed)
 
 ### K3. タスクサイズ宣言 — 案C 完了 (2026-04-15)
 

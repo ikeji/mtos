@@ -118,7 +118,7 @@ public API である」と宣言するのと同じ。後で表現を変えると
 
 - `docs/language.md` の「struct のプライベートフィールド」節
 - `docs/task/multi_file.md` (import の全体挙動)
-- `compiler/compiler/tests/test_import.sh` の "export forward decl exposes synthetic fn"
+- `compiler/tests/test_import.sh` の "export forward decl exposes synthetic fn"
   ケース (この挙動の回帰テスト)
 
 ---

@@ -25,21 +25,21 @@ tinyc は自己ホスト達成済みの小型言語。
 
 ```bash
 # 直接実行（インタープリタ経由、最速）
-./compiler/scripts/tc_run.sh interp tests/fib.tc
+./compiler/scripts/tc_run.sh interp compiler/tests/fib.tc
 
 # C実装ツールでコンパイル→バイトコード実行
-./compiler/scripts/tc_run.sh bcrun tests/fib.tc
+./compiler/scripts/tc_run.sh bcrun compiler/tests/fib.tc
 
 # RISC-V クロスコンパイル + qemu 実行
-./compiler/scripts/tc_run.sh rv32 tests/fib.tc
+./compiler/scripts/tc_run.sh rv32 compiler/tests/fib.tc
 
 # 自己ホスト版 (Gen2) でコンパイル
-./compiler/scripts/tc_run.sh pipeline  tests/fib.tc
-./compiler/scripts/tc_run.sh bc2asm_tc tests/fib.tc
+./compiler/scripts/tc_run.sh pipeline  compiler/tests/fib.tc
+./compiler/scripts/tc_run.sh bc2asm_tc compiler/tests/fib.tc
 
 # stdin を渡す場合
-./compiler/scripts/tc_run.sh bcrun tests/calc.tc "12 + 34 * 56"
-./compiler/scripts/tc_run.sh bcrun tests/calc.tc @input.txt
+./compiler/scripts/tc_run.sh bcrun compiler/tests/calc.tc "12 + 34 * 56"
+./compiler/scripts/tc_run.sh bcrun compiler/tests/calc.tc @input.txt
 ```
 
 ### コンパイルスクリプト (RV32 ELF 生成)

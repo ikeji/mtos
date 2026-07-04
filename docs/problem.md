@@ -137,7 +137,7 @@ var b: u8 = get(keymap(), i);
 ```
 
 関数の return path だと literal が .rodata に正しく置かれ、ポインタ
-も returnable。実機で確認済 (commit XXX、`kernel/platform/pico2/keyboard_matrix.tc`
+も returnable。実機で確認済 (commit aa54b0c、`kernel/platform/pico2/keyboard_matrix.tc`
 の KBD_KEYMAP)。
 
 根本治療: codegen の var_decl + str init 経路を直す。`compiler/src/codegen.tc`
@@ -177,84 +177,6 @@ peek/poke は 1 命令の操作に 5-6 命令のオーバーヘッド。bc2asm �
 intrinsic 化すれば解消。解決すれば #6 (get 境界チェック) も入れられる。
 
 いつやるか: 「遅くてどうしようもない」状態になったら。現状は実害なし。
-
-### 32. dead-strip が最後の dead text ラベルの dead range を誤計算 (bug, 解決済 2026-05-18)
-
-**症状**: text セクションの最後の実ラベルが dead だと、その dead
-range が rodata 全体を巻き込んで巨大化し、`new_text = orig_text -
-total_dead` が**負値**になる (観測例: 314 KB の `.incbin` フォントを
-持つ `/bin/console` で `sec 0 0 -278288`)。.lab のセクションレイアウト
-が破綻し、asm_pass3 が壊れたバイナリを吐いてタスクが起動直後にクラッシュ。
-
-**原因**: `__global_pointer$` は section 0 (text) に登録されているが
-addr は data 範囲 (`gp_abs = data_base + 2048`) にある。
-`ds_compact` Phase 1 が section 0 のラベルを addr 順にソートすると
-`__global_pointer$` が全実 text ラベルより後ろに来るため、最後の実
-text ラベルの `next_addr` が `gp_abs` になる。そのラベルが dead だと
-dead range = `[last_text_addr, gp_abs]` = rodata 全域ぶんになる。
-incbin で rodata が巨大なほど被害が大きい。発症は「最後の text
-ラベルが dead」のときだけなので、それが live な通常ビルドでは顕在化
-しなかった。
-
-**修正**: `ds_sort_section` が `__global_pointer$` を section 0 の
-コンパクション walk から除外 (`ds_is_global_pointer`)。gp は root で
-常に live、かつ addr は `ds_compact` Phase 3 が専用パスで書き換える
-ので workspace から外して安全。
-
-### 33. asm_pass2 の link 入力数が EXTRAS_CAP を超えると末尾を黙って落とす (bug, 解決済 2026-05-20)
-
-**症状**: カーネルに `.tc` モジュールを 1 個足したら virt カーネルが
-boot で無出力ハング、pico2 カーネルから埋め込み mtfs image が消えた。
-`.lab` を見ると最後の入力 (`crt0_data` / `mtfs_image`) が link から
-丸ごと脱落していた。
-
-**原因**: `asm_common.tc::EXTRAS_CAP` は asm_pass2 の link 入力
-(prelude + user 以降の `--add` 入力) の上限。これが **16** で、
-カーネルの link はちょうど 16 個 (ぎりぎり) だった。モジュールを
-1 個追加すると 17 個になり、`asm_add_extra_input` が 17 個目で
-`-1` を返す — が呼び出し側 (`asm_pass2_lib.tc::run_link`) がそれを
-無視するため、末尾入力 (bss の `.space __arena` を持つ `crt0_data`)
-が黙って捨てられていた。bss=0 のカーネルは最初の kmalloc で即死し
-無出力。
-
-**修正**:
-1. `EXTRAS_CAP` を 16 → 48 に引き上げ (kernel link の現状は ~17、
-   余裕を持たせた)。
-2. `run_link` が `asm_add_extra_input` の `-1` を検出した時点で
-   `"asm_pass2: link inputs exceed EXTRAS_CAP — bump compiler/
-   asm_common.tc::EXTRAS_CAP"` を stderr に出力して `-1` を返す
-   (silent drop → loud error)。これで cap を超えても link が
-   nonzero exit するので、下流の asm_pass3 が full.lab を作れず
-   build.sh が "kernel compilation failed" で止まる。
-   なお `compile-gen2.sh` は asm_pass2 を `2>/dev/null` で起動する
-   ため stderr メッセージ自体は見えないが、exit code は伝播する。
-
-### K7. pico2 で phase 7 コンパイラを完走させる ✅ **解決 (2026-04-29)**
-
-完成: pico2 実機上で OS 自身のコンパイラパイプラインが
-parse → sigscan → tcheck → codegen → bc2asm → asm_pass2 → asm_pass3
-を全段完走させ、生成された `/sd/HW` を実行して `Hello, World!`
-を出力 (K7 達成時 127 秒 / 2026-05-13 再計測で **~13.8 秒** で 1 boot
-完走、`docs/scaling.md` Q1)。
-
-決め手は 3 つの組み合わせ:
-
-1. **SD カード SPI ストレージ追加** (commit 37c99c7):
-   `block_sd.tc` + MBR 対応 fatfs。中間ファイル (1.ast / 2.tast /
-   3.bc / 4.s / full.s / lab.s / p2.in / HW) を `/sd/` に書くこと
-   で 480 KB SRAM tmpfs 制約を回避。
-2. **PLL_SYS で CPU を 150 MHz 化** (commit cf22718):
-   それまで PLL 未使用で clk_sys ≈ 12 MHz だったため asm_pass2 単独
-   で 310s。150 MHz 化で 27s に短縮 (11.5×)。
-3. **`tests/pico2_pipeline_drive.py` でプロンプト同期 UART** (commit 5dfa631):
-   PL011 RX FIFO 32 byte は sh が sys_wait 中に drain されない。
-   `sh$ ` プロンプトを見て次行を送ることで FIFO overflow を回避。
-
-残った副次的課題は別エントリへ:
-- ~~part 3 OOM 中継~~: 後続テストで再現せず、最初の観測は別テストの状態残りだった疑い (要再現確認)
-- UART RX FIFO に IRQ + ring buffer (本質的解決): K8+K9 と統合して別途
-- arena 絶対サイズ: 各 task arena が大きいため pipeline でも依然
-  ギリギリ。phase 8 で task 内コード/データ分離を再検討するなら自然に縮む
 
 ### 30. tmpfs に unlink が無い (limitation)
 
@@ -299,7 +221,7 @@ PL011 → ring を drain。K8 (spin-wait wedge) は基本解消、sustained
 input の K9 (短い ecall 経路) も大きく改善。
 **ただし長時間 ecall 中 (mr → fatfs_write → SD CMD24 wait など) は
 MIE=0 で timer が masked のため drain 不能 → K11 が依然再現**
-(実機検証 2026-05-06、`tests/pico2_k11_reproduce.py` で 256 byte
+(実機検証 2026-05-06、`integration/pico2_k11_reproduce.py` で 256 byte
 upload 後 sh が応答せず、UARTRSR の OE flag が立つことを観測)。
 
 **Phase 2A (2026-05-06、commits: pending)**: narrow drain hooks。
@@ -313,7 +235,7 @@ upload 後 sh が応答せず、UARTRSR の OE flag が立つことを観測)。
   のを防ぐ
 - ring buffer を 1 KB → 4 KB に拡大、burst 耐性を上げる
 
-実機検証: K11 wedge は **256 → 8 KB upload 改善 (32x)**。tests/
+実機検証: K11 wedge は **256 → 8 KB upload 改善 (32x)**。integration/
 pico2_k11_reproduce.py で 256 / 1024 / 4096 / 8192 byte 全 PASS。
 16 KB はまだ fail (mr が早期 EOS 検知して残バイトが sh の入力に流れる
 モード — 完全 wedge ではないが期待通りでない)。
@@ -339,7 +261,7 @@ systemic + 高コスト。K11 が完全に必要な場合は実装する
 (0x10017c00 付近を周回)。fatfs_close での FAT chain walk + dir entry
 update は完了している (file は読み戻せる)。
 
-**qemu virt では再現しない** (2026-05-05 確認、`tests/qemu_mr_scale.py`)。
+**qemu virt では再現しない** (2026-05-05 確認、`integration/qemu_mr_scale.py`)。
 qemu virt + plain `-serial stdio` で 256〜65536 byte の mr upload は
 全部 OK。pico2 固有の現象。
 
@@ -372,14 +294,8 @@ sh の入力に流れる別モード。詳細は K8+K9 エントリの Phase 2A 
 
 **回避策 (実装済)**:
 - 大容量 (>1.4 MB の disk.img 等) は host 側で SD カードを抜いて
-  manual cp で staging。`tests/pico2_link_kernel_run.sh` の
-  `SKIP_UPLOAD=1` 経路
+  manual cp で staging。`pico2_link_kernel_run.sh` の
+  `SKIP_UPLOAD=1` 経路 (スクリプト自体は walked-source 退役時に削除、
+  commit 4fd9027)
 - self-replicate 経路は kernel_pico2.tc::dump_mtfs_to_sd で完全迂回
 
-### K12. fatfs ファイル名 8.3 制限 (解決済、2026-05-14)
-
-**解決**: VFAT LFN (Long File Name) + サブディレクトリ + mkdir を
-fatfs に実装し、`/sd/<long_name>/<nested>/file.bin` のような構造を
-ランタイムから読み書きできるようになった。pico2 self-host bench も
-本来名 (`/sd/asm_pass1.lab` / `prelude.idx.rfs`) に戻した。
-詳細は `docs/solved.md` K12 entry。

@@ -110,7 +110,7 @@ K7 時代の上記モデル (asm_pass2 が prelude.s を walk、asm_pass3 が 3
 - dead-strip default-on (commit b7d8b4d、2026-05-13) で text セクション
   は ~290 KB → ~264 KB (~9 %)、task .bin は 53 KB → 24 KB に縮小。
 
-**実機 pico2 で `kernel/kernel/tests/test_pico2_bench.sh` 計測 (Hello World、
+**実機 pico2 で `kernel/tests/test_pico2_bench.sh` 計測 (Hello World、
 PLL_SYS 150 MHz、msh /pico2_bench_idx.sh 駆動、1 boot 完走)**:
 
 | stage | K7 (2026-04-29) | 現在 (2026-05-13) | 比 |
@@ -232,17 +232,15 @@ bucket peak から逆算 (`buckets 8:3 16:66 32:38 64:18 128:12 256:2
 msh 8 KB に絞れば kernel arena から ~50 KB が空く見込みだが、それは
 別タスク。
 
-### 旧 50 ファイル × 平均 5 KB 推計 (2026-04-29、要見直し)
+### OS 全体コンパイルの実測 (旧推計は撤去、2026-07-05 更新)
 
-K7 時代の「合計 約 3 時間」は固定費 120 s × 50 = 6000 s が支配して
-いた。現在の pipeline で source 依存部分が ~18× 速くなったので、
-合計でも **数倍 (10x には届かないが) 速くなる**見込み:
-
-- 旧 1 ファイル 200〜250 s → 推定 **20〜40 s 程度**
-- 旧 合計 ~3 時間 → 推定 **15〜30 分**
-
-ただし上記は msh-driven OOM を回避できる前提。実機での再測定が
-必要 (本 doc は機会があれば更新する)。
+かつてここにあった「50 ファイル × 平均 5 KB で合計 15〜30 分」の
+外挿推計は、実測に置き換えられた: self_replicate (kernel + 全
+コンパイラの実機再生成) の end-to-end 実測は **Q6 参照** —
+2026-05-13 時点で ~23〜30 min、K21 (2026-05-30) の
+`CLEAN_SD=1 REFRESH_KERN_MODS=1` full run で **~50 min**。支配項は
+コンパイル計算ではなく SD 書き込み (asm_pass3 link ~10 min +
+bin2uf2 ~9 min + dx.img upload ~6 min)。
 
 ### メモリ: 1 ファイルごとの peak は ~300 KB のまま
 
@@ -382,7 +380,7 @@ OOM: 327684                 ← tcheck spawn 失敗
    段目は別途処理を要する (chain).
 
 現状の `tcc.tc` は **タイミング測定のリファレンス実装**として残す。
-本番の self-host は sh-driven (`kernel/kernel/tests/test_pico2_phase7_sd.sh` 又は
+本番の self-host は sh-driven (`kernel/tests/test_pico2_phase7_sd.sh` 又は
 manually) で。
 
 ## Q4: `/prelude.s` とは
@@ -616,7 +614,7 @@ sh-driven, with PLL_SYS @ 150 MHz: 123 sec (K7 era 127 sec)
 tcc-driven 検証時の数字か、あるいは PLL_SYS 150 MHz 化前の旧値。
 sh/msh から起動した tiny task の spawn コストは無視できる範囲。
 
-`kernel/kernel/tests/test_pico2_bench.sh` の最新結果より:
+`kernel/tests/test_pico2_bench.sh` の最新結果より:
 - `echo BENCH_DONE` = 0.010 s
 - `parse < /hw.tc > /sd/1.ast` (6-line input) = 0.21 s (処理含む)
 - `sigscan < /sd/1.ast > /sd/1.th` = 0.11 s
@@ -700,7 +698,7 @@ tcc-driven は 79 KB しか残らない上、tcc が arena の中ほどに居座
 ## Q6: self_replicate end-to-end 所要時間 (2026-05-09)
 
 K13 / pico2 self_replicate を `REFRESH_KERN_MODS=1` で実機実行した
-最新の per-step wall-clock。`tests/pico2_self_replicate.sh` は openocd
+最新の per-step wall-clock。`integration/pico2_self_replicate.sh` は openocd
 reset で各 step を fresh kernel で再起動する設計なので、各 step 末尾の
 `spawn failed` / spawn arena fragment が次 step に持ち越されない。
 
@@ -767,8 +765,8 @@ md5sum ~152 sec で計 ~4 min が観測値。step 4 (bin2uf2 + md5sum)
 も同様。全体は 2026-05-09 計測の ~34 min から 4 min ほど縮んだ
 (主に 0a-0e refresh のコンパイラ自体が高速化)。
 
-入力 disk-extra 経路の変更: orchestrator が host 側 `kernel/scripts/bin2s.sh`
-(disk を `.byte ASCII` で 26 MB に展開) ではなく `kernel/scripts/bin2s_incbin.sh`
+入力 disk-extra 経路の変更: orchestrator が host 側 `userland/scripts/bin2s.sh`
+(disk を `.byte ASCII` で 26 MB に展開) ではなく `userland/scripts/bin2s_incbin.sh`
 を使い、blob path として `dx.img` (basename only) を渡す。compile-gen2 の
 intermediate dir に sibling `dx.img` を copy で staging すると、
 device 側の `/sd/dx.img` と path 解決が対称になる。Makefile の
@@ -794,7 +792,7 @@ bench で観測された OOM の根本原因が **clone_argv が argv 1 個ご�
 - msh: 32K+8K → 8K+4K
 - kernel arena free に **+48 KB の余裕**
 
-`tests/pico2_self_replicate.sh NORESET=1` で実機検証 (commit 001fc41):
+`integration/pico2_self_replicate.sh NORESET=1` で実機検証 (commit 001fc41):
 **全 4 step が 1 boot で完走**、step 間 `reset_only` 不要に。
 
 ```
@@ -992,7 +990,7 @@ self_replicate は pre-encode + link 単一経路に統一された。
 
 ## ベースライン: 10s / 100 KB 最適化計画 (2026-04-30)
 
-`tests/bench_pipeline.sh` で計測した Gen3 + qemu-riscv32 の per-stage
+`compiler/tests/bench_pipeline.sh` で計測した Gen3 + qemu-riscv32 の per-stage
 peak memory + 時間。**ターゲット: 各段 ≤ 10 sec (pico2 実機) / ≤ 100 KB
 (bcrun.tc を除く worst case = bc2asm.tc)**。bench は host 計測なので
 時間は相対的な指標、メモリは pico2 でも同じ。
@@ -1091,4 +1089,4 @@ host virt の wall time は相対指標として shrink 前後の差を確認す
 - `docs/compiler.md` — 各段の peak と algorithm
 - `docs/lab_format.md` — asm_pass2/pass2 が共有する .lab 中間形式
 - `docs/solved.md` K7 — pico2 phase 7 完走の経緯
-- `tests/bench_pipeline.sh` — per-stage memory/time 回帰計測
+- `compiler/tests/bench_pipeline.sh` — per-stage memory/time 回帰計測

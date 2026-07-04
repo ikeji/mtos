@@ -417,7 +417,7 @@ docs/roadmap.md          (フェーズ5 チェック)
 
 - virtio-blk + mtfs は qemu-system-riscv32 起動が必要で数百 ms〜かかる。
 - `make test` は 60 秒上限を維持したいので、当面は `FULL_TEST=1` 限定に
-  して `kernel/kernel/tests/test_os.sh` 的な扱いにする。安定したら `make test` 側への
+  して `kernel/tests/test_os.sh` 的な扱いにする。安定したら `make test` 側への
   移動を検討。
 
 #### test_fs.sh の手順

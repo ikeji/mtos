@@ -222,4 +222,4 @@ Makefile を参照。
   (`compiler/scripts/compile-gen2.sh`)
 
 自己ホスト確認は Gen2 == Gen3 の BC/ASM 一致を
-`compiler/compiler/tests/test_gen3.sh` が CI で検証。
+`compiler/tests/test_gen3.sh` が CI で検証。
