@@ -43,16 +43,16 @@ fn uart_rx_pop(buf: u32, len: i32) -> i32;
 fn kfree(ptr: u32) -> void;
 
 // Device ids.
-var DEV_UART:  i32 = 0;
-var DEV_RTC:   i32 = 1;
-var DEV_FB:    i32 = 2;
-var DEV_KBD:   i32 = 3;
-var DEV_TOUCH: i32 = 4;
+const DEV_UART:  i32 = 0;
+const DEV_RTC:   i32 = 1;
+const DEV_FB:    i32 = 2;
+const DEV_KBD:   i32 = 3;
+const DEV_TOUCH: i32 = 4;
 
-var DEVFS_MAX_FDS: i32 = 8;
+const DEVFS_MAX_FDS: i32 = 8;
 // Data capacity of a buffered node's U8Array (after the 4-byte length
 // prefix). Holds the RTC snapshot or an accumulated datetime write.
-var DEVFS_BUF_CAP: i32 = 60;
+const DEVFS_BUF_CAP: i32 = 60;
 
 struct DevFD {
     // dev:  device id, or -1 for a free slot.

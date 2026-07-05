@@ -4,44 +4,44 @@
 // -M virt exposes by default. Uses a single queue (size 8) with polling.
 
 // MMIO base and scan
-var VIRTIO_BASE: u32   = 0x10001000u32;
-var VIRTIO_STRIDE: u32 = 0x1000u32;
-var VIRTIO_SLOTS: i32  = 8;
-var VIRTIO_MAGIC: u32  = 0x74726976u32;  // "virt" in LE
-var DEVICE_ID_BLOCK: u32 = 2u32;
+const VIRTIO_BASE: u32   = 0x10001000u32;
+const VIRTIO_STRIDE: u32 = 0x1000u32;
+const VIRTIO_SLOTS: i32  = 8;
+const VIRTIO_MAGIC: u32  = 0x74726976u32;  // "virt" in LE
+const DEVICE_ID_BLOCK: u32 = 2u32;
 
 // Register offsets (legacy virtio-mmio, virtio 1.1 spec §4.2.4)
-var REG_MAGIC:         u32 = 0x000u32;
-var REG_VERSION:       u32 = 0x004u32;
-var REG_DEVICE_ID:     u32 = 0x008u32;
-var REG_HOST_FEAT:     u32 = 0x010u32;
-var REG_HOST_FEAT_SEL: u32 = 0x014u32;
-var REG_GUEST_FEAT:    u32 = 0x020u32;
+const REG_MAGIC:         u32 = 0x000u32;
+const REG_VERSION:       u32 = 0x004u32;
+const REG_DEVICE_ID:     u32 = 0x008u32;
+const REG_HOST_FEAT:     u32 = 0x010u32;
+const REG_HOST_FEAT_SEL: u32 = 0x014u32;
+const REG_GUEST_FEAT:    u32 = 0x020u32;
 var REG_GUEST_FEAT_SEL:u32 = 0x024u32;
-var REG_GUEST_PGSIZE:  u32 = 0x028u32;
-var REG_QUEUE_SEL:     u32 = 0x030u32;
-var REG_QUEUE_NUM_MAX: u32 = 0x034u32;
-var REG_QUEUE_NUM:     u32 = 0x038u32;
-var REG_QUEUE_ALIGN:   u32 = 0x03Cu32;
-var REG_QUEUE_PFN:     u32 = 0x040u32;
-var REG_QUEUE_NOTIFY:  u32 = 0x050u32;
-var REG_INT_STATUS:    u32 = 0x060u32;
-var REG_INT_ACK:       u32 = 0x064u32;
-var REG_STATUS:        u32 = 0x070u32;
-var REG_CONFIG:        u32 = 0x100u32;
+const REG_GUEST_PGSIZE:  u32 = 0x028u32;
+const REG_QUEUE_SEL:     u32 = 0x030u32;
+const REG_QUEUE_NUM_MAX: u32 = 0x034u32;
+const REG_QUEUE_NUM:     u32 = 0x038u32;
+const REG_QUEUE_ALIGN:   u32 = 0x03Cu32;
+const REG_QUEUE_PFN:     u32 = 0x040u32;
+const REG_QUEUE_NOTIFY:  u32 = 0x050u32;
+const REG_INT_STATUS:    u32 = 0x060u32;
+const REG_INT_ACK:       u32 = 0x064u32;
+const REG_STATUS:        u32 = 0x070u32;
+const REG_CONFIG:        u32 = 0x100u32;
 
 // Device status bits
-var STATUS_ACK:         u32 = 1u32;
-var STATUS_DRIVER:      u32 = 2u32;
-var STATUS_DRIVER_OK:   u32 = 4u32;
-var STATUS_FEATURES_OK: u32 = 8u32;
+const STATUS_ACK:         u32 = 1u32;
+const STATUS_DRIVER:      u32 = 2u32;
+const STATUS_DRIVER_OK:   u32 = 4u32;
+const STATUS_FEATURES_OK: u32 = 8u32;
 
 // virtio-blk request types
-var VBLK_T_IN: u32 = 0u32;  // read
+const VBLK_T_IN: u32 = 0u32;  // read
 
 // Descriptor flags
-var DESC_F_NEXT:  u16 = 1u16;
-var DESC_F_WRITE: u16 = 2u16;
+const DESC_F_NEXT:  u16 = 1u16;
+const DESC_F_WRITE: u16 = 2u16;
 
 // Queue sizing / layout
 //   queue_size = 8
@@ -54,15 +54,15 @@ var DESC_F_WRITE: u16 = 2u16;
 //   STATUS: [4696 .. 4697) 1 B status
 //
 // We allocate a 12 KB buffer so the 4 KB alignment can always be met.
-var QUEUE_SIZE: u32 = 8u32;
-var QUEUE_ALIGN: u32 = 4096u32;
-var OFF_DESC:   u32 = 0u32;
-var OFF_AVAIL:  u32 = 128u32;
-var OFF_USED:   u32 = 4096u32;
-var OFF_HDR:    u32 = 4168u32;
-var OFF_DATA:   u32 = 4184u32;
-var OFF_STATUS: u32 = 4696u32;
-var MEM_RESERVE: i32 = 12288;  // 3 * 4096, guarantees aligned slot
+const QUEUE_SIZE: u32 = 8u32;
+const QUEUE_ALIGN: u32 = 4096u32;
+const OFF_DESC:   u32 = 0u32;
+const OFF_AVAIL:  u32 = 128u32;
+const OFF_USED:   u32 = 4096u32;
+const OFF_HDR:    u32 = 4168u32;
+const OFF_DATA:   u32 = 4184u32;
+const OFF_STATUS: u32 = 4696u32;
+const MEM_RESERVE: i32 = 12288;  // 3 * 4096, guarantees aligned slot
 
 // Discovered / initialized state
 var g_vblk_base:    u32 = 0u32;

@@ -28,7 +28,8 @@ typedef enum {
     /* loop control */
     TK_BREAK,
     TK_CONTINUE,
-    TK_EXPORT
+    TK_EXPORT,
+    TK_CONST
 } TokenKind;
 
 typedef struct {

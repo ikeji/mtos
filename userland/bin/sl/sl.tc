@@ -26,7 +26,7 @@ var SH: i32 = 24;
 // animation loop runs while pos > -TRAIN_W so the train clears the
 // left edge before we redraw the final clean frame.
 var TRAIN_W: i32 = 53;
-var TRAIN_H: i32 = 10;
+const TRAIN_H: i32 = 10;
 
 // Parse a non-negative decimal — returns -1 on empty / non-digit input
 // so callers can fall back to a default. Same logic as seq.tc but

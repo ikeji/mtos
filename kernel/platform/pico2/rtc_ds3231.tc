@@ -25,19 +25,19 @@
 import "rtc.tc";
 
 // ===== RP2350 register addresses =====
-var RTC_IO_BANK0:    u32 = 0x40028000u32;
-var RTC_PADS_SET:    u32 = 0x4003A000u32;   // PADS_BANK0 atomic-set alias
-var RTC_PADS_CLR:    u32 = 0x4003B000u32;   // PADS_BANK0 atomic-clear alias
+const RTC_IO_BANK0:    u32 = 0x40028000u32;
+const RTC_PADS_SET:    u32 = 0x4003A000u32;   // PADS_BANK0 atomic-set alias
+const RTC_PADS_CLR:    u32 = 0x4003B000u32;   // PADS_BANK0 atomic-clear alias
 
 // SIO high-GPIO bank (GP32-47). Bit 0 = GP32 = SDA, bit 1 = GP33 = SCL.
-var SIO_HI_IN:      u32 = 0xD0000008u32;
-var SIO_HI_OUT_CLR: u32 = 0xD0000024u32;
-var SIO_HI_OE_SET:  u32 = 0xD000003Cu32;
-var SIO_HI_OE_CLR:  u32 = 0xD0000044u32;
-var BB_SDA: u32 = 0x1u32;
-var BB_SCL: u32 = 0x2u32;
+const SIO_HI_IN:      u32 = 0xD0000008u32;
+const SIO_HI_OUT_CLR: u32 = 0xD0000024u32;
+const SIO_HI_OE_SET:  u32 = 0xD000003Cu32;
+const SIO_HI_OE_CLR:  u32 = 0xD0000044u32;
+const BB_SDA: u32 = 0x1u32;
+const BB_SCL: u32 = 0x2u32;
 
-var DS3231_ADDR: u32 = 0x68u32;     // DS3231 7-bit I2C address
+const DS3231_ADDR: u32 = 0x68u32;     // DS3231 7-bit I2C address
 
 var g_rtc_inited: i32 = 0;
 

@@ -54,6 +54,7 @@ static struct Keyword keywords[] = {
     {"return", TK_RETURN}, {"import", TK_IMPORT}, {"as", TK_AS},
     {"true", TK_TRUE}, {"false", TK_FALSE},
     {"break", TK_BREAK}, {"continue", TK_CONTINUE}, {"export", TK_EXPORT},
+    {"const", TK_CONST},
     {"u8", TK_U8}, {"u16", TK_U16}, {"u32", TK_U32},
     {"i8", TK_I8}, {"i16", TK_I16}, {"i32", TK_I32},
     {"bool", TK_BOOL}, {"void", TK_VOID},
@@ -318,6 +319,7 @@ const char *token_kind_name(TokenKind k) {
         case TK_FN: return "fn";
         case TK_STRUCT: return "struct";
         case TK_VAR: return "var";
+        case TK_CONST: return "const";
         case TK_IF: return "if";
         case TK_ELSE: return "else";
         case TK_WHILE: return "while";

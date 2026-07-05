@@ -2,7 +2,7 @@
 // Platform-independent: busy-loop wait instead of mtime.
 
 var g_char: u8 = 'A';
-var g_count: i32 = 5;
+const g_count: i32 = 5;
 
 fn main() -> i32 {
     var buf: U8Array = U8Array(1);

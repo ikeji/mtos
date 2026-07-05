@@ -24,13 +24,13 @@ fn km_live_count() -> i32;
 fn println(v: i32) -> void;
 
 // CLINT MMIO (qemu virt)
-var MTIMECMP_LO: u32 = 0x02004000u32;
-var MTIMECMP_HI: u32 = 0x02004004u32;
-var MTIME_LO: u32    = 0x0200BFF8u32;
-var MTIME_HI: u32    = 0x0200BFFCu32;
+const MTIMECMP_LO: u32 = 0x02004000u32;
+const MTIMECMP_HI: u32 = 0x02004004u32;
+const MTIME_LO: u32    = 0x0200BFF8u32;
+const MTIME_HI: u32    = 0x0200BFFCu32;
 // qemu virt CLINT mtime runs at 10 MHz by default, so 10_000 ticks
 // ≈ 1 ms between preemptions.
-var TIMER_INTERVAL: u32 = 10000u32;
+const TIMER_INTERVAL: u32 = 10000u32;
 
 // Provided to kernel_common (called from trap_handler). 64-bit
 // mtimecmp update: (a) guard against a spurious interrupt during the
@@ -66,7 +66,7 @@ fn ticks_per_ms() -> u32 {
 // qemu virt maps a goldfish-rtc at 0x101000. TIME_LOW (0x00) returns
 // the low 32 bits of nanoseconds-since-epoch and latches the high
 // 32 bits; TIME_HIGH (0x04) returns the latched high word.
-var RTC_BASE: u32 = 0x101000u32;
+const RTC_BASE: u32 = 0x101000u32;
 
 // (hi:lo) / 1_000_000_000. The quotient (seconds) fits in u32.
 fn rtc_div_1e9(hi: u32, lo: u32) -> u32 {

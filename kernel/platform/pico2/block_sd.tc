@@ -26,34 +26,34 @@
 fn uart_rx_drain() -> void;
 
 // ----- MMIO -----
-var SD_IO_BANK0:    u32 = 0x40028000u32;
-var SD_PADS_CLR:    u32 = 0x4003B000u32;  // PADS_BANK0 atomic CLR alias
-var SD_PADS_SET:    u32 = 0x4003A000u32;  // PADS_BANK0 atomic SET alias
-var SD_SIO:         u32 = 0xD0000000u32;
+const SD_IO_BANK0:    u32 = 0x40028000u32;
+const SD_PADS_CLR:    u32 = 0x4003B000u32;  // PADS_BANK0 atomic CLR alias
+const SD_PADS_SET:    u32 = 0x4003A000u32;  // PADS_BANK0 atomic SET alias
+const SD_SIO:         u32 = 0xD0000000u32;
 
 // High-GPIO SIO offsets (GP32-47).
-var SD_HI_IN:       u32 = 0x008u32;
-var SD_HI_OUT_SET:  u32 = 0x01Cu32;
-var SD_HI_OUT_CLR:  u32 = 0x024u32;
-var SD_HI_OE_SET:   u32 = 0x03Cu32;
+const SD_HI_IN:       u32 = 0x008u32;
+const SD_HI_OUT_SET:  u32 = 0x01Cu32;
+const SD_HI_OUT_CLR:  u32 = 0x024u32;
+const SD_HI_OE_SET:   u32 = 0x03Cu32;
 
 // Per-GPIO masks (n - 32).
-var SD_MISO_MASK:   u32 = 0x04u32;  // GP34
-var SD_CS_MASK:     u32 = 0x08u32;  // GP35
-var SD_SCK_MASK:    u32 = 0x10u32;  // GP36
-var SD_MOSI_MASK:   u32 = 0x20u32;  // GP37
+const SD_MISO_MASK:   u32 = 0x04u32;  // GP34
+const SD_CS_MASK:     u32 = 0x08u32;  // GP35
+const SD_SCK_MASK:    u32 = 0x10u32;  // GP36
+const SD_MOSI_MASK:   u32 = 0x20u32;  // GP37
 
 // IO_BANK0 GPIO_CTRL offsets (= 4 + 8*n).
-var SD_CTRL_MISO:   u32 = 0x114u32;  // GP34
-var SD_CTRL_CS:     u32 = 0x11Cu32;  // GP35
-var SD_CTRL_SCK:    u32 = 0x124u32;  // GP36
-var SD_CTRL_MOSI:   u32 = 0x12Cu32;  // GP37
+const SD_CTRL_MISO:   u32 = 0x114u32;  // GP34
+const SD_CTRL_CS:     u32 = 0x11Cu32;  // GP35
+const SD_CTRL_SCK:    u32 = 0x124u32;  // GP36
+const SD_CTRL_MOSI:   u32 = 0x12Cu32;  // GP37
 
 // PADS_BANK0 offsets (= 4 + 4*n).
-var SD_PAD_MISO:    u32 = 0x08Cu32;  // GP34
-var SD_PAD_CS:      u32 = 0x090u32;  // GP35
-var SD_PAD_SCK:     u32 = 0x094u32;  // GP36
-var SD_PAD_MOSI:    u32 = 0x098u32;  // GP37
+const SD_PAD_MISO:    u32 = 0x08Cu32;  // GP34
+const SD_PAD_CS:      u32 = 0x090u32;  // GP35
+const SD_PAD_SCK:     u32 = 0x094u32;  // GP36
+const SD_PAD_MOSI:    u32 = 0x098u32;  // GP37
 
 // ----- module state -----
 var g_sd_sdhc:        i32 = 0;     // 1 = SDHC, 0 = SDSC

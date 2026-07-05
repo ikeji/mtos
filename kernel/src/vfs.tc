@@ -33,20 +33,20 @@ fn fat_block_sync() -> i32;
 // Runtime allocator (compiler/runtime.tc)
 fn kfree(ptr: u32) -> void;
 
-var VFS_MAX_FDS: i32 = 32;
-var VFS_PATH_MAX: i32 = 128;
+const VFS_MAX_FDS: i32 = 32;
+const VFS_PATH_MAX: i32 = 128;
 
 // fs_type values
 //   -1 = free slot, 0 = UART (unused today), 1 = mtfs, 2 = tmpfs,
 //   3 = procfs, 4 = pipe, 5 = fatfs, 6 = devfs
-var FS_NONE:   i32 = -1;
-var FS_UART:   i32 = 0;
-var FS_MTFS:   i32 = 1;
-var FS_TMPFS:  i32 = 2;
-var FS_PROCFS: i32 = 3;
-var FS_PIPE:   i32 = 4;
-var FS_FATFS:  i32 = 5;
-var FS_DEVFS:  i32 = 6;
+const FS_NONE:   i32 = -1;
+const FS_UART:   i32 = 0;
+const FS_MTFS:   i32 = 1;
+const FS_TMPFS:  i32 = 2;
+const FS_PROCFS: i32 = 3;
+const FS_PIPE:   i32 = 4;
+const FS_FATFS:  i32 = 5;
+const FS_DEVFS:  i32 = 6;
 
 var g_fatfs_ready: i32 = 0;
 
@@ -602,8 +602,8 @@ export fn vfs_close_owned_by(slot: i32) -> i32 {
 //
 // inner encoding: pipe_idx * 2 = read end, pipe_idx * 2 + 1 = write end.
 
-var PIPE_MAX:      i32 = 4;
-var PIPE_BUF_SIZE: i32 = 4096;
+const PIPE_MAX:      i32 = 4;
+const PIPE_BUF_SIZE: i32 = 4096;
 
 struct Pipe {
     buf:       u32,    // U8Array addr (0 = free slot)

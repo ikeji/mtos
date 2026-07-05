@@ -3,52 +3,52 @@
 import "strlib.tc";
 
 // ===== Opcodes =====
-var OP_PUSH_INT: i32 = 1;
-var OP_PUSH_STR: i32 = 2;
-var OP_LOAD: i32 = 3;
-var OP_STORE: i32 = 4;
-var OP_CALL: i32 = 5;
-var OP_RETURN: i32 = 6;
-var OP_RETURN_VOID: i32 = 7;
-var OP_POP: i32 = 8;
-var OP_ADD: i32 = 9;
-var OP_SUB: i32 = 10;
-var OP_MUL: i32 = 11;
-var OP_DIV: i32 = 12;
-var OP_MOD: i32 = 13;
-var OP_AND: i32 = 14;
-var OP_OR: i32 = 15;
-var OP_XOR: i32 = 16;
-var OP_SHL: i32 = 17;
-var OP_SHR: i32 = 18;
-var OP_EQ: i32 = 19;
-var OP_NE: i32 = 20;
-var OP_LT: i32 = 21;
-var OP_LE: i32 = 22;
-var OP_GT: i32 = 23;
-var OP_GE: i32 = 24;
-var OP_NEG: i32 = 25;
-var OP_LNOT: i32 = 26;
-var OP_CAST: i32 = 27;
-var OP_JUMP: i32 = 28;
-var OP_JUMP_IF: i32 = 29;
-var OP_JUMP_IFNOT: i32 = 30;
-var OP_SHR_U: i32 = 31;
-var OP_LT_U: i32 = 32;
-var OP_LE_U: i32 = 33;
-var OP_GT_U: i32 = 34;
-var OP_GE_U: i32 = 35;
-var OP_DIV_U: i32 = 36;
-var OP_MOD_U: i32 = 37;
+const OP_PUSH_INT: i32 = 1;
+const OP_PUSH_STR: i32 = 2;
+const OP_LOAD: i32 = 3;
+const OP_STORE: i32 = 4;
+const OP_CALL: i32 = 5;
+const OP_RETURN: i32 = 6;
+const OP_RETURN_VOID: i32 = 7;
+const OP_POP: i32 = 8;
+const OP_ADD: i32 = 9;
+const OP_SUB: i32 = 10;
+const OP_MUL: i32 = 11;
+const OP_DIV: i32 = 12;
+const OP_MOD: i32 = 13;
+const OP_AND: i32 = 14;
+const OP_OR: i32 = 15;
+const OP_XOR: i32 = 16;
+const OP_SHL: i32 = 17;
+const OP_SHR: i32 = 18;
+const OP_EQ: i32 = 19;
+const OP_NE: i32 = 20;
+const OP_LT: i32 = 21;
+const OP_LE: i32 = 22;
+const OP_GT: i32 = 23;
+const OP_GE: i32 = 24;
+const OP_NEG: i32 = 25;
+const OP_LNOT: i32 = 26;
+const OP_CAST: i32 = 27;
+const OP_JUMP: i32 = 28;
+const OP_JUMP_IF: i32 = 29;
+const OP_JUMP_IFNOT: i32 = 30;
+const OP_SHR_U: i32 = 31;
+const OP_LT_U: i32 = 32;
+const OP_LE_U: i32 = 33;
+const OP_GT_U: i32 = 34;
+const OP_GE_U: i32 = 35;
+const OP_DIV_U: i32 = 36;
+const OP_MOD_U: i32 = 37;
 
 // Heap object kinds
-var HK_U8: i32 = 1;
-var HK_I32: i32 = 2;
-var HK_STR: i32 = 3;
+const HK_U8: i32 = 1;
+const HK_I32: i32 = 2;
+const HK_STR: i32 = 3;
 
 // Tag values
-var TAG_INT: i32 = 0;
-var TAG_REF: i32 = 1;
+const TAG_INT: i32 = 0;
+const TAG_REF: i32 = 1;
 
 // ===== Global state =====
 var g_cur_func: i32 = -1;

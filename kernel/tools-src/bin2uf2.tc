@@ -16,13 +16,13 @@ fn do_openat(dirfd: i32, path: String,        flags: i32) -> i32;
 fn do_openat(dirfd: i32, path: StringLiteral, flags: i32) -> i32;
 fn do_close(fd: i32) -> i32;
 
-var UF2_MAGIC_START0: u32 = 0x0A324655u32;
-var UF2_MAGIC_START1: u32 = 0x9E5D5157u32;
-var UF2_MAGIC_END:    u32 = 0x0AB16F30u32;
-var UF2_FLAG_FAMILY:  u32 = 0x00002000u32;
-var RP2350_FAMILY_ID: u32 = 0xE48BFF5Au32;
-var PAYLOAD_SIZE:     i32 = 256;
-var BLOCK_SIZE:       i32 = 512;
+const UF2_MAGIC_START0: u32 = 0x0A324655u32;
+const UF2_MAGIC_START1: u32 = 0x9E5D5157u32;
+const UF2_MAGIC_END:    u32 = 0x0AB16F30u32;
+const UF2_FLAG_FAMILY:  u32 = 0x00002000u32;
+const RP2350_FAMILY_ID: u32 = 0xE48BFF5Au32;
+const PAYLOAD_SIZE:     i32 = 256;
+const BLOCK_SIZE:       i32 = 512;
 
 fn write_le32(buf: U8Array, off: i32, v: u32) -> void {
     set(buf, off,     (v        & 0xFFu32) as u8);

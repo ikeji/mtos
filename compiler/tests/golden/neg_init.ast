@@ -1,0 +1,173 @@
+(program
+  (const_decl A
+    (type i32)
+    (unary -
+      (int 1)
+    )
+  )
+  (var_decl g_b
+    (type i32)
+    (unary -
+      (int 7)
+    )
+  )
+  (fn put_i
+    (params
+      (param v
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (comment "var x: i32 = v;")
+      (var_decl x
+        (type i32)
+        (var v)
+      )
+      (comment "var buf: U8Array = U8Array(12u32);")
+      (var_decl buf
+        (type U8Array)
+        (call U8Array
+          (int:u32 12)
+        )
+      )
+      (comment "var p: i32 = 0;")
+      (var_decl p
+        (type i32)
+        (int 0)
+      )
+      (comment "if x < 0 { set(buf, p, '-' as u8); p = p + 1; x = 0 - x; }")
+      (if
+        (binop <
+          (var x)
+          (int 0)
+        )
+        (block
+          (call_stmt set
+            (var buf)
+            (var p)
+            (cast
+              (int:u8 45)
+              (type u8)
+            )
+          )
+          (assign p
+            (binop +
+              (var p)
+              (int 1)
+            )
+          )
+          (assign x
+            (binop -
+              (int 0)
+              (var x)
+            )
+          )
+        )
+      )
+      (comment "if x >= 10 { set(buf, p, (48 + x / 10) as u8); p = p + 1; }")
+      (if
+        (binop >=
+          (var x)
+          (int 10)
+        )
+        (block
+          (call_stmt set
+            (var buf)
+            (var p)
+            (cast
+              (binop +
+                (int 48)
+                (binop /
+                  (var x)
+                  (int 10)
+                )
+              )
+              (type u8)
+            )
+          )
+          (assign p
+            (binop +
+              (var p)
+              (int 1)
+            )
+          )
+        )
+      )
+      (comment "set(buf, p, (48 + x % 10) as u8); p = p + 1;")
+      (call_stmt set
+        (var buf)
+        (var p)
+        (cast
+          (binop +
+            (int 48)
+            (binop %
+              (var x)
+              (int 10)
+            )
+          )
+          (type u8)
+        )
+      )
+      (assign p
+        (binop +
+          (var p)
+          (int 1)
+        )
+      )
+      (comment "set(buf, p, 10u8); p = p + 1;")
+      (call_stmt set
+        (var buf)
+        (var p)
+        (int:u8 10)
+      )
+      (assign p
+        (binop +
+          (var p)
+          (int 1)
+        )
+      )
+      (comment "sys_write(1, buf, p);")
+      (call_stmt sys_write
+        (int 1)
+        (var buf)
+        (var p)
+      )
+      (comment "delete(buf);")
+      (call_stmt delete
+        (var buf)
+      )
+      (comment "return;")
+      (return)
+    )
+  )
+  (fn main
+    (params)
+    (ret
+      (type i32)
+    )
+    (block
+      (comment "put_i(A);")
+      (call_stmt put_i
+        (var A)
+      )
+      (comment "put_i(g_b);")
+      (call_stmt put_i
+        (var g_b)
+      )
+      (comment "put_i(A + g_b);")
+      (call_stmt put_i
+        (binop +
+          (var A)
+          (var g_b)
+        )
+      )
+      (comment "return 0;")
+      (return
+        (int 0)
+      )
+    )
+  )
+)

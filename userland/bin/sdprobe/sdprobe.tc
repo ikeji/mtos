@@ -26,34 +26,34 @@
 import "../../lib/libtc/libtc.tc";
 
 // ----- MMIO -----
-var IO_BANK0_BASE:  u32 = 0x40028000u32;
-var PADS_BANK0_CLR: u32 = 0x4003B000u32;
-var PADS_BANK0_SET: u32 = 0x4003A000u32;
-var SIO_BASE:       u32 = 0xD0000000u32;
+const IO_BANK0_BASE:  u32 = 0x40028000u32;
+const PADS_BANK0_CLR: u32 = 0x4003B000u32;
+const PADS_BANK0_SET: u32 = 0x4003A000u32;
+const SIO_BASE:       u32 = 0xD0000000u32;
 
 // High-GPIO SIO offsets (GP32-47).
-var HI_IN:      u32 = 0x008u32;
-var HI_OUT_SET: u32 = 0x01Cu32;
-var HI_OUT_CLR: u32 = 0x024u32;
-var HI_OE_SET:  u32 = 0x03Cu32;
+const HI_IN:      u32 = 0x008u32;
+const HI_OUT_SET: u32 = 0x01Cu32;
+const HI_OUT_CLR: u32 = 0x024u32;
+const HI_OE_SET:  u32 = 0x03Cu32;
 
 // Per-GPIO masks (n - 32).
-var MISO_MASK: u32 = 0x04u32;   // GP34
-var CS_MASK:   u32 = 0x08u32;   // GP35
-var SCK_MASK:  u32 = 0x10u32;   // GP36
-var MOSI_MASK: u32 = 0x20u32;   // GP37
+const MISO_MASK: u32 = 0x04u32;   // GP34
+const CS_MASK:   u32 = 0x08u32;   // GP35
+const SCK_MASK:  u32 = 0x10u32;   // GP36
+const MOSI_MASK: u32 = 0x20u32;   // GP37
 
 // IO_BANK0 GPIO_CTRL offsets.
-var CTRL_MISO: u32 = 0x114u32;  // GP34
-var CTRL_CS:   u32 = 0x11Cu32;  // GP35
-var CTRL_SCK:  u32 = 0x124u32;  // GP36
-var CTRL_MOSI: u32 = 0x12Cu32;  // GP37
+const CTRL_MISO: u32 = 0x114u32;  // GP34
+const CTRL_CS:   u32 = 0x11Cu32;  // GP35
+const CTRL_SCK:  u32 = 0x124u32;  // GP36
+const CTRL_MOSI: u32 = 0x12Cu32;  // GP37
 
 // PADS_BANK0 offsets.
-var PAD_MISO: u32 = 0x08Cu32;
-var PAD_CS:   u32 = 0x090u32;
-var PAD_SCK:  u32 = 0x094u32;
-var PAD_MOSI: u32 = 0x098u32;
+const PAD_MISO: u32 = 0x08Cu32;
+const PAD_CS:   u32 = 0x090u32;
+const PAD_SCK:  u32 = 0x094u32;
+const PAD_MOSI: u32 = 0x098u32;
 
 // Bit-bang clock half-period. During init we need 100-400 kHz; after
 // init, faster is fine. Caller flips g_clk_delay.

@@ -689,10 +689,11 @@ int interpret(AstNode *program) {
     ip.global_frame = gf;
     ip.frame = gf;
 
-    /* initialize global variables */
+    /* initialize global variables (const_decl always has an init) */
     for (int i = 0; i < program->nchildren; i++) {
         AstNode *d = program->children[i];
-        if (strcmp(d->kind, "var_decl") == 0) {
+        if (strcmp(d->kind, "var_decl") == 0 ||
+            strcmp(d->kind, "const_decl") == 0) {
             Value v = val_int(0);
             if (d->nchildren > 1) v = eval_expr(&ip, d->children[1]);
             frame_set(gf, d->sval, v);

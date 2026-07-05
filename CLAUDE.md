@@ -633,6 +633,11 @@ UART は Debug Probe の CDC-ACM 経由で `/dev/ttyACM0` (115200 8N1)。
   で許容
 - `>>` は u32 では論理右シフト (`srl`)、i32 / i8 / i16 では算術右シフト
   (`sra`)。バイトコードでは `shr` (signed) と `shr_u` (unsigned) を区別
+- `const NAME: T = <literal>;` — トップレベル定数 (2026-07-05)。
+  リテラル初期化必須・再代入はコンパイルエラー・値は使用箇所に
+  インライン展開 (int/bool → push_int、文字列 → push_str)。
+  **グローバル var の文字列リテラル初期化はコンパイルエラー**
+  (const を使う)。宣言は使用より前に書く
 - `docs/language.md` — TinyC言語仕様
 - `docs/bc_format.md` — バイトコード形式仕様
 - `docs/ast_format.md` — AST ファイルフォーマット（.ast/.tast/.th）

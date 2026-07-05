@@ -1,19 +1,31 @@
 (program
-  (var_decl GREET
+  (const_decl GREET
     (type StringLiteral)
     (str "hi, global str!")
   )
-  (var_decl SAME
+  (const_decl SAME
     (type StringLiteral)
     (str "hi, global str!")
   )
-  (var_decl TAIL
+  (const_decl TAIL
     (type StringLiteral)
     (str "tail")
   )
-  (var_decl G_ADD
+  (const_decl N
     (type i32)
-    (int 10)
+    (int 42)
+  )
+  (const_decl MASK
+    (type u32)
+    (int:u32 16)
+  )
+  (const_decl FLAG
+    (type bool)
+    (bool true)
+  )
+  (var_decl g_counter
+    (type i32)
+    (int 0)
   )
   (fn put_sl
     (params
@@ -159,6 +171,29 @@
       (return)
     )
   )
+  (fn shadowed
+    (params)
+    (ret
+      (type void)
+    )
+    (block
+      (comment "var N: i32 = 7;")
+      (var_decl N
+        (type i32)
+        (int 7)
+      )
+      (comment "N = 8;")
+      (assign N
+        (int 8)
+      )
+      (comment "put2(N);")
+      (call_stmt put2
+        (var N)
+      )
+      (comment "return;")
+      (return)
+    )
+  )
   (fn main
     (params)
     (ret
@@ -177,15 +212,36 @@
       (call_stmt put_sl
         (var TAIL)
       )
-      (comment "put2(len(GREET) + G_ADD);")
+      (comment "g_counter = N + (MASK as i32);")
+      (assign g_counter
+        (binop +
+          (var N)
+          (cast
+            (var MASK)
+            (type i32)
+          )
+        )
+      )
+      (comment "if FLAG { put2(g_counter); }")
+      (if
+        (var FLAG)
+        (block
+          (call_stmt put2
+            (var g_counter)
+          )
+        )
+      )
+      (comment "put2(len(GREET) + 10);")
       (call_stmt put2
         (binop +
           (call len
             (var GREET)
           )
-          (var G_ADD)
+          (int 10)
         )
       )
+      (comment "shadowed();")
+      (call_stmt shadowed)
       (comment "return 0;")
       (return
         (int 0)

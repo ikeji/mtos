@@ -28,7 +28,7 @@ import "../../lib/libtc/libtc.tc";
 var CMD_MAX:  i32 = 1024;
 // "/bin/" (5) + path bytes + NUL ≤ 70. argv[0] alone, no command line.
 var PATH_MAX: i32 = 70;
-var HIST_MAX: i32 = 8;
+const HIST_MAX: i32 = 8;
 
 // Redirect results produced by parse_redir. Globals because TC
 // functions return a single value and we need three outputs (argv

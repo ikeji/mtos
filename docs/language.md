@@ -42,15 +42,42 @@
   - `var g_arr: U32Array = 0 as U32Array;` で null 宣言
   - `fn main() { g_arr = U32Array(64); }` のように初期化
   - 初期化子に関数呼び出しを書くと codegen が無視するため null のまま
-- **例外: 文字列リテラル初期化のグローバルは定数** (#36 で対応、2026-07-05)
-  - `var GREET: StringLiteral = "hi";` は GREET をリテラルの
-    **定数エイリアス**としてコンパイルする (load が push_str になる)。
-    .data に実体スロットは無いので**再代入はコンパイルエラー**
+- **グローバル var の文字列リテラル初期化はコンパイルエラー** (#36、2026-07-05)
+  - `var S: StringLiteral = "hi";` → `Type error: global var 'S'
+    cannot be initialized with a string literal - use const`
   - PIC raw-bin タスクにはロード時 data relocation が無いため、
-    「.data にポインタを置く」形は実現できない — 定数化が正しい下位互換
-  - 宣言は使用より**前**に書くこと (Gen2 codegen はストリーミングの
-    ため、宣言前の使用は `load` にフォールバックしリンク時に
-    undefined label エラーになる)
+    可変な .data ワードにリテラルのポインタを置く形は実現できない。
+    定数でよいなら `const`、実行時に差し替えるなら
+    `var S: StringLiteral = 0 as StringLiteral;` + 代入で初期化する
+
+## 定数 (const)
+
+トップレベル限定の `const` 宣言 (2026-07-05 導入):
+
+```tc
+const N: i32 = 42;
+const MASK: u32 = 0x10u32;
+const FLAG: bool = true;
+const GREET: StringLiteral = "hi, const!";
+```
+
+- **初期化子はリテラル限定** (整数型 ← int リテラル、bool ←
+  true/false、StringLiteral ← 文字列リテラル)。式・関数呼び出し不可
+- **再代入はコンパイルエラー** (`Type error: cannot assign to const`)。
+  同名のローカル/パラメータでシャドーした場合はローカルへの通常代入
+- **ストレージを持たない**: codegen が使用箇所ごとに値をインライン
+  (int/bool → `push_int`、文字列 → `push_str` = .rodata の literal
+  への `la`)。.data に .word は出ない
+- **モジュールプライベート** (`export const` は無い)。同一リテラルの
+  文字列 const は slit dedup で同じ .rodata オブジェクトを指す
+- **宣言は使用より前に書く** (Gen2 codegen はトップレベルをストリーム
+  処理するため、宣言前の使用は `load` にフォールバックしリンク時の
+  undefined label エラーになる。Gen1 は 2 パスなのでどちらでも通るが、
+  可搬性のため宣言を先に置くこと)
+- ローカルスコープの `const` は未サポート (パースエラー)
+
+AST 形式は `(const_decl NAME (type T) (init))` — var_decl と同形で
+kind のみ異なる (`docs/ast_format.md`)。
 
 ## 配列
 

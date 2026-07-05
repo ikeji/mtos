@@ -1,0 +1,121 @@
+.bc
+; globals
+.global g_b i32 -7
+
+.fn put_i i32 void
+.param v i32
+.local x i32
+.local buf U8Array
+.local p i32
+; var x: i32 = v;
+  load v
+  store x
+; var buf: U8Array = U8Array(12u32);
+  push_int 12
+  call U8Array u32
+  store buf
+; var p: i32 = 0;
+  push_int 0
+  store p
+; if x < 0 { set(buf, p, '-' as u8); p = p + 1; x = 0 - x; }
+  load x
+  push_int 0
+  lt
+  jump_ifnot __L0
+  load buf
+  load p
+  push_int 45
+  cast u8
+  call set U8Array i32 u8
+  pop
+  load p
+  push_int 1
+  add
+  store p
+  push_int 0
+  load x
+  sub
+  store x
+__L0:
+; if x >= 10 { set(buf, p, (48 + x / 10) as u8); p = p + 1; }
+  load x
+  push_int 10
+  ge
+  jump_ifnot __L1
+  load buf
+  load p
+  push_int 48
+  load x
+  push_int 10
+  div
+  add
+  cast u8
+  call set U8Array i32 u8
+  pop
+  load p
+  push_int 1
+  add
+  store p
+__L1:
+; set(buf, p, (48 + x % 10) as u8); p = p + 1;
+  load buf
+  load p
+  push_int 48
+  load x
+  push_int 10
+  mod
+  add
+  cast u8
+  call set U8Array i32 u8
+  pop
+  load p
+  push_int 1
+  add
+  store p
+; set(buf, p, 10u8); p = p + 1;
+  load buf
+  load p
+  push_int 10
+  call set U8Array i32 u8
+  pop
+  load p
+  push_int 1
+  add
+  store p
+; sys_write(1, buf, p);
+  push_int 1
+  load buf
+  load p
+  call sys_write i32 U8Array i32
+  pop
+; delete(buf);
+  load buf
+  call delete U8Array
+  pop
+; return;
+  return_void
+  return_void
+.endfn
+
+.fn main i32
+; put_i(A);
+  push_int -1
+  call put_i i32
+  pop
+; put_i(g_b);
+  load g_b
+  call put_i i32
+  pop
+; put_i(A + g_b);
+  push_int -1
+  load g_b
+  add
+  call put_i i32
+  pop
+; return 0;
+  push_int 0
+  return
+  return_void
+.endfn
+
+.endbc

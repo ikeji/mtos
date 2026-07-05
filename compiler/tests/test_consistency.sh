@@ -44,5 +44,6 @@ run_consistency "break_test.tc" "$SCRIPT_DIR/break_test.tc"
 run_consistency "continue_test.tc" "$SCRIPT_DIR/continue_test.tc"
 run_consistency "nested_break_test.tc" "$SCRIPT_DIR/nested_break_test.tc"
 run_consistency "global_str.tc" "$SCRIPT_DIR/global_str.tc"
+run_consistency "neg_init.tc" "$SCRIPT_DIR/neg_init.tc"
 
 print_results

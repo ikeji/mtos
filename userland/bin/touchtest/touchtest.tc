@@ -19,8 +19,8 @@ import "../../lib/libtc/libtc.tc";
 // nanosleep syscall (a7=101): not exported from libtc, declare locally.
 fn do_nanosleep(ms: i32) -> i32;
 
-var O_RDONLY: i32 = 0;
-var O_WRONLY: i32 = 1;
+const O_RDONLY: i32 = 0;
+const O_WRONLY: i32 = 1;
 
 fn put_u16(b: U8Array, pos: i32, v: i32) -> void {
     set(b, pos,     (v & 0xFF) as u8);
@@ -52,16 +52,16 @@ fn send_alt_screen(on: i32) -> void {
 // Padded slightly toward the middle so panel-to-panel variance at
 // the extreme corners saturates onto the LCD edges instead of being
 // clipped off-screen.
-var RX_MIN: i32 = 500;
-var RX_MAX: i32 = 3800;
-var RY_MIN: i32 = 700;
-var RY_MAX: i32 = 3700;
+const RX_MIN: i32 = 500;
+const RX_MAX: i32 = 3800;
+const RY_MIN: i32 = 700;
+const RY_MAX: i32 = 3700;
 // console-land puts the ILI9488 in landscape orientation, so the
 // LCD coordinate system is 480 wide × 320 tall, not 320 × 480.
 // fb_fill (mode=1) and mode-0 blits both interpret (x, y) in this
 // landscape frame, so touchtest builds its mapping against it too.
-var LCD_W:  i32 = 480;
-var LCD_H:  i32 = 320;
+const LCD_W:  i32 = 480;
+const LCD_H:  i32 = 320;
 
 fn map_x(raw: i32) -> i32 {
     var v: i32 = raw - RX_MIN;

@@ -2,151 +2,151 @@
   (import string_buffer.tc)
   (import source_reader.tc)
   (import strlib.tc)
-  (var_decl OP_PUSH_INT
+  (const_decl OP_PUSH_INT
     (type i32)
     (int 1)
   )
-  (var_decl OP_PUSH_STR
+  (const_decl OP_PUSH_STR
     (type i32)
     (int 2)
   )
-  (var_decl OP_LOAD
+  (const_decl OP_LOAD
     (type i32)
     (int 3)
   )
-  (var_decl OP_STORE
+  (const_decl OP_STORE
     (type i32)
     (int 4)
   )
-  (var_decl OP_CALL
+  (const_decl OP_CALL
     (type i32)
     (int 5)
   )
-  (var_decl OP_RETURN
+  (const_decl OP_RETURN
     (type i32)
     (int 6)
   )
-  (var_decl OP_RETURN_VOID
+  (const_decl OP_RETURN_VOID
     (type i32)
     (int 7)
   )
-  (var_decl OP_POP
+  (const_decl OP_POP
     (type i32)
     (int 8)
   )
-  (var_decl OP_ADD
+  (const_decl OP_ADD
     (type i32)
     (int 9)
   )
-  (var_decl OP_SUB
+  (const_decl OP_SUB
     (type i32)
     (int 10)
   )
-  (var_decl OP_MUL
+  (const_decl OP_MUL
     (type i32)
     (int 11)
   )
-  (var_decl OP_DIV
+  (const_decl OP_DIV
     (type i32)
     (int 12)
   )
-  (var_decl OP_MOD
+  (const_decl OP_MOD
     (type i32)
     (int 13)
   )
-  (var_decl OP_AND
+  (const_decl OP_AND
     (type i32)
     (int 14)
   )
-  (var_decl OP_OR
+  (const_decl OP_OR
     (type i32)
     (int 15)
   )
-  (var_decl OP_XOR
+  (const_decl OP_XOR
     (type i32)
     (int 16)
   )
-  (var_decl OP_SHL
+  (const_decl OP_SHL
     (type i32)
     (int 17)
   )
-  (var_decl OP_SHR
+  (const_decl OP_SHR
     (type i32)
     (int 18)
   )
-  (var_decl OP_EQ
+  (const_decl OP_EQ
     (type i32)
     (int 19)
   )
-  (var_decl OP_NE
+  (const_decl OP_NE
     (type i32)
     (int 20)
   )
-  (var_decl OP_LT
+  (const_decl OP_LT
     (type i32)
     (int 21)
   )
-  (var_decl OP_LE
+  (const_decl OP_LE
     (type i32)
     (int 22)
   )
-  (var_decl OP_GT
+  (const_decl OP_GT
     (type i32)
     (int 23)
   )
-  (var_decl OP_GE
+  (const_decl OP_GE
     (type i32)
     (int 24)
   )
-  (var_decl OP_NEG
+  (const_decl OP_NEG
     (type i32)
     (int 25)
   )
-  (var_decl OP_LNOT
+  (const_decl OP_LNOT
     (type i32)
     (int 26)
   )
-  (var_decl OP_CAST
+  (const_decl OP_CAST
     (type i32)
     (int 27)
   )
-  (var_decl OP_JUMP
+  (const_decl OP_JUMP
     (type i32)
     (int 28)
   )
-  (var_decl OP_JUMP_IF
+  (const_decl OP_JUMP_IF
     (type i32)
     (int 29)
   )
-  (var_decl OP_JUMP_IFNOT
+  (const_decl OP_JUMP_IFNOT
     (type i32)
     (int 30)
   )
-  (var_decl OP_SHR_U
+  (const_decl OP_SHR_U
     (type i32)
     (int 31)
   )
-  (var_decl OP_LT_U
+  (const_decl OP_LT_U
     (type i32)
     (int 32)
   )
-  (var_decl OP_LE_U
+  (const_decl OP_LE_U
     (type i32)
     (int 33)
   )
-  (var_decl OP_GT_U
+  (const_decl OP_GT_U
     (type i32)
     (int 34)
   )
-  (var_decl OP_GE_U
+  (const_decl OP_GE_U
     (type i32)
     (int 35)
   )
-  (var_decl OP_DIV_U
+  (const_decl OP_DIV_U
     (type i32)
     (int 36)
   )
-  (var_decl OP_MOD_U
+  (const_decl OP_MOD_U
     (type i32)
     (int 37)
   )

@@ -34,7 +34,7 @@ var g_fat_free_clusters: u32 = 0xFFFFFFFFu32;
 // Shared sector buffer for FAT table reads (avoids extra alloc)
 
 // ===== FD table =====
-var FATFS_MAX_FDS: i32 = 16;
+const FATFS_MAX_FDS: i32 = 16;
 
 struct FatFD {
     ff_start: u32,    // start cluster (0 = empty file)
@@ -49,10 +49,10 @@ struct FatFD {
     ff_dir_off: i32,  // offset of dir entry within sector (0..480)
 }
 
-var FATFS_O_WRONLY: i32 = 1;
-var FATFS_O_RDWR:   i32 = 2;
-var FATFS_O_CREAT:  i32 = 64;
-var FATFS_O_TRUNC:  i32 = 512;
+const FATFS_O_WRONLY: i32 = 1;
+const FATFS_O_RDWR:   i32 = 2;
+const FATFS_O_CREAT:  i32 = 64;
+const FATFS_O_TRUNC:  i32 = 512;
 var g_fat_fds: FatFDArray = 0 as FatFDArray;
 
 // ===== Helpers =====

@@ -15,16 +15,16 @@
 // Runtime allocator (compiler/runtime.tc)
 fn kfree(ptr: u32) -> void;
 
-var TMPFS_MAX_FILES: i32 = 32;
-var TMPFS_MAX_FDS:   i32 = 16;
-var TMPFS_NAME_MAX:  i32 = 63;
+const TMPFS_MAX_FILES: i32 = 32;
+const TMPFS_MAX_FDS:   i32 = 16;
+const TMPFS_NAME_MAX:  i32 = 63;
 
 // Linux open() flag subset. Stored values match the usual O_*
 // constants so tasks can pass them through as-is.
-var TMPFS_O_WRONLY: i32 = 1;
-var TMPFS_O_RDWR:   i32 = 2;
-var TMPFS_O_CREAT:  i32 = 64;
-var TMPFS_O_TRUNC:  i32 = 512;
+const TMPFS_O_WRONLY: i32 = 1;
+const TMPFS_O_RDWR:   i32 = 2;
+const TMPFS_O_CREAT:  i32 = 64;
+const TMPFS_O_TRUNC:  i32 = 512;
 
 // Inode:
 //   nm_addr  kmalloc-backed NUL-terminated name, 0 = free slot

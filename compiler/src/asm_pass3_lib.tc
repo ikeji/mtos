@@ -111,7 +111,7 @@ var g_reloc_in_done: i32 = 1;
 // the shared rb_* reader because that one is bound to the main lab/
 // source stdin fd; the reloc reader runs concurrently during the
 // text section emit.
-var RELOC_BUF_CAP: i32 = 4096;
+const RELOC_BUF_CAP: i32 = 4096;
 var g_reloc_in_buf:     U8Array = 0 as U8Array;
 var g_reloc_in_buf_pos: i32 = 0;
 var g_reloc_in_buf_len: i32 = 0;
@@ -1054,7 +1054,7 @@ fn run_section_pass(sec_target: i32) -> void {
 // next phase's reads. The caller still concatenates the source 3
 // times, and src_bytes from the .lab tells each pass exactly when
 // to stop consuming from the stream.
-var G_BUF_CAP: i32 = 4096;
+const G_BUF_CAP: i32 = 4096;
 var g_buf:     U8Array = 0 as U8Array;
 var g_buf_pos: i32 = 0;
 var g_buf_len: i32 = 0;

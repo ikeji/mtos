@@ -47,7 +47,7 @@ fn main() -> i32 {
     return 1;
 }
 
-var MAX_INPUTS: i32 = 32;
+const MAX_INPUTS: i32 = 32;
 
 fn main(argv: StringArray) -> i32 {
     var lab_out: String = 0 as String;

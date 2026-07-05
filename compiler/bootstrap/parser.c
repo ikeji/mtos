@@ -366,6 +366,26 @@ static AstNode *parse_var_decl(Parser *p) {
     return n;
 }
 
+/* const NAME: TYPE = <literal>; — top-level only. Same AST shape as
+   var_decl (name + (type) + init) under the kind "const_decl". The
+   initializer must be present; literal-ness is enforced by typecheck
+   so the parser stays simple. */
+static AstNode *parse_const_decl(Parser *p) {
+    int line = cur_tok(p)->line;
+    expect(p, TK_CONST);
+    Token *name = expect(p, TK_IDENT);
+    expect(p, TK_COLON);
+    AstNode *ty = parse_type(p);
+    AstNode *n = ast_node("const_decl", line);
+    n->sval = strdup(name->sval);
+    ast_add_child(n, ty);
+    expect(p, TK_EQ);
+    AstNode *init = parse_expr(p);
+    ast_add_child(n, init);
+    expect(p, TK_SEMI);
+    return n;
+}
+
 static AstNode *parse_if_stmt(Parser *p) {
     int line = cur_tok(p)->line;
     expect(p, TK_IF);
@@ -982,8 +1002,10 @@ AstNode *parse(Token *tokens, int ntokens, const char *filename, const char *sou
             continue;
         } else if (t->kind == TK_VAR) {
             d = parse_var_decl(&p);
+        } else if (t->kind == TK_CONST) {
+            d = parse_const_decl(&p);
         } else {
-            fprintf(stderr, "%s:%d: expected 'fn', 'struct', 'export', or 'var' at top level, got '%s'\n",
+            fprintf(stderr, "%s:%d: expected 'fn', 'struct', 'export', 'var', or 'const' at top level, got '%s'\n",
                     p.filename, t->line, token_kind_name(t->kind));
             exit(1);
         }

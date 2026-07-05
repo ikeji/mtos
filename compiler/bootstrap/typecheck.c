@@ -27,6 +27,7 @@ typedef struct FnSig {
 typedef struct VarEntry {
     char *name;
     char *type;
+    int is_const;   /* 1 = const_decl global (assignment is an error) */
     struct VarEntry *next;
 } VarEntry;
 
@@ -87,6 +88,26 @@ static void register_var_global(TypeEnv *e, const char *name, const char *type) 
     v->type = strdup(type);
     v->next = e->globals;
     e->globals = v;
+}
+
+static void register_const_global(TypeEnv *e, const char *name, const char *type) {
+    register_var_global(e, name, type);
+    e->globals->is_const = 1;
+}
+
+static int global_is_const(TypeEnv *e, const char *name) {
+    for (VarEntry *v = e->globals; v; v = v->next)
+        if (strcmp(v->name, name) == 0) return v->is_const;
+    return 0;
+}
+
+/* Lookup in local scopes only (no global fallback) — used to decide
+   whether an assignment target shadows a const global. */
+static int local_lookup(TypeEnv *e, const char *name) {
+    for (Scope *s = e->scope; s; s = s->parent)
+        for (VarEntry *v = s->vars; v; v = v->next)
+            if (strcmp(v->name, name) == 0) return 1;
+    return 0;
 }
 
 static StructDef *find_struct(TypeEnv *e, const char *name) {
@@ -553,6 +574,45 @@ static const char *check_expr(TypeEnv *e, AstNode *node) {
     exit(1);
 }
 
+/* const_decl validation shared by both typecheck entry points: the
+   initializer must be a literal whose kind matches the declared type
+   (int literal ↔ integer type, bool ↔ bool, str ↔ StringLiteral) —
+   codegen inlines the value at every use site, so there is no
+   storage that could hold a computed value. */
+static int type_is_integer(const char *t) {
+    return strcmp(t, "i8") == 0 || strcmp(t, "i16") == 0 || strcmp(t, "i32") == 0 ||
+           strcmp(t, "u8") == 0 || strcmp(t, "u16") == 0 || strcmp(t, "u32") == 0;
+}
+
+static const char *check_expr(TypeEnv *e, AstNode *node);
+
+static void check_const_decl(TypeEnv *e, AstNode *d) {
+    const char *ty = d->children[0]->sval;
+    if (d->nchildren < 2) {
+        fprintf(stderr, "%s:%d: const '%s' needs an initializer\n",
+                e->filename, d->line, d->sval);
+        exit(1);
+    }
+    AstNode *init = d->children[1];
+    const char *ik = init->kind;
+    int ok = 0;
+    if (strcmp(ik, "int") == 0 && type_is_integer(ty)) ok = 1;
+    /* negative literal parses as (unary - (int N)) */
+    if (strcmp(ik, "unary") == 0 && init->sval && strcmp(init->sval, "-") == 0 &&
+        init->nchildren == 1 && strcmp(init->children[0]->kind, "int") == 0 &&
+        type_is_integer(ty)) ok = 1;
+    if (strcmp(ik, "bool") == 0 && strcmp(ty, "bool") == 0) ok = 1;
+    if (strcmp(ik, "str") == 0 && strcmp(ty, "StringLiteral") == 0) ok = 1;
+    if (!ok) {
+        fprintf(stderr, "%s:%d: const '%s' initializer must be a literal matching "
+                "its type (int literal for integer types, true/false for bool, "
+                "\"...\" for StringLiteral)\n",
+                e->filename, d->line, d->sval);
+        exit(1);
+    }
+    check_expr(e, init);
+}
+
 /* ---- typecheck statements ---- */
 
 static void check_stmt(TypeEnv *e, AstNode *node);
@@ -577,6 +637,11 @@ static void check_stmt(TypeEnv *e, AstNode *node) {
         const char *var_ty = scope_lookup(e, node->sval);
         if (!var_ty) {
             fprintf(stderr, "%s:%d: undefined variable '%s'\n",
+                    e->filename, node->line, node->sval);
+            exit(1);
+        }
+        if (!local_lookup(e, node->sval) && global_is_const(e, node->sval)) {
+            fprintf(stderr, "%s:%d: cannot assign to const '%s'\n",
                     e->filename, node->line, node->sval);
             exit(1);
         }
@@ -739,6 +804,8 @@ AstNode *typecheck(AstNode *program, const char *filename) {
             collect_fn(&e, d);
         } else if (strcmp(d->kind, "var_decl") == 0) {
             register_var_global(&e, d->sval, d->children[0]->sval);
+        } else if (strcmp(d->kind, "const_decl") == 0) {
+            register_const_global(&e, d->sval, d->children[0]->sval);
         }
     }
 
@@ -748,9 +815,20 @@ AstNode *typecheck(AstNode *program, const char *filename) {
         if (strcmp(d->kind, "fn") == 0) {
             check_fn(&e, d);
         } else if (strcmp(d->kind, "var_decl") == 0) {
+            /* a string-literal pointer cannot live in a mutable .data
+               word (PIC raw-bin tasks have no load-time relocation) —
+               direct users to const, which inlines the literal */
+            if (d->nchildren > 1 && strcmp(d->children[1]->kind, "str") == 0) {
+                fprintf(stderr, "%s:%d: global var '%s' cannot be initialized with a "
+                        "string literal — use `const %s: StringLiteral = ...;`\n",
+                        e.filename, d->line, d->sval, d->sval);
+                exit(1);
+            }
             if (d->nchildren > 1) {
                 check_expr(&e, d->children[1]);
             }
+        } else if (strcmp(d->kind, "const_decl") == 0) {
+            check_const_decl(&e, d);
         }
     }
 
@@ -804,6 +882,8 @@ AstNode *typecheck_with_imports(AstNode *program, const char *filename, AstNode 
             collect_fn(&e, d);
         } else if (strcmp(d->kind, "var_decl") == 0) {
             register_var_global(&e, d->sval, d->children[0]->sval);
+        } else if (strcmp(d->kind, "const_decl") == 0) {
+            register_const_global(&e, d->sval, d->children[0]->sval);
         }
     }
 
@@ -813,9 +893,20 @@ AstNode *typecheck_with_imports(AstNode *program, const char *filename, AstNode 
         if (strcmp(d->kind, "fn") == 0) {
             check_fn(&e, d);
         } else if (strcmp(d->kind, "var_decl") == 0) {
+            /* a string-literal pointer cannot live in a mutable .data
+               word (PIC raw-bin tasks have no load-time relocation) —
+               direct users to const, which inlines the literal */
+            if (d->nchildren > 1 && strcmp(d->children[1]->kind, "str") == 0) {
+                fprintf(stderr, "%s:%d: global var '%s' cannot be initialized with a "
+                        "string literal — use `const %s: StringLiteral = ...;`\n",
+                        e.filename, d->line, d->sval, d->sval);
+                exit(1);
+            }
             if (d->nchildren > 1) {
                 check_expr(&e, d->children[1]);
             }
+        } else if (strcmp(d->kind, "const_decl") == 0) {
+            check_const_decl(&e, d);
         }
     }
 

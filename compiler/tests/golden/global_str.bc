@@ -1,6 +1,6 @@
 .bc
 ; globals
-.global G_ADD i32 10
+.global g_counter i32 0
 
 .fn put_sl StringLiteral void
 .param s StringLiteral
@@ -112,6 +112,23 @@ __L1:
   return_void
 .endfn
 
+.fn shadowed void
+.local N i32
+; var N: i32 = 7;
+  push_int 7
+  store N
+; N = 8;
+  push_int 8
+  store N
+; put2(N);
+  load N
+  call put2 i32
+  pop
+; return;
+  return_void
+  return_void
+.endfn
+
 .fn main i32
 ; put_sl(GREET);
   push_str 0
@@ -125,12 +142,28 @@ __L1:
   push_str 1
   call put_sl StringLiteral
   pop
-; put2(len(GREET) + G_ADD);
+; g_counter = N + (MASK as i32);
+  push_int 42
+  push_int 16
+  cast i32
+  add
+  store g_counter
+; if FLAG { put2(g_counter); }
+  push_int 1
+  jump_ifnot __L2
+  load g_counter
+  call put2 i32
+  pop
+__L2:
+; put2(len(GREET) + 10);
   push_str 0
   call len StringLiteral
-  load G_ADD
+  push_int 10
   add
   call put2 i32
+  pop
+; shadowed();
+  call shadowed
   pop
 ; return 0;
   push_int 0

@@ -10,7 +10,7 @@ import "../../lib/libtc/libtc.tc";
 // Linux O_* subset understood by kernel/tmpfs.tc
 var O_WRONLY: i32 = 1;
 var O_CREAT:  i32 = 64;
-var O_TRUNC:  i32 = 512;
+const O_TRUNC:  i32 = 512;
 
 fn main() -> i32 {
     // --- Write ---

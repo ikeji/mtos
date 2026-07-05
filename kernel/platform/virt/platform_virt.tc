@@ -6,8 +6,8 @@
 // that just walks memory-mapped registers can be plain TC, with
 // peek8/poke8 from trap_common.s as the underlying primitive.
 
-var UART_DR:  u32 = 0x10000000u32;  // 16550 RBR/THR
-var UART_LSR: u32 = 0x10000005u32;  // line status: bit 0 = Data Ready
+const UART_DR:  u32 = 0x10000000u32;  // 16550 RBR/THR
+const UART_LSR: u32 = 0x10000005u32;  // line status: bit 0 = Data Ready
 
 export fn do_uart_write(buf: u32, len: i32) -> i32 {
     var i: i32 = 0;

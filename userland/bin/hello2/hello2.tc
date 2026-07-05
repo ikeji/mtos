@@ -1,7 +1,7 @@
 // hello2.tc — guest task: prints character from initialized global variable
 
 var g_char: u8 = 'B';
-var g_count: i32 = 5;
+const g_count: i32 = 5;
 
 fn main() -> i32 {
     var buf: U8Array = U8Array(1);

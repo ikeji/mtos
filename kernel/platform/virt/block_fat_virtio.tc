@@ -4,51 +4,51 @@
 // device on the bus. Exports fat_block_* to avoid symbol collision
 // with the first driver. Supports both read and write.
 
-var FAT_VIRTIO_BASE:   u32 = 0x10001000u32;
-var FAT_VIRTIO_STRIDE: u32 = 0x1000u32;
-var FAT_VIRTIO_SLOTS:  i32 = 8;
-var FAT_VIRTIO_MAGIC:  u32 = 0x74726976u32;
-var FAT_DEVICE_ID_BLOCK: u32 = 2u32;
+const FAT_VIRTIO_BASE:   u32 = 0x10001000u32;
+const FAT_VIRTIO_STRIDE: u32 = 0x1000u32;
+const FAT_VIRTIO_SLOTS:  i32 = 8;
+const FAT_VIRTIO_MAGIC:  u32 = 0x74726976u32;
+const FAT_DEVICE_ID_BLOCK: u32 = 2u32;
 
 // Register offsets (legacy virtio-mmio)
-var FAT_REG_MAGIC:         u32 = 0x000u32;
-var FAT_REG_VERSION:       u32 = 0x004u32;
-var FAT_REG_DEVICE_ID:     u32 = 0x008u32;
-var FAT_REG_HOST_FEAT:     u32 = 0x010u32;
-var FAT_REG_HOST_FEAT_SEL: u32 = 0x014u32;
-var FAT_REG_GUEST_FEAT:    u32 = 0x020u32;
+const FAT_REG_MAGIC:         u32 = 0x000u32;
+const FAT_REG_VERSION:       u32 = 0x004u32;
+const FAT_REG_DEVICE_ID:     u32 = 0x008u32;
+const FAT_REG_HOST_FEAT:     u32 = 0x010u32;
+const FAT_REG_HOST_FEAT_SEL: u32 = 0x014u32;
+const FAT_REG_GUEST_FEAT:    u32 = 0x020u32;
 var FAT_REG_GUEST_FEAT_SEL:u32 = 0x024u32;
-var FAT_REG_GUEST_PGSIZE:  u32 = 0x028u32;
-var FAT_REG_QUEUE_SEL:     u32 = 0x030u32;
-var FAT_REG_QUEUE_NUM_MAX: u32 = 0x034u32;
-var FAT_REG_QUEUE_NUM:     u32 = 0x038u32;
-var FAT_REG_QUEUE_ALIGN:   u32 = 0x03Cu32;
-var FAT_REG_QUEUE_PFN:     u32 = 0x040u32;
-var FAT_REG_QUEUE_NOTIFY:  u32 = 0x050u32;
-var FAT_REG_INT_STATUS:    u32 = 0x060u32;
-var FAT_REG_INT_ACK:       u32 = 0x064u32;
-var FAT_REG_STATUS:        u32 = 0x070u32;
+const FAT_REG_GUEST_PGSIZE:  u32 = 0x028u32;
+const FAT_REG_QUEUE_SEL:     u32 = 0x030u32;
+const FAT_REG_QUEUE_NUM_MAX: u32 = 0x034u32;
+const FAT_REG_QUEUE_NUM:     u32 = 0x038u32;
+const FAT_REG_QUEUE_ALIGN:   u32 = 0x03Cu32;
+const FAT_REG_QUEUE_PFN:     u32 = 0x040u32;
+const FAT_REG_QUEUE_NOTIFY:  u32 = 0x050u32;
+const FAT_REG_INT_STATUS:    u32 = 0x060u32;
+const FAT_REG_INT_ACK:       u32 = 0x064u32;
+const FAT_REG_STATUS:        u32 = 0x070u32;
 
-var FAT_STATUS_ACK:         u32 = 1u32;
-var FAT_STATUS_DRIVER:      u32 = 2u32;
-var FAT_STATUS_DRIVER_OK:   u32 = 4u32;
-var FAT_STATUS_FEATURES_OK: u32 = 8u32;
+const FAT_STATUS_ACK:         u32 = 1u32;
+const FAT_STATUS_DRIVER:      u32 = 2u32;
+const FAT_STATUS_DRIVER_OK:   u32 = 4u32;
+const FAT_STATUS_FEATURES_OK: u32 = 8u32;
 
-var FAT_VBLK_T_IN:  u32 = 0u32;
-var FAT_VBLK_T_OUT: u32 = 1u32;
+const FAT_VBLK_T_IN:  u32 = 0u32;
+const FAT_VBLK_T_OUT: u32 = 1u32;
 
-var FAT_DESC_F_NEXT:  u16 = 1u16;
-var FAT_DESC_F_WRITE: u16 = 2u16;
+const FAT_DESC_F_NEXT:  u16 = 1u16;
+const FAT_DESC_F_WRITE: u16 = 2u16;
 
-var FAT_QUEUE_SIZE:  u32 = 8u32;
-var FAT_QUEUE_ALIGN: u32 = 4096u32;
-var FAT_OFF_DESC:    u32 = 0u32;
-var FAT_OFF_AVAIL:   u32 = 128u32;
-var FAT_OFF_USED:    u32 = 4096u32;
-var FAT_OFF_HDR:     u32 = 4168u32;
-var FAT_OFF_DATA:    u32 = 4184u32;
-var FAT_OFF_STATUS:  u32 = 4696u32;
-var FAT_MEM_RESERVE: i32 = 12288;
+const FAT_QUEUE_SIZE:  u32 = 8u32;
+const FAT_QUEUE_ALIGN: u32 = 4096u32;
+const FAT_OFF_DESC:    u32 = 0u32;
+const FAT_OFF_AVAIL:   u32 = 128u32;
+const FAT_OFF_USED:    u32 = 4096u32;
+const FAT_OFF_HDR:     u32 = 4168u32;
+const FAT_OFF_DATA:    u32 = 4184u32;
+const FAT_OFF_STATUS:  u32 = 4696u32;
+const FAT_MEM_RESERVE: i32 = 12288;
 
 var g_fat_blk_base:    u32 = 0u32;
 var g_fat_blk_ready:   i32 = 0;

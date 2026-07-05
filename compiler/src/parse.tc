@@ -7,72 +7,73 @@ import "source_reader.tc";
 import "strlib.tc";
 
 // ===== Token kind constants =====
-var TK_FN: i32 = 0;
-var TK_STRUCT: i32 = 1;
-var TK_VAR: i32 = 2;
-var TK_IF: i32 = 3;
-var TK_ELSE: i32 = 4;
-var TK_WHILE: i32 = 5;
-var TK_RETURN: i32 = 6;
-var TK_IMPORT: i32 = 7;
-var TK_AS: i32 = 8;
-var TK_TRUE: i32 = 9;
-var TK_FALSE: i32 = 10;
-var TK_U8: i32 = 11;
-var TK_U16: i32 = 12;
-var TK_U32: i32 = 13;
-var TK_I8: i32 = 14;
-var TK_I16: i32 = 15;
-var TK_I32: i32 = 16;
-var TK_BOOL: i32 = 17;
-var TK_VOID: i32 = 18;
-var TK_PLUS: i32 = 19;
-var TK_MINUS: i32 = 20;
-var TK_STAR: i32 = 21;
-var TK_SLASH: i32 = 22;
-var TK_PERCENT: i32 = 23;
-var TK_AMP: i32 = 24;
-var TK_PIPE: i32 = 25;
-var TK_CARET: i32 = 26;
-var TK_LSHIFT: i32 = 27;
-var TK_RSHIFT: i32 = 28;
-var TK_AMPAMP: i32 = 29;
-var TK_PIPEPIPE: i32 = 30;
-var TK_BANG: i32 = 31;
-var TK_EQEQ: i32 = 32;
-var TK_BANGEQ: i32 = 33;
-var TK_LT: i32 = 34;
-var TK_LTEQ: i32 = 35;
-var TK_GT: i32 = 36;
-var TK_GTEQ: i32 = 37;
-var TK_EQ: i32 = 38;
-var TK_ARROW: i32 = 39;
-var TK_PLUS_EQ: i32 = 40;
-var TK_MINUS_EQ: i32 = 41;
-var TK_STAR_EQ: i32 = 42;
-var TK_SLASH_EQ: i32 = 43;
-var TK_PERCENT_EQ: i32 = 44;
-var TK_LPAREN: i32 = 45;
-var TK_RPAREN: i32 = 46;
-var TK_LBRACE: i32 = 47;
-var TK_RBRACE: i32 = 48;
-var TK_COMMA: i32 = 49;
-var TK_SEMI: i32 = 50;
-var TK_COLON: i32 = 51;
-var TK_INT_LIT: i32 = 52;
-var TK_STR_LIT: i32 = 53;
-var TK_IDENT: i32 = 54;
-var TK_EOF: i32 = 55;
-var TK_BREAK: i32 = 56;
-var TK_CONTINUE: i32 = 57;
-var TK_EXPORT: i32 = 58;
+const TK_FN: i32 = 0;
+const TK_STRUCT: i32 = 1;
+const TK_VAR: i32 = 2;
+const TK_IF: i32 = 3;
+const TK_ELSE: i32 = 4;
+const TK_WHILE: i32 = 5;
+const TK_RETURN: i32 = 6;
+const TK_IMPORT: i32 = 7;
+const TK_AS: i32 = 8;
+const TK_TRUE: i32 = 9;
+const TK_FALSE: i32 = 10;
+const TK_U8: i32 = 11;
+const TK_U16: i32 = 12;
+const TK_U32: i32 = 13;
+const TK_I8: i32 = 14;
+const TK_I16: i32 = 15;
+const TK_I32: i32 = 16;
+const TK_BOOL: i32 = 17;
+const TK_VOID: i32 = 18;
+const TK_PLUS: i32 = 19;
+const TK_MINUS: i32 = 20;
+const TK_STAR: i32 = 21;
+const TK_SLASH: i32 = 22;
+const TK_PERCENT: i32 = 23;
+const TK_AMP: i32 = 24;
+const TK_PIPE: i32 = 25;
+const TK_CARET: i32 = 26;
+const TK_LSHIFT: i32 = 27;
+const TK_RSHIFT: i32 = 28;
+const TK_AMPAMP: i32 = 29;
+const TK_PIPEPIPE: i32 = 30;
+const TK_BANG: i32 = 31;
+const TK_EQEQ: i32 = 32;
+const TK_BANGEQ: i32 = 33;
+const TK_LT: i32 = 34;
+const TK_LTEQ: i32 = 35;
+const TK_GT: i32 = 36;
+const TK_GTEQ: i32 = 37;
+const TK_EQ: i32 = 38;
+const TK_ARROW: i32 = 39;
+const TK_PLUS_EQ: i32 = 40;
+const TK_MINUS_EQ: i32 = 41;
+const TK_STAR_EQ: i32 = 42;
+const TK_SLASH_EQ: i32 = 43;
+const TK_PERCENT_EQ: i32 = 44;
+const TK_LPAREN: i32 = 45;
+const TK_RPAREN: i32 = 46;
+const TK_LBRACE: i32 = 47;
+const TK_RBRACE: i32 = 48;
+const TK_COMMA: i32 = 49;
+const TK_SEMI: i32 = 50;
+const TK_COLON: i32 = 51;
+const TK_INT_LIT: i32 = 52;
+const TK_STR_LIT: i32 = 53;
+const TK_IDENT: i32 = 54;
+const TK_EOF: i32 = 55;
+const TK_BREAK: i32 = 56;
+const TK_CONTINUE: i32 = 57;
+const TK_EXPORT: i32 = 58;
+const TK_CONST: i32 = 59;
 
 // ===== Lexer state =====
 var g_line: i32 = 1;
 var g_tok: i32 = 55;      // TK_EOF
 var g_tok_ival: i32 = 0;
 var g_tok_slen: i32 = 0;  // length of current token string in tok buf
-var g_tok_neg: i32 = 0;   // 1 if int literal is negative
+const g_tok_neg: i32 = 0;   // 1 if int literal is negative
 var g_tok_line: i32 = 1;  // line number of current token
 var g_last_comment_line: i32 = 0; // suppress duplicate comments
 
@@ -157,6 +158,7 @@ fn classify_ident(tok: U8Array, tlen: i32) -> i32 {
         if tok_cmp(tok, tlen, "while")  { return TK_WHILE; }  // while
         if tok_cmp(tok, tlen, "false")   { return TK_FALSE; }  // false
         if tok_cmp(tok, tlen, "break")    { return TK_BREAK; }  // break
+        if tok_cmp(tok, tlen, "const")     { return TK_CONST; } // const
     }
     if tlen == 6 {
         if tok_cmp(tok, tlen, "return") { return TK_RETURN; } // return
@@ -779,6 +781,40 @@ fn pars_var_decl(src: SourceReader, tok: U8Array, sb: StringBuffer, indent: i32)
         emit_indent(sb, indent + 1);
         pars_expr(src, tok, sb);
     }
+    expect_tok(TK_SEMI, src, tok);
+    emit_nl(sb);
+    emit_indent(sb, indent);
+    emit_char(sb, ')');  // )
+    return;
+}
+
+// const NAME: TYPE = <literal>; — top-level only. Same AST shape as
+// var_decl under the kind "const_decl"; the initializer is mandatory.
+// Literal-ness is enforced by tcheck so the parser stays simple.
+fn pars_const_decl(src: SourceReader, tok: U8Array, sb: StringBuffer, indent: i32) -> void {
+    expect_tok(TK_CONST, src, tok);
+    var name_len: i32 = g_tok_slen;
+    var name_buf: U8Array = U8Array((name_len + 1) as u32);
+    var i: i32 = 0;
+    while i < name_len {
+        set(name_buf, i, get(tok, i));
+        i = i + 1;
+    }
+    expect_tok(TK_IDENT, src, tok);
+    expect_tok(TK_COLON, src, tok);
+
+    // (const_decl NAME
+    emit_char(sb, '('); emit_string(sb, "const_decl"); emit_char(sb, ' ');
+    emit_n(sb, name_buf, 0, name_len);
+    delete(name_buf);
+    emit_nl(sb);
+    emit_indent(sb, indent + 1);
+    pars_type(src, tok, sb, indent + 1);
+
+    expect_tok(TK_EQ, src, tok);
+    emit_nl(sb);
+    emit_indent(sb, indent + 1);
+    pars_expr(src, tok, sb);
     expect_tok(TK_SEMI, src, tok);
     emit_nl(sb);
     emit_indent(sb, indent);
@@ -1790,7 +1826,11 @@ fn pars_program(src: SourceReader, tok: U8Array, sb: StringBuffer) -> void {
                     if g_tok == TK_VAR {
                         pars_var_decl(src, tok, sb, 1);
                     } else {
-                        sys_exit(1);
+                        if g_tok == TK_CONST {
+                            pars_const_decl(src, tok, sb, 1);
+                        } else {
+                            sys_exit(1);
+                        }
                     }
                 }
             }

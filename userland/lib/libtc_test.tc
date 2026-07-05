@@ -24,7 +24,11 @@ import "../lib/libtc/libtc.tc";
 
 var g_test_passed:  i32 = 0;
 var g_test_failed:  i32 = 0;
-var g_test_current: StringLiteral = "(unnamed)";
+// Mutable StringLiteral global: a literal initializer is a compile
+// error (#36 — no load-time relocation for .data), so start null and
+// let test_begin set it. The old literal init compiled to .word 0
+// anyway, so the observable behavior is unchanged.
+var g_test_current: StringLiteral = 0 as StringLiteral;
 
 // test_begin — set the current test name for failure messages. Call once
 // per logical test before its assertions so a failure tells you which

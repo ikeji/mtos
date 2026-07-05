@@ -1,0 +1,22 @@
+const A: i32 = -1;
+var g_b: i32 = -7;
+
+fn put_i(v: i32) -> void {
+    var x: i32 = v;
+    var buf: U8Array = U8Array(12u32);
+    var p: i32 = 0;
+    if x < 0 { set(buf, p, '-' as u8); p = p + 1; x = 0 - x; }
+    if x >= 10 { set(buf, p, (48 + x / 10) as u8); p = p + 1; }
+    set(buf, p, (48 + x % 10) as u8); p = p + 1;
+    set(buf, p, 10u8); p = p + 1;
+    sys_write(1, buf, p);
+    delete(buf);
+    return;
+}
+
+fn main() -> i32 {
+    put_i(A);
+    put_i(g_b);
+    put_i(A + g_b);
+    return 0;
+}

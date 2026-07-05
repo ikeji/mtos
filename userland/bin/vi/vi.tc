@@ -52,14 +52,14 @@ import "../../lib/libtc/libtc.tc";
 fn _tut_grid_addr() -> u32;        // tut_data.s: 40×40 kanji/kana grid
 fn peek16(addr: u32) -> u16;       // task_crt0.s builtin
 
-var BUF_CAP: i32 = 16384;      // max file size in bytes
-var CMD_CAP: i32 = 128;        // max cmdline length
+const BUF_CAP: i32 = 16384;      // max file size in bytes
+const CMD_CAP: i32 = 128;        // max cmdline length
 
 // Fixed screen geometry: we don't query the terminal (would require
 // reading the ESC[6n response back through stdin), so pick the
 // classic 80x24 and keep the bottom row for the status line.
-var SCREEN_ROWS: i32 = 24;
-var TEXT_ROWS:   i32 = 23;    // SCREEN_ROWS - 1 (status line)
+const SCREEN_ROWS: i32 = 24;
+const TEXT_ROWS:   i32 = 23;    // SCREEN_ROWS - 1 (status line)
 
 // ===== global editor state =====
 

@@ -5,9 +5,9 @@
 
 import "../../lib/libtc/libtc.tc";
 
-var O_WRONLY: i32 = 1;
+const O_WRONLY: i32 = 1;
 var O_CREAT:  i32 = 64;
-var O_TRUNC:  i32 = 512;
+const O_TRUNC:  i32 = 512;
 
 fn main(argv: StringArray) -> i32 {
     if len(argv) < 3 {

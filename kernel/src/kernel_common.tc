@@ -34,11 +34,11 @@ fn ticks_per_ms() -> u32;
 //   1 = done     — task exited; slot can be reused by sched_spawn
 //   2 = unused   — never filled; slot can be reused by sched_spawn
 //   3 = waiting  — blocked in sys_wait; wakes when its target goes done
-var STATE_READY:    i32 = 0;
-var STATE_DONE:     i32 = 1;
-var STATE_UNUSED:   i32 = 2;
-var STATE_WAITING:  i32 = 3;
-var STATE_SLEEPING: i32 = 4;
+const STATE_READY:    i32 = 0;
+const STATE_DONE:     i32 = 1;
+const STATE_UNUSED:   i32 = 2;
+const STATE_WAITING:  i32 = 3;
+const STATE_SLEEPING: i32 = 4;
 
 // Per-task process-table entry. Each scheduler slot owns one Task
 // instance; sched_init allocates them up-front and we mutate fields
@@ -123,7 +123,7 @@ var g_last_argv_addr: u32 = 0u32;
 // carved from the large heap; once a task spawned with a big ram block
 // the carve stranded a permanent fragment above it (see docs).
 var g_last_name_addr: u32 = 0u32;
-var TASK_NAME_RESERVE: i32 = 64;
+const TASK_NAME_RESERVE: i32 = 64;
 
 // ===== UART frame multiplexer (docs/task/uart_multiplex.md) =====
 //
@@ -281,7 +281,7 @@ export fn kputs(s: StringLiteral) -> void {
 
 var g_kdbg_buf: U8Array = 0 as U8Array;
 var g_kdbg_pos: i32 = 0;
-var G_KDBG_CAP: i32 = 128;
+const G_KDBG_CAP: i32 = 128;
 
 fn kdbg_flush() -> void {
     if g_kdbg_pos <= 0 { return; }
@@ -422,8 +422,8 @@ export fn kdbg_write(slot: i32, n: i32) -> void {
 
 fn do_uart_try_read(buf: u32, max: i32) -> i32;
 
-var TASK_IN_BUF_CAP: i32 = 4096;
-var G_RX_PARSE_CAP:  i32 = 512;
+const TASK_IN_BUF_CAP: i32 = 4096;
+const G_RX_PARSE_CAP:  i32 = 512;
 
 var g_rx_parse_buf: U8Array = 0 as U8Array;
 var g_rx_parse_pos: i32 = 0;
@@ -440,7 +440,7 @@ var g_rx_parse_pos: i32 = 0;
 //
 // Both mux-on (uart_rx_dispatch) and mux-off (vfs_read fd=0) paths
 // pop from this ring instead of touching do_uart_try_read directly.
-var G_UART_RX_CAP:  i32 = 4096;
+const G_UART_RX_CAP:  i32 = 4096;
 var g_uart_rx_buf:  U8Array = 0 as U8Array;
 var g_uart_rx_head: i32 = 0;
 var g_uart_rx_tail: i32 = 0;

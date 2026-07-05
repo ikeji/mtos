@@ -2109,43 +2109,6 @@ __L25:
 .endfn
 
 ; globals
-.global OP_PUSH_INT i32 1
-.global OP_PUSH_STR i32 2
-.global OP_LOAD i32 3
-.global OP_STORE i32 4
-.global OP_CALL i32 5
-.global OP_RETURN i32 6
-.global OP_RETURN_VOID i32 7
-.global OP_POP i32 8
-.global OP_ADD i32 9
-.global OP_SUB i32 10
-.global OP_MUL i32 11
-.global OP_DIV i32 12
-.global OP_MOD i32 13
-.global OP_AND i32 14
-.global OP_OR i32 15
-.global OP_XOR i32 16
-.global OP_SHL i32 17
-.global OP_SHR i32 18
-.global OP_EQ i32 19
-.global OP_NE i32 20
-.global OP_LT i32 21
-.global OP_LE i32 22
-.global OP_GT i32 23
-.global OP_GE i32 24
-.global OP_NEG i32 25
-.global OP_LNOT i32 26
-.global OP_CAST i32 27
-.global OP_JUMP i32 28
-.global OP_JUMP_IF i32 29
-.global OP_JUMP_IFNOT i32 30
-.global OP_SHR_U i32 31
-.global OP_LT_U i32 32
-.global OP_LE_U i32 33
-.global OP_GT_U i32 34
-.global OP_GE_U i32 35
-.global OP_DIV_U i32 36
-.global OP_MOD_U i32 37
 .global g_reader SourceReader 0
 .global g_stab_pos i32 0
 .global g_nfuncs i32 0
@@ -4396,7 +4359,7 @@ __L77:
   push_str 82
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L107
-  load OP_OR
+  push_int 15
   return
 __L107:
 ; if streq(strtab, ss, sl, "eq")          { return OP_EQ; }
@@ -4406,7 +4369,7 @@ __L107:
   push_str 83
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L108
-  load OP_EQ
+  push_int 19
   return
 __L108:
 ; if streq(strtab, ss, sl, "ne")          { return OP_NE; }
@@ -4416,7 +4379,7 @@ __L108:
   push_str 84
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L109
-  load OP_NE
+  push_int 20
   return
 __L109:
 ; if streq(strtab, ss, sl, "lt")          { return OP_LT; }
@@ -4426,7 +4389,7 @@ __L109:
   push_str 85
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L110
-  load OP_LT
+  push_int 21
   return
 __L110:
 ; if streq(strtab, ss, sl, "le")          { return OP_LE; }
@@ -4436,7 +4399,7 @@ __L110:
   push_str 86
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L111
-  load OP_LE
+  push_int 22
   return
 __L111:
 ; if streq(strtab, ss, sl, "gt")          { return OP_GT; }
@@ -4446,7 +4409,7 @@ __L111:
   push_str 87
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L112
-  load OP_GT
+  push_int 23
   return
 __L112:
 ; if streq(strtab, ss, sl, "ge")          { return OP_GE; }
@@ -4456,7 +4419,7 @@ __L112:
   push_str 88
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L113
-  load OP_GE
+  push_int 24
   return
 __L113:
 ; if streq(strtab, ss, sl, "add")         { return OP_ADD; }
@@ -4466,7 +4429,7 @@ __L113:
   push_str 89
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L114
-  load OP_ADD
+  push_int 9
   return
 __L114:
 ; if streq(strtab, ss, sl, "sub")         { return OP_SUB; }
@@ -4476,7 +4439,7 @@ __L114:
   push_str 90
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L115
-  load OP_SUB
+  push_int 10
   return
 __L115:
 ; if streq(strtab, ss, sl, "mul")         { return OP_MUL; }
@@ -4486,7 +4449,7 @@ __L115:
   push_str 91
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L116
-  load OP_MUL
+  push_int 11
   return
 __L116:
 ; if streq(strtab, ss, sl, "div")         { return OP_DIV; }
@@ -4496,7 +4459,7 @@ __L116:
   push_str 92
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L117
-  load OP_DIV
+  push_int 12
   return
 __L117:
 ; if streq(strtab, ss, sl, "mod")         { return OP_MOD; }
@@ -4506,7 +4469,7 @@ __L117:
   push_str 93
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L118
-  load OP_MOD
+  push_int 13
   return
 __L118:
 ; if streq(strtab, ss, sl, "and")         { return OP_AND; }
@@ -4516,7 +4479,7 @@ __L118:
   push_str 94
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L119
-  load OP_AND
+  push_int 14
   return
 __L119:
 ; if streq(strtab, ss, sl, "xor")         { return OP_XOR; }
@@ -4526,7 +4489,7 @@ __L119:
   push_str 95
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L120
-  load OP_XOR
+  push_int 16
   return
 __L120:
 ; if streq(strtab, ss, sl, "shl")         { return OP_SHL; }
@@ -4536,7 +4499,7 @@ __L120:
   push_str 96
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L121
-  load OP_SHL
+  push_int 17
   return
 __L121:
 ; if streq(strtab, ss, sl, "shr")         { return OP_SHR; }
@@ -4546,7 +4509,7 @@ __L121:
   push_str 97
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L122
-  load OP_SHR
+  push_int 18
   return
 __L122:
 ; if streq(strtab, ss, sl, "pop")         { return OP_POP; }
@@ -4556,7 +4519,7 @@ __L122:
   push_str 98
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L123
-  load OP_POP
+  push_int 8
   return
 __L123:
 ; if streq(strtab, ss, sl, "neg")         { return OP_NEG; }
@@ -4566,7 +4529,7 @@ __L123:
   push_str 99
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L124
-  load OP_NEG
+  push_int 25
   return
 __L124:
 ; if streq(strtab, ss, sl, "lnot")        { return OP_LNOT; }
@@ -4576,7 +4539,7 @@ __L124:
   push_str 100
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L125
-  load OP_LNOT
+  push_int 26
   return
 __L125:
 ; if streq(strtab, ss, sl, "cast")        { return OP_CAST; }
@@ -4586,7 +4549,7 @@ __L125:
   push_str 101
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L126
-  load OP_CAST
+  push_int 27
   return
 __L126:
 ; if streq(strtab, ss, sl, "load")        { return OP_LOAD; }
@@ -4596,7 +4559,7 @@ __L126:
   push_str 102
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L127
-  load OP_LOAD
+  push_int 3
   return
 __L127:
 ; if streq(strtab, ss, sl, "jump")        { return OP_JUMP; }
@@ -4606,7 +4569,7 @@ __L127:
   push_str 103
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L128
-  load OP_JUMP
+  push_int 28
   return
 __L128:
 ; if streq(strtab, ss, sl, "call")        { return OP_CALL; }
@@ -4616,7 +4579,7 @@ __L128:
   push_str 104
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L129
-  load OP_CALL
+  push_int 5
   return
 __L129:
 ; if streq(strtab, ss, sl, "lt_u")        { return OP_LT_U; }
@@ -4626,7 +4589,7 @@ __L129:
   push_str 105
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L130
-  load OP_LT_U
+  push_int 32
   return
 __L130:
 ; if streq(strtab, ss, sl, "le_u")        { return OP_LE_U; }
@@ -4636,7 +4599,7 @@ __L130:
   push_str 106
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L131
-  load OP_LE_U
+  push_int 33
   return
 __L131:
 ; if streq(strtab, ss, sl, "gt_u")        { return OP_GT_U; }
@@ -4646,7 +4609,7 @@ __L131:
   push_str 107
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L132
-  load OP_GT_U
+  push_int 34
   return
 __L132:
 ; if streq(strtab, ss, sl, "ge_u")        { return OP_GE_U; }
@@ -4656,7 +4619,7 @@ __L132:
   push_str 108
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L133
-  load OP_GE_U
+  push_int 35
   return
 __L133:
 ; if streq(strtab, ss, sl, "store")       { return OP_STORE; }
@@ -4666,7 +4629,7 @@ __L133:
   push_str 109
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L134
-  load OP_STORE
+  push_int 4
   return
 __L134:
 ; if streq(strtab, ss, sl, "shr_u")       { return OP_SHR_U; }
@@ -4676,7 +4639,7 @@ __L134:
   push_str 110
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L135
-  load OP_SHR_U
+  push_int 31
   return
 __L135:
 ; if streq(strtab, ss, sl, "div_u")       { return OP_DIV_U; }
@@ -4686,7 +4649,7 @@ __L135:
   push_str 111
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L136
-  load OP_DIV_U
+  push_int 36
   return
 __L136:
 ; if streq(strtab, ss, sl, "mod_u")       { return OP_MOD_U; }
@@ -4696,7 +4659,7 @@ __L136:
   push_str 112
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L137
-  load OP_MOD_U
+  push_int 37
   return
 __L137:
 ; if streq(strtab, ss, sl, "return")      { return OP_RETURN; }
@@ -4706,7 +4669,7 @@ __L137:
   push_str 113
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L138
-  load OP_RETURN
+  push_int 6
   return
 __L138:
 ; if streq(strtab, ss, sl, "jump_if")     { return OP_JUMP_IF; }
@@ -4716,7 +4679,7 @@ __L138:
   push_str 114
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L139
-  load OP_JUMP_IF
+  push_int 29
   return
 __L139:
 ; if streq(strtab, ss, sl, "push_int")    { return OP_PUSH_INT; }
@@ -4726,7 +4689,7 @@ __L139:
   push_str 115
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L140
-  load OP_PUSH_INT
+  push_int 1
   return
 __L140:
 ; if streq(strtab, ss, sl, "push_str")    { return OP_PUSH_STR; }
@@ -4736,7 +4699,7 @@ __L140:
   push_str 116
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L141
-  load OP_PUSH_STR
+  push_int 2
   return
 __L141:
 ; if streq(strtab, ss, sl, "jump_ifnot")  { return OP_JUMP_IFNOT; }
@@ -4746,7 +4709,7 @@ __L141:
   push_str 117
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L142
-  load OP_JUMP_IFNOT
+  push_int 30
   return
 __L142:
 ; if streq(strtab, ss, sl, "return_void") { return OP_RETURN_VOID; }
@@ -4756,7 +4719,7 @@ __L142:
   push_str 118
   call streq U8Array i32 i32 StringLiteral
   jump_ifnot __L143
-  load OP_RETURN_VOID
+  push_int 7
   return
 __L143:
 ; return -1;
@@ -6303,11 +6266,11 @@ __L213:
   store op2
 ; if op2==OP_JUMP||op2==OP_JUMP_IF||op2==OP_JUMP_IFNOT {
   load op2
-  load OP_JUMP
+  push_int 28
   eq
   jump_if __L218
   load op2
-  load OP_JUMP_IF
+  push_int 29
   eq
   jump_if __L218
   push_int 0
@@ -6317,7 +6280,7 @@ __L218:
 __L219:
   jump_if __L216
   load op2
-  load OP_JUMP_IFNOT
+  push_int 30
   eq
   jump_if __L216
   push_int 0
@@ -6692,7 +6655,7 @@ __L259:
   pop
 ; if op3==OP_PUSH_INT {
   load op3
-  load OP_PUSH_INT
+  push_int 1
   eq
   jump_ifnot __L260
 ; var v_ss: i32=next_tok(strtab);
@@ -6718,7 +6681,7 @@ __L259:
 __L260:
 ; if op3==OP_PUSH_STR {
   load op3
-  load OP_PUSH_STR
+  push_int 2
   eq
   jump_ifnot __L261
 ; var v_ss: i32=next_tok(strtab);
@@ -6744,11 +6707,11 @@ __L260:
 __L261:
 ; if op3==OP_LOAD||op3==OP_STORE {
   load op3
-  load OP_LOAD
+  push_int 3
   eq
   jump_if __L263
   load op3
-  load OP_STORE
+  push_int 4
   eq
   jump_if __L263
   push_int 0
@@ -6782,7 +6745,7 @@ __L264:
 __L262:
 ; if op3==OP_CALL {
   load op3
-  load OP_CALL
+  push_int 5
   eq
   jump_ifnot __L265
 ; var nm_ss: i32=next_tok(strtab);
@@ -6884,7 +6847,7 @@ __L267:
 __L265:
 ; if op3==OP_CAST {
   load op3
-  load OP_CAST
+  push_int 27
   eq
   jump_ifnot __L270
 ; var ty_ss: i32=next_tok(strtab); var ty_sl: i32=tok_len(ty_ss);
@@ -6912,11 +6875,11 @@ __L265:
 __L270:
 ; if op3==OP_JUMP||op3==OP_JUMP_IF||op3==OP_JUMP_IFNOT {
   load op3
-  load OP_JUMP
+  push_int 28
   eq
   jump_if __L274
   load op3
-  load OP_JUMP_IF
+  push_int 29
   eq
   jump_if __L274
   push_int 0
@@ -6926,7 +6889,7 @@ __L274:
 __L275:
   jump_if __L272
   load op3
-  load OP_JUMP_IFNOT
+  push_int 30
   eq
   jump_if __L272
   push_int 0
@@ -7248,11 +7211,11 @@ __L288:
   store op
 ; if op==OP_JUMP||op==OP_JUMP_IF||op==OP_JUMP_IFNOT {
   load op
-  load OP_JUMP
+  push_int 28
   eq
   jump_if __L293
   load op
-  load OP_JUMP_IF
+  push_int 29
   eq
   jump_if __L293
   push_int 0
@@ -7262,7 +7225,7 @@ __L293:
 __L294:
   jump_if __L291
   load op
-  load OP_JUMP_IFNOT
+  push_int 30
   eq
   jump_if __L291
   push_int 0
@@ -7572,11 +7535,11 @@ __L317:
   store op
 ; if op == OP_PUSH_INT || op == OP_PUSH_STR || op == OP_LOAD {
   load op
-  load OP_PUSH_INT
+  push_int 1
   eq
   jump_if __L322
   load op
-  load OP_PUSH_STR
+  push_int 2
   eq
   jump_if __L322
   push_int 0
@@ -7586,7 +7549,7 @@ __L322:
 __L323:
   jump_if __L320
   load op
-  load OP_LOAD
+  push_int 3
   eq
   jump_if __L320
   push_int 0
@@ -7603,11 +7566,11 @@ __L321:
 __L319:
 ; if op == OP_STORE || op == OP_POP || op == OP_RETURN ||
   load op
-  load OP_STORE
+  push_int 4
   eq
   jump_if __L331
   load op
-  load OP_POP
+  push_int 8
   eq
   jump_if __L331
   push_int 0
@@ -7617,7 +7580,7 @@ __L331:
 __L332:
   jump_if __L329
   load op
-  load OP_RETURN
+  push_int 6
   eq
   jump_if __L329
   push_int 0
@@ -7627,7 +7590,7 @@ __L329:
 __L330:
   jump_if __L327
   load op
-  load OP_JUMP_IF
+  push_int 29
   eq
   jump_if __L327
   push_int 0
@@ -7637,7 +7600,7 @@ __L327:
 __L328:
   jump_if __L325
   load op
-  load OP_JUMP_IFNOT
+  push_int 30
   eq
   jump_if __L325
   push_int 0
@@ -7654,11 +7617,11 @@ __L326:
 __L324:
 ; if op >= OP_ADD && op <= OP_GE { depth = depth - 1; }
   load op
-  load OP_ADD
+  push_int 9
   ge
   jump_ifnot __L334
   load op
-  load OP_GE
+  push_int 24
   le
   jump_ifnot __L334
   push_int 1
@@ -7674,7 +7637,7 @@ __L335:
 __L333:
 ; if op == OP_SHR_U { depth = depth - 1; }
   load op
-  load OP_SHR_U
+  push_int 31
   eq
   jump_ifnot __L336
   load depth
@@ -7684,11 +7647,11 @@ __L333:
 __L336:
 ; if op >= OP_LT_U && op <= OP_GE_U { depth = depth - 1; }
   load op
-  load OP_LT_U
+  push_int 32
   ge
   jump_ifnot __L338
   load op
-  load OP_GE_U
+  push_int 35
   le
   jump_ifnot __L338
   push_int 1
@@ -7704,11 +7667,11 @@ __L339:
 __L337:
 ; if op == OP_DIV_U || op == OP_MOD_U { depth = depth - 1; }
   load op
-  load OP_DIV_U
+  push_int 36
   eq
   jump_if __L341
   load op
-  load OP_MOD_U
+  push_int 37
   eq
   jump_if __L341
   push_int 0
@@ -7724,7 +7687,7 @@ __L342:
 __L340:
 ; if op == OP_CALL {
   load op
-  load OP_CALL
+  push_int 5
   eq
   jump_ifnot __L343
 ; var nargs: i32 = ins_ival(instrs, ibase, i);
@@ -8259,7 +8222,7 @@ __L357:
   store ssl
 ; if op==OP_PUSH_INT {
   load op
-  load OP_PUSH_INT
+  push_int 1
   eq
   jump_ifnot __L358
 ; e_li(ob); eregt0(ob); emit_int(ob, ival); emit_nl(ob);
@@ -8283,7 +8246,7 @@ __L357:
 __L358:
 ; if op==OP_PUSH_STR {
   load op
-  load OP_PUSH_STR
+  push_int 2
   eq
   jump_ifnot __L359
 ; e_la(ob); eregt0(ob);
@@ -8308,7 +8271,7 @@ __L358:
 __L359:
 ; if op==OP_LOAD {
   load op
-  load OP_LOAD
+  push_int 3
   eq
   jump_ifnot __L360
 ; if is_local(strtab,fns,params_pool,locals_pool,fi,sss,ssl)==1 {
@@ -8385,7 +8348,7 @@ __L362:
 __L360:
 ; if op==OP_STORE {
   load op
-  load OP_STORE
+  push_int 4
   eq
   jump_ifnot __L363
 ; asm_pop_t0(ob);
@@ -8462,7 +8425,7 @@ __L365:
 __L363:
 ; if op==OP_CALL {
   load op
-  load OP_CALL
+  push_int 5
   eq
   jump_ifnot __L366
 ; var nargs: i32=ival;
@@ -8711,7 +8674,7 @@ __L374:
 __L366:
 ; if op==OP_RETURN {
   load op
-  load OP_RETURN
+  push_int 6
   eq
   jump_ifnot __L376
 ; asm_pop_t0(ob);
@@ -8744,7 +8707,7 @@ __L366:
 __L376:
 ; if op==OP_RETURN_VOID {
   load op
-  load OP_RETURN_VOID
+  push_int 7
   eq
   jump_ifnot __L377
 ; asm_epilogue(ob);
@@ -8754,7 +8717,7 @@ __L376:
 __L377:
 ; if op==OP_POP {
   load op
-  load OP_POP
+  push_int 8
   eq
   jump_ifnot __L378
 ; e_addi(ob); eregsp(ob); eregsp(ob); emit_char(ob, '4');emit_nl(ob);
@@ -8777,7 +8740,7 @@ __L377:
 __L378:
 ; if op==OP_ADD { asm_pop_t1_t0(ob);
   load op
-  load OP_ADD
+  push_int 9
   eq
   jump_ifnot __L379
   load ob
@@ -8812,7 +8775,7 @@ __L378:
 __L379:
 ; if op==OP_SUB { asm_pop_t1_t0(ob);
   load op
-  load OP_SUB
+  push_int 10
   eq
   jump_ifnot __L380
   load ob
@@ -8847,7 +8810,7 @@ __L379:
 __L380:
 ; if op==OP_MUL { asm_pop_t1_t0(ob);
   load op
-  load OP_MUL
+  push_int 11
   eq
   jump_ifnot __L381
   load ob
@@ -8882,7 +8845,7 @@ __L380:
 __L381:
 ; if op==OP_DIV { asm_pop_t1_t0(ob);
   load op
-  load OP_DIV
+  push_int 12
   eq
   jump_ifnot __L382
   load ob
@@ -8917,7 +8880,7 @@ __L381:
 __L382:
 ; if op==OP_MOD { asm_pop_t1_t0(ob);
   load op
-  load OP_MOD
+  push_int 13
   eq
   jump_ifnot __L383
   load ob
@@ -8952,7 +8915,7 @@ __L382:
 __L383:
 ; if op==OP_DIV_U { asm_pop_t1_t0(ob);
   load op
-  load OP_DIV_U
+  push_int 36
   eq
   jump_ifnot __L384
   load ob
@@ -8987,7 +8950,7 @@ __L383:
 __L384:
 ; if op==OP_MOD_U { asm_pop_t1_t0(ob);
   load op
-  load OP_MOD_U
+  push_int 37
   eq
   jump_ifnot __L385
   load ob
@@ -9022,7 +8985,7 @@ __L384:
 __L385:
 ; if op==OP_AND { asm_pop_t1_t0(ob);
   load op
-  load OP_AND
+  push_int 14
   eq
   jump_ifnot __L386
   load ob
@@ -9057,7 +9020,7 @@ __L385:
 __L386:
 ; if op==OP_OR { asm_pop_t1_t0(ob);
   load op
-  load OP_OR
+  push_int 15
   eq
   jump_ifnot __L387
   load ob
@@ -9092,7 +9055,7 @@ __L386:
 __L387:
 ; if op==OP_XOR { asm_pop_t1_t0(ob);
   load op
-  load OP_XOR
+  push_int 16
   eq
   jump_ifnot __L388
   load ob
@@ -9127,7 +9090,7 @@ __L387:
 __L388:
 ; if op==OP_SHL { asm_pop_t1_t0(ob);
   load op
-  load OP_SHL
+  push_int 17
   eq
   jump_ifnot __L389
   load ob
@@ -9162,7 +9125,7 @@ __L388:
 __L389:
 ; if op==OP_SHR { asm_pop_t1_t0(ob);
   load op
-  load OP_SHR
+  push_int 18
   eq
   jump_ifnot __L390
   load ob
@@ -9197,7 +9160,7 @@ __L389:
 __L390:
 ; if op==OP_SHR_U { asm_pop_t1_t0(ob);
   load op
-  load OP_SHR_U
+  push_int 31
   eq
   jump_ifnot __L391
   load ob
@@ -9232,7 +9195,7 @@ __L390:
 __L391:
 ; if op==OP_EQ { asm_pop_t1_t0(ob); asm_sub_t0_t0_t1(ob); asm_seqz_t0(ob); asm_push_t0(ob); }
   load op
-  load OP_EQ
+  push_int 19
   eq
   jump_ifnot __L392
   load ob
@@ -9250,7 +9213,7 @@ __L391:
 __L392:
 ; if op==OP_NE { asm_pop_t1_t0(ob); asm_sub_t0_t0_t1(ob); asm_snez_t0(ob); asm_push_t0(ob); }
   load op
-  load OP_NE
+  push_int 20
   eq
   jump_ifnot __L393
   load ob
@@ -9268,7 +9231,7 @@ __L392:
 __L393:
 ; if op==OP_LT { asm_pop_t1_t0(ob); asm_slt(0,ob); asm_push_t0(ob); }           // slt t0,t0,t1
   load op
-  load OP_LT
+  push_int 21
   eq
   jump_ifnot __L394
   load ob
@@ -9284,7 +9247,7 @@ __L393:
 __L394:
 ; if op==OP_LE { asm_pop_t1_t0(ob); asm_slt(1,ob); asm_xori_t0_1(ob); asm_push_t0(ob); } // NOT (t1<t0)
   load op
-  load OP_LE
+  push_int 22
   eq
   jump_ifnot __L395
   load ob
@@ -9303,7 +9266,7 @@ __L394:
 __L395:
 ; if op==OP_GT { asm_pop_t1_t0(ob); asm_slt(1,ob); asm_push_t0(ob); }           // slt t0,t1,t0
   load op
-  load OP_GT
+  push_int 23
   eq
   jump_ifnot __L396
   load ob
@@ -9319,7 +9282,7 @@ __L395:
 __L396:
 ; if op==OP_GE { asm_pop_t1_t0(ob); asm_slt(0,ob); asm_xori_t0_1(ob); asm_push_t0(ob); } // NOT (t0<t1)
   load op
-  load OP_GE
+  push_int 24
   eq
   jump_ifnot __L397
   load ob
@@ -9338,7 +9301,7 @@ __L396:
 __L397:
 ; if op==OP_LT_U { asm_pop_t1_t0(ob); asm_sltu(0,ob); asm_push_t0(ob); }             // sltu t0,t0,t1
   load op
-  load OP_LT_U
+  push_int 32
   eq
   jump_ifnot __L398
   load ob
@@ -9354,7 +9317,7 @@ __L397:
 __L398:
 ; if op==OP_LE_U { asm_pop_t1_t0(ob); asm_sltu(1,ob); asm_xori_t0_1(ob); asm_push_t0(ob); } // NOT (t1<t0)
   load op
-  load OP_LE_U
+  push_int 33
   eq
   jump_ifnot __L399
   load ob
@@ -9373,7 +9336,7 @@ __L398:
 __L399:
 ; if op==OP_GT_U { asm_pop_t1_t0(ob); asm_sltu(1,ob); asm_push_t0(ob); }             // sltu t0,t1,t0
   load op
-  load OP_GT_U
+  push_int 34
   eq
   jump_ifnot __L400
   load ob
@@ -9389,7 +9352,7 @@ __L399:
 __L400:
 ; if op==OP_GE_U { asm_pop_t1_t0(ob); asm_sltu(0,ob); asm_xori_t0_1(ob); asm_push_t0(ob); } // NOT (t0<t1)
   load op
-  load OP_GE_U
+  push_int 35
   eq
   jump_ifnot __L401
   load ob
@@ -9408,7 +9371,7 @@ __L400:
 __L401:
 ; if op==OP_NEG {
   load op
-  load OP_NEG
+  push_int 25
   eq
   jump_ifnot __L402
 ; asm_pop_t0(ob);
@@ -9441,7 +9404,7 @@ __L401:
 __L402:
 ; if op==OP_LNOT { asm_pop_t0(ob); asm_seqz_t0(ob); asm_push_t0(ob); }
   load op
-  load OP_LNOT
+  push_int 26
   eq
   jump_ifnot __L403
   load ob
@@ -9456,7 +9419,7 @@ __L402:
 __L403:
 ; if op==OP_CAST {
   load op
-  load OP_CAST
+  push_int 27
   eq
   jump_ifnot __L404
 ; asm_pop_t0(ob);
@@ -9726,7 +9689,7 @@ __L419:
 __L404:
 ; if op==OP_JUMP { asm_jump(strtab,nm_ss,nm_sl,ival,ob); }
   load op
-  load OP_JUMP
+  push_int 28
   eq
   jump_ifnot __L420
   load strtab
@@ -9739,7 +9702,7 @@ __L404:
 __L420:
 ; if op==OP_JUMP_IF { asm_pop_t0(ob); asm_branch(strtab,nm_ss,nm_sl,1,ival,ob); }
   load op
-  load OP_JUMP_IF
+  push_int 29
   eq
   jump_ifnot __L421
   load ob
@@ -9756,7 +9719,7 @@ __L420:
 __L421:
 ; if op==OP_JUMP_IFNOT { asm_pop_t0(ob); asm_branch(strtab,nm_ss,nm_sl,0,ival,ob); }
   load op
-  load OP_JUMP_IFNOT
+  push_int 30
   eq
   jump_ifnot __L422
   load ob

@@ -107,6 +107,20 @@ run_test_contains "codegen hello.tc has .fn main" \
 run_test_contains "codegen hello.tc has call sys_write" \
     "$CODEGEN $SCRIPT_DIR/hello.tc" "call sys_write i32 U8Array i32"
 
+# --- const negative tests (#36 / const_decl) ---
+run_test_exit "const: assign to const is an error" \
+    "$CODEGEN $SCRIPT_DIR/const_err_assign.tc" 1
+run_test_contains "const: assign error message" \
+    "$CODEGEN $SCRIPT_DIR/const_err_assign.tc" "cannot assign to const"
+run_test_exit "const: global var with string literal init is an error" \
+    "$CODEGEN $SCRIPT_DIR/const_err_varstr.tc" 1
+run_test_contains "const: var str error message" \
+    "$CODEGEN $SCRIPT_DIR/const_err_varstr.tc" "cannot be initialized with a string literal"
+run_test_exit "const: type-mismatched initializer is an error" \
+    "$CODEGEN $SCRIPT_DIR/const_err_init.tc" 1
+run_test_contains "const: codegen inlines int const" \
+    "$CODEGEN $SCRIPT_DIR/global_str.tc" "push_int 42"
+
 # --- bcrun tests ---
 run_test "bcrun hello world" "$CODEGEN $SCRIPT_DIR/hello.tc | $BCRUN" "Hello, World"
 run_test "bcrun fib(10) prints 55" "$CODEGEN $SCRIPT_DIR/fib.tc | $BCRUN" "55"

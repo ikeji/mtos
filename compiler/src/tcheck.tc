@@ -62,36 +62,37 @@ fn km_dump_peak() -> void;
 fn kmalloc(size: i32) -> u32;
 
 // ===== AST node kind constants =====
-var NK_PROGRAM: i32 = 0;
-var NK_FN: i32 = 1;
-var NK_STRUCT: i32 = 2;
-var NK_PARAMS: i32 = 3;
-var NK_PARAM: i32 = 4;
-var NK_RET: i32 = 5;
-var NK_TYPE: i32 = 6;
-var NK_BLOCK: i32 = 7;
-var NK_VAR_DECL: i32 = 8;
-var NK_ASSIGN: i32 = 9;
-var NK_CALL_STMT: i32 = 10;
-var NK_CALL: i32 = 11;
-var NK_IF: i32 = 12;
-var NK_WHILE: i32 = 13;
-var NK_RETURN: i32 = 14;
-var NK_BINOP: i32 = 15;
-var NK_UNARY: i32 = 16;
-var NK_INT: i32 = 17;
-var NK_STR: i32 = 18;
-var NK_BOOL: i32 = 19;
-var NK_VAR: i32 = 20;
-var NK_CAST: i32 = 21;
-var NK_IMPORT: i32 = 22;
-var NK_FIELD: i32 = 23;
-var NK_BREAK: i32 = 24;
-var NK_CONTINUE: i32 = 25;
-var NK_COMMENT: i32 = 26;
-var NK_UNKNOWN: i32 = 99;
-var NK_IMPORTS: i32 = 100;
-var NK_SELF:    i32 = 101;
+const NK_PROGRAM: i32 = 0;
+const NK_FN: i32 = 1;
+const NK_STRUCT: i32 = 2;
+const NK_PARAMS: i32 = 3;
+const NK_PARAM: i32 = 4;
+const NK_RET: i32 = 5;
+const NK_TYPE: i32 = 6;
+const NK_BLOCK: i32 = 7;
+const NK_VAR_DECL: i32 = 8;
+const NK_ASSIGN: i32 = 9;
+const NK_CALL_STMT: i32 = 10;
+const NK_CALL: i32 = 11;
+const NK_IF: i32 = 12;
+const NK_WHILE: i32 = 13;
+const NK_RETURN: i32 = 14;
+const NK_BINOP: i32 = 15;
+const NK_UNARY: i32 = 16;
+const NK_INT: i32 = 17;
+const NK_STR: i32 = 18;
+const NK_BOOL: i32 = 19;
+const NK_VAR: i32 = 20;
+const NK_CAST: i32 = 21;
+const NK_IMPORT: i32 = 22;
+const NK_FIELD: i32 = 23;
+const NK_BREAK: i32 = 24;
+const NK_CONTINUE: i32 = 25;
+const NK_COMMENT: i32 = 26;
+const NK_CONST_DECL: i32 = 27;
+const NK_UNKNOWN: i32 = 99;
+const NK_IMPORTS: i32 = 100;
+const NK_SELF:    i32 = 101;
 
 // ===== Global state =====
 // Note: AST node counter (g_nc) lives in ast_node.tc now; access via
@@ -109,6 +110,7 @@ var g_max_sp:    i32 = 0;
 var g_max_fn:    i32 = 0;
 var g_max_var:   i32 = 0;
 var g_scope_depth: i32 = 0;
+var g_found_cst: i32 = 0;   // set by var_find: 1 = hit entry is const
 var g_ret_ss: i32 = -1;
 var g_ret_sl: i32 = 0;
 // Returned type from check_expr
@@ -139,7 +141,7 @@ var g_last_cmt_sl: i32 = 0;
 // single 21-param fn (bcrun.tc::vm_run) costs 188 B; old flat layout
 // charged 188 B for every fn. For ~200 fns averaging ~3 params each
 // we now spend ~10 KB instead of 47 KB on fntab.
-var FN_MAX_PARAMS: i32 = 21;
+const FN_MAX_PARAMS: i32 = 21;
 
 // vartab stride: name_ss(0), name_sl(1), type_ss(2), type_sl(3), scope(4) = 5 fields per entry
 
@@ -210,6 +212,7 @@ fn classify_kind(atom: U8Array, len: i32) -> i32 {
     if streq(atom, 0, len, "self")      { return NK_SELF; }
     if streq(atom, 0, len, "comment")   { return NK_COMMENT; }
     if streq(atom, 0, len, "var_decl")  { return NK_VAR_DECL; }
+    if streq(atom, 0, len, "const_decl") { return NK_CONST_DECL; }
     if streq(atom, 0, len, "continue")  { return NK_CONTINUE; }
     if streq(atom, 0, len, "call_stmt") { return NK_CALL_STMT; }
     return NK_UNKNOWN;
@@ -415,6 +418,7 @@ struct VarEntry {
     tss: i32,
     tsl: i32,
     sco: i32,
+    cst: i32,  // 1 = const_decl global (assignment is an error)
 }
 
 // ===== Scope management =====
@@ -439,10 +443,12 @@ fn var_find(strtab: U8Array, vartab: VarEntryArray, name_ss: i32, name_sl: i32) 
         if strtab_eq(strtab, nss(v), nsl(v), name_ss, name_sl) {
             g_type_ss = tss(v);
             g_type_sl = tsl(v);
+            g_found_cst = cst(v);
             return true;
         }
         i = i - 1;
     }
+    g_found_cst = 0;
     return false;
 }
 
@@ -451,7 +457,18 @@ fn var_add(strtab: U8Array, vartab: VarEntryArray, nss: i32, nsl: i32, tss: i32,
     nss(v, nss); nsl(v, nsl);
     tss(v, tss); tsl(v, tsl);
     sco(v, g_scope_depth);
+    cst(v, 0);
     g_var_count = g_var_count + 1;
+    return;
+}
+
+// Register a const_decl global: a normal vartab entry with the const
+// flag set so NK_ASSIGN can reject stores (innermost var_find hit
+// wins, so a local/param shadowing the const assigns normally).
+fn var_add_const(strtab: U8Array, vartab: VarEntryArray, nss: i32, nsl: i32, tss: i32, tsl: i32) -> void {
+    var_add(strtab, vartab, nss, nsl, tss, tsl);
+    var v: VarEntry = get(vartab, g_var_count - 1);
+    cst(v, 1);
     return;
 }
 
@@ -901,6 +918,31 @@ fn err(buf: U8Array, pos: i32, strtab: U8Array, ss: i32, sl: i32) -> i32 {
     return pos + sl;
 }
 
+// Is the type slice one of the integer scalar types?
+fn type_is_int_sl(strtab: U8Array, ss: i32, sl: i32) -> bool {
+    if streq(strtab, ss, sl, "i8")  { return true; }
+    if streq(strtab, ss, sl, "i16") { return true; }
+    if streq(strtab, ss, sl, "i32") { return true; }
+    if streq(strtab, ss, sl, "u8")  { return true; }
+    if streq(strtab, ss, sl, "u16") { return true; }
+    if streq(strtab, ss, sl, "u32") { return true; }
+    return false;
+}
+
+// Emit "<pre><decl name><post>" to stderr and exit — used by the
+// top-level var_decl / const_decl validation errors.
+fn gdecl_err(strtab: U8Array, nodes: AstNodeArray, n: i32, pre: StringLiteral, post: StringLiteral) -> void {
+    var buf: U8Array = U8Array(512);
+    var pos: i32 = 0;
+    pos = err(buf, pos, pre);
+    pos = err(buf, pos, strtab, n_ss(nodes, n), n_sl(nodes, n));
+    pos = err(buf, pos, post);
+    sys_write(2, buf, pos);
+    delete(buf);
+    sys_exit(1);
+    return;
+}
+
 fn check_call_site(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, vartab: VarEntryArray,
                    n: i32, fname_ss: i32, fname_sl: i32) -> void {
     var nargs: i32 = n_nchildren(nodes, n);
@@ -1011,6 +1053,21 @@ fn check_stmt(nodes: AstNodeArray, strtab: U8Array, fntab: U32Array, vartab: Var
         var aname_sl: i32 = n_sl(nodes, n);
         var found2: bool = var_find(strtab, vartab, aname_ss, aname_sl);
         if found2 {
+            if g_found_cst == 1 {
+                var ebuf: U8Array = U8Array(1024);
+                var epos: i32 = 0;
+                epos = err(ebuf, epos, "Type error: cannot assign to const '");
+                epos = err(ebuf, epos, strtab, aname_ss, aname_sl);
+                epos = err(ebuf, epos, "'\n");
+                if g_last_cmt_ss >= 0 {
+                    epos = err(ebuf, epos, "  near: ");
+                    epos = err(ebuf, epos, strtab, g_last_cmt_ss, g_last_cmt_sl);
+                    epos = err(ebuf, epos, "\n");
+                }
+                sys_write(2, ebuf, epos);
+                delete(ebuf);
+                sys_exit(1);
+            }
             set_annot(nodes, n, g_type_ss, g_type_sl);
         }
         var rhs: i32 = n_child(nodes, n);
@@ -1294,6 +1351,7 @@ fn emit_kind(k: i32, ob: StringBuffer) -> void {
     if k == NK_TYPE     { emit_string(ob, "type"); return; }
     if k == NK_BLOCK    { emit_string(ob, "block"); return; }
     if k == NK_VAR_DECL { emit_string(ob, "var_decl"); return; }
+    if k == NK_CONST_DECL { emit_string(ob, "const_decl"); return; }
     if k == NK_ASSIGN   { emit_string(ob, "assign"); return; }
     if k == NK_CALL_STMT { emit_string(ob, "call_stmt"); return; }
     if k == NK_CALL     { emit_string(ob, "call"); return; }
@@ -1593,7 +1651,7 @@ fn main_impl(use_files: i32, exth_paths: StringArray, exth_n: i32,
     var fntab: U32Array = U32Array(512);
     var vartab: VarEntryArray = VarEntryArray(256u32);
     var vti: i32 = 0;
-    while vti < 256 { set(vartab, vti, VarEntry(0, 0, 0, 0, 0)); vti = vti + 1; }
+    while vti < 256 { set(vartab, vti, VarEntry(0, 0, 0, 0, 0, 0)); vti = vti + 1; }
 
     // In stdin mode g_reader is the single concatenated wrap; in file
     // mode each phase opens its own file and points g_reader at it.
@@ -1705,8 +1763,60 @@ fn main_impl(use_files: i32, exth_paths: StringArray, exth_n: i32,
                 var_add(strtab, vartab, n_ss(nodes, n), n_sl(nodes, n), gt_ss, gt_sl);
                 var ginit: i32 = n_sib(nodes, gtype_n);
                 if ginit >= 0 {
+                    // A string-literal pointer cannot live in a
+                    // mutable .data word (PIC raw-bin tasks have no
+                    // load-time relocation) — direct users to const.
+                    if n_kind(nodes, ginit) == NK_STR {
+                        gdecl_err(strtab, nodes, n,
+                            "Type error: global var '",
+                            "' cannot be initialized with a string literal - use const\n");
+                    }
                     check_expr(nodes, strtab, fntab, vartab, ginit);
                 }
+            }
+        } else if k == NK_CONST_DECL {
+            // Top-level const. Registered like a global var but with
+            // the const flag; the initializer must be a literal whose
+            // kind matches the declared type (codegen inlines the
+            // value at every use site - there is no storage).
+            var ctype_n: i32 = n_child(nodes, n);
+            if ctype_n >= 0 {
+                var ct_ss: i32 = n_ss(nodes, ctype_n);
+                var ct_sl: i32 = n_sl(nodes, ctype_n);
+                var cinit: i32 = n_sib(nodes, ctype_n);
+                var cok: i32 = 0;
+                if cinit >= 0 {
+                    var ck: i32 = n_kind(nodes, cinit);
+                    if ck == NK_INT {
+                        if type_is_int_sl(strtab, ct_ss, ct_sl) { cok = 1; }
+                    }
+                    if ck == NK_UNARY {
+                        // negative literal: (unary - (int N))
+                        if n_sl(nodes, cinit) == 1 {
+                            if get(strtab, n_ss(nodes, cinit)) == '-' {
+                                var ucn: i32 = n_child(nodes, cinit);
+                                if ucn >= 0 {
+                                    if n_kind(nodes, ucn) == NK_INT {
+                                        if type_is_int_sl(strtab, ct_ss, ct_sl) { cok = 1; }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if ck == NK_BOOL {
+                        if streq(strtab, ct_ss, ct_sl, "bool") { cok = 1; }
+                    }
+                    if ck == NK_STR {
+                        if streq(strtab, ct_ss, ct_sl, "StringLiteral") { cok = 1; }
+                    }
+                }
+                if cok == 0 {
+                    gdecl_err(strtab, nodes, n,
+                        "Type error: const '",
+                        "' initializer must be a literal matching its type\n");
+                }
+                var_add_const(strtab, vartab, n_ss(nodes, n), n_sl(nodes, n), ct_ss, ct_sl);
+                check_expr(nodes, strtab, fntab, vartab, cinit);
             }
         }
         // Other kinds (struct, comment, import) are written through
@@ -1728,7 +1838,7 @@ fn main_impl(use_files: i32, exth_paths: StringArray, exth_n: i32,
 
         // Strtab rollback: globals advance sp_persistent, everything
         // else falls back. See sp_persistent comment above.
-        if k == NK_VAR_DECL {
+        if k == NK_VAR_DECL || k == NK_CONST_DECL {
             sp_persistent = g_sp;
         } else {
             g_sp = sp_persistent;

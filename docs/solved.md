@@ -204,9 +204,44 @@ problem.md に「未実装」のまま残っていたが、実際にはとっく
   `bltu`、OOB は `__array_oob_get/set` へ jump) が入った。K14 の
   silent overflow footgun 修正の一環。
 
-### 36. `var X: StringLiteral = "..."` で literal が `.word 0` に落ちる — 完了 (2026-07-05)
+### 36b. const 導入で #36 の暗黙エイリアスを置き換え — 完了 (2026-07-05)
 
-### 36. `var X: StringLiteral = "..."` で literal が `.word 0` に落ちる — 完了 (2026-07-05)
+#36 の初版修正は「文字列リテラル初期化の `var` グローバルを暗黙に
+定数エイリアス化」だったが、**var なのに書き換えられない**のは
+言語として筋が悪い、というレビューを受けて明示的な設計に変更:
+
+1. **`const NAME: T = <literal>;` を言語に導入** (トップレベル限定、
+   リテラル初期化必須、再代入は tcheck エラー、モジュールプライベート)。
+   codegen は int/bool を `push_int`、文字列を `push_str` に
+   インライン展開する — ストレージなし。parser (Gen1 lexer/parser +
+   parse.tc) / sigscan (.th に type-only で emit) / tcheck (vartab に
+   const フラグ) / codegen (const 表 + シャドー判定) / interp の
+   全段に実装。5 実行メソッド一致 (`compiler/tests/global_str.tc`)。
+2. **グローバル `var` の文字列リテラル初期化はコンパイルエラー**
+   (`use const` を案内)。実行時差し替えが要る場合は
+   `= 0 as StringLiteral` で null 宣言して代入で初期化する
+   (userland/lib/libtc_test.tc の g_test_current が実例)。
+3. **既存の「定数ぽい var」を一括 const 化**: リテラル初期化 +
+   モジュール内で再代入なし + 手書き .s から参照なし + 宣言が初回
+   使用より前、の条件で 578 宣言を機械変換 (compiler/src、kernel、
+   userland の 40+ ファイル)。int 定数の load (la+lw) が push_int
+   (li) になるので .data も命令数も減る。
+
+制限: 宣言は使用より前に書く (Gen2 codegen はストリーミングのため、
+違反はリンク時 undefined label で loud に失敗)。ローカル const は
+未サポート。詳細は `docs/language.md`「定数 (const)」。
+
+**副産物: グローバル var の負リテラル初期値が silently 0 になる
+既存バグを発見・修正**。`-1` は AST 上 `(unary - (int 1))` で、
+codegen の `.global` initval 計算が kind==int しか見ていなかった
+ため `var X: i32 = -1;` は昔から **0 初期化**されていた (tcheck.tc
+の g_ret_ss / g_type_ss / g_last_cmt_ss、msh の g_script_fd 等が
+該当 — `>= 0` ガードが初期状態で誤って真になっていた)。const の
+負リテラル対応と同時に var 側の initval も unary-minus-int を
+認識するよう Gen1/Gen2 両方を修正 (`compiler/tests/neg_init.tc`
+が回帰テスト、5 メソッド一致)。
+
+### 36. `var X: StringLiteral = "..."` で literal が `.word 0` に落ちる — 完了 (2026-07-05、初版修正 → 36b で置換)
 
 **症状**: グローバル変数を文字列リテラルで初期化すると、AST には
 `(str "...")` が正しく載っているのに codegen が無視して

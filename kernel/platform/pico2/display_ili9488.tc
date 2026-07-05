@@ -30,44 +30,44 @@ fn kputs_t(s: StringLiteral) -> void;
 fn kput_hex32(v: u32) -> void;
 
 // ===== RP2350 register addresses =====
-var LCD_IO_BANK0:    u32 = 0x40028000u32;
-var LCD_PADS_SET:    u32 = 0x4003A000u32;
-var LCD_PADS_CLR:    u32 = 0x4003B000u32;
-var LCD_SIO:         u32 = 0xD0000000u32;
+const LCD_IO_BANK0:    u32 = 0x40028000u32;
+const LCD_PADS_SET:    u32 = 0x4003A000u32;
+const LCD_PADS_CLR:    u32 = 0x4003B000u32;
+const LCD_SIO:         u32 = 0xD0000000u32;
 
 // High-GPIO SIO offsets (GP32-47).
-var LCD_HI_OUT_SET:  u32 = 0x01Cu32;
-var LCD_HI_OUT_CLR:  u32 = 0x024u32;
-var LCD_HI_OE_SET:   u32 = 0x03Cu32;
+const LCD_HI_OUT_SET:  u32 = 0x01Cu32;
+const LCD_HI_OUT_CLR:  u32 = 0x024u32;
+const LCD_HI_OE_SET:   u32 = 0x03Cu32;
 
 // Per-GPIO masks (n - 32) for all seven pins.
-var LCD_DC_MASK:   u32 = 0x040u32;   // GP38
-var LCD_CS_MASK:   u32 = 0x080u32;   // GP39
-var LCD_SCK_MASK:  u32 = 0x100u32;   // GP40
-var LCD_MOSI_MASK: u32 = 0x200u32;   // GP41
-var LCD_RST_MASK:  u32 = 0x800u32;   // GP43
-var LCD_BL_MASK:   u32 = 0x1000u32;  // GP44
+const LCD_DC_MASK:   u32 = 0x040u32;   // GP38
+const LCD_CS_MASK:   u32 = 0x080u32;   // GP39
+const LCD_SCK_MASK:  u32 = 0x100u32;   // GP40
+const LCD_MOSI_MASK: u32 = 0x200u32;   // GP41
+const LCD_RST_MASK:  u32 = 0x800u32;   // GP43
+const LCD_BL_MASK:   u32 = 0x1000u32;  // GP44
 
 // IO_BANK0 GPIO_CTRL offsets (= 4 + 8*n) for GP38-44.
-var LCD_CTRL_DC:   u32 = 0x134u32;
-var LCD_CTRL_CS:   u32 = 0x13Cu32;
-var LCD_CTRL_SCK:  u32 = 0x144u32;
-var LCD_CTRL_MOSI: u32 = 0x14Cu32;
-var LCD_CTRL_MISO: u32 = 0x154u32;
-var LCD_CTRL_RST:  u32 = 0x15Cu32;
-var LCD_CTRL_BL:   u32 = 0x164u32;
+const LCD_CTRL_DC:   u32 = 0x134u32;
+const LCD_CTRL_CS:   u32 = 0x13Cu32;
+const LCD_CTRL_SCK:  u32 = 0x144u32;
+const LCD_CTRL_MOSI: u32 = 0x14Cu32;
+const LCD_CTRL_MISO: u32 = 0x154u32;
+const LCD_CTRL_RST:  u32 = 0x15Cu32;
+const LCD_CTRL_BL:   u32 = 0x164u32;
 
 // PADS_BANK0 offsets (= 4 + 4*n) for GP38-44.
-var LCD_PAD_DC:   u32 = 0x09Cu32;
-var LCD_PAD_CS:   u32 = 0x0A0u32;
-var LCD_PAD_SCK:  u32 = 0x0A4u32;
-var LCD_PAD_MOSI: u32 = 0x0A8u32;
-var LCD_PAD_MISO: u32 = 0x0ACu32;
-var LCD_PAD_RST:  u32 = 0x0B0u32;
-var LCD_PAD_BL:   u32 = 0x0B4u32;
+const LCD_PAD_DC:   u32 = 0x09Cu32;
+const LCD_PAD_CS:   u32 = 0x0A0u32;
+const LCD_PAD_SCK:  u32 = 0x0A4u32;
+const LCD_PAD_MOSI: u32 = 0x0A8u32;
+const LCD_PAD_MISO: u32 = 0x0ACu32;
+const LCD_PAD_RST:  u32 = 0x0B0u32;
+const LCD_PAD_BL:   u32 = 0x0B4u32;
 
 // SIO MTIME tick rate on the Pico 2 (~131.5 MHz — see kernel_pico2.tc).
-var LCD_MTIME_PER_MS: u32 = 131500u32;
+const LCD_MTIME_PER_MS: u32 = 131500u32;
 
 // ===== PIO2 SPI for SCK (GP40) + MOSI (GP41) =====
 //
@@ -82,36 +82,36 @@ var LCD_MTIME_PER_MS: u32 = 131500u32;
 // CLKDIV = 4 / FRAC 0 → SPI clock = 150 MHz / (4 × 2) = 18.75 MHz, safe
 // under the ILI9488's 20 MHz SPI ceiling. clkdiv 2 = 37.5 MHz works on
 // many panels but is past spec; not enabling by default.
-var PIO2_BASE:         u32 = 0x50400000u32;
-var PIO_CTRL:          u32 = 0x000u32;
-var PIO_FSTAT:         u32 = 0x004u32;
-var PIO_TXF0:          u32 = 0x010u32;
-var PIO_INSTR_MEM0:    u32 = 0x048u32;
-var PIO_SM0_CLKDIV:    u32 = 0x0C8u32;
-var PIO_SM0_EXECCTRL:  u32 = 0x0CCu32;
-var PIO_SM0_SHIFTCTRL: u32 = 0x0D0u32;
-var PIO_SM0_INSTR:     u32 = 0x0D8u32;
-var PIO_SM0_PINCTRL:   u32 = 0x0DCu32;
+const PIO2_BASE:         u32 = 0x50400000u32;
+const PIO_CTRL:          u32 = 0x000u32;
+const PIO_FSTAT:         u32 = 0x004u32;
+const PIO_TXF0:          u32 = 0x010u32;
+const PIO_INSTR_MEM0:    u32 = 0x048u32;
+const PIO_SM0_CLKDIV:    u32 = 0x0C8u32;
+const PIO_SM0_EXECCTRL:  u32 = 0x0CCu32;
+const PIO_SM0_SHIFTCTRL: u32 = 0x0D0u32;
+const PIO_SM0_INSTR:     u32 = 0x0D8u32;
+const PIO_SM0_PINCTRL:   u32 = 0x0DCu32;
 // RP2350 added a GPIOBASE register to PIO2 that selects whether its
 // 32 internal pins map to GPIO 0-31 (GPIOBASE=0, default) or GPIO
 // 16-47 (GPIOBASE=1). The pico-sdk header puts it at offset 0x168.
 // (0x180 looked promising in an earlier GDB probe because writes
 // stuck there — but that's actually IRQ1_INTF, not GPIOBASE.)
-var PIO_GPIOBASE:      u32 = 0x168u32;
+const PIO_GPIOBASE:      u32 = 0x168u32;
 
 // RP2350 RESETS block. The chip powers up with every non-essential
 // peripheral held in reset; PIO2 is no exception. We have to clear its
 // reset bit (RESETS.RESET[13]) and wait for RESETS.RESET_DONE[13] to
 // go high before any PIO2 register accesses do anything visible.
-var RESETS_BASE:       u32 = 0x40020000u32;
-var RESETS_RESET_CLR:  u32 = 0x3000u32;     // atomic CLR alias
-var RESETS_DONE:       u32 = 0x008u32;
-var RESETS_PIO2_BIT:   u32 = 0x2000u32;     // bit 13
+const RESETS_BASE:       u32 = 0x40020000u32;
+const RESETS_RESET_CLR:  u32 = 0x3000u32;     // atomic CLR alias
+const RESETS_DONE:       u32 = 0x008u32;
+const RESETS_PIO2_BIT:   u32 = 0x2000u32;     // bit 13
 
 // PIO2 sees GPIO 16-47 as its pin 0-31.
-var PIO2_PIN_SCK:  i32 = 24;   // GP40
-var PIO2_PIN_MOSI: i32 = 25;   // GP41
-var LCD_FUNC_PIO2: u32 = 8u32;
+const PIO2_PIN_SCK:  i32 = 24;   // GP40
+const PIO2_PIN_MOSI: i32 = 25;   // GP41
+const LCD_FUNC_PIO2: u32 = 8u32;
 
 // Bit masks for FSTAT. Per RP2350 PIO datasheet
 // (pico-sdk hardware/regs/pio.h):
@@ -124,8 +124,8 @@ var LCD_FUNC_PIO2: u32 = 8u32;
 // pio_spi_byte therefore never blocked, the TX FIFO overflowed,
 // and only the first ~1/4 of fb_fill's pixel stream reached the
 // LCD — the rest landed in a full FIFO and was silently dropped.
-var FSTAT_TXFULL_SM0:  u32 = 0x00010000u32;  // bit 16
-var FSTAT_TXEMPTY_SM0: u32 = 0x01000000u32;  // bit 24
+const FSTAT_TXFULL_SM0:  u32 = 0x00010000u32;  // bit 16
+const FSTAT_TXEMPTY_SM0: u32 = 0x01000000u32;  // bit 24
 
 var g_pio_lcd_inited: i32 = 0;
 // 1 → drive SCK/MOSI from PIO2, 0 → fall back to the original SIO

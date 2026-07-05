@@ -26,18 +26,19 @@ import "strlib.tc";
 fn km_dump_peak() -> void;
 
 // Node kind constants (subset needed for filtering)
-var NK_PROGRAM:  i32 = 0;
-var NK_FN:       i32 = 1;
-var NK_STRUCT:   i32 = 2;
-var NK_PARAMS:   i32 = 3;
-var NK_PARAM:    i32 = 4;
-var NK_RET:      i32 = 5;
-var NK_TYPE:     i32 = 6;
-var NK_BLOCK:    i32 = 7;
-var NK_VAR_DECL: i32 = 8;
-var NK_FIELD:    i32 = 23;
-var NK_COMMENT:  i32 = 26;
-var NK_UNKNOWN:  i32 = 99;
+const NK_PROGRAM:  i32 = 0;
+const NK_FN:       i32 = 1;
+const NK_STRUCT:   i32 = 2;
+const NK_PARAMS:   i32 = 3;
+const NK_PARAM:    i32 = 4;
+const NK_RET:      i32 = 5;
+const NK_TYPE:     i32 = 6;
+const NK_BLOCK:    i32 = 7;
+const NK_VAR_DECL: i32 = 8;
+const NK_CONST_DECL: i32 = 9;
+const NK_FIELD:    i32 = 23;
+const NK_COMMENT:  i32 = 26;
+const NK_UNKNOWN:  i32 = 99;
 
 // Global state. AST node counter (g_nc) lives in ast_node.tc.
 var g_reader: SourceReader = 0 as SourceReader;
@@ -83,6 +84,7 @@ fn classify_kind(atom: U8Array, len: i32) -> i32 {
     if streq(atom, 0, len, "program")  { return NK_PROGRAM; }
     if streq(atom, 0, len, "comment")  { return NK_COMMENT; }
     if streq(atom, 0, len, "var_decl") { return NK_VAR_DECL; }
+    if streq(atom, 0, len, "const_decl") { return NK_CONST_DECL; }
     return NK_UNKNOWN;
 }
 
@@ -96,6 +98,7 @@ fn should_keep(kind_code: i32) -> bool {
     if kind_code == NK_FN       { return true; }
     if kind_code == NK_STRUCT   { return true; }
     if kind_code == NK_VAR_DECL { return true; }
+    if kind_code == NK_CONST_DECL { return true; }
     if kind_code == NK_PARAMS   { return true; }
     if kind_code == NK_PARAM    { return true; }
     if kind_code == NK_RET      { return true; }
@@ -259,6 +262,7 @@ fn emit_kind(k: i32, ob: StringBuffer) -> void {
     if k == NK_RET      { emit_string(ob, "ret"); return; }
     if k == NK_TYPE     { emit_string(ob, "type"); return; }
     if k == NK_VAR_DECL { emit_string(ob, "var_decl"); return; }
+    if k == NK_CONST_DECL { emit_string(ob, "const_decl"); return; }
     emit_char(ob, '?');
     return;
 }
@@ -339,15 +343,16 @@ fn write_fn_header(nodes: AstNodeArray, strtab: U8Array, ob: StringBuffer, inden
     return;
 }
 
-// Emit a top-level var_decl: "(var_decl name (type ...))". Strips the
-// optional init expression because tcheck only needs the type to put
-// the global into the symbol table. Using a dedicated emitter avoids
-// recursing into init expression nodes (int / call / binop / ...) for
-// which sigscan has no NK_ constants.
-fn write_global_var(nodes: AstNodeArray, strtab: U8Array, ob: StringBuffer, indent: i32, n: i32) -> void {
+// Emit a top-level var_decl / const_decl: "(<kw> name (type ...))".
+// Strips the optional init expression because tcheck only needs the
+// type (+ const-ness, carried by the keyword) to put the global into
+// the symbol table. Using a dedicated emitter avoids recursing into
+// init expression nodes (int / call / binop / ...) for which sigscan
+// has no NK_ constants.
+fn write_global_var(nodes: AstNodeArray, strtab: U8Array, ob: StringBuffer, indent: i32, n: i32, kw: StringLiteral) -> void {
     emit_indent(ob, indent);
     emit_char(ob, '(');
-    emit_string(ob, "var_decl");
+    emit_string(ob, kw);
     if n_sl(nodes, n) > 0 {
         emit_char(ob, ' ');
         emit_n(ob, strtab, n_ss(nodes, n), n_sl(nodes, n));
@@ -449,7 +454,11 @@ fn main() -> i32 {
         }
         if k == NK_VAR_DECL {
             // Top-level global declaration.
-            write_global_var(nodes, strtab, ob, 1, n);
+            write_global_var(nodes, strtab, ob, 1, n, "var_decl");
+            emit_nl(ob);
+        }
+        if k == NK_CONST_DECL {
+            write_global_var(nodes, strtab, ob, 1, n, "const_decl");
             emit_nl(ob);
         }
         // Other top-level kinds (comment, import, ...) are dropped.

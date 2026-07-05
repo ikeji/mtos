@@ -39,7 +39,7 @@ fn kmalloc(size: i32) -> u32;
 // which were too big for Pico 2 and wasteful on virt. Per-task peaks
 // range from ~8 KB (hello) to 512 KB (asm_pass3), so a single constant
 // was never going to be right.
-var TASK_HEADER_SIZE: i32 = 8;
+const TASK_HEADER_SIZE: i32 = 8;
 
 fn read_task_header_arena(img_addr: u32) -> i32 {
     return peek32(img_addr) as i32;
@@ -62,15 +62,15 @@ fn read_task_header_stack(img_addr: u32) -> i32 {
 // valid task binary (or we read the wrong file — see K7-3 in
 // docs/problem.md). Bail out instead of passing garbage to make_task,
 // which would kmalloc megabytes and OOM the kernel arena.
-var TASK_ARENA_MAX: i32 = 16777216;  // 16 MB (DOOM zone wants ~5 MB up front)
-var TASK_STACK_MAX: i32 = 131072;   // 128 KB
+const TASK_ARENA_MAX: i32 = 16777216;  // 16 MB (DOOM zone wants ~5 MB up front)
+const TASK_STACK_MAX: i32 = 131072;   // 128 KB
 // K22 path-A: lowered from 4096 to 1024 so gcc_doom_pico2 (which uses
 // picolibc-managed heap, not the K3 arena) can declare a tiny arena
 // and keep make_task's single allocation under the 4-KB KM_PAGE
 // rounding boundary. TC tasks that genuinely need a 4-KB runtime
 // arena still declare 4096 in their task.mk.
-var TASK_ARENA_MIN: i32 = 1024;     // 1 KB
-var TASK_STACK_MIN: i32 = 1024;     // 1 KB
+const TASK_ARENA_MIN: i32 = 1024;     // 1 KB
+const TASK_STACK_MIN: i32 = 1024;     // 1 KB
 
 fn load_fd_header_ok(arena: i32, stack: i32) -> bool {
     if arena < TASK_ARENA_MIN { return false; }
@@ -347,9 +347,9 @@ export fn pack_argv_at(dst: u32, src_addr: u32) -> void {
 // Linux open() flags — duplicate the subset tmpfs understands so
 // loader.tc can open redirected stdout files with O_WRONLY|O_CREAT|
 // O_TRUNC. Defined inline to avoid an extra import.
-var LOADER_O_WRONLY: i32 = 1;
-var LOADER_O_CREAT:  i32 = 64;
-var LOADER_O_TRUNC:  i32 = 512;
+const LOADER_O_WRONLY: i32 = 1;
+const LOADER_O_CREAT:  i32 = 64;
+const LOADER_O_TRUNC:  i32 = 512;
 
 // Open an optional redirect path (may be 0 = "not set"). Returns
 // the VFS fd on success, 0 if path is null, or -1 on error. `wr` is

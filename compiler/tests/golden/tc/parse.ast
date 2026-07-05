@@ -2,241 +2,245 @@
   (import string_buffer.tc)
   (import source_reader.tc)
   (import strlib.tc)
-  (var_decl TK_FN
+  (const_decl TK_FN
     (type i32)
     (int 0)
   )
-  (var_decl TK_STRUCT
+  (const_decl TK_STRUCT
     (type i32)
     (int 1)
   )
-  (var_decl TK_VAR
+  (const_decl TK_VAR
     (type i32)
     (int 2)
   )
-  (var_decl TK_IF
+  (const_decl TK_IF
     (type i32)
     (int 3)
   )
-  (var_decl TK_ELSE
+  (const_decl TK_ELSE
     (type i32)
     (int 4)
   )
-  (var_decl TK_WHILE
+  (const_decl TK_WHILE
     (type i32)
     (int 5)
   )
-  (var_decl TK_RETURN
+  (const_decl TK_RETURN
     (type i32)
     (int 6)
   )
-  (var_decl TK_IMPORT
+  (const_decl TK_IMPORT
     (type i32)
     (int 7)
   )
-  (var_decl TK_AS
+  (const_decl TK_AS
     (type i32)
     (int 8)
   )
-  (var_decl TK_TRUE
+  (const_decl TK_TRUE
     (type i32)
     (int 9)
   )
-  (var_decl TK_FALSE
+  (const_decl TK_FALSE
     (type i32)
     (int 10)
   )
-  (var_decl TK_U8
+  (const_decl TK_U8
     (type i32)
     (int 11)
   )
-  (var_decl TK_U16
+  (const_decl TK_U16
     (type i32)
     (int 12)
   )
-  (var_decl TK_U32
+  (const_decl TK_U32
     (type i32)
     (int 13)
   )
-  (var_decl TK_I8
+  (const_decl TK_I8
     (type i32)
     (int 14)
   )
-  (var_decl TK_I16
+  (const_decl TK_I16
     (type i32)
     (int 15)
   )
-  (var_decl TK_I32
+  (const_decl TK_I32
     (type i32)
     (int 16)
   )
-  (var_decl TK_BOOL
+  (const_decl TK_BOOL
     (type i32)
     (int 17)
   )
-  (var_decl TK_VOID
+  (const_decl TK_VOID
     (type i32)
     (int 18)
   )
-  (var_decl TK_PLUS
+  (const_decl TK_PLUS
     (type i32)
     (int 19)
   )
-  (var_decl TK_MINUS
+  (const_decl TK_MINUS
     (type i32)
     (int 20)
   )
-  (var_decl TK_STAR
+  (const_decl TK_STAR
     (type i32)
     (int 21)
   )
-  (var_decl TK_SLASH
+  (const_decl TK_SLASH
     (type i32)
     (int 22)
   )
-  (var_decl TK_PERCENT
+  (const_decl TK_PERCENT
     (type i32)
     (int 23)
   )
-  (var_decl TK_AMP
+  (const_decl TK_AMP
     (type i32)
     (int 24)
   )
-  (var_decl TK_PIPE
+  (const_decl TK_PIPE
     (type i32)
     (int 25)
   )
-  (var_decl TK_CARET
+  (const_decl TK_CARET
     (type i32)
     (int 26)
   )
-  (var_decl TK_LSHIFT
+  (const_decl TK_LSHIFT
     (type i32)
     (int 27)
   )
-  (var_decl TK_RSHIFT
+  (const_decl TK_RSHIFT
     (type i32)
     (int 28)
   )
-  (var_decl TK_AMPAMP
+  (const_decl TK_AMPAMP
     (type i32)
     (int 29)
   )
-  (var_decl TK_PIPEPIPE
+  (const_decl TK_PIPEPIPE
     (type i32)
     (int 30)
   )
-  (var_decl TK_BANG
+  (const_decl TK_BANG
     (type i32)
     (int 31)
   )
-  (var_decl TK_EQEQ
+  (const_decl TK_EQEQ
     (type i32)
     (int 32)
   )
-  (var_decl TK_BANGEQ
+  (const_decl TK_BANGEQ
     (type i32)
     (int 33)
   )
-  (var_decl TK_LT
+  (const_decl TK_LT
     (type i32)
     (int 34)
   )
-  (var_decl TK_LTEQ
+  (const_decl TK_LTEQ
     (type i32)
     (int 35)
   )
-  (var_decl TK_GT
+  (const_decl TK_GT
     (type i32)
     (int 36)
   )
-  (var_decl TK_GTEQ
+  (const_decl TK_GTEQ
     (type i32)
     (int 37)
   )
-  (var_decl TK_EQ
+  (const_decl TK_EQ
     (type i32)
     (int 38)
   )
-  (var_decl TK_ARROW
+  (const_decl TK_ARROW
     (type i32)
     (int 39)
   )
-  (var_decl TK_PLUS_EQ
+  (const_decl TK_PLUS_EQ
     (type i32)
     (int 40)
   )
-  (var_decl TK_MINUS_EQ
+  (const_decl TK_MINUS_EQ
     (type i32)
     (int 41)
   )
-  (var_decl TK_STAR_EQ
+  (const_decl TK_STAR_EQ
     (type i32)
     (int 42)
   )
-  (var_decl TK_SLASH_EQ
+  (const_decl TK_SLASH_EQ
     (type i32)
     (int 43)
   )
-  (var_decl TK_PERCENT_EQ
+  (const_decl TK_PERCENT_EQ
     (type i32)
     (int 44)
   )
-  (var_decl TK_LPAREN
+  (const_decl TK_LPAREN
     (type i32)
     (int 45)
   )
-  (var_decl TK_RPAREN
+  (const_decl TK_RPAREN
     (type i32)
     (int 46)
   )
-  (var_decl TK_LBRACE
+  (const_decl TK_LBRACE
     (type i32)
     (int 47)
   )
-  (var_decl TK_RBRACE
+  (const_decl TK_RBRACE
     (type i32)
     (int 48)
   )
-  (var_decl TK_COMMA
+  (const_decl TK_COMMA
     (type i32)
     (int 49)
   )
-  (var_decl TK_SEMI
+  (const_decl TK_SEMI
     (type i32)
     (int 50)
   )
-  (var_decl TK_COLON
+  (const_decl TK_COLON
     (type i32)
     (int 51)
   )
-  (var_decl TK_INT_LIT
+  (const_decl TK_INT_LIT
     (type i32)
     (int 52)
   )
-  (var_decl TK_STR_LIT
+  (const_decl TK_STR_LIT
     (type i32)
     (int 53)
   )
-  (var_decl TK_IDENT
+  (const_decl TK_IDENT
     (type i32)
     (int 54)
   )
-  (var_decl TK_EOF
+  (const_decl TK_EOF
     (type i32)
     (int 55)
   )
-  (var_decl TK_BREAK
+  (const_decl TK_BREAK
     (type i32)
     (int 56)
   )
-  (var_decl TK_CONTINUE
+  (const_decl TK_CONTINUE
     (type i32)
     (int 57)
   )
-  (var_decl TK_EXPORT
+  (const_decl TK_EXPORT
     (type i32)
     (int 58)
+  )
+  (const_decl TK_CONST
+    (type i32)
+    (int 59)
   )
   (var_decl g_line
     (type i32)
@@ -254,7 +258,7 @@
     (type i32)
     (int 0)
   )
-  (var_decl g_tok_neg
+  (const_decl g_tok_neg
     (type i32)
     (int 0)
   )
@@ -1085,6 +1089,19 @@
             (block
               (return
                 (var TK_BREAK)
+              )
+            )
+          )
+          (comment "if tok_cmp(tok, tlen, \"const\")     { return TK_CONST; } // const")
+          (if
+            (call tok_cmp
+              (var tok)
+              (var tlen)
+              (str "const")
+            )
+            (block
+              (return
+                (var TK_CONST)
               )
             )
           )
@@ -5111,6 +5128,185 @@
             (var sb)
           )
         )
+      )
+      (comment "expect_tok(TK_SEMI, src, tok);")
+      (call_stmt expect_tok
+        (var TK_SEMI)
+        (var src)
+        (var tok)
+      )
+      (comment "emit_nl(sb);")
+      (call_stmt emit_nl
+        (var sb)
+      )
+      (comment "emit_indent(sb, indent);")
+      (call_stmt emit_indent
+        (var sb)
+        (var indent)
+      )
+      (comment "emit_char(sb, ')');  // )")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 41)
+      )
+      (comment "return;")
+      (return)
+    )
+  )
+  (fn pars_const_decl
+    (params
+      (param src
+        (type SourceReader)
+      )
+      (param tok
+        (type U8Array)
+      )
+      (param sb
+        (type StringBuffer)
+      )
+      (param indent
+        (type i32)
+      )
+    )
+    (ret
+      (type void)
+    )
+    (block
+      (comment "expect_tok(TK_CONST, src, tok);")
+      (call_stmt expect_tok
+        (var TK_CONST)
+        (var src)
+        (var tok)
+      )
+      (comment "var name_len: i32 = g_tok_slen;")
+      (var_decl name_len
+        (type i32)
+        (var g_tok_slen)
+      )
+      (comment "var name_buf: U8Array = U8Array((name_len + 1) as u32);")
+      (var_decl name_buf
+        (type U8Array)
+        (call U8Array
+          (cast
+            (binop +
+              (var name_len)
+              (int 1)
+            )
+            (type u32)
+          )
+        )
+      )
+      (comment "var i: i32 = 0;")
+      (var_decl i
+        (type i32)
+        (int 0)
+      )
+      (comment "while i < name_len {")
+      (while
+        (binop <
+          (var i)
+          (var name_len)
+        )
+        (block
+          (comment "set(name_buf, i, get(tok, i));")
+          (call_stmt set
+            (var name_buf)
+            (var i)
+            (call get
+              (var tok)
+              (var i)
+            )
+          )
+          (comment "i = i + 1;")
+          (assign i
+            (binop +
+              (var i)
+              (int 1)
+            )
+          )
+        )
+      )
+      (comment "expect_tok(TK_IDENT, src, tok);")
+      (call_stmt expect_tok
+        (var TK_IDENT)
+        (var src)
+        (var tok)
+      )
+      (comment "expect_tok(TK_COLON, src, tok);")
+      (call_stmt expect_tok
+        (var TK_COLON)
+        (var src)
+        (var tok)
+      )
+      (comment "emit_char(sb, '('); emit_string(sb, \"const_decl\"); emit_char(sb, ' ');")
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 40)
+      )
+      (call_stmt emit_string
+        (var sb)
+        (str "const_decl")
+      )
+      (call_stmt emit_char
+        (var sb)
+        (int:u8 32)
+      )
+      (comment "emit_n(sb, name_buf, 0, name_len);")
+      (call_stmt emit_n
+        (var sb)
+        (var name_buf)
+        (int 0)
+        (var name_len)
+      )
+      (comment "delete(name_buf);")
+      (call_stmt delete
+        (var name_buf)
+      )
+      (comment "emit_nl(sb);")
+      (call_stmt emit_nl
+        (var sb)
+      )
+      (comment "emit_indent(sb, indent + 1);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 1)
+        )
+      )
+      (comment "pars_type(src, tok, sb, indent + 1);")
+      (call_stmt pars_type
+        (var src)
+        (var tok)
+        (var sb)
+        (binop +
+          (var indent)
+          (int 1)
+        )
+      )
+      (comment "expect_tok(TK_EQ, src, tok);")
+      (call_stmt expect_tok
+        (var TK_EQ)
+        (var src)
+        (var tok)
+      )
+      (comment "emit_nl(sb);")
+      (call_stmt emit_nl
+        (var sb)
+      )
+      (comment "emit_indent(sb, indent + 1);")
+      (call_stmt emit_indent
+        (var sb)
+        (binop +
+          (var indent)
+          (int 1)
+        )
+      )
+      (comment "pars_expr(src, tok, sb);")
+      (call_stmt pars_expr
+        (var src)
+        (var tok)
+        (var sb)
       )
       (comment "expect_tok(TK_SEMI, src, tok);")
       (call_stmt expect_tok
@@ -13031,9 +13227,27 @@
                           )
                         )
                         (block
-                          (comment "sys_exit(1);")
-                          (call_stmt sys_exit
-                            (int 1)
+                          (comment "if g_tok == TK_CONST {")
+                          (if
+                            (binop ==
+                              (var g_tok)
+                              (var TK_CONST)
+                            )
+                            (block
+                              (comment "pars_const_decl(src, tok, sb, 1);")
+                              (call_stmt pars_const_decl
+                                (var src)
+                                (var tok)
+                                (var sb)
+                                (int 1)
+                              )
+                            )
+                            (block
+                              (comment "sys_exit(1);")
+                              (call_stmt sys_exit
+                                (int 1)
+                              )
+                            )
                           )
                         )
                       )

@@ -12,7 +12,7 @@
 // Provided by kern_data.s (bin2s.sh <mtfs.img> _mtfs_image)
 fn _mtfs_image_addr() -> u32;
 
-var MTFS_BLOCK: i32 = 512;
+const MTFS_BLOCK: i32 = 512;
 var g_flash_base: u32 = 0u32;
 
 export fn block_init() -> i32 {

@@ -30,22 +30,22 @@
 // is done by the caller; we just expose the raw samples here.
 
 // SIO register offsets (low-GPIO group, GP0-31).
-var TS_IO_BANK0: u32 = 0x40028000u32;
-var TS_PADS_SET: u32 = 0x4003A000u32;
-var TS_PADS_CLR: u32 = 0x4003B000u32;
-var TS_SIO:      u32 = 0xD0000000u32;
-var TS_SIO_IN:      u32 = 0x04u32;
-var TS_SIO_OUT_SET: u32 = 0x18u32;
-var TS_SIO_OUT_CLR: u32 = 0x20u32;
-var TS_SIO_OE_SET:  u32 = 0x38u32;
-var TS_SIO_OE_CLR:  u32 = 0x40u32;
+const TS_IO_BANK0: u32 = 0x40028000u32;
+const TS_PADS_SET: u32 = 0x4003A000u32;
+const TS_PADS_CLR: u32 = 0x4003B000u32;
+const TS_SIO:      u32 = 0xD0000000u32;
+const TS_SIO_IN:      u32 = 0x04u32;
+const TS_SIO_OUT_SET: u32 = 0x18u32;
+const TS_SIO_OUT_CLR: u32 = 0x20u32;
+const TS_SIO_OE_SET:  u32 = 0x38u32;
+const TS_SIO_OE_CLR:  u32 = 0x40u32;
 
 // GPIO numbers (per 2026-05-21 board silk).
-var TS_CLK:  i32 = 13;
-var TS_CS:   i32 = 15;
-var TS_DO:   i32 = 16;
-var TS_DI:   i32 = 17;
-var TS_INT:  i32 = 19;
+const TS_CLK:  i32 = 13;
+const TS_CS:   i32 = 15;
+const TS_DO:   i32 = 16;
+const TS_DI:   i32 = 17;
+const TS_INT:  i32 = 19;
 
 // Cached bit masks.
 var ts_clk_mask: u32 = 0u32;

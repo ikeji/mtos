@@ -21,29 +21,29 @@ fn do_getdents64(fd: i32, buf: u32, count: i32) -> i32;
 fn do_statx(dirfd: i32, path: String, flags: i32, mask: i32, sxbuf: u32) -> i32;
 fn do_read(fd: i32, buf: u32, count: i32) -> i32;
 
-var BLOCK_SIZE: i32 = 512;
-var INODE_SIZE: i32 = 64;
-var INODES_PER_BLOCK: i32 = 8;       // 512 / 64
-var MAGIC: u32 = 0x5346544Du32;      // 'MTFS' little-endian
-var FLAG_FILE: u32 = 0u32;
-var FLAG_DIR:  u32 = 1u32;
+const BLOCK_SIZE: i32 = 512;
+const INODE_SIZE: i32 = 64;
+const INODES_PER_BLOCK: i32 = 8;       // 512 / 64
+const MAGIC: u32 = 0x5346544Du32;      // 'MTFS' little-endian
+const FLAG_FILE: u32 = 0u32;
+const FLAG_DIR:  u32 = 1u32;
 // (0 - 100) = -100. We compute it inline (`0 - 100`) at every call
 // site since the codegen path that initialises globals from a
 // constant expression here ended up storing 0, not -100.
-var O_RDONLY:    i32 = 0;
-var O_WRONLY:    i32 = 1;
+const O_RDONLY:    i32 = 0;
+const O_WRONLY:    i32 = 1;
 var O_CREAT:     i32 = 64;
-var O_TRUNC:     i32 = 512;
-var O_DIRECTORY: i32 = 0x10000;
+const O_TRUNC:     i32 = 512;
+const O_DIRECTORY: i32 = 0x10000;
 // linux struct statx fields:
 //   28: stx_mode  (u16)
 //   40: stx_size  (u64, low 32 bits used here)
-var STX_MODE_OFFSET: i32 = 28;
-var STX_SIZE_OFFSET: i32 = 40;
-var STATX_BASIC: i32 = 0x7ff;  // mode + size + ino + ...
-var S_IFMT:  u32 = 0xF000u32;
-var S_IFDIR: u32 = 0x4000u32;
-var S_IFREG: u32 = 0x8000u32;
+const STX_MODE_OFFSET: i32 = 28;
+const STX_SIZE_OFFSET: i32 = 40;
+const STATX_BASIC: i32 = 0x7ff;  // mode + size + ino + ...
+const S_IFMT:  u32 = 0xF000u32;
+const S_IFDIR: u32 = 0x4000u32;
+const S_IFREG: u32 = 0x8000u32;
 
 // ===== Entry list (we need 2 passes: collect + emit) =====
 
@@ -279,7 +279,7 @@ fn make_entry(name_addr: u32, name_len: i32, parent: i32, is_dir: i32,
 // sorted(os.listdir) we collect names then bubble-sort them. n is
 // always small (a typical kernel disk has < 200 entries per dir).
 
-var DIRENT_BUF_SIZE: i32 = 8192;
+const DIRENT_BUF_SIZE: i32 = 8192;
 
 // Compare two byte slices (memcmp-like).
 fn name_cmp(a: U8Array, alen: i32, b: U8Array, blen: i32) -> i32 {

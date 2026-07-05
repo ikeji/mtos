@@ -33,11 +33,12 @@ AST は S式（S-expression）のテキスト形式で表現される。
 
 | kind | value | children | 説明 |
 |---|---|---|---|
-| `program` | — | fn, struct, var_decl, import, comment | ルートノード |
+| `program` | — | fn, struct, var_decl, const_decl, import, comment | ルートノード |
 | `fn` | 関数名 | params, ret, block | 関数定義。`:export` 注釈あり |
 | `struct` | 構造体名 | field* | 構造体定義 |
 | `import` | ファイル名 | — | import 宣言 |
 | `var_decl` | 変数名 | type [, init_expr] | グローバル/ローカル変数宣言 |
+| `const_decl` | 定数名 | type, init_literal | トップレベル定数 (init はリテラル必須。tcheck が再代入を拒否、codegen は値を使用箇所にインライン) |
 | `comment` | コメント文字列 | — | ソースコメント（`"..."` で囲む） |
 
 ### 関数内部
@@ -206,6 +207,10 @@ streaming 版) が **自分自身の forward 参照を解決するため**に消
 ```
 
 (`FooArray` / `len` / `get` / `set` の合成 fn は省略)
+
+const_decl も同様に型のみの `(const_decl NAME (type T))` として拡張
+.th に載る (tcheck が const フラグ付きで vartab に登録し、再代入を
+拒否するため)。
 
 互換性:
 

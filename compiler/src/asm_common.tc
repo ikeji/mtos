@@ -28,7 +28,7 @@ import "source_reader.tc";
 import "strlib.tc";
 
 // ===== Constants =====
-var ELF_HDR_SIZE: i32 = 84;  // 52 (ehdr) + 32 (phdr)
+const ELF_HDR_SIZE: i32 = 84;  // 52 (ehdr) + 32 (phdr)
 // PIC: labels are stored as offsets from code start (0..code_size).
 // ELF output adds g_load_vaddr + ELF_HDR_SIZE for runtime addresses.
 //
@@ -50,7 +50,7 @@ var MAX_LABELS: i32 = 4095;
 // asm_pass2.tc build now totals ~2200 (asm_common.s alone 1622 +
 // asm_dead_strip.s 241 + runtime/prelude 115 + ...), so 2047 was too
 // tight. 4095 leaves ~2x headroom for future growth.
-var NUM_LAB_PER_DIGIT: i32 = 4095;
+const NUM_LAB_PER_DIGIT: i32 = 4095;
 
 // ===== Output mode (set by ; raw / ; load_base directives) =====
 var g_load_vaddr: i32 = 65536;  // 0x10000 (default Linux ELF load address)
@@ -101,7 +101,7 @@ var g_stream_mode:     i32 = 0;        // 1 = stream to stdout, 0 = buffer in g_
 var g_target_section:  i32 = 0;        // which section (0/1/2) the current pass is emitting
 var g_out_buf:         U8Array = 0 as U8Array;  // 4 KB stdout buffer
 var g_out_pos:         i32 = 0;        // bytes currently in g_out_buf
-var g_out_buf_size:    i32 = 4096;
+const g_out_buf_size:    i32 = 4096;
 var g_section_emitted: i32 = 0;        // bytes emitted in the current target section this pass
 
 // Incbin-defer: a `.incbin SIZE "path"` directive at section offset 0
@@ -303,7 +303,7 @@ var g_refs_out_fd:   i32 = 0;
 var g_refs_out_path: String = 0 as String;
 var g_refs_out_buf:  U8Array = 0 as U8Array;
 var g_refs_out_pos:  i32 = 0;
-var REFS_BUF_CAP:    i32 = 4092;
+const REFS_BUF_CAP:    i32 = 4092;
 var g_owner_idx: i32 = 0 - 1;  // -1 = no current owner (section root)
 
 // Ref-collection gate: only the .idx emit path collects refs (so the
@@ -326,7 +326,7 @@ var g_collecting_refs: i32 = 0;
 // 2047 also keeps every subsequent grow on the lower bucket boundary
 // (4094, 8188, 16376 — each lands in b16384 / b32768 / b65536 exactly
 // rather than the next-larger bucket).
-var MAX_DEFERRED: i32 = 2047;
+const MAX_DEFERRED: i32 = 2047;
 var g_def_capacity: i32 = 0;
 var g_def_owner:    I32Array = 0 as I32Array;
 var g_def_name_off: I32Array = 0 as I32Array;
@@ -339,7 +339,7 @@ var g_def_pool_pos: i32 = 0;
 // each land in the next bucket without spilling: 4092*2+4 = 8188 →
 // b8192 exactly, etc. The old "4 * 1024 = 4096" choice landed every
 // step one bucket higher.
-var DEF_POOL_INITIAL_BYTES: i32 = 4092;
+const DEF_POOL_INITIAL_BYTES: i32 = 4092;
 
 // Streaming def-queue writer (mirrors g_refs_out_*). When
 // g_def_out_fd > 0, record_ref's forward-ref branch writes
@@ -352,7 +352,7 @@ var g_def_out_fd:    i32     = 0;
 var g_def_out_path:  String  = 0 as String;
 var g_def_out_buf:   U8Array = 0 as U8Array;
 var g_def_out_pos:   i32     = 0;
-var DEF_OUT_BUF_CAP: i32     = 4092;
+const DEF_OUT_BUF_CAP: i32     = 4092;
 
 // Pre-encoded prelude paths (Step 5 of pre-encode). When set,
 // asm_dump_lab_state emits three `src raw` lines pointing to the
@@ -410,7 +410,7 @@ export fn asm_set_user_data_start(v: i32)    -> void { g_user_data_start   = v; 
 // by architecture; for now the loud error keeps overflow visible and
 // the constant easy to bump. See docs/design_decisions.md §5 for
 // the fixed-vs-growable criterion.
-var EXTRAS_CAP: i32 = 48;
+const EXTRAS_CAP: i32 = 48;
 var g_n_extras: i32 = 0;
 var g_extra_idx:        StringArray = 0 as StringArray;
 var g_extra_text_bin:   StringArray = 0 as StringArray;

@@ -1,13 +1,19 @@
-// #36 regression: globals initialized with a string literal compile
-// as constant aliases of the literal (push_str), because PIC raw-bin
-// tasks have no load-time data relocation. Covers: load via get/len,
-// two globals sharing one literal (slit dedup), and an int global
-// living in the same file (still a .data word).
+// const globals: string consts alias their literal (push_str), int /
+// bool consts inline their value (push_int), assignment is a compile
+// error, and `var X: StringLiteral = "..."` at global scope is a
+// compile error (#36 — a string pointer can't live in a .data word
+// because PIC raw-bin tasks have no load-time relocation).
+// Covers: str const via get/len, two consts sharing one literal (slit
+// dedup), int / u32 / bool consts, a local shadowing a const name,
+// and a mutable var global living in the same file.
 
-var GREET: StringLiteral = "hi, global str!";
-var SAME: StringLiteral = "hi, global str!";
-var TAIL: StringLiteral = "tail";
-var G_ADD: i32 = 10;
+const GREET: StringLiteral = "hi, global str!";
+const SAME: StringLiteral = "hi, global str!";
+const TAIL: StringLiteral = "tail";
+const N: i32 = 42;
+const MASK: u32 = 0x10u32;
+const FLAG: bool = true;
+var g_counter: i32 = 0;
 
 fn put_sl(s: StringLiteral) -> void {
     var n: i32 = len(s);
@@ -33,10 +39,20 @@ fn put2(v: i32) -> void {
     return;
 }
 
+fn shadowed() -> void {
+    var N: i32 = 7;
+    N = 8;
+    put2(N);
+    return;
+}
+
 fn main() -> i32 {
     put_sl(GREET);
     put_sl(SAME);
     put_sl(TAIL);
-    put2(len(GREET) + G_ADD);
+    g_counter = N + (MASK as i32);
+    if FLAG { put2(g_counter); }
+    put2(len(GREET) + 10);
+    shadowed();
     return 0;
 }

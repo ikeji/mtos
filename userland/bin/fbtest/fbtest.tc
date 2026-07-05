@@ -8,7 +8,7 @@
 
 import "../../lib/libtc/libtc.tc";
 
-var O_WRONLY: i32 = 1;
+const O_WRONLY: i32 = 1;
 
 // Store a little-endian u16 at byte offset `pos`.
 fn put_u16(b: U8Array, pos: i32, v: i32) -> void {

@@ -48,7 +48,7 @@ fn do_read(fd: i32, buf: u32, len: i32) -> i32;
 fn do_read_nb(fd: i32, buf: u32, len: i32) -> i32;
 fn do_nanosleep(ms: i32) -> i32;
 
-var FG: i32 = 65535;        // RGB565 white
+const FG: i32 = 65535;        // RGB565 white
 
 // Win95-ish desktop palette (RGB565 from the canonical 8-bit values):
 //   teal  #008080 → 0x0410 (desktop background)
@@ -56,18 +56,18 @@ var FG: i32 = 65535;        // RGB565 white
 //   navy  #000080 → 0x0010 (active title bar)
 //   white #FFFFFF → 0xFFFF (3D highlight, title text)
 //   black #000000 → 0x0000 (3D shadow, content area, DOS-style)
-var COLOR_DESKTOP:  i32 = 0x0410;
-var COLOR_FRAME:    i32 = 0xC618;
-var COLOR_TITLE_BG: i32 = 0x0010;
-var COLOR_TITLE_FG: i32 = 65535;
-var COLOR_HILIGHT:  i32 = 65535;
-var COLOR_SHADOW:   i32 = 0x0000;
-var COLOR_CONTENT:  i32 = 0x0000;
+const COLOR_DESKTOP:  i32 = 0x0410;
+const COLOR_FRAME:    i32 = 0xC618;
+const COLOR_TITLE_BG: i32 = 0x0010;
+const COLOR_TITLE_FG: i32 = 65535;
+const COLOR_HILIGHT:  i32 = 65535;
+const COLOR_SHADOW:   i32 = 0x0000;
+const COLOR_CONTENT:  i32 = 0x0000;
 
 // Cell geometry — 8x16 hankaku. Screen size, COLS/ROWS and the
 // orientation are decided in main() from argv.
-var CW:   i32 = 8;
-var CH:   i32 = 16;
+const CW:   i32 = 8;
+const CH:   i32 = 16;
 var SCREEN_W: i32 = 320;
 var SCREEN_H: i32 = 480;
 var COLS: i32 = 40;
@@ -126,9 +126,9 @@ fn jpfont_addr() -> u32;
 fn jpfont_size_value() -> u32;
 var g_font_addr: u32 = 0u32;
 var g_u2k:  i32 = 0;
-var OFF_HAN: i32 = 8;
-var OFF_ZEN: i32 = 4104;       // 8 + 256*16
-var OFF_U2K: i32 = 286856;     // 4104 + 94*94*32
+const OFF_HAN: i32 = 8;
+const OFF_ZEN: i32 = 4104;       // 8 + 256*16
+const OFF_U2K: i32 = 286856;     // 4104 + 94*94*32
 
 // UTF-8 decode state.
 var g_un:  i32 = 0;            // continuation bytes still expected
@@ -687,7 +687,7 @@ fn draw_cp(fb: i32, frame: U8Array, cp: i32) -> void {
 // 2 px was too thin to spot on the panel; 4 px reads as a clear bar
 // without covering enough of the glyph to be confusing.
 var g_cur_on: i32 = 0;
-var CUR_H:    i32 = 4;
+const CUR_H:    i32 = 4;
 
 fn draw_cursor(fb: i32, frame: U8Array) -> void {
     if g_cur_enabled == 0 { return; }     // DECTCEM ESC[?25l

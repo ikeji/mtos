@@ -21,13 +21,16 @@ typedef struct {
     /* loop label stack for break/continue (pairs: lloop, lend) */
     int loop_stack[64];
     int loop_depth;
-    /* #36: globals initialized with a string literal. PIC raw-bin
-       tasks have no load-time data relocation, so such a global is
-       compiled as a constant alias for the literal: loads become
-       push_str, assignment is a compile error. */
+    /* const_decl globals. String consts alias their literal (loads
+       become push_str); int/bool consts inline their value (loads
+       become push_int). Assignment is rejected by typecheck (and
+       defensively here). */
     char **cstr_names;
     int   *cstr_idx;
     int    ncstr, cstr_cap;
+    char **cint_names;
+    long  *cint_vals;
+    int    ncint, cint_cap;
     /* locals + params of the fn being compiled (shadowing check) */
     LocalList *cur_locals;
 } CG;
@@ -63,6 +66,25 @@ static void cstr_add(CG *cg, const char *name, int slit_idx) {
     cg->cstr_names[cg->ncstr] = strdup(name);
     cg->cstr_idx[cg->ncstr] = slit_idx;
     cg->ncstr++;
+}
+
+static int cint_find(CG *cg, const char *name) {
+    if (!name) return -1;
+    for (int i = 0; i < cg->ncint; i++)
+        if (strcmp(cg->cint_names[i], name) == 0) return i;
+    return -1;
+}
+
+static void cint_add(CG *cg, const char *name, long val) {
+    if (cg->ncint >= cg->cint_cap) {
+        cg->cint_cap = cg->cint_cap ? cg->cint_cap * 2 : 16;
+        cg->cint_names = realloc(cg->cint_names, cg->cint_cap * sizeof(char*));
+        cg->cint_vals  = realloc(cg->cint_vals,  cg->cint_cap * sizeof(long));
+        if (!cg->cint_names || !cg->cint_vals) { fprintf(stderr, "out of memory\n"); exit(1); }
+    }
+    cg->cint_names[cg->ncint] = strdup(name);
+    cg->cint_vals[cg->ncint] = val;
+    cg->ncint++;
 }
 
 static int local_list_has(LocalList *ll, const char *name) {
@@ -170,12 +192,17 @@ static void cg_expr(CG *cg, AstNode *node) {
     }
 
     if (strcmp(k, "var") == 0) {
-        /* #36: a const-str global (not shadowed by a local/param)
-           loads as its literal */
+        /* a const global (not shadowed by a local/param) loads as
+           its literal value */
         if (!local_list_has(cg->cur_locals, node->sval)) {
             int ci = cstr_find(cg, node->sval);
             if (ci >= 0) {
                 fprintf(cg->out, "  push_str %d\n", cg->cstr_idx[ci]);
+                return;
+            }
+            ci = cint_find(cg, node->sval);
+            if (ci >= 0) {
+                fprintf(cg->out, "  push_int %d\n", (int32_t)cg->cint_vals[ci]);
                 return;
             }
         }
@@ -318,11 +345,11 @@ static void cg_stmt(CG *cg, AstNode *node) {
     }
 
     if (strcmp(k, "assign") == 0) {
-        /* #36: const-str globals are constants — reject stores */
+        /* consts have no storage — typecheck rejects this first,
+           this is a defensive backstop */
         if (!local_list_has(cg->cur_locals, node->sval) &&
-            cstr_find(cg, node->sval) >= 0) {
-            fprintf(stderr, "codegen: cannot assign to string-literal global %s\n",
-                    node->sval);
+            (cstr_find(cg, node->sval) >= 0 || cint_find(cg, node->sval) >= 0)) {
+            fprintf(stderr, "codegen: cannot assign to const %s\n", node->sval);
             exit(1);
         }
         cg_expr(cg, node->children[0]);
@@ -463,25 +490,46 @@ void codegen(AstNode *program) {
     /* emit header */
     fprintf(cg.out, ".bc\n");
 
-    /* emit global variable declarations */
+    /* register consts + emit global variable declarations */
     int has_global = 0;
     for (int i = 0; i < program->nchildren; i++) {
         AstNode *d = program->children[i];
-        if (strcmp(d->kind, "var_decl") == 0) {
-            /* #36: a string-literal initializer can't live in a .data
-               word (PIC raw-bin tasks have no load-time relocation) —
-               register the global as a constant alias for the literal
-               instead of emitting .global */
-            if (d->nchildren > 1 && strcmp(d->children[1]->kind, "str") == 0) {
-                int idx = cg_add_string(&cg, d->children[1]->sval ? d->children[1]->sval : "");
+        if (strcmp(d->kind, "const_decl") == 0) {
+            /* consts have no storage: string consts alias their
+               literal, int/bool consts inline their value at every
+               use site. typecheck validated the literal kind. */
+            AstNode *init = d->children[1];
+            if (strcmp(init->kind, "str") == 0) {
+                int idx = cg_add_string(&cg, init->sval ? init->sval : "");
                 cstr_add(&cg, d->sval, idx);
-                continue;
+            } else if (strcmp(init->kind, "unary") == 0) {
+                /* negative literal: (unary - (int N)) */
+                cint_add(&cg, d->sval, -init->children[0]->ival);
+            } else {
+                cint_add(&cg, d->sval, init->ival);
+            }
+            continue;
+        }
+        if (strcmp(d->kind, "var_decl") == 0) {
+            /* a string-literal pointer can't live in a .data word
+               (typecheck rejects this — defensive backstop) */
+            if (d->nchildren > 1 && strcmp(d->children[1]->kind, "str") == 0) {
+                fprintf(stderr, "codegen: global var %s cannot be initialized with a "
+                        "string literal — use const\n", d->sval);
+                exit(1);
             }
             if (!has_global) { fprintf(cg.out, "; globals\n"); has_global = 1; }
-            /* emit initial value if it's a simple integer literal */
+            /* emit initial value if it's a simple integer literal.
+               A negative literal parses as (unary - (int N)) — before
+               2026-07-05 that silently emitted 0 (docs/solved.md 36b). */
             long initval = 0;
             if (d->nchildren > 1 && strcmp(d->children[1]->kind, "int") == 0)
                 initval = d->children[1]->ival;
+            if (d->nchildren > 1 && strcmp(d->children[1]->kind, "unary") == 0 &&
+                d->children[1]->sval && strcmp(d->children[1]->sval, "-") == 0 &&
+                d->children[1]->nchildren == 1 &&
+                strcmp(d->children[1]->children[0]->kind, "int") == 0)
+                initval = -d->children[1]->children[0]->ival;
             fprintf(cg.out, ".global %s %s %d\n", d->sval, d->children[0]->sval, (int32_t)initval);
         }
     }
@@ -514,4 +562,7 @@ void codegen(AstNode *program) {
     for (int i = 0; i < cg.ncstr; i++) free(cg.cstr_names[i]);
     free(cg.cstr_names);
     free(cg.cstr_idx);
+    for (int i = 0; i < cg.ncint; i++) free(cg.cint_names[i]);
+    free(cg.cint_names);
+    free(cg.cint_vals);
 }

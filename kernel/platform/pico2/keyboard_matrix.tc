@@ -26,30 +26,30 @@
 fn kdbg_kbd_sc(sc: i32, ch: u8) -> void;
 
 // ===== RP2350 register addresses =====
-var KBD_IO_BANK0: u32 = 0x40028000u32;
-var KBD_PADS_SET: u32 = 0x4003A000u32;
-var KBD_PADS_CLR: u32 = 0x4003B000u32;
-var KBD_SIO:      u32 = 0xD0000000u32;
+const KBD_IO_BANK0: u32 = 0x40028000u32;
+const KBD_PADS_SET: u32 = 0x4003A000u32;
+const KBD_PADS_CLR: u32 = 0x4003B000u32;
+const KBD_SIO:      u32 = 0xD0000000u32;
 
 // SIO register offsets (low-GPIO group, GP0-31).
-var SIO_IN:      u32 = 0x04u32;
-var SIO_OUT_SET: u32 = 0x18u32;
-var SIO_OUT_CLR: u32 = 0x20u32;
-var SIO_OE_SET:  u32 = 0x38u32;
-var SIO_OE_CLR:  u32 = 0x40u32;
+const SIO_IN:      u32 = 0x04u32;
+const SIO_OUT_SET: u32 = 0x18u32;
+const SIO_OUT_CLR: u32 = 0x20u32;
+const SIO_OE_SET:  u32 = 0x38u32;
+const SIO_OE_CLR:  u32 = 0x40u32;
 
 // Physical row/col GPIO numbers (computed → masks at init).
-var KBD_ROW_GP0: i32 = 2;
-var KBD_ROW_GP1: i32 = 1;
-var KBD_ROW_GP2: i32 = 4;
-var KBD_ROW_GP3: i32 = 3;
-var KBD_ROW_GP4: i32 = 6;
-var KBD_COL_GP0: i32 = 5;
-var KBD_COL_GP1: i32 = 8;
-var KBD_COL_GP2: i32 = 7;
-var KBD_COL_GP3: i32 = 10;
-var KBD_COL_GP4: i32 = 9;
-var KBD_COL_GP5: i32 = 12;
+const KBD_ROW_GP0: i32 = 2;
+const KBD_ROW_GP1: i32 = 1;
+const KBD_ROW_GP2: i32 = 4;
+const KBD_ROW_GP3: i32 = 3;
+const KBD_ROW_GP4: i32 = 6;
+const KBD_COL_GP0: i32 = 5;
+const KBD_COL_GP1: i32 = 8;
+const KBD_COL_GP2: i32 = 7;
+const KBD_COL_GP3: i32 = 10;
+const KBD_COL_GP4: i32 = 9;
+const KBD_COL_GP5: i32 = 12;
 
 var g_kbd_rows_mask: u32 = 0u32;
 var g_kbd_cols_mask: u32 = 0u32;
@@ -79,15 +79,15 @@ var g_prev_hi: u32 = 0u32;
 //   SFT  z   x   c   v   b   n   m   ,   .   /   SFT
 //   FN   sp  sp  sp  sp  sp  sp  sp  sp  sp  sp  FN
 //
-// A string-literal global compiles as a constant alias for the
-// literal since #36 was fixed (loads become push_str → la to the
-// .rodata strobj). Note `+` between StringLiterals is still pointer
-// arithmetic, not concat — keep this a single literal.
+// A string const compiles as an alias for its literal (loads become
+// push_str → la to the .rodata strobj; #36 → const_decl). Note `+`
+// between StringLiterals is still pointer arithmetic, not concat —
+// keep this a single literal.
 //
 // Underscores are placeholders for keys that need a non-printable byte
 // (BS / ESC / TAB / ENT) or are modifiers with no input byte (CTL /
 // SFT / FN, patched to 0 below so kbd_backend_read skips them).
-var KBD_KEYMAP: StringLiteral = "_09876_12345'poiuy_qwert_:lkjh_asdfg_/.,mn_zxcvb_     _     ";
+const KBD_KEYMAP: StringLiteral = "_09876_12345'poiuy_qwert_:lkjh_asdfg_/.,mn_zxcvb_     _     ";
 var g_keymap: U8Array = 0 as U8Array;
 
 // Short busy-wait so a driven line settles before it is sampled.

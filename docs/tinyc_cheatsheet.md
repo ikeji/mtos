@@ -82,6 +82,18 @@ fn init() -> void {
 }
 ```
 
+### 定数 (トップレベル限定、リテラル初期化のみ)
+
+```tinyc
+const N: i32 = 42;
+const MASK: u32 = 0x10u32;
+const FLAG: bool = true;
+const GREET: StringLiteral = "hi";   // var + 文字列リテラルはエラー
+
+// 再代入はコンパイルエラー。値は使用箇所にインライン展開される
+// (.data を消費しない)。宣言は使用より前に書くこと。
+```
+
 ### 関数
 
 ```tinyc
