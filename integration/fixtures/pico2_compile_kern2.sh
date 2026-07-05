@@ -54,10 +54,10 @@ tcheck --exth /sd/rt.th --tgth /sd/r3.th --tgt /sd/r3.ast --out /sd/r3.tast
 codegen < /sd/r3.tast > /sd/r3.bc
 bc2asm < /sd/r3.bc > /sd/r3.s
 md5sum /sd/r3.s
-# kp: imports kc pp bf bs ff mf vf ld r3 di km
+# kp: imports kc pp bf bs ff mf vf ld r3 di km tp
 parse < /src/kernel_pico2.tc > /sd/kp.ast
 sigscan < /sd/kp.ast > /sd/kp.th
-tcheck --exth /sd/kc.th --exth /sd/pp.th --exth /sd/bf.th --exth /sd/bs.th --exth /sd/ff.th --exth /sd/mf.th --exth /sd/vf.th --exth /sd/ld.th --exth /sd/r3.th --exth /sd/di.th --exth /sd/km.th --tgth /sd/kp.th --tgt /sd/kp.ast --out /sd/kp.tast
+tcheck --exth /sd/kc.th --exth /sd/pp.th --exth /sd/bf.th --exth /sd/bs.th --exth /sd/ff.th --exth /sd/mf.th --exth /sd/vf.th --exth /sd/ld.th --exth /sd/r3.th --exth /sd/di.th --exth /sd/km.th --exth /sd/tp.th --tgth /sd/kp.th --tgt /sd/kp.ast --out /sd/kp.tast
 codegen < /sd/kp.tast > /sd/kp.bc
 bc2asm < /sd/kp.bc > /sd/kp.s
 md5sum /sd/kp.s

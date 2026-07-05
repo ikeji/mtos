@@ -193,6 +193,10 @@ EXTRA_SRC_DEPS := $(addprefix $(ROOT)/compiler/src/,string_buffer.tc source_read
     $(ROOT)/kernel/src/kernel_common.tc \
     $(ROOT)/kernel/platform/pico2/block_flash.tc \
     $(ROOT)/kernel/platform/pico2/block_sd.tc \
+    $(ROOT)/kernel/platform/pico2/rtc_ds3231.tc \
+    $(ROOT)/kernel/platform/pico2/display_ili9488.tc \
+    $(ROOT)/kernel/platform/pico2/keyboard_matrix.tc \
+    $(ROOT)/kernel/platform/pico2/touch_xpt2046.tc \
     $(ROOT)/kernel/src/tmpfs.tc $(ROOT)/kernel/src/fatfs.tc \
     $(ROOT)/kernel/src/mtfs.tc $(ROOT)/kernel/src/procfs.tc \
     $(ROOT)/kernel/src/vfs.tc $(ROOT)/kernel/src/loader.tc \

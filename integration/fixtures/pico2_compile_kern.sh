@@ -48,4 +48,10 @@ tcheck --tgth /sd/km.th --tgt /sd/km.ast --out /sd/km.tast
 codegen < /sd/km.tast > /sd/km.bc
 bc2asm < /sd/km.bc > /sd/km.s
 md5sum /sd/km.s
+parse < /src/touch_xpt2046.tc > /sd/tp.ast
+sigscan < /sd/tp.ast > /sd/tp.th
+tcheck --tgth /sd/tp.th --tgt /sd/tp.ast --out /sd/tp.tast
+codegen < /sd/tp.tast > /sd/tp.bc
+bc2asm < /sd/tp.bc > /sd/tp.s
+md5sum /sd/tp.s
 echo COMPILE_KERN_LEAVES_DONE

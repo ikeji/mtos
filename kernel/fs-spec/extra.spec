@@ -79,6 +79,7 @@
 /src/rtc_ds3231.tc                  kernel/platform/pico2/rtc_ds3231.tc
 /src/display_ili9488.tc             kernel/platform/pico2/display_ili9488.tc
 /src/keyboard_matrix.tc             kernel/platform/pico2/keyboard_matrix.tc
+/src/touch_xpt2046.tc               kernel/platform/pico2/touch_xpt2046.tc
 /src/platform_pico2.s               kernel/platform/pico2/platform_pico2.s
 /src/crt0_pico2_data.s              kernel/platform/pico2/crt0_pico2_data.s
 

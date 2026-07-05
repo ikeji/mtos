@@ -23,8 +23,9 @@
 #   in_12 = r3.s (kernel/platform/pico2/rtc_ds3231.tc)
 #   in_13 = di.s (kernel/platform/pico2/display_ili9488.tc)
 #   in_14 = km.s (kernel/platform/pico2/keyboard_matrix.tc)
-#   in_15 = kp.s (kernel/src/kernel_pico2.tc)
+#   in_15 = tp.s (kernel/platform/pico2/touch_xpt2046.tc)
+#   in_16 = kp.s (kernel/src/kernel_pico2.tc)
 #   tail    = crt0_pico2_data.s + wrap.s
-cat /src/raw.s /src/platform_pico2.s /src/trap_common.s /sd/runtime.s /sd/kc.s /sd/pp.s /sd/bf.s /sd/bs.s /sd/ff.s /sd/mf.s /sd/tf.s /sd/pf.s /sd/rt.s /sd/df.s /sd/vf.s /sd/ld.s /sd/r3.s /sd/di.s /sd/km.s /sd/kp.s /src/crt0_pico2_data.s /sd/wrap.s > /sd/full.s
+cat /src/raw.s /src/platform_pico2.s /src/trap_common.s /sd/runtime.s /sd/kc.s /sd/pp.s /sd/bf.s /sd/bs.s /sd/ff.s /sd/mf.s /sd/tf.s /sd/pf.s /sd/rt.s /sd/df.s /sd/vf.s /sd/ld.s /sd/r3.s /sd/di.s /sd/km.s /sd/tp.s /sd/kp.s /src/crt0_pico2_data.s /sd/wrap.s > /sd/full.s
 md5sum /sd/full.s
 echo SELF_STEP1_DONE

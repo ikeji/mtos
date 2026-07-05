@@ -33,6 +33,7 @@ KERNEL_MODULES=(
     "r3|kernel/platform/pico2/rtc_ds3231.tc"
     "di|kernel/platform/pico2/display_ili9488.tc"
     "km|kernel/platform/pico2/keyboard_matrix.tc"
+    "tp|kernel/platform/pico2/touch_xpt2046.tc"
     "kp|kernel/src/kernel_pico2.tc"
 )
 

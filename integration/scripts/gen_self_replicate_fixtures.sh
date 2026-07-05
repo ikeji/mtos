@@ -26,6 +26,19 @@ OUT_DIR="$ROOT_DIR/integration/fixtures"
 # shellcheck source=self_replicate_modules.sh
 source "$SCRIPT_DIR/self_replicate_modules.sh"
 
+# Guard: the manifest must cover kernel_pico2.tc's full import closure.
+# Twice now a new kernel module was added without updating the manifest
+# (K20: rtc/devfs/..., 2026-07-06: touch_xpt2046), silently shifting
+# compile-gen2's INPUT_NAMES mapping and breaking byte-exactness.
+_closure=$("$ROOT_DIR/compiler/scripts/collect_imports.sh"     "$ROOT_DIR/kernel/src/kernel_pico2.tc"     | sed "s|^$ROOT_DIR/||; s|kernel/src/\.\./|kernel/|" | sort)
+_manifest=$(for _e in "${KERNEL_MODULES[@]}"; do echo "${_e##*|}"; done | sort)
+if [ "$_closure" != "$_manifest" ]; then
+    echo "ERROR: self_replicate_modules.sh manifest != kernel_pico2.tc import closure" >&2
+    echo "--- import closure vs manifest ---" >&2
+    diff <(echo "$_closure") <(echo "$_manifest") >&2 || true
+    exit 1
+fi
+
 MODE="${1:-write}"
 case "$MODE" in
     --check) MODE=check ;;
