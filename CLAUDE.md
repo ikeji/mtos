@@ -16,7 +16,16 @@ R_Init / P_Init / S_Init / D_CheckNetGame / HU_Init / ST_Init /
 I_InitGraphics) を完走、`DG_DrawFrame` から `/dev/fb` mode=0
 band-blit 経由で LCD に DOOM ロゴ + Doomguy を表示するまで到達。
 
-**最近の改善 (K21 / K22)**:
+**最近の改善 (K21 / K22 / 2026-07-05〜06)**:
+- 2026-07-05〜06: `const` 導入 (下記「言語仕様」参照) + 既存の定数
+  ぽい var 578 個を const 化、SD を CMD25 バースト + inline xfer で
+  ~1.45× 高速化、tmpfs_unlink 追加、#36 修正。その後
+  `pico2_self_replicate.sh` で **byte-exact self-replicate 維持を
+  実機再確認** (kernel.bin/uf2 とも host と MATCH、~57 min)。
+  途中で touch_xpt2046 の manifest 未追従 (K20 型) を検出・修正し、
+  import closure ガードを fixtures-check に追加 (`docs/solved.md`
+  #40)。self_replicate 時の disk-extra は DROP_TASKS で slim 化が
+  必要 (gcc_doom_pico2 4.5 MB が 4 MiB flash に入らないため、同 #40)
 - K21 (2026-05-30): `dump_mtfs_to_sd` を boot から削除 (~6 秒短縮)。
   orchestrator が `mr -a` で /sd/dx.img と /sd/wrap.s を upload
   する経路に切り替え。`mr -a` は ACK + sum32 checksum + NAK retry

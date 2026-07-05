@@ -204,6 +204,40 @@ problem.md に「未実装」のまま残っていたが、実際にはとっく
   `bltu`、OOB は `__array_oob_get/set` へ jump) が入った。K14 の
   silent overflow footgun 修正の一環。
 
+### 40. self_replicate manifest に touch_xpt2046 が未追従 — 完了 (2026-07-06)
+
+const 導入後の byte-exact 確認で `pico2_self_replicate.sh` が失敗
+(device k.bin ≠ host)。切り分けは K14 流の中間ファイル md5 総当たり:
+REFRESH 後の全モジュール .s / .idx が device↔host で一致し、唯一
+kp.idx だけ不一致 → 実体は **touch_xpt2046 (2026-06-21 追加) が
+manifest に無い** ことによる compile-gen2 INPUT_NAMES の位置ズレ
+(host 側で touch の idx が kp.idx と誤命名、device fixture は touch
+を link から欠落)。K20 と同型の再発。
+
+修正 (commit 5222acf): manifest に `tp|touch_xpt2046.tc` を追加して
+fixture 4 本を再生成、extra.spec に /src/touch_xpt2046.tc を staging、
+再発防止として gen_self_replicate_fixtures.sh に「manifest ==
+kernel_pico2.tc の import closure (collect_imports.sh)」の集合一致
+ガードを追加 — 従来の --check は fixtures↔manifest の相互一致しか
+見ておらず、モジュール追加漏れが盲点だった。今後は
+`make self-replicate-fixtures-check` が fail する (負テスト確認済)。
+
+修正後の再実行 (2026-07-06、DROP_TASKS で gcc_doom_pico2/console 等を
+外し kernel.bin 3.55 MB に slim 化、CLEAN_SD=1 REFRESH_KERN_MODS=1
+NORESET=1): **kernel.bin / kernel.uf2 とも host と byte-exact MATCH**
+(md5 `e28a3cce…` / `dd11df01…`)。const 一括変換 (578 宣言) + SD CMD25
++ tmpfs_unlink 込みのツールチェーン/カーネルで self-replicate が
+維持されていることを実機確認。step 実測: step1 cat 113 s / step2
+asm_pass1×23 + asm_pass2 1085 s / step3 asm_pass3 206 s / step4
+bin2uf2 432 s、全体 ~57 min (host freeze + dx.img upload + REFRESH
+17 モジュール込み)。
+
+注: disk-extra はデフォルトビルドだと 9.4 MB (gcc_doom_pico2.bin
+4.5 MB が主因) で 4 MiB flash に入らない。self_replicate 時は
+`DROP_TASKS="gcc_doom gcc_doom_pico2 gcc_hello console sl touchtest
+fbtest kbdump vi neofetch grep cp du head wc sdprobe count tmpdemo
+launcher hello hello2 catfile seq"` で 3.1 MB に絞る。
+
 ### 36b. const 導入で #36 の暗黙エイリアスを置き換え — 完了 (2026-07-05)
 
 #36 の初版修正は「文字列リテラル初期化の `var` グローバルを暗黙に
