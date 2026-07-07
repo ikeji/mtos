@@ -566,6 +566,103 @@ poke32__u32__u32:
     sw   a1, 0(a0)
     ret
 
+# ===== Indirect-call support (docs/task/function_pointers.md) =====
+# callN(f, a1..aN) -> u32 — tail-call f with the args shifted down one
+# register. f's own `ret` returns straight to callN's caller, so no
+# frame is needed. Unsafe primitive (no arg-count / type checking);
+# TC code must only use these inside typed wrapper fns (vfs.tc's
+# fs_rw_via / fs_fd_via).
+    .globl call0__u32
+call0__u32:
+    mv   t0, a0
+    jr   t0
+    .globl call1__u32__u32
+call1__u32__u32:
+    mv   t0, a0
+    mv   a0, a1
+    jr   t0
+    .globl call2__u32__u32__u32
+call2__u32__u32__u32:
+    mv   t0, a0
+    mv   a0, a1
+    mv   a1, a2
+    jr   t0
+    .globl call3__u32__u32__u32__u32
+call3__u32__u32__u32__u32:
+    mv   t0, a0
+    mv   a0, a1
+    mv   a1, a2
+    mv   a2, a3
+    jr   t0
+    .globl call4__u32__u32__u32__u32__u32
+call4__u32__u32__u32__u32__u32:
+    mv   t0, a0
+    mv   a0, a1
+    mv   a1, a2
+    mv   a2, a3
+    mv   a3, a4
+    jr   t0
+
+# ===== fs_ops_init(read_tab, write_tab, size_tab, close_tab) =====
+# Fill the vfs dispatch tables (U32Array *data* addresses = array+4,
+# indexed by fs_type*4) with fs op function addresses. This is the
+# single place that spells out mangled fs-op labels; `la` is
+# PC-relative so the stored values are correct runtime addresses
+# under PIC / XIP (a `.word` table would only hold link-time offsets
+# — docs/task/function_pointers.md). Entries left 0 mean "operation
+# unsupported by that FS"; vfs guards on 0 before dispatching.
+# Keep offsets in sync with kernel/src/vfs.tc:
+#   FS_MTFS=1 FS_TMPFS=2 FS_PROCFS=3 FS_PIPE=4 FS_FATFS=5 FS_DEVFS=6
+    .globl fs_ops_init__u32__u32__u32__u32
+fs_ops_init__u32__u32__u32__u32:
+    # --- read: (fd: i32, buf: u32, n: i32) -> i32 ---
+    la   t0, mtfs_read__i32__u32__i32
+    sw   t0, 4(a0)
+    la   t0, tmpfs_read__i32__u32__i32
+    sw   t0, 8(a0)
+    la   t0, procfs_read__i32__u32__i32
+    sw   t0, 12(a0)
+    la   t0, pipe_read__i32__u32__i32
+    sw   t0, 16(a0)
+    la   t0, fatfs_read__i32__u32__i32
+    sw   t0, 20(a0)
+    la   t0, devfs_read__i32__u32__i32
+    sw   t0, 24(a0)
+    # --- write (mtfs / procfs are read-only, pipe uses pipe_write) ---
+    la   t0, tmpfs_write__i32__u32__i32
+    sw   t0, 8(a1)
+    la   t0, pipe_write__i32__u32__i32
+    sw   t0, 16(a1)
+    la   t0, fatfs_write_synced__i32__u32__i32
+    sw   t0, 20(a1)
+    la   t0, devfs_write__i32__u32__i32
+    sw   t0, 24(a1)
+    # --- size: (fd: i32) -> i32 (pipe has no size) ---
+    la   t0, mtfs_size__i32
+    sw   t0, 4(a2)
+    la   t0, tmpfs_size__i32
+    sw   t0, 8(a2)
+    la   t0, procfs_size__i32
+    sw   t0, 12(a2)
+    la   t0, fatfs_size__i32
+    sw   t0, 20(a2)
+    la   t0, devfs_size__i32
+    sw   t0, 24(a2)
+    # --- close: (fd: i32) ---
+    la   t0, mtfs_close__i32
+    sw   t0, 4(a3)
+    la   t0, tmpfs_close__i32
+    sw   t0, 8(a3)
+    la   t0, procfs_close__i32
+    sw   t0, 12(a3)
+    la   t0, pipe_close__i32
+    sw   t0, 16(a3)
+    la   t0, fatfs_close_synced__i32
+    sw   t0, 20(a3)
+    la   t0, devfs_close__i32
+    sw   t0, 24(a3)
+    ret
+
 # ===== CSR helpers =====
     .globl csr_read_mstatus
 csr_read_mstatus:

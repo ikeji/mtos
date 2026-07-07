@@ -10,6 +10,11 @@
 #   kernel/build/disk.img / disk-{demo,extra,console,console-land}.img
 #   kernel/build/fat.img                     virt 用 second virtio-blk drive
 
+# Delete partially-written targets when a recipe fails — otherwise a
+# failed compile-gen2.sh leaves a truncated output that the next make
+# run mistakes for up-to-date.
+.DELETE_ON_ERROR:
+
 ROOT := $(realpath $(CURDIR)/..)
 
 QEMU_USER := qemu-riscv32

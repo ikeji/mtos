@@ -30,6 +30,15 @@ fn uart_rx_pop(buf: u32, len: i32) -> i32;
 // the old single-block CMD24 path.
 fn fat_block_sync() -> i32;
 
+// Indirect-call trampolines + vtable filler (trap_common.s). See
+// docs/task/function_pointers.md. callN is an unsafe primitive (no
+// arg-count / type checking) — use only inside the typed fs_*_via
+// wrappers below.
+fn call1(f: u32, a: u32) -> u32;
+fn call3(f: u32, a: u32, b: u32, c: u32) -> u32;
+fn fs_ops_init(read_tab: u32, write_tab: u32,
+               size_tab: u32, close_tab: u32) -> void;
+
 // Runtime allocator (compiler/runtime.tc)
 fn kfree(ptr: u32) -> void;
 
@@ -49,6 +58,49 @@ const FS_FATFS:  i32 = 5;
 const FS_DEVFS:  i32 = 6;
 
 var g_fatfs_ready: i32 = 0;
+
+// ===== fs op vtables =====
+// Indexed by fs_type (FS_MTFS..FS_DEVFS). Entry 0 = the FS doesn't
+// support that operation (dispatch returns -1 / no-op, the same
+// meaning as the old per-op if-chain falling through). Filled once in
+// vfs_init by fs_ops_init (trap_common.s) — the single place that
+// takes fs function addresses; its offsets must match the FS_*
+// values above.
+var g_fs_read:  U32Array = 0 as U32Array;
+var g_fs_write: U32Array = 0 as U32Array;
+var g_fs_size:  U32Array = 0 as U32Array;
+var g_fs_close: U32Array = 0 as U32Array;
+
+// kmalloc doesn't zero — clear every slot so "unset" reads as 0.
+fn fs_tab_new() -> U32Array {
+    var t: U32Array = U32Array(8u32);
+    var i: i32 = 0;
+    while i < 8 { set(t, i, 0u32); i = i + 1; }
+    return t;
+}
+
+// Typed wrappers over the unsafe callN trampolines. All fs read /
+// write ops share (fd: i32, buf: u32, n: i32) -> i32; size / close
+// share (fd: i32).
+fn fs_rw_via(f: u32, fd: i32, buf: u32, n: i32) -> i32 {
+    return call3(f, fd as u32, buf, n as u32) as i32;
+}
+fn fs_fd_via(f: u32, fd: i32) -> i32 {
+    return call1(f, fd as u32) as i32;
+}
+
+// fatfs write / close need a fat_block_sync() afterwards (commit the
+// CMD25 write burst) — wrap them so the vtable stays uniform.
+fn fatfs_write_synced(fd: i32, buf_addr: u32, n: i32) -> i32 {
+    var wr: i32 = fatfs_write(fd, buf_addr, n);
+    fat_block_sync();
+    return wr;
+}
+fn fatfs_close_synced(fd: i32) -> i32 {
+    var r: i32 = fatfs_close(fd);
+    fat_block_sync();
+    return r;
+}
 
 export fn vfs_set_fatfs_ready() -> void {
     g_fatfs_ready = 1;
@@ -82,6 +134,12 @@ export fn vfs_init() -> i32 {
     if mtfs_mount() != 0 { return -1; }
     if tmpfs_mount() != 0 { return -1; }
     pipe_init();
+    g_fs_read  = fs_tab_new();
+    g_fs_write = fs_tab_new();
+    g_fs_size  = fs_tab_new();
+    g_fs_close = fs_tab_new();
+    fs_ops_init(g_fs_read as u32 + 4u32, g_fs_write as u32 + 4u32,
+                g_fs_size as u32 + 4u32, g_fs_close as u32 + 4u32);
     g_vfs_fds = FDArray(VFS_MAX_FDS as u32);
     var i: i32 = 0;
     while i < VFS_MAX_FDS {
@@ -263,12 +321,10 @@ export fn vfs_size(fd: i32) -> i32 {
     if fd >= VFS_MAX_FDS + 3 { return -1; }
     var e: FD = get(g_vfs_fds, fd - 3);
     var t: i32 = fs_type(e);
-    if t == FS_MTFS   { return mtfs_size(inner(e)); }
-    if t == FS_TMPFS  { return tmpfs_size(inner(e)); }
-    if t == FS_PROCFS { return procfs_size(inner(e)); }
-    if t == FS_FATFS  { return fatfs_size(inner(e)); }
-    if t == FS_DEVFS  { return devfs_size(inner(e)); }
-    return -1;
+    if t < 1 || t >= 8 { return -1; }   // FS_NONE / out of table
+    var f: u32 = get(g_fs_size, t);
+    if f == 0u32 { return -1; }
+    return fs_fd_via(f, inner(e));
 }
 
 // Move the fd's read/write cursor. POSIX `whence`: 0=SET, 1=CUR, 2=END.
@@ -336,13 +392,10 @@ export fn vfs_read(fd: i32, buf_addr: u32, n: i32) -> i32 {
     if fd < 3 || fd >= VFS_MAX_FDS + 3 { return -1; }
     var e: FD = get(g_vfs_fds, fd - 3);
     var t: i32 = fs_type(e);
-    if t == FS_MTFS   { return mtfs_read(inner(e), buf_addr, n); }
-    if t == FS_TMPFS  { return tmpfs_read(inner(e), buf_addr, n); }
-    if t == FS_PROCFS { return procfs_read(inner(e), buf_addr, n); }
-    if t == FS_PIPE   { return pipe_read(inner(e), buf_addr, n); }
-    if t == FS_FATFS  { return fatfs_read(inner(e), buf_addr, n); }
-    if t == FS_DEVFS  { return devfs_read(inner(e), buf_addr, n); }
-    return -1;
+    if t < 1 || t >= 8 { return -1; }   // FS_NONE / out of table
+    var f: u32 = get(g_fs_read, t);
+    if f == 0u32 { return -1; }
+    return fs_rw_via(f, inner(e), buf_addr, n);
 }
 
 export fn vfs_write(fd: i32, buf_addr: u32, n: i32) -> i32 {
@@ -373,15 +426,10 @@ export fn vfs_write(fd: i32, buf_addr: u32, n: i32) -> i32 {
     if fd < 3 || fd >= VFS_MAX_FDS + 3 { return -1; }
     var e: FD = get(g_vfs_fds, fd - 3);
     var t: i32 = fs_type(e);
-    if t == FS_TMPFS { return tmpfs_write(inner(e), buf_addr, n); }
-    if t == FS_PIPE  { return pipe_write(inner(e), buf_addr, n); }
-    if t == FS_FATFS {
-        var wr: i32 = fatfs_write(inner(e), buf_addr, n);
-        fat_block_sync();
-        return wr;
-    }
-    if t == FS_DEVFS { return devfs_write(inner(e), buf_addr, n); }
-    return -1;
+    if t < 1 || t >= 8 { return -1; }   // FS_NONE / out of table
+    var f: u32 = get(g_fs_write, t);
+    if f == 0u32 { return -1; }
+    return fs_rw_via(f, inner(e), buf_addr, n);
 }
 
 // Resolve a path to the mtfs inode of its final component, walking
@@ -548,12 +596,10 @@ export fn vfs_close(fd: i32) -> i32 {
     var e: FD = get(g_vfs_fds, fd - 3);
     var t: i32 = fs_type(e);
     if t == FS_NONE { return 0; }
-    if t == FS_MTFS   { mtfs_close(inner(e)); }
-    if t == FS_TMPFS  { tmpfs_close(inner(e)); }
-    if t == FS_PROCFS { procfs_close(inner(e)); }
-    if t == FS_PIPE   { pipe_close(inner(e)); }
-    if t == FS_FATFS  { fatfs_close(inner(e)); fat_block_sync(); }
-    if t == FS_DEVFS  { devfs_close(inner(e)); }
+    if t >= 1 && t < 8 {
+        var f: u32 = get(g_fs_close, t);
+        if f != 0u32 { fs_fd_via(f, inner(e)); }
+    }
     fs_type(e, FS_NONE);
     inner(e, 0);
     offset(e, 0);

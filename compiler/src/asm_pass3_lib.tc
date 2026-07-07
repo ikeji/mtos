@@ -562,8 +562,23 @@ fn parse_reloc_into_pending(buf: U8Array, blen: i32) -> i32 {
     var i: i32 = 0;
     while i < nlen { set(name, i, get(buf, ns + i)); i = i + 1; }
     var lab_idx: i32 = asm_find_label_idx(name, nlen);
+    if lab_idx < 0 {
+        // A reloc in live code references a symbol missing from the
+        // merged label table — a typo'd `la` target or a module
+        // dropped from the link (docs/solved.md #40 was this class).
+        // Relocs inside dead-stripped code were already dropped by
+        // asm_pass2's copy_reloc_shifted, so there is no legitimate
+        // undefined case. Silently skipping (the old behavior) left
+        // the placeholder bytes unpatched = a bogus runtime address;
+        // fail loudly instead.
+        var eb: StringBuffer = StringBuffer_new();
+        asm_err_begin(eb);
+        emit_string(eb, "undefined reloc target '");
+        emit_n(eb, name, 0, nlen);
+        emit_string(eb, "'");
+        asm_err_end(eb);
+    }
     delete(name);
-    if lab_idx < 0 { return 0 - 1; }
     g_reloc_pending_lab_idx = lab_idx;
     g_reloc_pending_addr    = asm_label_addr_at(lab_idx);
     g_reloc_pending_sec     = asm_label_section_at(lab_idx);

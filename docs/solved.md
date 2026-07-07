@@ -230,6 +230,32 @@ fib.bc / global_str.bc を Gen1 bcrun と同一出力で実行。回帰は
 これで tcheck の実 worst case は bc2asm.tc (nc=1656) → bcrun.tc
 (nc=2387) に更新。vm_run の関数分解は不要だった。
 
+### 42. asm_pass3 が未定義 reloc ターゲットを silent skip — 完了 (2026-07-08)
+
+fs vtable (docs/task/function_pointers.md) の「typo はリンク時に loud に
+失敗する」性質を負テストで検証したところ、**失敗しなかった**: per-file
+pre-encode 経路では `la` の未定義参照が reloc として .lab に流れ、
+asm_pass3 の `parse_reloc_into_pending` が label table に無い名前を
+**黙って読み飛ばして**いた (placeholder バイトが未パッチのまま = 実行時
+に不正アドレス)。typo だけでなく「モジュールが link 入力から落ちた」
+(#40 touch_xpt2046 型) も silent 化しうる穴。
+
+安全性の確認: asm_pass2 の `copy_reloc_shifted` は dead-strip された
+コード範囲内の reloc を落とすので、.lab に残る reloc は live コード
+由来のみ。live コードが参照するシンボルは ref graph で live になる
+ため、「未定義」は typo か入力漏れ以外にあり得ない → hard error 化が
+正しい。
+
+修正: `asm_pass3_lib.tc::parse_reloc_into_pending` で lab_idx < 0 の
+とき `asm_pass3: undefined reloc target '<name>'` + exit(1)。負テスト
+(trap_common.s の la ターゲットを故意に typo) で make が Error 1 に
+なることを確認。
+
+**副産物**: 失敗した compile-gen2.sh が部分出力ファイルを残し、次の
+make が「ビルド済み」と誤認する問題も同時に発覚 (typo テスト中に
+112 byte の壊れた virt_kernel.bin が生成された)。3 つのサブ Makefile
+(compiler / kernel / userland) に `.DELETE_ON_ERROR:` を追加して解消。
+
 ### 41. K11 の根本原因を訂正: HW FIFO ではなく SW ring overflow、nested-trap は不要 — 診断完了 (2026-07-07)
 
 K11 (pico2 の大容量 plain-mr upload で sh が wedge) の「根本解決」と

@@ -146,6 +146,10 @@ fnaddr builtin (5) との比較:
 - mangled 名の asm 手書き: シグネチャ変更・typo はリンク時
   undefined label で **loud に失敗** (silent 化しない)。Phase 1 で
   わざと typo したビルドが失敗することを確認しておく。
+  **→ 実施した結果、失敗しないことが判明** (2026-07-08): per-file
+  pre-encode 経路では未定義 `la` が reloc になり、asm_pass3 が silent
+  skip していた。`docs/solved.md` #42 で hard error 化して解決 —
+  この設計の前提が本物になった。
 - fs_ops_init のテーブルレイアウト (index = FS_* 値) が TC 側の
   定数と暗黙結合: コメントで両方向に相互参照を書く。
 - kernel バイナリが変わるので self-replicate 実機再確認 (~1 時間)。

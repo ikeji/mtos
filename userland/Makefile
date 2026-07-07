@@ -9,6 +9,11 @@
 #   userland/build/task_sizes.sh          task.mk から自動生成された arena/stack
 #   userland/build/jpfont.dat / jpfont_inc.s  console 用日本語フォント
 
+# Delete partially-written targets when a recipe fails — otherwise a
+# failed compile-gen2.sh leaves a truncated output that the next make
+# run mistakes for up-to-date.
+.DELETE_ON_ERROR:
+
 ROOT := $(realpath $(CURDIR)/..)
 
 QEMU_USER := qemu-riscv32
