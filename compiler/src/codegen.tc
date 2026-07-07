@@ -1016,10 +1016,9 @@ fn main() -> i32 {
     // Buffer sizes after per-top-level strtab rollback (#59):
     //
     //   atom_buf  scratch                          1 KB
-    //   nodes     2048 AstNode refs (streaming)    8 KB refs + live
-    //               (was 4096; bcrun.tc excluded
-    //                per docs/scaling.md, bc2asm.tc
-    //                worst case nc=1656)
+    //   nodes     4096 AstNode refs (streaming) — sized to include
+    //               bcrun.tc::vm_run (nc > 2048); bc2asm.tc worst
+    //               case among the rest is nc=1656
     //   strtab    perm prefix + 1 fn worst case  → 32768 (32 KB)
     //               max g_sp 24334 in bcrun.tc
     //   slits     ≤ 256 lits × 2 i32              2 KB
@@ -1029,7 +1028,7 @@ fn main() -> i32 {
     // refs + 8 KB locals + 2 KB slits = 282 KB before).
     var atom_buf: U8Array = U8Array(1024);
     var out_buf: StringBuffer = StringBuffer_new(1);
-    var nodes: AstNodeArray = AstNodeArray(2048);
+    var nodes: AstNodeArray = AstNodeArray(4096);
     var strtab: U8Array = U8Array(32768);
     var slits: I32Array = I32Array(512);
     var locals: I32Array = I32Array(1024);

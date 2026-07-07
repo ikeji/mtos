@@ -204,6 +204,32 @@ problem.md に「未実装」のまま残っていたが、実際にはとっく
   `bltu`、OOB は `__array_oob_get/set` へ jump) が入った。K14 の
   silent overflow footgun 修正の一環。
 
+### 10 + Q5. tcheck vartab/fntab 動的化で bcrun.tc を self-compile 可能に — 完了 (2026-07-07)
+
+「全ソース self-host」の唯一の例外だった bcrun.tc (vm_run が >128
+locals + 巨大 fn で tcheck の vartab を溢れさせ `get: N out of
+bounds`、`docs/scaling.md` Q5) を解消。あわせて problem.md #10
+(fntab 512 上限) も閉じた。
+
+変更 (固定 cap の引き上げ + 動的 grow):
+- `tcheck.tc`: nodes `AstNodeArray(2048→4096)`、vartab
+  `256→1024`、fntab `512→1024`
+- `codegen.tc`: nodes `2048→4096`
+- `bc2asm.tc`: per-fn `instrs`(8192)/`label_pcs`(2048) を
+  parse_bc 所有に移して **×2 動的 grow** (`grow_i32`)、
+  `locals_pool 128→512`。instrs/label_pcs は main で delete して
+  いなかった (タスク終了で解放) ので所有権移動は無害
+- task arena bump: tcheck 320 KB / codegen 224 KB / bc2asm 176 KB
+  (bcrun.tc 入力の実測 peak 287/178/148 KB に margin)
+
+検証: `compile-gen2.sh bcrun.tc` が通り、生成 bcrun が hello.bc /
+fib.bc / global_str.bc を Gen1 bcrun と同一出力で実行。回帰は
+`test_gen3.sh` の FULL_TEST ケース (Gen2 self-compile + run hello.bc、
+~37 s なので 1 分予算を避けて FULL_TEST 側)。`make test` 158 PASS。
+
+これで tcheck の実 worst case は bc2asm.tc (nc=1656) → bcrun.tc
+(nc=2387) に更新。vm_run の関数分解は不要だった。
+
 ### 40. self_replicate manifest に touch_xpt2046 が未追従 — 完了 (2026-07-06)
 
 const 導入後の byte-exact 確認で `pico2_self_replicate.sh` が失敗

@@ -1638,7 +1638,9 @@ fn main_impl(use_files: i32, exth_paths: StringArray, exth_n: i32,
     // handle table + per-fn kmalloc (#64). Each entry is (5 + 2*np)
     // i32, so a 0-param fn costs 20 B and the 21-param vm_run costs
     // 188 B instead of every fn paying 188 B.
-    var nodes: AstNodeArray = AstNodeArray(2048);
+    // 4096: bcrun.tc::vm_run is the outlier (nc > 2048); every other
+    // compiler/kernel source fits in 2048 (docs/scaling.md Q5).
+    var nodes: AstNodeArray = AstNodeArray(4096);
     var strtab: U8Array = U8Array(65536);
     var atom_buf: U8Array = U8Array(1024);
     // Output target: stdout for stdin mode, --out file for file mode.
@@ -1648,10 +1650,10 @@ fn main_impl(use_files: i32, exth_paths: StringArray, exth_n: i32,
         if out_fd < 0 { sys_exit(12); }
     }
     var ob: StringBuffer = StringBuffer_new(out_fd);
-    var fntab: U32Array = U32Array(512);
-    var vartab: VarEntryArray = VarEntryArray(256u32);
+    var fntab: U32Array = U32Array(1024);
+    var vartab: VarEntryArray = VarEntryArray(1024u32);
     var vti: i32 = 0;
-    while vti < 256 { set(vartab, vti, VarEntry(0, 0, 0, 0, 0, 0)); vti = vti + 1; }
+    while vti < 1024 { set(vartab, vti, VarEntry(0, 0, 0, 0, 0, 0)); vti = vti + 1; }
 
     // In stdin mode g_reader is the single concatenated wrap; in file
     // mode each phase opens its own file and points g_reader at it.

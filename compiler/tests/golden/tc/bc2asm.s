@@ -17328,10 +17328,151 @@ parse_lnum_stream__u8:
     ret
     # end of parse_lnum_stream__u8
 
-    .globl parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer
-    .type  parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer, @function
-parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer:
-    # prologue: frame_size=384, params=9, locals=40, eval_depth=42
+    .globl grow_i32__I32Array
+    .type  grow_i32__I32Array, @function
+grow_i32__I32Array:
+    # prologue: frame_size=48, params=1, locals=3, eval_depth=4
+    addi sp, sp, -48
+    sw   ra, 44(sp)
+    sw   s0, 40(sp)
+    addi s0, sp, 48
+    sw   a0, -12(s0)
+    sw   zero, -16(s0)
+    sw   zero, -20(s0)
+    sw   zero, -24(s0)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call len__I32Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -16(s0)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 2
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    mul  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call I32Array__u32
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -20(s0)
+    li   t0, 0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -24(s0)
+  .L_grow_i32__I32Array_pc11:
+    lw   t0, -24(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -16(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    slt  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_grow_i32__I32Array_pc27
+0:
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -24(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -24(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 4(sp)
+    lw   a1, 0(sp)
+    call get__I32Array__i32
+    addi sp, sp, 8
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   a0, 8(sp)
+    lw   a1, 4(sp)
+    lw   a2, 0(sp)
+    call set__I32Array__i32__i32
+    addi sp, sp, 12
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -24(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    add  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -24(s0)
+    j    .L_grow_i32__I32Array_pc11
+  .L_grow_i32__I32Array_pc27:
+    lw   t0, -12(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call delete__I32Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    addi sp, sp, 4
+    lw   t0, -20(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    mv   a0, t0
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    mv   t0, s0
+    lw   ra, -4(t0)
+    lw   s0, -8(t0)
+    addi sp, t0, 0
+    ret
+    # end of grow_i32__I32Array
+
+    .globl parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer
+    .type  parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer, @function
+parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer:
+    # prologue: frame_size=384, params=7, locals=42, eval_depth=42
     addi sp, sp, -384
     sw   ra, 380(sp)
     sw   s0, 376(sp)
@@ -17343,9 +17484,8 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     sw   a4, -28(s0)
     sw   a5, -32(s0)
     sw   a6, -36(s0)
-    sw   a7, -40(s0)
-    lw   t0, 0(s0)
-    sw   t0, -44(s0)
+    sw   zero, -40(s0)
+    sw   zero, -44(s0)
     sw   zero, -48(s0)
     sw   zero, -52(s0)
     sw   zero, -56(s0)
@@ -17386,6 +17526,28 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     sw   zero, -196(s0)
     sw   zero, -200(s0)
     sw   zero, -204(s0)
+    li   t0, 8192
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call I32Array__u32
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -40(s0)
+    li   t0, 2048
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call I32Array__u32
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -44(s0)
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17418,7 +17580,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -56(s0)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc9:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc15:
     lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17435,7 +17597,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc20
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc26
 0:
     la   t1, g_reader
     lw   t0, 0(t1)
@@ -17459,21 +17621,21 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc20
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc26
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc21
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc20:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc27
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc26:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc21:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc27:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc1108
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc1138
 0:
     call skip_spaces
     addi sp, sp, -4
@@ -17491,7 +17653,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc29
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc35
 0:
     li   t0, 1
     addi sp, sp, -4
@@ -17499,7 +17661,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -56(s0)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc29:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc35:
     lw   t0, -56(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17516,7 +17678,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc1107
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc1137
 0:
     la   t1, g_reader
     lw   t0, 0(t1)
@@ -17546,7 +17708,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     beqz t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc46
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc52
 0:
     lw   t0, -60(s0)
     addi sp, sp, -4
@@ -17564,21 +17726,21 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     beqz t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc46
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc52
 0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc47
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc46:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc53
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc52:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc47:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc53:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc51
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc57
 0:
     la   t1, g_reader
     lw   t0, 0(t1)
@@ -17590,7 +17752,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc51:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc57:
     lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17607,7 +17769,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc61
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc67
 0:
     lw   t0, -60(s0)
     addi sp, sp, -4
@@ -17625,21 +17787,21 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc61
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc67
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc62
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc61:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc68
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc67:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc62:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc68:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc69
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc75
 0:
     lw   t0, -60(s0)
     addi sp, sp, -4
@@ -17657,27 +17819,27 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc69
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc75
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc70
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc69:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc76
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc75:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc70:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc76:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc73
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc79
 0:
     call skip_line
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc73:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc79:
     lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17694,7 +17856,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc83
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc89
 0:
     lw   t0, -60(s0)
     addi sp, sp, -4
@@ -17712,21 +17874,21 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc83
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc89
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc84
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc83:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc90
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc89:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc84:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc90:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc91
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc97
 0:
     lw   t0, -60(s0)
     addi sp, sp, -4
@@ -17744,21 +17906,21 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc91
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc97
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc92
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc91:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc98
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc97:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc92:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc98:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc99
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc105
 0:
     lw   t0, -60(s0)
     addi sp, sp, -4
@@ -17776,21 +17938,21 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc99
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc105
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc100
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc99:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc106
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc105:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc100:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc106:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc709
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc715
 0:
     la   t1, g_reader
     lw   t0, 0(t1)
@@ -17851,7 +18013,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc122
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc128
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -17868,7 +18030,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -72(s0)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc122:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc128:
     lw   t0, -68(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17884,7 +18046,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc132
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc138
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -17910,7 +18072,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -76(s0)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc132:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc138:
     lw   t0, -72(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -17927,7 +18089,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc142
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc148
 0:
     lw   t0, -76(s0)
     addi sp, sp, -4
@@ -17945,21 +18107,21 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc142
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc148
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc143
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc142:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc149
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc148:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc143:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc149:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc193
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc199
 0:
     lw   t0, -64(s0)
     addi sp, sp, -4
@@ -18096,7 +18258,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc185
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc191
 0:
     lw   t0, -84(s0)
     addi sp, sp, -4
@@ -18114,7 +18276,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     addi sp, sp, 4
     la   t1, g_nstrings
     sw   t0, 0(t1)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc185:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc191:
     call skip_line
     addi sp, sp, -4
     sw   a0, 0(sp)
@@ -18135,7 +18297,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc193
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc199
 0:
     la   t1, g_stab_pos
     lw   t0, 0(t1)
@@ -18144,7 +18306,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -48(s0)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc193:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc199:
     lw   t0, -72(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18161,7 +18323,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc203
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc209
 0:
     lw   t0, -76(s0)
     addi sp, sp, -4
@@ -18179,21 +18341,21 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc203
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc209
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc204
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc203:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc210
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc209:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc204:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc210:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc256
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc262
 0:
     lw   t0, -64(s0)
     addi sp, sp, -4
@@ -18370,7 +18532,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc256
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc262
 0:
     la   t1, g_stab_pos
     lw   t0, 0(t1)
@@ -18379,7 +18541,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -48(s0)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc256:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc262:
     lw   t0, -72(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18396,7 +18558,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc266
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc272
 0:
     lw   t0, -76(s0)
     addi sp, sp, -4
@@ -18414,21 +18576,21 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc266
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc272
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc267
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc266:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc273
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc272:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc267:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc273:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc385
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc391
 0:
     lw   t0, -64(s0)
     addi sp, sp, -4
@@ -18454,7 +18616,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc277
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc283
 0:
     la   t1, g_stab_pos
     lw   t0, 0(t1)
@@ -18463,7 +18625,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -48(s0)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc277:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc283:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18486,7 +18648,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc284:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc290:
     la   t1, g_reader
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -18509,7 +18671,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc296
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc302
 0:
     la   t1, g_reader
     lw   t0, 0(t1)
@@ -18533,21 +18695,21 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc296
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc302
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc297
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc296:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc303
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc302:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc297:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc303:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc324
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc330
 0:
     la   t1, g_stab_pos
     lw   t0, 0(t1)
@@ -18639,8 +18801,8 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc284
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc324:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc290
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc330:
     lw   t0, -124(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18740,7 +18902,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc379
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc385
 0:
     li   t0, 0
     addi sp, sp, -4
@@ -18748,7 +18910,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -128(s0)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc351:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc357:
     lw   t0, -128(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18764,7 +18926,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc361
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc367
 0:
     lw   t0, -128(s0)
     addi sp, sp, -4
@@ -18781,21 +18943,21 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc361
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc367
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc362
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc361:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc368
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc367:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc362:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc368:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc377
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc383
 0:
     la   t1, g_unit_name
     lw   t0, 0(t1)
@@ -18848,8 +19010,8 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -128(s0)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc351
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc377:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc357
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc383:
     lw   t0, -128(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18857,7 +19019,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     addi sp, sp, 4
     la   t1, g_unit_name_len
     sw   t0, 0(t1)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc379:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc385:
     la   t1, g_nfuncs
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -18879,7 +19041,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc385:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc391:
     lw   t0, -72(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -18896,7 +19058,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc395
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc401
 0:
     lw   t0, -76(s0)
     addi sp, sp, -4
@@ -18914,21 +19076,21 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc395
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc401
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc396
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc395:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc402
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc401:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc396:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc402:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc445
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc451
 0:
     lw   t0, -64(s0)
     addi sp, sp, -4
@@ -19056,7 +19218,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc443
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc449
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -19100,12 +19262,12 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc443:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc449:
     call skip_line
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc445:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc451:
     lw   t0, -72(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19122,7 +19284,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc455
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc461
 0:
     lw   t0, -76(s0)
     addi sp, sp, -4
@@ -19140,21 +19302,21 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc455
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc461
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc456
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc455:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc462
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc461:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc456:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc462:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc505
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc511
 0:
     lw   t0, -64(s0)
     addi sp, sp, -4
@@ -19282,7 +19444,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc503
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc509
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -19326,12 +19488,12 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc503:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc509:
     call skip_line
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc505:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc511:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19353,7 +19515,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc517
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc523
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -19379,7 +19541,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -144(s0)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc517:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc523:
     lw   t0, -72(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19396,7 +19558,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc527
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc533
 0:
     lw   t0, -144(s0)
     addi sp, sp, -4
@@ -19414,21 +19576,21 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc527
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc533
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc528
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc527:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc534
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc533:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc528:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc534:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc534
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc540
 0:
     lw   t0, -64(s0)
     addi sp, sp, -4
@@ -19445,7 +19607,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -56(s0)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc534:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc540:
     lw   t0, -72(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19462,7 +19624,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc544
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc550
 0:
     lw   t0, -144(s0)
     addi sp, sp, -4
@@ -19480,21 +19642,21 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc544
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc550
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc545
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc544:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc551
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc550:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc545:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc551:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc660
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc666
 0:
     lw   t0, -64(s0)
     addi sp, sp, -4
@@ -19521,7 +19683,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc655
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc661
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -19569,7 +19731,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -156(s0)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc565:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc571:
     lw   t0, -156(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19585,9 +19747,9 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc613
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc619
 0:
-    lw   t0, -36(s0)
+    lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -148(s0)
@@ -19622,7 +19784,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     beqz t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc584
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc590
 0:
     lw   t0, -160(s0)
     addi sp, sp, -4
@@ -19640,21 +19802,21 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     beqz t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc584
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc590
 0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc585
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc584:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc591
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc590:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc585:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc591:
     lw   t0, 0(sp)
     addi sp, sp, 4
     beqz t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc592
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc598
 0:
     lw   t0, -160(s0)
     addi sp, sp, -4
@@ -19672,23 +19834,23 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     beqz t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc592
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc598
 0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc593
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc592:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc599
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc598:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc593:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc599:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc608
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc614
 0:
-    lw   t0, -36(s0)
+    lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -148(s0)
@@ -19707,7 +19869,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -164(s0)
-    lw   t0, -36(s0)
+    lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -148(s0)
@@ -19719,7 +19881,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -40(s0)
+    lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -164(s0)
@@ -19741,7 +19903,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc608:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc614:
     lw   t0, -156(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19757,8 +19919,8 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -156(s0)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc565
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc613:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc571
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc619:
     lw   t0, -12(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19771,7 +19933,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, -32(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -36(s0)
+    lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -16(s0)
@@ -19780,7 +19942,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -44(s0)
+    lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 28(sp)
@@ -19813,7 +19975,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc629
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc635
 0:
     la   t1, g_stab_pos
     lw   t0, 0(t1)
@@ -19823,7 +19985,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     addi sp, sp, 4
     la   t1, g_max_stab
     sw   t0, 0(t1)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc629:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc635:
     la   t1, g_ninstrs
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -19841,7 +20003,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc635
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc641
 0:
     la   t1, g_ninstrs
     lw   t0, 0(t1)
@@ -19851,7 +20013,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     addi sp, sp, 4
     la   t1, g_max_instr
     sw   t0, 0(t1)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc635:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc641:
     la   t1, g_nparams
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -19869,7 +20031,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc641
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc647
 0:
     la   t1, g_nparams
     lw   t0, 0(t1)
@@ -19879,7 +20041,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     addi sp, sp, 4
     la   t1, g_max_param
     sw   t0, 0(t1)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc641:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc647:
     la   t1, g_nlocals
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -19897,7 +20059,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc647
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc653
 0:
     la   t1, g_nlocals
     lw   t0, 0(t1)
@@ -19907,7 +20069,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     addi sp, sp, 4
     la   t1, g_max_local
     sw   t0, 0(t1)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc647:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc653:
     lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19936,7 +20098,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     addi sp, sp, 4
     la   t1, g_ninstrs
     sw   t0, 0(t1)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc655:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc661:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19952,7 +20114,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc660:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc666:
     lw   t0, -72(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -19969,7 +20131,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc670
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc676
 0:
     lw   t0, -72(s0)
     addi sp, sp, -4
@@ -19987,21 +20149,21 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc670
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc676
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc671
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc670:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc677
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc676:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc671:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc677:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc678
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc684
 0:
     lw   t0, -72(s0)
     addi sp, sp, -4
@@ -20019,21 +20181,21 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc678
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc684
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc679
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc678:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc685
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc684:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc679:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc685:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc686
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc692
 0:
     lw   t0, -72(s0)
     addi sp, sp, -4
@@ -20051,21 +20213,21 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc686
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc692
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc687
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc686:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc693
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc692:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc687:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc693:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc694
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc700
 0:
     lw   t0, -72(s0)
     addi sp, sp, -4
@@ -20083,21 +20245,21 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc694
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc700
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc695
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc694:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc701
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc700:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc695:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc701:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc702
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc708
 0:
     lw   t0, -72(s0)
     addi sp, sp, -4
@@ -20115,21 +20277,21 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc702
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc708
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc703
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc702:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc709
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc708:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc703:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc709:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc709
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc715
 0:
     lw   t0, -64(s0)
     addi sp, sp, -4
@@ -20144,7 +20306,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc709:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc715:
     lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -20161,7 +20323,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc719
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc725
 0:
     lw   t0, -60(s0)
     addi sp, sp, -4
@@ -20179,21 +20341,21 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc719
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc725
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc720
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc719:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc726
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc725:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc720:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc726:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc727
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc733
 0:
     lw   t0, -60(s0)
     addi sp, sp, -4
@@ -20211,21 +20373,21 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc727
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc733
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc728
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc727:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc734
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc733:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc728:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc734:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc735
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc741
 0:
     lw   t0, -60(s0)
     addi sp, sp, -4
@@ -20243,21 +20405,21 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc735
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc741
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc736
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc735:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc742
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc741:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc736:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc742:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc743
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc749
 0:
     lw   t0, -60(s0)
     addi sp, sp, -4
@@ -20275,21 +20437,21 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc743
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc749
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc744
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc743:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc750
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc749:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc744:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc750:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc782
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc797
 0:
     li   t0, 58
     addi sp, sp, -4
@@ -20329,7 +20491,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc761
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc767
 0:
     la   t1, g_reader
     lw   t0, 0(t1)
@@ -20353,21 +20515,21 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc761
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc767
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc762
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc761:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc768
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc767:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc762:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc768:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc780
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc795
 0:
     la   t1, g_reader
     lw   t0, 0(t1)
@@ -20395,9 +20557,46 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc780
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc795
 0:
-    lw   t0, -40(s0)
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc776:
+    lw   t0, -168(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -44(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call len__I32Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    slt  t0, t0, t1
+    xori t0, t0, 1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc785
+0:
+    lw   t0, -44(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call grow_i32__I32Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -44(s0)
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc776
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc785:
+    lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -168(s0)
@@ -20438,12 +20637,12 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc780:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc795:
     call skip_line
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc782:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc797:
     lw   t0, -60(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -20460,7 +20659,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc792
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc807
 0:
     lw   t0, -60(s0)
     addi sp, sp, -4
@@ -20478,21 +20677,21 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc792
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc807
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc793
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc792:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc808
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc807:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc793:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc808:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc800
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc815
 0:
     lw   t0, -60(s0)
     addi sp, sp, -4
@@ -20510,21 +20709,21 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc800
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc815
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc801
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc800:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc816
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc815:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc801:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc816:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc808
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc823
 0:
     lw   t0, -60(s0)
     addi sp, sp, -4
@@ -20542,21 +20741,21 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc808
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc823
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc809
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc808:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc824
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc823:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc809:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc824:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc816
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc831
 0:
     lw   t0, -60(s0)
     addi sp, sp, -4
@@ -20574,21 +20773,21 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc816
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc831
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc817
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc816:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc832
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc831:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc817:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc832:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc1107
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc1137
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -20656,7 +20855,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc842
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc857
 0:
     lw   t0, -52(s0)
     addi sp, sp, -4
@@ -20674,21 +20873,21 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc842
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc857
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc843
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc842:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc858
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc857:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc843:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc858:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc1105
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc1135
 0:
     lw   t0, -24(s0)
     addi sp, sp, -4
@@ -20730,7 +20929,70 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -188(s0)
-    lw   t0, -36(s0)
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc869:
+    lw   t0, -184(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -188(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    add  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    mul  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    li   t0, 4
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    add  t0, t0, t1
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call len__I32Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t1, 0(sp)
+    lw   t0, 4(sp)
+    addi sp, sp, 8
+    slt  t0, t1, t0
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    bnez t0, 0f
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc884
+0:
+    lw   t0, -40(s0)
+    addi sp, sp, -4
+    sw   t0, 0(sp)
+    lw   a0, 0(sp)
+    call grow_i32__I32Array
+    addi sp, sp, 4
+    addi sp, sp, -4
+    sw   a0, 0(sp)
+    lw   t0, 0(sp)
+    addi sp, sp, 4
+    sw   t0, -40(s0)
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc869
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc884:
+    lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -184(s0)
@@ -20755,7 +21017,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -36(s0)
+    lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -184(s0)
@@ -20780,7 +21042,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -36(s0)
+    lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -184(s0)
@@ -20805,7 +21067,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -36(s0)
+    lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -184(s0)
@@ -20846,7 +21108,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc903
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc933
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -20859,7 +21121,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -192(s0)
-    lw   t0, -36(s0)
+    lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -184(s0)
@@ -20911,7 +21173,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc903:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc933:
     lw   t0, -180(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -20928,7 +21190,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc924
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc954
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -20941,7 +21203,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -192(s0)
-    lw   t0, -36(s0)
+    lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -184(s0)
@@ -20993,7 +21255,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc924:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc954:
     lw   t0, -180(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21010,7 +21272,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     beqz t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc934
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc964
 0:
     lw   t0, -180(s0)
     addi sp, sp, -4
@@ -21028,21 +21290,21 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     beqz t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc934
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc964
 0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc935
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc934:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc965
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc964:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc935:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc965:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc956
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc986
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -21066,7 +21328,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -100(s0)
-    lw   t0, -36(s0)
+    lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -184(s0)
@@ -21091,7 +21353,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -36(s0)
+    lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -184(s0)
@@ -21116,7 +21378,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc956:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc986:
     lw   t0, -180(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21133,7 +21395,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc1038
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc1068
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -21163,7 +21425,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc969:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc999:
     la   t1, g_reader
     lw   t0, 0(t1)
     addi sp, sp, -4
@@ -21186,7 +21448,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc981
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc1011
 0:
     la   t1, g_reader
     lw   t0, 0(t1)
@@ -21210,21 +21472,21 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc981
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc1011
 0:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc982
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc981:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc1012
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc1011:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc982:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc1012:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc1013
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc1043
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -21331,8 +21593,8 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc969
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc1013:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc999
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc1043:
     lw   t0, -196(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21348,7 +21610,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -100(s0)
-    lw   t0, -36(s0)
+    lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -184(s0)
@@ -21373,7 +21635,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -36(s0)
+    lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -184(s0)
@@ -21398,7 +21660,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -36(s0)
+    lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -184(s0)
@@ -21423,7 +21685,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc1038:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc1068:
     lw   t0, -180(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21440,7 +21702,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc1062
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc1092
 0:
     lw   t0, -12(s0)
     addi sp, sp, -4
@@ -21464,7 +21726,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -204(s0)
-    lw   t0, -36(s0)
+    lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -184(s0)
@@ -21489,7 +21751,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -36(s0)
+    lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -184(s0)
@@ -21514,7 +21776,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc1062:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc1092:
     lw   t0, -180(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21531,7 +21793,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     beqz t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc1072
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc1102
 0:
     lw   t0, -180(s0)
     addi sp, sp, -4
@@ -21549,21 +21811,21 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     beqz t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc1072
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc1102
 0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc1073
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc1072:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc1103
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc1102:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc1073:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc1103:
     lw   t0, 0(sp)
     addi sp, sp, 4
     beqz t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc1080
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc1110
 0:
     lw   t0, -180(s0)
     addi sp, sp, -4
@@ -21581,27 +21843,27 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   t0, 0(sp)
     addi sp, sp, 4
     beqz t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc1080
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc1110
 0:
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc1081
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc1080:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc1111
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc1110:
     li   t0, 1
     addi sp, sp, -4
     sw   t0, 0(sp)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc1081:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc1111:
     lw   t0, 0(sp)
     addi sp, sp, 4
     bnez t0, 0f
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc1093
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc1123
 0:
     call skip_spaces
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -36(s0)
+    lw   t0, -40(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, -184(s0)
@@ -21636,7 +21898,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc1093:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc1123:
     lw   t0, -24(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -21685,14 +21947,14 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     addi sp, sp, 4
     la   t1, g_ninstrs
     sw   t0, 0(t1)
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc1105:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc1135:
     call skip_line
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc1107:
-    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc9
-  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer_pc1108:
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc1137:
+    j    .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc15
+  .L_parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer_pc1138:
     mv   t0, s0
     lw   ra, -4(t0)
     lw   s0, -8(t0)
@@ -21703,7 +21965,7 @@ parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRef
     lw   s0, -8(t0)
     addi sp, t0, 0
     ret
-    # end of parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer
+    # end of parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer
 
     .globl is_local__U8Array__BcFuncArray__StrRefArray__StrRefArray__i32__i32__i32
     .type  is_local__U8Array__BcFuncArray__StrRefArray__StrRefArray__i32__i32__i32, @function
@@ -31206,11 +31468,11 @@ bc_dump_dec__U8Array__i32__i32:
     .globl main
     .type  main, @function
 main:
-    # prologue: frame_size=96, params=0, locals=13, eval_depth=9
-    addi sp, sp, -96
-    sw   ra, 92(sp)
-    sw   s0, 88(sp)
-    addi s0, sp, 96
+    # prologue: frame_size=80, params=0, locals=11, eval_depth=7
+    addi sp, sp, -80
+    sw   ra, 76(sp)
+    sw   s0, 72(sp)
+    addi s0, sp, 80
     sw   zero, -12(s0)
     sw   zero, -16(s0)
     sw   zero, -20(s0)
@@ -31222,8 +31484,6 @@ main:
     sw   zero, -44(s0)
     sw   zero, -48(s0)
     sw   zero, -52(s0)
-    sw   zero, -56(s0)
-    sw   zero, -60(s0)
     li   t0, 16384
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -31290,7 +31550,7 @@ main:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -32(s0)
-    li   t0, 128
+    li   t0, 512
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)
@@ -31378,7 +31638,7 @@ main:
     lw   t0, -44(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    li   t0, 128
+    li   t0, 512
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t1, 0(sp)
@@ -31435,28 +31695,6 @@ main:
     sw   t0, -44(s0)
     j    .L_main_pc41
   .L_main_pc57:
-    li   t0, 8192
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    call I32Array__u32
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    sw   t0, -48(s0)
-    li   t0, 2048
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   a0, 0(sp)
-    call I32Array__u32
-    addi sp, sp, 4
-    addi sp, sp, -4
-    sw   a0, 0(sp)
-    lw   t0, 0(sp)
-    addi sp, sp, 4
-    sw   t0, -52(s0)
     li   t0, 64
     addi sp, sp, -4
     sw   t0, 0(sp)
@@ -31577,28 +31815,18 @@ main:
     lw   t0, -36(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -48(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
-    lw   t0, -52(s0)
-    addi sp, sp, -4
-    sw   t0, 0(sp)
     lw   t0, -16(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    addi sp, sp, -4
-    lw   t0, 4(sp)
-    sw   t0, 0(sp)
-    lw   a0, 36(sp)
-    lw   a1, 32(sp)
-    lw   a2, 28(sp)
-    lw   a3, 24(sp)
-    lw   a4, 20(sp)
-    lw   a5, 16(sp)
-    lw   a6, 12(sp)
-    lw   a7, 8(sp)
-    call parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__I32Array__I32Array__StringBuffer
-    addi sp, sp, 40
+    lw   a0, 24(sp)
+    lw   a1, 20(sp)
+    lw   a2, 16(sp)
+    lw   a3, 12(sp)
+    lw   a4, 8(sp)
+    lw   a5, 4(sp)
+    lw   a6, 0(sp)
+    call parse_bc__U8Array__StrRefArray__GlobalVarArray__BcFuncArray__StrRefArray__StrRefArray__StringBuffer
+    addi sp, sp, 28
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
@@ -31656,17 +31884,17 @@ main:
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -56(s0)
+    sw   t0, -48(s0)
     li   t0, 0
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -60(s0)
-    lw   t0, -56(s0)
+    sw   t0, -52(s0)
+    lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 91
@@ -31685,7 +31913,7 @@ main:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -31699,11 +31927,11 @@ main:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -60(s0)
-    lw   t0, -56(s0)
+    sw   t0, -52(s0)
+    lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 98
@@ -31722,7 +31950,7 @@ main:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -31736,11 +31964,11 @@ main:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -60(s0)
-    lw   t0, -56(s0)
+    sw   t0, -52(s0)
+    lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 99
@@ -31759,7 +31987,7 @@ main:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -31773,11 +32001,11 @@ main:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -60(s0)
-    lw   t0, -56(s0)
+    sw   t0, -52(s0)
+    lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 32
@@ -31796,7 +32024,7 @@ main:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -31810,11 +32038,11 @@ main:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -60(s0)
-    lw   t0, -56(s0)
+    sw   t0, -52(s0)
+    lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 105
@@ -31833,7 +32061,7 @@ main:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -31847,11 +32075,11 @@ main:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -60(s0)
-    lw   t0, -56(s0)
+    sw   t0, -52(s0)
+    lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 110
@@ -31870,7 +32098,7 @@ main:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -31884,11 +32112,11 @@ main:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -60(s0)
-    lw   t0, -56(s0)
+    sw   t0, -52(s0)
+    lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 61
@@ -31907,7 +32135,7 @@ main:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -31921,11 +32149,11 @@ main:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -60(s0)
-    lw   t0, -56(s0)
+    sw   t0, -52(s0)
+    lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     la   t1, g_max_instr
@@ -31941,11 +32169,11 @@ main:
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -60(s0)
-    lw   t0, -56(s0)
+    sw   t0, -52(s0)
+    lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 32
@@ -31964,7 +32192,7 @@ main:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -31978,11 +32206,11 @@ main:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -60(s0)
-    lw   t0, -56(s0)
+    sw   t0, -52(s0)
+    lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 115
@@ -32001,7 +32229,7 @@ main:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -32015,11 +32243,11 @@ main:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -60(s0)
-    lw   t0, -56(s0)
+    sw   t0, -52(s0)
+    lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 112
@@ -32038,7 +32266,7 @@ main:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -32052,11 +32280,11 @@ main:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -60(s0)
-    lw   t0, -56(s0)
+    sw   t0, -52(s0)
+    lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 61
@@ -32075,7 +32303,7 @@ main:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -32089,11 +32317,11 @@ main:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -60(s0)
-    lw   t0, -56(s0)
+    sw   t0, -52(s0)
+    lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     la   t1, g_max_stab
@@ -32109,11 +32337,11 @@ main:
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -60(s0)
-    lw   t0, -56(s0)
+    sw   t0, -52(s0)
+    lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 32
@@ -32132,7 +32360,7 @@ main:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -32146,11 +32374,11 @@ main:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -60(s0)
-    lw   t0, -56(s0)
+    sw   t0, -52(s0)
+    lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 112
@@ -32169,7 +32397,7 @@ main:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -32183,11 +32411,11 @@ main:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -60(s0)
-    lw   t0, -56(s0)
+    sw   t0, -52(s0)
+    lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 97
@@ -32206,7 +32434,7 @@ main:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -32220,11 +32448,11 @@ main:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -60(s0)
-    lw   t0, -56(s0)
+    sw   t0, -52(s0)
+    lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 61
@@ -32243,7 +32471,7 @@ main:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -32257,11 +32485,11 @@ main:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -60(s0)
-    lw   t0, -56(s0)
+    sw   t0, -52(s0)
+    lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     la   t1, g_max_param
@@ -32277,11 +32505,11 @@ main:
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -60(s0)
-    lw   t0, -56(s0)
+    sw   t0, -52(s0)
+    lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 32
@@ -32300,7 +32528,7 @@ main:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -32314,11 +32542,11 @@ main:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -60(s0)
-    lw   t0, -56(s0)
+    sw   t0, -52(s0)
+    lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 108
@@ -32337,7 +32565,7 @@ main:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -32351,11 +32579,11 @@ main:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -60(s0)
-    lw   t0, -56(s0)
+    sw   t0, -52(s0)
+    lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 111
@@ -32374,7 +32602,7 @@ main:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -32388,11 +32616,11 @@ main:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -60(s0)
-    lw   t0, -56(s0)
+    sw   t0, -52(s0)
+    lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 61
@@ -32411,7 +32639,7 @@ main:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -32425,11 +32653,11 @@ main:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -60(s0)
-    lw   t0, -56(s0)
+    sw   t0, -52(s0)
+    lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     la   t1, g_max_local
@@ -32445,11 +32673,11 @@ main:
     sw   a0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -60(s0)
-    lw   t0, -56(s0)
+    sw   t0, -52(s0)
+    lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 93
@@ -32468,7 +32696,7 @@ main:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -32482,11 +32710,11 @@ main:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -60(s0)
-    lw   t0, -56(s0)
+    sw   t0, -52(s0)
+    lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 10
@@ -32500,7 +32728,7 @@ main:
     addi sp, sp, -4
     sw   a0, 0(sp)
     addi sp, sp, 4
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     li   t0, 1
@@ -32514,14 +32742,14 @@ main:
     sw   t0, 0(sp)
     lw   t0, 0(sp)
     addi sp, sp, 4
-    sw   t0, -60(s0)
+    sw   t0, -52(s0)
     li   t0, 2
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -56(s0)
+    lw   t0, -48(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
-    lw   t0, -60(s0)
+    lw   t0, -52(s0)
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 8(sp)

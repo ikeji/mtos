@@ -22,7 +22,7 @@ K22 (DOOM TITLEPIC 表示) 到達時点で、`docs/problem.md` /
 | 5 | peek/poke/get/set intrinsic 化 (#20) → 実は解決済みだった (§2-2) | 性能+安全 | **済 (stale)** | — |
 | 6 | tmpfs_unlink 追加 (#30) | 機能 | **済 2026-07-05** | S |
 | 7 | userland タスクの単体テスト整備 | テスト | P2 | M |
-| 8 | tcheck vartab / fntab の動的化 (#10, Q5) | limitation | P2 | M |
+| 8 | tcheck vartab / fntab の動的化 (#10, Q5) | limitation | **済 2026-07-07** | M |
 | 9 | realloc 式 in-place grow (kmalloc 拡張) | 性能 | P2 | M |
 | 10 | sh の CWD / 相対パス対応 (#31) | 機能 | P3 | M |
 | 11 | tcheck エラーの file:line 化 (#5 段階 2) | DX | P3 | L |
@@ -132,14 +132,15 @@ old+new 同時生存の transient peak を作っており、kmalloc に
 
 ## 3. 言語・コンパイラの limitation 解消
 
-### 3-1. tcheck vartab (128) / fntab (512) の動的化 — P2 / M
+### 3-1. tcheck vartab / fntab の動的化 — 済み (2026-07-07)
 
-`bcrun.tc` が vartab overflow で self-compile できないのは
-「全ソース self-host」の看板に対する唯一の例外。動的配列
-ライブラリ (もしくは cap を kmalloc ベースで引き上げる簡易版) で
-vartab / fntab (#10) をまとめて解消できる。ただし cap を上げると
-arena peak も伸びるので、`docs/scaling.md` の worst-case 表を
-更新しながらやる必要がある。
+実施。tcheck の nodes 4096 / vartab 1024 / fntab 1024、codegen の
+nodes 4096、bc2asm の per-fn instr/label buffer を ×2 動的 grow +
+locals_pool 512 に拡大し、**bcrun.tc が Gen2 で self-compile 可能に**
+なった (「全ソース self-host」の唯一の例外を解消、problem.md #10 も
+クローズ)。task arena は tcheck 320 / codegen 224 / bc2asm 176 KB に
+bump。回帰は test_gen3.sh の FULL_TEST ケース。詳細は
+`docs/solved.md`「#10 + Q5」、`docs/scaling.md` Q5。
 
 ### 3-2. tcheck エラーの `file:line` 化 (#5 段階 2) — P3 / L
 

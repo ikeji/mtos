@@ -187,5 +187,39 @@ for f in "${TC_FILES[@]}"; do
     rm -f "$actual_gen2_ast" "$actual_gen2_bc"
 done
 
+# === bcrun.tc self-compiles through the Gen2 pipeline (FULL_TEST) ===
+# #8 regression: bcrun.tc::vm_run has > 128 locals and a huge fn, which
+# used to overflow tcheck's vartab and bc2asm's fixed instr buffer, so
+# bcrun.tc was "not compilable" (docs/scaling.md Q5). After the pool
+# bumps + growable instr/label buffers it round-trips. We compile it
+# with the Gen2 tools and run the result on hello.bc, expecting the
+# same "Hello, World" as Gen1 bcrun. Gated behind FULL_TEST because the
+# Gen2 (qemu-riscv32) compile of a ~50 KB source takes ~30 s — too slow
+# for the 1-minute `make test` budget.
+if [ "${FULL_TEST:-0}" = "1" ] && [ "$USE_NATIVE" = true ]; then
+    bcrun_bin="$TMP_GEN3_BCRUN"
+    [ -z "$bcrun_bin" ] && bcrun_bin=$(mktemp)
+    t0=$(time_ms)
+    GEN2_DIR="$_GEN2_TMP" \
+        "$ROOT_DIR/compiler/scripts/compile-gen2.sh" -o "$bcrun_bin" \
+        "$TC_DIR/bcrun.tc" 2>/dev/null
+    if [ -s "$bcrun_bin" ]; then
+        out=$("$QEMU" "$bcrun_bin" < "$GOLDEN_DIR/hello.bc" 2>/dev/null)
+        elapsed=$(( $(time_ms) - t0 ))
+        case "$out" in
+            *"Hello, World"*)
+                report_pass "bcrun.tc (Gen2 self-compile + run hello.bc)" "$elapsed" ;;
+            *)
+                report_fail_msg "bcrun.tc (Gen2 self-compile) [${elapsed}ms]" \
+                    "ran but output != 'Hello, World': $out" ;;
+        esac
+    else
+        elapsed=$(( $(time_ms) - t0 ))
+        report_fail_msg "bcrun.tc (Gen2 self-compile) [${elapsed}ms]" \
+            "compile-gen2.sh produced no output (vartab/instr overflow regression?)"
+    fi
+    rm -f "$bcrun_bin"
+fi
+
 cleanup_gen2_tools
 print_results

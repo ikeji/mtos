@@ -131,14 +131,6 @@ StringLiteral 同士の `+` は **ポインタ加算** (「add」命令) を emi
 段階 2 は未着手: AST に `@line` 情報を入れて `file:line: message` が
 出せるようにする大規模変更。段階 1 で実用上十分なので必要性が出てから。
 
-### 10. tcheck の fntab サイズ上限 (limitation)
-
-`compiler/src/tcheck.tc` の fntab は `U32Array(512)` で、1 ファイル中の
-関数が 512 を超えるとコンパイル失敗。256 → 512 に暫定拡大済
-(2026-04-17)。
-
-対処: 動的配列ライブラリを先に作り、fntab を動的サイズにする。
-
 ### 11. struct フィールド名がグローバル関数名と衝突する (limitation)
 
 struct のフィールド名は getter/setter 関数としてマングルされるため、

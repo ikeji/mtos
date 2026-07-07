@@ -24729,7 +24729,7 @@ main:
     lw   t0, 0(sp)
     addi sp, sp, 4
     sw   t0, -16(s0)
-    li   t0, 2048
+    li   t0, 4096
     addi sp, sp, -4
     sw   t0, 0(sp)
     lw   a0, 0(sp)

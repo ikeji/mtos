@@ -491,16 +491,26 @@ Hello World の実 peak は概ね目標 100 KB 級だが、**task arena 予約�
 worst case を見越して 320 KB に取っている**。
 これが多重 task 同時 alive を阻む元凶。
 
-#### bcrun.tc は実は worst case ではない (2026-04-29 再測定)
+#### bcrun.tc は 2026-07-07 に self-compile 可能化 (#8 解決)
 
 歴史的に「tcheck worst case = bcrun.tc::vm_run の 244 KB peak」と
-記録されているが、現在の Gen2 tcheck は **vartab=128 上限** に当たって
-bcrun.tc を tcheck 通せない (vm_run の局所変数 > 128 で `get: 128 out
-of bounds`)。よって今や bcrun.tc は「コンパイル不可」であって、
-worst case として参照する意味がない。
+記録されていたが、2026-04〜07-06 の Gen2 tcheck は **vartab 上限** に
+当たって bcrun.tc を tcheck 通せなかった (vm_run の局所変数が上限超で
+`get: N out of bounds`)。これが「全ソース self-host」の唯一の例外で、
+docs/problem.md #10 (fntab 上限) と同根だった。
 
-ホスト Gen2 で各 compiler ファイルを tcheck し、per-function node
-最大値 (`nc`) を測ったもの:
+**2026-07-07 に解決** (#8): tcheck の `nodes 2048→4096` / `vartab
+256→1024` / `fntab 512→1024`、codegen の `nodes 2048→4096`、bc2asm の
+per-fn `instrs`(8192)/`label_pcs`(2048) を **×2 動的 grow** 化 +
+`locals_pool 128→512`。これで bcrun.tc が Gen2 パイプラインを
+byte-exact に通り、生成された bcrun が hello.bc を実行して
+"Hello, World" を返す (`compiler/tests/test_gen3.sh` の FULL_TEST
+ケースで回帰保護)。実測 peak: tcheck 287 KB / codegen 178 KB /
+bc2asm 148 KB (bcrun.tc 入力)、task arena は tcheck 320 KB / codegen
+224 KB / bc2asm 176 KB に bump。
+
+ホスト Gen2 で各 compiler ファイルを tcheck した per-function node
+最大値 (`nc`) と、self-compile 可能化後の状況:
 
 | ファイル | nc (peak fn) | tcheck 結果 |
 |---|---:|---|
@@ -512,8 +522,8 @@ worst case として参照する意味がない。
 | asm_pass3.tc     |  389 | OK |
 | tcheck.tc        |  607 | OK |
 | codegen.tc       |  854 | OK |
-| **bc2asm.tc**    | **1656** | **OK ← 現実の worst case** |
-| bcrun.tc         | — | vartab overflow (compile 不可) |
+| bc2asm.tc        | 1656 | OK |
+| **bcrun.tc**     | **2387** | **OK (2026-07-07 以降、実 worst case)** |
 
 Hello World は nc=11 で peak 74 KB。peak は per-fn の AstNode pool +
 strtab に支配されるので、おおよそ nc に線形:
@@ -538,9 +548,9 @@ OS 全体を self-host する用途を想定して各段 arena を:
 これで sh + tcc + tcheck = 40 + 25 + 240 = **305 KB / 480 KB**、
 余裕 175 KB。tcc-driven が動くようになる見込み。
 
-bcrun.tc を OS 上で再コンパイルしたいなら、まず **vartab を 256 以上
-に拡大** + AST pool 分割 (vm_run を関数分解、現状 ユーザ指示で out of
-scope) が要る。それは別タスク。
+bcrun.tc の OS 上再コンパイルは 2026-07-07 に vartab/fntab/nodes の
+拡大 + bc2asm instr buffer 動的化で可能になった (#8、上記)。vm_run の
+関数分解は不要だった。
 
 ### 実装後の実測 (2026-04-29 追記)
 

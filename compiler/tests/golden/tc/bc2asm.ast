@@ -5201,6 +5201,76 @@
       )
     )
   )
+  (fn grow_i32
+    (params
+      (param arr
+        (type I32Array)
+      )
+    )
+    (ret
+      (type I32Array)
+    )
+    (block
+      (comment "var oldlen: i32 = len(arr);")
+      (var_decl oldlen
+        (type i32)
+        (call len
+          (var arr)
+        )
+      )
+      (comment "var na: I32Array = I32Array((oldlen * 2) as u32);")
+      (var_decl na
+        (type I32Array)
+        (call I32Array
+          (cast
+            (binop *
+              (var oldlen)
+              (int 2)
+            )
+            (type u32)
+          )
+        )
+      )
+      (comment "var i: i32 = 0;")
+      (var_decl i
+        (type i32)
+        (int 0)
+      )
+      (comment "while i < oldlen {")
+      (while
+        (binop <
+          (var i)
+          (var oldlen)
+        )
+        (block
+          (comment "set(na, i, get(arr, i));")
+          (call_stmt set
+            (var na)
+            (var i)
+            (call get
+              (var arr)
+              (var i)
+            )
+          )
+          (comment "i = i + 1;")
+          (assign i
+            (binop +
+              (var i)
+              (int 1)
+            )
+          )
+        )
+      )
+      (comment "delete(arr);")
+      (call_stmt delete
+        (var arr)
+      )
+      (comment "return na;")
+      (return
+        (var na)
+      )
+    )
+  )
   (fn parse_bc
     (params
       (param strtab
@@ -5221,12 +5291,6 @@
       (param locals_pool
         (type StrRefArray)
       )
-      (param instrs
-        (type I32Array)
-      )
-      (param label_pcs
-        (type I32Array)
-      )
       (param ob
         (type StringBuffer)
       )
@@ -5235,6 +5299,20 @@
       (type void)
     )
     (block
+      (comment "var instrs: I32Array = I32Array(8192);")
+      (var_decl instrs
+        (type I32Array)
+        (call I32Array
+          (int 8192)
+        )
+      )
+      (comment "var label_pcs: I32Array = I32Array(2048);")
+      (var_decl label_pcs
+        (type I32Array)
+        (call I32Array
+          (int 2048)
+        )
+      )
       (comment "var strtab_save: i32 = 0 - 1;")
       (var_decl strtab_save
         (type i32)
@@ -6354,13 +6432,30 @@
                       (call_stmt next
                         (var g_reader)
                       )
-                      (comment "if cur_fn>=0 { set(label_pcs,lnum3,g_ninstrs-instr_base(get(fns, cur_fn))); }")
+                      (comment "if cur_fn>=0 {")
                       (if
                         (binop >=
                           (var cur_fn)
                           (int 0)
                         )
                         (block
+                          (comment "while lnum3 >= len(label_pcs) { label_pcs = grow_i32(label_pcs); }")
+                          (while
+                            (binop >=
+                              (var lnum3)
+                              (call len
+                                (var label_pcs)
+                              )
+                            )
+                            (block
+                              (assign label_pcs
+                                (call grow_i32
+                                  (var label_pcs)
+                                )
+                              )
+                            )
+                          )
+                          (comment "set(label_pcs,lnum3,g_ninstrs-instr_base(get(fns, cur_fn)));")
                           (call_stmt set
                             (var label_pcs)
                             (var lnum3)
@@ -6470,6 +6565,31 @@
                           (call get
                             (var fns)
                             (var cur_fn)
+                          )
+                        )
+                      )
+                      (comment "while ((ib3+iidx)*4+4) > len(instrs) { instrs = grow_i32(instrs); }")
+                      (while
+                        (binop >
+                          (binop +
+                            (binop *
+                              (binop +
+                                (var ib3)
+                                (var iidx)
+                              )
+                              (int 4)
+                            )
+                            (int 4)
+                          )
+                          (call len
+                            (var instrs)
+                          )
+                        )
+                        (block
+                          (assign instrs
+                            (call grow_i32
+                              (var instrs)
+                            )
                           )
                         )
                       )
@@ -10686,11 +10806,11 @@
           (int:u32 32)
         )
       )
-      (comment "var locals_pool:  StrRefArray = StrRefArray(128u32);")
+      (comment "var locals_pool:  StrRefArray = StrRefArray(512u32);")
       (var_decl locals_pool
         (type StrRefArray)
         (call StrRefArray
-          (int:u32 128)
+          (int:u32 512)
         )
       )
       (comment "var ppi: i32 = 0;")
@@ -10726,11 +10846,11 @@
         (type i32)
         (int 0)
       )
-      (comment "while lpi < 128 { set(locals_pool, lpi, StrRef(0, 0)); lpi = lpi + 1; }")
+      (comment "while lpi < 512 { set(locals_pool, lpi, StrRef(0, 0)); lpi = lpi + 1; }")
       (while
         (binop <
           (var lpi)
-          (int 128)
+          (int 512)
         )
         (block
           (call_stmt set
@@ -10747,20 +10867,6 @@
               (int 1)
             )
           )
-        )
-      )
-      (comment "var instrs:       I32Array = I32Array(8192);")
-      (var_decl instrs
-        (type I32Array)
-        (call I32Array
-          (int 8192)
-        )
-      )
-      (comment "var label_pcs:    I32Array = I32Array(2048);")
-      (var_decl label_pcs
-        (type I32Array)
-        (call I32Array
-          (int 2048)
         )
       )
       (comment "g_unit_name = U8Array(64);")
@@ -10813,8 +10919,6 @@
         (var fns)
         (var params_pool)
         (var locals_pool)
-        (var instrs)
-        (var label_pcs)
         (var ob)
       )
       (comment "close(g_reader);")
