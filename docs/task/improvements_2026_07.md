@@ -18,7 +18,7 @@ K22 (DOOM TITLEPIC 表示) 到達時点で、`docs/problem.md` /
 | 1 | codegen: グローバル var の StringLiteral 初期化バグ修正 (#36) | バグ | **済 2026-07-05** | S |
 | 2 | SD 書き込み高速化 (CMD25 / SPI クロック) | 性能 | **済 2026-07-05** | M |
 | 3 | ドキュメントの stale 記述掃除 (パス・解決済エントリ) | docs | **済 2026-07-05** | S |
-| 4 | PL011 RX IRQ + nested trap (K11 根本解決) | 信頼性 | P2 | L |
+| 4 | K11: nested-trap は不要と判明 (真因は SW ring/throughput) | 診断 | **済 2026-07-07** | — |
 | 5 | peek/poke/get/set intrinsic 化 (#20) → 実は解決済みだった (§2-2) | 性能+安全 | **済 (stale)** | — |
 | 6 | tmpfs_unlink 追加 (#30) | 機能 | **済 2026-07-05** | S |
 | 7 | userland タスクの単体テスト整備 | テスト | P2 | M |
@@ -46,20 +46,28 @@ K22 (DOOM TITLEPIC 表示) 到達時点で、`docs/problem.md` /
 
 参照: `docs/problem.md` #36。
 
-### 1-2. PL011 RX IRQ + nested trap (K11 Phase 2B) — P2 / L
+### 1-2. K11: nested-trap は誤ったターゲットだった — 診断完了 (2026-07-07)
 
-`mr -a` の ACK + checksum プロトコル (K21) で実用上は回避済みだが、
-「長時間 ecall 中 (SD write 等) は UART RX FIFO が overflow し得る」
-という本質は残っている。今は upload 経路しか守られておらず、将来
-対話的なタスク (エディタ、ゲーム) が SD I/O と UART 入力を同時に
-使うと再発する。`trap_common.s` に mscratch 退避 + nested trap stack
-を入れて RX IRQ 駆動の drain にするのが本筋。
+着手前に実機で再現・切り分けたところ、docs の「HW FIFO overflow」
+という根本原因診断が**誤り**と判明した。`G_UART_RX_CAP` を
+4 KB → 16 KB にすると plain mr の安全 upload サイズが 8 KB → 16 KB に
+**比例して動く** (pico2_k11_reproduce.py) ため、ボトルネックは
+HW FIFO (32 byte 固定) ではなく **SW ring (`g_uart_rx_buf`)**。
+Phase 2A の drain hook (`sd_spi_xfer` 毎の drain) が HW FIFO を空に
+保っており、真因は「mr が長い SD write 中に ring を pop できず、
+partial-sector RMW でスループット不足 → ring overflow」。
 
-規模が大きい (trap entry の改修 + 全 syscall 経路の再検証) ので、
-実害が再発したタイミングで着手が妥当。着手時は
-`integration/pico2_k11_reproduce.py` が回帰テストとして使える。
+したがって **提案されていた PL011 RX IRQ + nested trap は K11 を
+直さない** (HW FIFO はすでに空)。高リスクな trap_common.s 書き換えを
+回避できた。正しい対策:
+- **mr -a (ACK flow control)**: 実装済・self_replicate で 3.5 MB
+  byte-exact 実証。plain mr は legacy qemu fixture 専用なので実機の
+  大容量 plain-mr upload は実用ワークフローではない
+- mr を 512 byte 境界までバッファして full-sector write にすれば
+  RMW 回避でスループットが上がり ring が溜まらない (未実装、userland
+  のみの低リスク改善案)
 
-参照: `docs/problem.md` K8+K9 Phase 2B、K11。
+詳細は `docs/problem.md` K11「真の根本原因」、`docs/solved.md` #41。
 
 ### 1-3. tmpfs_unlink (#30) — 済み (2026-07-05)
 

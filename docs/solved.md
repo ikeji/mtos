@@ -230,6 +230,38 @@ fib.bc / global_str.bc を Gen1 bcrun と同一出力で実行。回帰は
 これで tcheck の実 worst case は bc2asm.tc (nc=1656) → bcrun.tc
 (nc=2387) に更新。vm_run の関数分解は不要だった。
 
+### 41. K11 の根本原因を訂正: HW FIFO ではなく SW ring overflow、nested-trap は不要 — 診断完了 (2026-07-07)
+
+K11 (pico2 の大容量 plain-mr upload で sh が wedge) の「根本解決」と
+して長らく **PL011 RX IRQ + nested trap** (trap_common.s 改修) が
+roadmap に残っていた。着手前に実機で切り分けたところ、前提が誤りと
+判明:
+
+- 当初診断 (2026-05-06) は「M-mode 長時間滞在中に HW RX FIFO (32B)
+  overflow」。しかし Phase 2A の drain hook (`sd_spi_xfer` が SPI 1
+  byte 毎に `uart_rx_drain`) が HW FIFO を空に保つので、もう HW FIFO
+  は溢れない。
+- **決定的実験**: `G_UART_RX_CAP` を 4 KB → 16 KB にすると plain mr の
+  安全 upload サイズが 8 KB → 16 KB へ**線形に増加** (2026-07-07、
+  `pico2_k11_reproduce.py`: 4 KB ring で 8 OK/16 fail、16 KB ring で
+  16 OK/32 fail)。HW FIFO が原因なら ring サイズは無関係のはずで、
+  サイズ依存 = **SW ring (`g_uart_rx_buf`) overflow** の証明。
+- 真因: mr は 1 フレーム毎に 64 byte を /sd に `sys_write` し、partial-
+  sector RMW (block read+write) で実効 ~2 KB/s。upload ~3.2 KB/s に
+  追いつかず、差分が ring に溜まり続けて overflow → frame desync。
+  SD CMD25 高速化 (2026-07-05) 後も閾値は不変。
+
+**帰結: nested-trap は K11 を直さない** (HW FIFO はすでに空)。高リスク
+かつ byte-exact self-replicate に関わる trap_common.s の書き換えを
+回避できた。正しい対策は flow control か mr のスループット改善で、
+production は既に **mr -a (ACK gate)** で解決済 (self_replicate が
+3.5 MB を byte-exact upload、K21)。plain mr は legacy qemu fixture
+専用なので実機の大容量 plain-mr upload は実用ワークフローではない。
+
+SW ring 拡大は band-aid (閾値を線形に動かすだけ、throughput mismatch
+は残る) で、+RAM + self_replicate byte-exact 再検証コストに見合わない
+ため見送り。ring は 4 KB のまま。詳細は `docs/problem.md` K11。
+
 ### 40. self_replicate manifest に touch_xpt2046 が未追従 — 完了 (2026-07-06)
 
 const 導入後の byte-exact 確認で `pico2_self_replicate.sh` が失敗

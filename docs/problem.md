@@ -187,13 +187,13 @@ upload 後 sh が応答せず、UARTRSR の OE flag が立つことを観測)。
 
 実機検証: K11 wedge は **256 → 8 KB upload 改善 (32x)**。integration/
 pico2_k11_reproduce.py で 256 / 1024 / 4096 / 8192 byte 全 PASS。
-16 KB はまだ fail (mr が早期 EOS 検知して残バイトが sh の入力に流れる
-モード — 完全 wedge ではないが期待通りでない)。
+plain mr は 16 KB 以上で依然 fail。
 
-**Phase 2B (未着手)**: PL011 RX interrupt + ネスト trap。
-trap_common.s に nested-trap 対応 (mscratch 退避 + 専用 nested 用
-trap stack) を入れて、ecall 実行中も RX IRQ 駆動で drain 可能にする。
-systemic + 高コスト。K11 が完全に必要な場合は実装する
+**Phase 2B (nested-trap) は不要と判明 (2026-07-07)**: 実験で drain
+hook が HW FIFO を空に保っている (溢れるのは SW ring) と確定したため、
+RX IRQ + nested trap は K11 の正しいターゲットではない。詳細は下の
+K11 エントリ「真の根本原因」を参照。真の対策は mr -a (flow control、
+実装済) か mr のスループット改善。
 
 **回避策 (実装済)**:
 - K8/K9: Phase 1 で大きく改善
@@ -220,32 +220,47 @@ qemu virt + plain `-serial stdio` で 256〜65536 byte の mr upload は
 食べてしまう。最初これを K11 と勘違いしたが別問題で、回避は
 qemu 側で `-serial stdio` 単独 (`-monitor null`) を使うこと。
 
-**根本原因 (2026-05-06 実機調査で確定)**: ecall_write → fatfs_write
-→ block_sd CMD24 wait の経路が **長時間 (1 sector ~10 ms) M-mode
-で滞在し、ハードが mstatus.MIE=0 にしている間 PL011 RX FIFO (32 byte)
-が overflow** する。
-- pico2_k11_reproduce.py で 256 byte upload 後 wedge を再現
-- openocd halt で **UARTRSR=0x08 (OE bit set)** を確認 — overrun 発生済
-- mr の framing input が破損 → sz hdr が乱数 → mr が無限 read で永続待ち
-- 観測 PC は trap_handler / sched_yield_read / vfs_read を周回
-  (mr が ecall→-2→yield→ecall を高速反復)
+**当初の診断 (2026-05-06) は誤りだった**: 「M-mode 長時間滞在中に
+PL011 HW RX FIFO (32 byte) が overflow」と結論づけていたが、
+2026-07-07 の実機実験でこれは**現在の kernel には当てはまらない**と
+判明。
 
-Phase 1 (kernel ring buffer + timer-tick drain) では **timer trap 自体が
-ecall 中は走らないため drain 不能** で K11 は救えない。
-Phase 2A (sd_spi_xfer drain hook) で 8 KB upload まで救済 (256 → 8 KB
-で 32x 改善)。16 KB 以上は依然失敗 — mr が早期 EOS 誤検知して残バイトが
-sh の入力に流れる別モード。詳細は K8+K9 エントリの Phase 2A 記述を参照。
+**真の根本原因 (2026-07-07 実機実験で確定): SW リング overflow
+(mr スループット不足)**。Phase 2A の drain hook (`sd_spi_xfer` が
+SPI 1 byte 毎に `uart_rx_drain`) が HW FIFO を空に保っているので、
+HW FIFO はもう溢れない。溢れるのは **`g_uart_rx_buf` (4 KB SW ring)**
+の方:
+- mr は 1 フレーム毎に `sys_write(1, ..., 64)` で /sd に書く。64 byte
+  でも partial-sector RMW (block read 512 + write 512) が走り、実効
+  ~2 KB/s。テストの upload は ~3.2 KB/s なので **mr が追いつかず**、
+  差分が ring に溜まり続ける (mr は SD write 中 ring を pop しない)
+- ring が満杯になるとバイトが drop → mr の frame 長ヘッダが破損 →
+  desync (無限 read wedge、または残バイトが sh 入力に流れる)
 
-**Phase 2 候補**:
-- A: block_sd の SPI poll loop / sd_wait_busy で `uart_rx_drain()` を
-  呼ぶ。narrow + 低コスト
-- B: PL011 RX interrupt + nested trap (`trap_common.s` に nested 対応)。
-  systemic だが trap entry の改修必要
+**決定的証拠**: `G_UART_RX_CAP` を 4 KB → 16 KB にすると、plain mr の
+安全 upload サイズが **8 KB → 16 KB に比例して増加** (2026-07-07
+`pico2_k11_reproduce.py`: 4 KB ring で 8 OK/16 fail、16 KB ring で
+16 OK/32 fail)。HW FIFO overflow なら ring サイズは無関係のはずで、
+サイズ依存 = SW ring overflow の証明。SD CMD25 高速化 (2026-07-05)
+後も閾値は変わらず。
+
+**⚠ 提案されていた「nested-trap (RX IRQ)」は K11 を直さない**:
+HW FIFO はすでに drain hook で空に保たれているので、それを IRQ で
+drain しても無意味。真の対策は **flow control (mr の pop 速度に
+sender を合わせる)** か **mr のスループット改善**:
+- **mr -a (ACK gate)**: 各フレーム書き込み後に ACK を返し sender が
+  待つ。production の self_replicate はこれで 3.5 MB を byte-exact
+  upload 済 (K21)。**plain mr は legacy qemu fixture 専用** なので
+  実機での plain mr 大容量 upload は実用ワークフローではない
+- mr が 512 byte 境界までバッファしてから full-sector write すれば
+  RMW を回避してスループットが arrival rate を超え、ring が溜まらなく
+  なる (未実装、userland のみの低リスク改善案)
+- SW ring 拡大は band-aid: 閾値を線形に動かすだけで throughput
+  mismatch は残る。+RAM + self_replicate byte-exact 再検証コストに
+  見合わないため見送り (2026-07-07)
 
 **回避策 (実装済)**:
-- 大容量 (>1.4 MB の disk.img 等) は host 側で SD カードを抜いて
-  manual cp で staging。`pico2_link_kernel_run.sh` の
-  `SKIP_UPLOAD=1` 経路 (スクリプト自体は walked-source 退役時に削除、
-  commit 4fd9027)
-- self-replicate 経路は kernel_pico2.tc::dump_mtfs_to_sd で完全迂回
+- self-replicate / 大容量 upload は mr -a (ACK) で完全に解決済
+- 旧: 大容量は host 側で SD 抜いて manual cp (`pico2_link_kernel_run.sh
+  SKIP_UPLOAD=1`、walked-source 退役時に削除 commit 4fd9027)
 
