@@ -156,7 +156,11 @@ $(TEST_ASM_DIR)/test_echo.bin: $(ROOT)/compiler/tests/test_echo.tc $(TEST_ASM_DE
 	    ./compiler/scripts/compile-gen2.sh -o $@ $< 2>/dev/null
 
 # ===== test =====
-test: gen2
+# Depend on test-asm-bins so test_asm.sh reuses the Make-cached virt
+# binaries instead of recompiling hello2/test_timer/test_echo through
+# compile-gen2.sh on every run (~13 s saved, keeps `make test` under
+# the 1-minute budget — CLAUDE.md work rule).
+test: gen2 test-asm-bins
 	@cd $(ROOT) && $(ROOT)/compiler/tests/test_unit.sh
 	@cd $(ROOT) && $(ROOT)/compiler/tests/test_pipeline.sh
 	@cd $(ROOT) && $(ROOT)/compiler/tests/test_consistency.sh
