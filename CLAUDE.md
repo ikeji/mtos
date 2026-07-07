@@ -16,7 +16,15 @@ R_Init / P_Init / S_Init / D_CheckNetGame / HU_Init / ST_Init /
 I_InitGraphics) を完走、`DG_DrawFrame` から `/dev/fb` mode=0
 band-blit 経由で LCD に DOOM ロゴ + Doomguy を表示するまで到達。
 
-**最近の改善 (K21 / K22 / 2026-07-05〜06)**:
+**最近の改善 (K21 / K22 / 2026-07-05〜08)**:
+- 2026-07-08: **fs ディスパッチを関数ポインタ vtable 化**
+  (`docs/task/function_pointers.md`)。言語・コンパイラ無改造の
+  ライブラリ方式: trap_common.s の callN (間接呼び出しトランポリン) +
+  fs_ops_init (la で vtable を埋める、mangled 名はここ 1 箇所) +
+  vfs.tc の typed ラッパ。read/write/size/close の if チェーンを置換、
+  self-replicate byte-exact 実機再確認済。負テストで asm_pass3 の
+  未定義 reloc silent skip を発見し hard error 化 (`docs/solved.md`
+  #42)、失敗ビルドの部分出力対策に 3 Makefile へ .DELETE_ON_ERROR
 - 2026-07-05〜06: `const` 導入 (下記「言語仕様」参照) + 既存の定数
   ぽい var 578 個を const 化、SD を CMD25 バースト + inline xfer で
   ~1.45× 高速化、tmpfs_unlink 追加、#36 修正。その後

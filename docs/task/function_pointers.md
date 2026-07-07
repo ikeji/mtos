@@ -138,6 +138,13 @@ fnaddr builtin (5) との比較:
     redirect/close を叩く)、`make test` 全 green。
   - **pico2 self-replicate byte-exact 再確認** (trap_common.s と
     vfs.tc は self-replicate 集合内なので必須)。
+
+**→ Phase 1+2 実装完了 (2026-07-08、commit 47f6077)**: read / write /
+size / close の 4 チェーンを vtable 化 (seek / xip は単一 FS なので
+if のまま)。make test 全 green (fs_virtio が間接呼び出し経路で全 FS
+操作を通過)、**pico2 self-replicate byte-exact MATCH 実機確認済**
+(kernel.bin md5 a6158412…)。負テストで発見した asm_pass3 の未定義
+reloc silent skip も修正 (下記リスク欄、solved.md #42)。
 - 追って: 他の間接呼び出し候補 (devfs バックエンド、procfs synth
   テーブル) への展開は fs で様子を見てから。
 
