@@ -396,19 +396,6 @@ export fn kdbg_kbd_sc(sc: i32, ch: u8) -> void {
     return;
 }
 
-// Print "[w slot:len]" when a task writes to a redirected stdout
-// (task fd 1 → tmpfs/mtfs fd ≥ 3). Exported so vfs.tc can trace
-// redirected writes without poking kernel_common internals.
-export fn kdbg_write(slot: i32, n: i32) -> void {
-    kdbg_chr('[' as u8);
-    kdbg_chr('w' as u8); kdbg_chr(' ' as u8);
-    kdbg_dec(slot);
-    kdbg_chr(':' as u8);
-    kdbg_dec(n);
-    kdbg_chr(']' as u8);
-    return;
-}
-
 // ===== UART RX frame dispatcher (Phase 2) =====
 //
 // When g_mux_enabled=1, sys_read(fd=0) consumes from the current

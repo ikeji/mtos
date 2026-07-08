@@ -66,3 +66,28 @@ export fn print_error(msg: StringLiteral) -> void {
     destroy(eb);
     return;
 }
+
+// argv 比較 (String vs リテラル)。一致 = 1 / 不一致 = 0。
+// asm_pass1/2/3 と tcheck の CLI パーサが使う (元は 4 ファイルに
+// 同一実装が複製されていた — refactor_candidates.md B3)。
+export fn arg_eq(s: String, pat: StringLiteral) -> i32 {
+    var ns: i32 = len(s);
+    var np: i32 = len(pat);
+    if ns != np { return 0; }
+    var i: i32 = 0;
+    while i < np {
+        if get(s, i) != get(pat, i) { return 0; }
+        i = i + 1;
+    }
+    return 1;
+}
+
+// print_error と違い改行を付加しない stderr 出力 (メッセージ側が
+// "\n" を含む前提)。asm_pass1/2/3 のエラー経路が使う。
+export fn err(s: StringLiteral) -> void {
+    var eb: StringBuffer = StringBuffer_new();
+    emit_string(eb, s);
+    write(eb, 2);
+    destroy(eb);
+    return;
+}

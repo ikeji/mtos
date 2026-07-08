@@ -27,7 +27,6 @@
 // SIO timer (kernel_pico2.tc) — used for the power-on delays.
 fn read_mtime() -> u32;
 fn kputs_t(s: StringLiteral) -> void;
-fn kput_hex32(v: u32) -> void;
 
 // ===== RP2350 register addresses =====
 const LCD_IO_BANK0:    u32 = 0x40028000u32;

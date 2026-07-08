@@ -148,6 +148,9 @@ fn tmpfs_lookup(name_addr: u32, n: i32) -> i32 {
 
 // Allocate a new file slot with a copy of name_addr[0..n] (+ NUL).
 // Returns the slot index, or -1 if the table is full.
+// kernel_common.tc の kputs (リンカ解決)。table-full の loud error 用。
+fn kputs(s: StringLiteral) -> void;
+
 fn tmpfs_create(name_addr: u32, n: i32) -> i32 {
     var i: i32 = 0;
     while i < TMPFS_MAX_FILES {
@@ -169,6 +172,7 @@ fn tmpfs_create(name_addr: u32, n: i32) -> i32 {
         }
         i = i + 1;
     }
+    kputs("tmpfs: file table full\n");
     return -1;
 }
 
@@ -184,6 +188,7 @@ fn tmpfs_alloc_fd(ino: i32, wr_flag: i32) -> i32 {
         }
         i = i + 1;
     }
+    kputs("tmpfs: fd table full\n");
     return -1;
 }
 

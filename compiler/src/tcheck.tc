@@ -1672,18 +1672,6 @@ fn main() -> i32 {
                      0 as String, 0 as String, 0 as String);
 }
 
-fn arg_eq(s: String, pat: StringLiteral) -> i32 {
-    var ns: i32 = len(s);
-    var np: i32 = len(pat);
-    if ns != np { return 0; }
-    var i: i32 = 0;
-    while i < np {
-        if get(s, i) != get(pat, i) { return 0; }
-        i = i + 1;
-    }
-    return 1;
-}
-
 // File-args entry:
 //   tcheck [--exth ext1.th [--exth ext2.th ...]]
 //          --tgth tgt.th --tgt tgt.ast --out tgt.tast

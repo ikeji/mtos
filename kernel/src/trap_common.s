@@ -1,7 +1,7 @@
 # kernel/trap_common.s — platform-independent trap handling and scheduler
 #
 # Provides: _trap_entry, _trap_restore, _handle_ecall, _task_exit_trampoline,
-#           init_task_frame, sched_start, kern_run_task, set_switch_frame,
+#           init_task_frame, sched_start, set_switch_frame,
 #           default trap_handler/sched_task_exit, peek/poke, CSR helpers.
 #
 # Requires from platform.s:
@@ -514,32 +514,6 @@ sched_start__u32:
     csrw 0x300, t0
     j    _trap_restore
 
-# ===== kern_run_task(entry, sp, gp, arena, arena_size) -> i32 =====
-    .globl kern_run_task__u32__u32__u32__u32__i32
-kern_run_task__u32__u32__u32__u32__i32:
-    la   t0, _kern_save
-    sw   ra,  0(t0)
-    sw   sp,  4(t0)
-    sw   s0,  8(t0)
-    sw   s1, 12(t0)
-    sw   s2, 16(t0)
-    sw   s3, 20(t0)
-    sw   s4, 24(t0)
-    sw   s5, 28(t0)
-    sw   s6, 32(t0)
-    sw   s7, 36(t0)
-    sw   s8, 40(t0)
-    sw   s9, 44(t0)
-    sw   s10, 48(t0)
-    sw   s11, 52(t0)
-    sw   gp, 56(t0)
-    mv   t0, a0
-    mv   sp, a1
-    mv   gp, a2
-    mv   a0, a3
-    mv   a1, a4
-    jr   t0
-
 # ===== Peek/Poke =====
     .globl peek8__u32
 peek8__u32:
@@ -571,7 +545,9 @@ poke32__u32__u32:
 # register. f's own `ret` returns straight to callN's caller, so no
 # frame is needed. Unsafe primitive (no arg-count / type checking);
 # TC code must only use these inside typed wrapper fns (vfs.tc's
-# fs_rw_via / fs_fd_via).
+# fs_rw_via / fs_fd_via). Currently only call1 / call3 have callers;
+# call0 / call2 / call4 are kept deliberately so the arity family is
+# complete for the next vtable user (devfs / procfs 拡張を想定).
     .globl call0__u32
 call0__u32:
     mv   t0, a0

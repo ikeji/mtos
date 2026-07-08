@@ -2108,6 +2108,87 @@ __L25:
   return_void
 .endfn
 
+.fn arg_eq String StringLiteral i32
+.param s String
+.param pat StringLiteral
+.local ns i32
+.local np i32
+.local i i32
+; var ns: i32 = len(s);
+  load s
+  call len String
+  store ns
+; var np: i32 = len(pat);
+  load pat
+  call len StringLiteral
+  store np
+; if ns != np { return 0; }
+  load ns
+  load np
+  ne
+  jump_ifnot __L27
+  push_int 0
+  return
+__L27:
+; var i: i32 = 0;
+  push_int 0
+  store i
+; while i < np {
+__L28:
+  load i
+  load np
+  lt
+  jump_ifnot __L29
+; if get(s, i) != get(pat, i) { return 0; }
+  load s
+  load i
+  call get String i32
+  load pat
+  load i
+  call get StringLiteral i32
+  ne
+  jump_ifnot __L30
+  push_int 0
+  return
+__L30:
+; i = i + 1;
+  load i
+  push_int 1
+  add
+  store i
+  jump __L28
+__L29:
+; return 1;
+  push_int 1
+  return
+  return_void
+.endfn
+
+.fn err StringLiteral void
+.param s StringLiteral
+.local eb StringBuffer
+; var eb: StringBuffer = StringBuffer_new();
+  call StringBuffer_new
+  store eb
+; emit_string(eb, s);
+  load eb
+  load s
+  call emit_string StringBuffer StringLiteral
+  pop
+; write(eb, 2);
+  load eb
+  push_int 2
+  call write StringBuffer i32
+  pop
+; destroy(eb);
+  load eb
+  call destroy StringBuffer
+  pop
+; return;
+  return_void
+  return_void
+.endfn
+
 ; globals
 .global g_reader SourceReader 0
 .global g_stab_pos i32 0

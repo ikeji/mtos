@@ -1431,6 +1431,7 @@ fn fatfs_alloc_fd() -> i32 {
         if ff_active(f) == 0 { return i; }
         i = i + 1;
     }
+    kputs("fatfs: fd table full\n");
     return -1;
 }
 

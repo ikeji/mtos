@@ -308,6 +308,7 @@ export fn procfs_open(path_addr: u32, plen: i32) -> i32 {
         i = i + 1;
     }
     // Table full
+    kputs("procfs: fd table full\n");
     if buf_hdr != 0u32 { kfree(buf_hdr); }
     return -1;
 }

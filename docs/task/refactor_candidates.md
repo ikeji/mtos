@@ -149,7 +149,11 @@ private、peek/poke 境界なし、固定 cap 等) は除外済み。
       から一切呼ばれていない死にスクリプトと判明 — Makefile gen3 は
       compile-gen2.sh を直接使い、test_gen3.sh は段階を自前駆動。
       GEN2_DIR=GEN3_DIR で compile-gen2.sh に委譲する薄いラッパに置換)
-- [ ] B1+B2+B3: 死にコード削除 + loud error + arg_eq/is_digit_c
+- [x] B1+B2+B3 (2026-07-08 完了): 死にコード削除 (dump_mtfs_to_sd 一式
+      ~150 行 / kern_run_task / kput_hex32 / kdbg_write、call0/2/4 は
+      「将来用」コメントを明記して温存)、fd/table 満杯 7 箇所に kputs
+      loud error、arg_eq ×4 + err ×3 を strlib.tc に集約
+      (is_digit_c ×3 は A2 で解消済み)
 - [ ] C1: virtio 統合
 - [ ] C2: pico2 スクリプト共通化
 - [ ] D1: fatfs イテレータ化 + 実機 self-replicate 再検証

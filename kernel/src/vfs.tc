@@ -204,6 +204,9 @@ fn alloc_vfs_fd(fs: i32, inner_fd: i32, owner_slot: i32) -> i32 {
         }
         i = i + 1;
     }
+    // 固定 cap (VFS_MAX_FDS) の枯渇は silent にしない
+    // (design_decisions.md #5)。以下の各 fs の fd/table full も同様。
+    kputs("vfs: fd table full\n");
     return -1;
 }
 

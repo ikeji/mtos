@@ -33,6 +33,7 @@
 import "asm_common.tc";
 import "source_reader.tc";
 import "string_buffer.tc";
+import "strlib.tc";
 
 fn do_openat(dirfd: i32, path: String,        flags: i32) -> i32;
 fn do_openat(dirfd: i32, path: StringLiteral, flags: i32) -> i32;
@@ -42,23 +43,6 @@ fn do_close(fd: i32) -> i32;
 // memory tests can read the per-stage peak from `[kmem peak=N]`.
 // No-op stub on host bootstrap (bootstrap/runtime_syscall.c).
 fn km_dump_peak() -> void;
-
-fn arg_eq(s: String, pat: StringLiteral) -> i32 {
-    var ns: i32 = len(s);
-    var np: i32 = len(pat);
-    if ns != np { return 0; }
-    var i: i32 = 0;
-    while i < np {
-        if get(s, i) != get(pat, i) { return 0; }
-        i = i + 1;
-    }
-    return 1;
-}
-
-fn err(s: StringLiteral) -> void {
-    sys_write(2, s as u32 as U8Array, len(s));
-    return;
-}
 
 // Pick the per-section .bin fd matching `sec`. Returns 0 if no fd
 // is wired for that section (e.g. asm_pass1 always wires text /
