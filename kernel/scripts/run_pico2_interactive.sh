@@ -3,9 +3,9 @@
 # interactive UART console, the pico2 counterpart of `make run`.
 #
 # Usage:
-#   ./kernel/run_pico2_interactive.sh              (pristine kernel)
-#   ./kernel/run_pico2_interactive.sh --extra      (with EXTRA_TASKS)
-#   UF2=path/to/kernel.uf2 ./kernel/run_pico2_interactive.sh --no-build
+#   ./kernel/scripts/run_pico2_interactive.sh              (pristine kernel)
+#   ./kernel/scripts/run_pico2_interactive.sh --extra      (with EXTRA_TASKS)
+#   UF2=path/to/kernel.uf2 ./kernel/scripts/run_pico2_interactive.sh --no-build
 #
 # Requires:
 #   - ~/opt/openocd-rpi/bin/openocd (Raspberry Pi fork with RP2350 support)
@@ -15,10 +15,7 @@
 set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
-
-OPENOCD="${OPENOCD:-$HOME/opt/openocd-rpi/bin/openocd}"
-OPENOCD_SCRIPTS="${OPENOCD_SCRIPTS:-$HOME/opt/openocd-rpi/share/openocd/scripts}"
-UART_PORT="${UART_PORT:-/dev/ttyACM0}"
+source "$ROOT_DIR/integration/lib/pico2_hw.sh"
 
 EXTRA_TASKS_DEFAULT="parse sigscan tcheck codegen bc2asm asm_pass2 asm_pass3 cat muxon muxoff mx mr"
 USE_EXTRA=0
@@ -41,7 +38,7 @@ if [ "$BUILD" = "1" ]; then
             "$SCRIPT_DIR/build.sh" --target pico2 -o "$UF2" >&2
     else
         # No EXTRA_TASKS → Make-cached path is fine.
-        (cd "$ROOT_DIR" && make pico2-kernel) >&2
+        (cd "$ROOT_DIR" && make -C kernel pico2) >&2
     fi
 else
     : "${UF2:=$ROOT_DIR/kernel/build/pico2_kernel.uf2}"
@@ -55,42 +52,17 @@ fi
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 BIN="$TMP/kernel.bin"
-python3 - "$UF2" "$BIN" << 'PY'
-import sys, struct
-with open(sys.argv[1], "rb") as f: data = f.read()
-out = bytearray()
-for i in range(0, len(data), 512):
-    block = data[i:i+512]
-    if len(block) < 512: break
-    m1, m2 = struct.unpack_from("<II", block, 0)
-    if m1 != 0x0A324655 or m2 != 0x9E5D5157: continue
-    _, _, ps = struct.unpack_from("<III", block, 8)
-    out.extend(block[32:32+ps])
-with open(sys.argv[2], "wb") as f: f.write(out)
-PY
+uf2_to_bin "$UF2" "$BIN"
 
 # Drain any stale UART bytes so the first keystroke isn't swallowed.
 if [ -e "$UART_PORT" ]; then
-    stty -F "$UART_PORT" 115200 cs8 -cstopb -parenb raw -echo -crtscts 2>/dev/null || true
-    timeout 0.3 cat "$UART_PORT" > /dev/null 2>&1 || true
+    pico2_uart_setup
+    pico2_uart_drain
 fi
 
 echo "[flash] $UF2 → RP2350" >&2
-"$OPENOCD" -s "$OPENOCD_SCRIPTS" \
-    -f interface/cmsis-dap.cfg -f target/rp2350-riscv.cfg \
-    -c "adapter speed 5000" -c "init" -c "reset halt" \
-    -c "program $BIN 0x10000000 verify" \
-    -c "reset run" -c "exit" > "$TMP/openocd.log" 2>&1 || {
-        echo "[flash] openocd failed:" >&2
-        tail -20 "$TMP/openocd.log" >&2
-        exit 1
-    }
-if ! grep -q "Verified OK" "$TMP/openocd.log"; then
-    echo "[flash] verify failed:" >&2
-    tail -20 "$TMP/openocd.log" >&2
-    exit 1
-fi
+pico2_flash_run "$BIN" "$TMP/openocd.log"
 echo "[flash] verified OK" >&2
 
 # Hand off to the Python bidi forwarder.
-exec python3 "$ROOT_DIR/tests/pico2_tty.py" "$UART_PORT" 115200
+exec python3 "$ROOT_DIR/integration/pico2_tty.py" "$UART_PORT" 115200

@@ -159,5 +159,15 @@ private、peek/poke 境界なし、固定 cap 等) は除外済み。
       パラメタ化コアで統合、未使用の virtio_blk_base/version も削除。
       検証: make -C kernel test 8/8 + qemu FAT smoke (mount/read/
       write/readdir) + qemu_mr_scale.py)
-- [ ] C2: pico2 スクリプト共通化
+- [x] C2: pico2 スクリプト共通化 (2026-07-08 完了。
+      integration/lib/pico2_hw.sh に uf2_to_bin / pico2_flash_{halt,run}
+      / pico2_reset_run / pico2_uart_{setup,drain} + env デフォルトを
+      集約、10 スクリプトを移植。副産物 3 件: run_pico2_interactive.sh
+      の stale path 2 件修正 (tests/pico2_tty.py → integration/、
+      make pico2-kernel → make -C kernel pico2)、build.sh の console
+      タスクに jpfont_inc.s が link されていなかった欠落を修正
+      (#42 の hard error が検出)。実機検証: flash_halt+reset_run 経路
+      (test_pico2.sh の flash/boot)、flash_run 経路 (console-land
+      焼き戻し + boot 確認)。test_pico2.sh の UART 検証 fail は既存の
+      capture byte-lossy 問題 — docs/problem.md #44)
 - [ ] D1: fatfs イテレータ化 + 実機 self-replicate 再検証

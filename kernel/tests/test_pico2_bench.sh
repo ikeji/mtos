@@ -28,10 +28,7 @@
 set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
-
-OPENOCD="${OPENOCD:-$HOME/opt/openocd-rpi/bin/openocd}"
-OPENOCD_SCRIPTS="${OPENOCD_SCRIPTS:-$HOME/opt/openocd-rpi/share/openocd/scripts}"
-UART_PORT="${UART_PORT:-/dev/ttyACM0}"
+source "$ROOT_DIR/integration/lib/pico2_hw.sh"
 
 if [ -z "${GEN2_DIR:-}" ]; then echo "ERROR: GEN2_DIR not set" >&2; exit 1; fi
 if [ ! -x "$OPENOCD" ];   then echo "ERROR: openocd missing at $OPENOCD" >&2; exit 1; fi
@@ -55,38 +52,15 @@ if [ "${SKIP_FLASH:-0}" != "1" ]; then
     fi
 
     # uf2 → raw bin for openocd
-    python3 - "$TMP/kernel.uf2" "$TMP/kernel.bin" << 'PY'
-import sys, struct
-with open(sys.argv[1], "rb") as f: data = f.read()
-out = bytearray()
-for i in range(0, len(data), 512):
-    b = data[i:i+512]
-    if len(b) < 512: break
-    m1, m2 = struct.unpack_from("<II", b, 0)
-    if m1 != 0x0A324655 or m2 != 0x9E5D5157: continue
-    _, _, ps = struct.unpack_from("<III", b, 8)
-    out.extend(b[32:32+ps])
-open(sys.argv[2], "wb").write(out)
-PY
+    uf2_to_bin "$TMP/kernel.uf2" "$TMP/kernel.bin"
 
     echo "[2/3] Flashing via openocd..." >&2
-    "$OPENOCD" -s "$OPENOCD_SCRIPTS" \
-        -f interface/cmsis-dap.cfg -f target/rp2350-riscv.cfg \
-        -c "adapter speed 5000" -c "init" -c "reset halt" \
-        -c "program $TMP/kernel.bin 0x10000000 verify" \
-        -c "exit" > "$TMP/oocd.log" 2>&1
-    if ! grep -q "Verified OK" "$TMP/oocd.log"; then
-        echo "ERROR: flash verify failed" >&2
-        tail -10 "$TMP/oocd.log" >&2
-        exit 1
-    fi
+    pico2_flash_halt "$TMP/kernel.bin" "$TMP/oocd.log"
 
-    stty -F "$UART_PORT" 115200 cs8 -cstopb -parenb raw -echo -crtscts 2>/dev/null
-    timeout 0.3 cat "$UART_PORT" > /dev/null 2>&1 || true
+    pico2_uart_setup
+    pico2_uart_drain
 
-    "$OPENOCD" -s "$OPENOCD_SCRIPTS" \
-        -f interface/cmsis-dap.cfg -f target/rp2350-riscv.cfg \
-        -c "adapter speed 5000" -c "init" -c "reset run" -c "exit" > /dev/null 2>&1
+    pico2_reset_run
     sleep 4
 fi
 

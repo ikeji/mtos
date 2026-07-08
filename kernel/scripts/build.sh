@@ -188,6 +188,21 @@ for task in $TASKS; do
     for _es in "$ROOT_DIR/userland/bin/$task"/*.s; do
         [ -f "$_es" ] && [ "$_es" != "$ROOT_DIR/userland/bin/$task/$task.s" ] && _extra_s="$_extra_s $_es"
     done
+    # Generated extra .s — userland/Makefile の TASK_EXTRA_S_<task> の
+    # ミラー。console は日本語フォント wrapper (jpfont_inc.s) を link
+    # する。従来ここが欠落していたが asm_pass3 の undefined-reloc
+    # silent skip (docs/solved.md #42) に隠れて発覚しなかった。
+    if [ "$task" = "console" ]; then
+        _jf="$ROOT_DIR/userland/build/jpfont_inc.s"
+        if [ ! -f "$_jf" ]; then
+            make -C "$ROOT_DIR/userland" font >/dev/null 2>&1 || true
+        fi
+        if [ ! -f "$_jf" ]; then
+            echo "Error: console needs $_jf (run: make -C userland font)" >&2
+            exit 1
+        fi
+        _extra_s="$_extra_s $_jf"
+    fi
     CRT0="$TMP/${task}_crt0.s" \
     CRT0_DATA="$TASK_DATA" \
     ASM_PROLOGUE="; raw" \

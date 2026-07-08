@@ -16,12 +16,9 @@
 set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$(dirname "$SCRIPT_DIR")/../compiler/tests/test_common.sh"
+source "$(dirname "$SCRIPT_DIR")/../integration/lib/pico2_hw.sh"
 
 echo "=== Pico 2 SD card hardware test ==="
-
-OPENOCD="${OPENOCD:-$HOME/opt/openocd-rpi/bin/openocd}"
-OPENOCD_SCRIPTS="${OPENOCD_SCRIPTS:-$HOME/opt/openocd-rpi/share/openocd/scripts}"
-UART_PORT="${UART_PORT:-/dev/ttyACM0}"
 
 # Use a unique payload so we can be sure it's our write that landed
 # on the card, not something left over from a previous run.
@@ -45,41 +42,12 @@ fi
 report_pass "pico2-sd: kernel build" "$(( $(time_ms) - t0 ))"
 
 # Extract raw bin
-python3 - "$TMP/kernel_pico2.uf2" "$TMP/kernel.bin" << 'PY'
-import sys, struct
-with open(sys.argv[1], "rb") as f: data = f.read()
-out = bytearray()
-for i in range(0, len(data), 512):
-    b = data[i:i+512]
-    if len(b) < 512: break
-    m1, m2 = struct.unpack_from("<II", b, 0)
-    if m1 != 0x0A324655 or m2 != 0x9E5D5157: continue
-    _, _, ps = struct.unpack_from("<III", b, 8)
-    out.extend(b[32:32+ps])
-open(sys.argv[2], "wb").write(out)
-PY
+uf2_to_bin "$TMP/kernel_pico2.uf2" "$TMP/kernel.bin"
 
-# ----- Helpers -----
-flash_kernel() {
-    "$OPENOCD" -s "$OPENOCD_SCRIPTS" \
-        -f interface/cmsis-dap.cfg -f target/rp2350-riscv.cfg \
-        -c "adapter speed 5000" -c "init" -c "reset halt" \
-        -c "program $TMP/kernel.bin 0x10000000 verify" \
-        -c "exit" > "$TMP/oocd.log" 2>&1
-    grep -q "Verified OK" "$TMP/oocd.log"
-}
-
-reset_run() {
-    "$OPENOCD" -s "$OPENOCD_SCRIPTS" \
-        -f interface/cmsis-dap.cfg -f target/rp2350-riscv.cfg \
-        -c "adapter speed 5000" -c "init" -c "reset run" -c "exit" \
-        > /dev/null 2>&1 || true
-}
-
-drain_uart() {
-    stty -F "$UART_PORT" 115200 cs8 -cstopb -parenb raw -echo -crtscts 2>/dev/null
-    timeout 0.3 cat "$UART_PORT" > /dev/null 2>&1 || true
-}
+# ----- Helpers (thin wrappers over integration/lib/pico2_hw.sh) -----
+flash_kernel() { pico2_flash_halt "$TMP/kernel.bin" "$TMP/oocd.log" 2>/dev/null; }
+reset_run()    { pico2_reset_run || true; }
+drain_uart()   { pico2_uart_setup; pico2_uart_drain; }
 
 # ----- Phase A: write -----
 t1=$(time_ms)

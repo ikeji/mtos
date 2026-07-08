@@ -8,9 +8,7 @@
 set -e
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-OPENOCD="${OPENOCD:-$HOME/opt/openocd-rpi/bin/openocd}"
-OPENOCD_SCRIPTS="${OPENOCD_SCRIPTS:-$HOME/opt/openocd-rpi/share/openocd/scripts}"
-UART_PORT="${UART_PORT:-/dev/ttyACM0}"
+source "$ROOT/integration/lib/pico2_hw.sh"
 KERNEL_UF2="${KERNEL_UF2:-$ROOT/kernel/build/pico2_kernel_extra.uf2}"
 
 TMP=$(mktemp -d)
@@ -21,30 +19,11 @@ HOST_PARSE_MD5=$(md5sum "$ROOT/userland/build/tasks/parse.bin" | awk '{print $1}
 echo "host parse.bin md5: $HOST_PARSE_MD5" >&2
 
 # Extract UF2 -> raw bin for openocd.
-python3 - "$KERNEL_UF2" "$TMP/kernel.bin" <<'PY'
-import sys, struct
-with open(sys.argv[1], "rb") as f: data = f.read()
-out = bytearray()
-for i in range(0, len(data), 512):
-    b = data[i:i+512]
-    if len(b) < 512: break
-    m1, m2 = struct.unpack_from("<II", b, 0)
-    if m1 != 0x0A324655 or m2 != 0x9E5D5157: continue
-    out += b[32:32+256]
-with open(sys.argv[2], "wb") as f: f.write(bytes(out))
-PY
+uf2_to_bin "$KERNEL_UF2" "$TMP/kernel.bin"
 
 flash_kernel() {
-    "$OPENOCD" -s "$OPENOCD_SCRIPTS" \
-        -f interface/cmsis-dap.cfg -f target/rp2350-riscv.cfg \
-        -c "adapter speed 5000" -c "init" -c "reset halt" \
-        -c "program $TMP/kernel.bin 0x10000000 verify" \
-        -c "exit" > "$TMP/oocd.log" 2>&1
-    grep -q "Verified OK" "$TMP/oocd.log" || { tail -20 "$TMP/oocd.log" >&2; exit 1; }
-    "$OPENOCD" -s "$OPENOCD_SCRIPTS" \
-        -f interface/cmsis-dap.cfg -f target/rp2350-riscv.cfg \
-        -c "adapter speed 5000" -c "init" -c "reset run" -c "exit" \
-        > /dev/null 2>&1
+    pico2_flash_halt "$TMP/kernel.bin" "$TMP/oocd.log" || exit 1
+    pico2_reset_run
 }
 
 run_step() {

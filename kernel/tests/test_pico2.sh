@@ -32,12 +32,9 @@
 set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$(dirname "$SCRIPT_DIR")/../compiler/tests/test_common.sh"
+source "$(dirname "$SCRIPT_DIR")/../integration/lib/pico2_hw.sh"
 
 echo "=== Pico 2 Hardware Test ==="
-
-OPENOCD="${OPENOCD:-$HOME/opt/openocd-rpi/bin/openocd}"
-OPENOCD_SCRIPTS="${OPENOCD_SCRIPTS:-$HOME/opt/openocd-rpi/share/openocd/scripts}"
-UART_PORT="${UART_PORT:-/dev/ttyACM0}"
 
 # ----- Preflight checks -----
 if [ -z "$GEN2_DIR" ]; then
@@ -69,26 +66,7 @@ elapsed=$(( $(time_ms) - t0 ))
 report_pass "pico2: kernel/build.sh --target pico2" "$elapsed"
 
 # ----- Step 2: Extract raw bin from UF2 -----
-# picotool needs a UF2 on the output side too, so we do the extraction
-# ourselves (same layout as kernel/run_pico2.sh's fallback).
-python3 - "$TMP/kernel_pico2.uf2" "$TMP/kernel_pico2.bin" << 'PY'
-import sys, struct
-uf2_path, bin_path = sys.argv[1], sys.argv[2]
-with open(uf2_path, "rb") as f:
-    data = f.read()
-out = bytearray()
-for i in range(0, len(data), 512):
-    block = data[i:i+512]
-    if len(block) < 512:
-        break
-    magic1, magic2 = struct.unpack_from("<II", block, 0)
-    if magic1 != 0x0A324655 or magic2 != 0x9E5D5157:
-        continue
-    _flags, _target_addr, payload_size = struct.unpack_from("<III", block, 8)
-    out.extend(block[32:32 + payload_size])
-with open(bin_path, "wb") as f:
-    f.write(out)
-PY
+uf2_to_bin "$TMP/kernel_pico2.uf2" "$TMP/kernel_pico2.bin"
 
 if [ ! -s "$TMP/kernel_pico2.bin" ]; then
     report_fail_msg "pico2: UF2 extract" "empty bin after UF2 → raw extraction"
@@ -96,31 +74,17 @@ if [ ! -s "$TMP/kernel_pico2.bin" ]; then
     exit $?
 fi
 
-# ----- Step 3: Flash the new kernel -----
-stty -F "$UART_PORT" 115200 cs8 -cstopb -parenb raw -echo -crtscts 2>/dev/null || true
+# ----- Step 3: Flash the new kernel (halted; released in Step 4) -----
+pico2_uart_setup
 
 # Drain any stale UART bytes from a previous run before we start the
 # real capture. Otherwise the last run's "SH: bye" / leftover prompt
 # bytes can bleed into this run's verification.
-cat "$UART_PORT" > /dev/null 2>&1 &
-FLUSH_PID=$!
-sleep 0.3
-kill "$FLUSH_PID" 2>/dev/null || true
-wait "$FLUSH_PID" 2>/dev/null || true
+pico2_uart_drain
 
 t1=$(time_ms)
 
-"$OPENOCD" -s "$OPENOCD_SCRIPTS" \
-    -f interface/cmsis-dap.cfg \
-    -f target/rp2350-riscv.cfg \
-    -c "adapter speed 5000" \
-    -c "init" \
-    -c "reset halt" \
-    -c "program $TMP/kernel_pico2.bin 0x10000000 verify" \
-    -c "reset init" \
-    -c "exit" > "$TMP/openocd.log" 2>&1 || true
-
-if ! grep -q "Verified OK" "$TMP/openocd.log"; then
+if ! pico2_flash_halt "$TMP/kernel_pico2.bin" "$TMP/openocd.log" 2>/dev/null; then
     elapsed=$(( $(time_ms) - t1 ))
     report_fail_msg "pico2: flash" "openocd did not print 'Verified OK': $(tail -5 "$TMP/openocd.log" | tr '\n' ' ')"
     print_results
@@ -136,13 +100,7 @@ timeout 40 cat "$UART_PORT" > "$TMP/uart.log" 2>/dev/null &
 CAT_PID=$!
 sleep 0.8
 
-"$OPENOCD" -s "$OPENOCD_SCRIPTS" \
-    -f interface/cmsis-dap.cfg \
-    -f target/rp2350-riscv.cfg \
-    -c "adapter speed 5000" \
-    -c "init" \
-    -c "reset run" \
-    -c "exit" > /dev/null 2>&1 || true
+pico2_reset_run || true
 
 # Wait for the kernel's early prints (KERN/BLOCK/MTFS/SH: ready) and
 # the first sh$ prompt to land.

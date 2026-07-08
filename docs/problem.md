@@ -18,6 +18,24 @@
 
 ## 後回し
 
+### 44. test_pico2.sh (K7 era) の UART 検証が現行カーネルで fail (limitation、2026-07-08)
+
+`kernel/tests/test_pico2.sh` は flash + boot + sh 駆動までは動くが、
+検証部が fail する。2 つの独立した理由:
+
+- **capture が byte-lossy**: plain `stty + cat` キャプチャは boot 直後
+  の高密度出力 (K21 の 61 ms boot + kputs_t timestamp) で bytes を
+  取りこぼす ("KERN: starting" が "KERN: stary" になる等)。プロンプト
+  駆動の pico2_tty.py / pico2_hw_driver.py 経路では起きない。C2
+  リファクタ後の焼き戻し (run_pico2.sh) でも同様に再現するので、
+  スクリプト共通化 (integration/lib/pico2_hw.sh) 起因ではない
+- テスト自体が K7 時代のマーカー前提で、その後保守されていない
+
+現行の実機ワークフロー (pico2_verify.sh / test_pico2_hw.sh /
+pico2_self_replicate.sh) はプロンプト駆動 driver を使うので影響なし。
+直すなら capture を pico2_hw_driver.py 系に置き換えるのが本筋。
+
+
 ### K22 残件: DOOM autostart E1M1 が zone 不足 (limitation、2026-06-18)
 
 `gcc_doom_pico2` は title screen (TITLEPIC) までは描画できているが、

@@ -13,26 +13,12 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 # shellcheck source=scripts/self_replicate_modules.sh
 source "$ROOT/integration/scripts/self_replicate_modules.sh"
 KERNEL_UF2="${KERNEL_UF2:-$ROOT/kernel/build/pico2_kernel_extra.uf2}"
-OPENOCD="${OPENOCD:-$HOME/opt/openocd-rpi/bin/openocd}"
-OPENOCD_SCRIPTS="${OPENOCD_SCRIPTS:-$HOME/opt/openocd-rpi/share/openocd/scripts}"
-UART_PORT="${UART_PORT:-/dev/ttyACM0}"
+source "$ROOT/integration/lib/pico2_hw.sh"
 
 TMP=$(mktemp -d)
 echo "TMP=$TMP" >&2
 
-python3 - "$KERNEL_UF2" "$TMP/kernel.bin" <<'PY'
-import sys, struct
-with open(sys.argv[1], "rb") as f: data = f.read()
-out = bytearray()
-for i in range(0, len(data), 512):
-    b = data[i:i+512]
-    if len(b) < 512: break
-    m1, m2 = struct.unpack_from("<II", b, 0)
-    if m1 != 0x0A324655 or m2 != 0x9E5D5157: continue
-    _, _, ps = struct.unpack_from("<III", b, 8)
-    out.extend(b[32:32+ps])
-open(sys.argv[2], "wb").write(out)
-PY
+uf2_to_bin "$KERNEL_UF2" "$TMP/kernel.bin"
 
 # Freeze the host reference at orchestrator start: copy the current
 # kernel/build/disk-extra.img + rebuild kernel.bin from current
@@ -82,23 +68,12 @@ echo "frozen host kernel.bin md5: $HOST_BIN_MD5" >&2
 echo "frozen host kernel.uf2 md5: $HOST_UF2_MD5" >&2
 
 flash_kernel() {
-    "$OPENOCD" -s "$OPENOCD_SCRIPTS" \
-        -f interface/cmsis-dap.cfg -f target/rp2350-riscv.cfg \
-        -c "adapter speed 5000" -c "init" -c "reset halt" \
-        -c "program $TMP/kernel.bin 0x10000000 verify" \
-        -c "exit" > "$TMP/oocd.log" 2>&1
-    grep -q "Verified OK" "$TMP/oocd.log" || { tail -20 "$TMP/oocd.log" >&2; exit 1; }
-    "$OPENOCD" -s "$OPENOCD_SCRIPTS" \
-        -f interface/cmsis-dap.cfg -f target/rp2350-riscv.cfg \
-        -c "adapter speed 5000" -c "init" -c "reset run" -c "exit" \
-        > /dev/null 2>&1
+    pico2_flash_halt "$TMP/kernel.bin" "$TMP/oocd.log" || exit 1
+    pico2_reset_run
 }
 
 reset_only() {
-    "$OPENOCD" -s "$OPENOCD_SCRIPTS" \
-        -f interface/cmsis-dap.cfg -f target/rp2350-riscv.cfg \
-        -c "adapter speed 5000" -c "init" -c "reset run" -c "exit" \
-        > /dev/null 2>&1
+    pico2_reset_run
 }
 
 run_step() {
