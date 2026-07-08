@@ -74,6 +74,12 @@ var g_nlocals: i32 = 0;
 var g_ninstrs: i32 = 0;
 var g_nglobals: i32 = 0;
 var g_nstrings: i32 = 0;
+// Multi-module concatenation support (mirrors bootstrap/bcrun.c):
+// each module's .string table restarts at 0, so concatenated .bc
+// streams would collide. A ".fn after .string lines" marks the next
+// module; rebase its `.string N` / `push_str N` as g_str_base + N.
+var g_str_base: i32 = 0;
+var g_in_strings: i32 = 0;
 var g_stab_pos: i32 = 0;
 var g_in_pos: i32 = 0;
 var g_in_len: i32 = 0;
@@ -416,7 +422,8 @@ fn parse_bc(src: U8Array, strtab: U8Array,
                 if d0=='s'&&d1=='t' { // "string"
                     discard_tok(dir_ss);
                     var idx_ss: i32 = next_tok(src, strtab);
-                    var idx: i32 = int_from_stab(strtab, idx_ss, tok_len(idx_ss));
+                    var idx: i32 = g_str_base +
+                        int_from_stab(strtab, idx_ss, tok_len(idx_ss));
                     discard_tok(idx_ss);
                     skip_spaces(src);
                     var slit_ss: i32 = read_strlit(src, strtab);
@@ -424,6 +431,7 @@ fn parse_bc(src: U8Array, strtab: U8Array,
                     set(string_lits, (idx*2+0), slit_ss);
                     set(string_lits, (idx*2+1), slit_sl);
                     if idx + 1 > g_nstrings { g_nstrings = idx + 1; }
+                    g_in_strings = 1;
                     skip_line(src);
                 }
                 if d0=='g'&&d1=='l' { // "global"
@@ -446,6 +454,12 @@ fn parse_bc(src: U8Array, strtab: U8Array,
                     skip_line(src);
                 }
                 if d0=='f'&&d1=='n' { // "fn"
+                    // First .fn after a .string block = next module in
+                    // a concatenated stream; rebase string indices.
+                    if g_in_strings == 1 {
+                        g_str_base = g_nstrings;
+                        g_in_strings = 0;
+                    }
                     discard_tok(dir_ss);
                     var nm_ss: i32 = next_tok(src, strtab);
                     // Build mangled name: append __TYPE for each arg type (last token = rettype, skip it)
@@ -564,7 +578,8 @@ fn parse_bc(src: U8Array, strtab: U8Array,
                     }
                     if op3 == OP_PUSH_STR {
                         var v_ss: i32 = next_tok(src, strtab);
-                        var v: i32 = int_from_stab(strtab, v_ss, tok_len(v_ss));
+                        var v: i32 = g_str_base +
+                            int_from_stab(strtab, v_ss, tok_len(v_ss));
                         discard_tok(v_ss);
                         ins_set(instrs, ibase3, iidx, 1, v);
                     }

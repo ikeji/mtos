@@ -142,7 +142,9 @@ private、peek/poke 境界なし、固定 cap 等) は除外済み。
 
 ## 進捗
 
-- [ ] A1+A2: NK_ 統一 + S 式リーダ共通化
+- [x] A1+A2: NK_ 統一 + S 式リーダ共通化 (2026-07-08 完了。副産物で
+      bcrun 連結 .bc の string table 衝突を発見・修正 —
+      `docs/solved.md` #43)
 - [ ] A3: compile-gen3.sh 乖離 (最低限コメント修正)
 - [ ] B1+B2+B3: 死にコード削除 + loud error + arg_eq/is_digit_c
 - [ ] C1: virtio 統合

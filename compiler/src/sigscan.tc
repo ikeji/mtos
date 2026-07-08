@@ -25,247 +25,23 @@ import "strlib.tc";
 // and live byte counts to stderr in the form "[kmem peak=N live=M]".
 fn km_dump_peak() -> void;
 
-// Node kind constants (subset needed for filtering)
-const NK_PROGRAM:  i32 = 0;
+// Node kind constants (subset sigscan compares against). Numbers must
+// match the canonical list in ast_node.tc — TC has no `export const`,
+// so this is a manual copy; classify_kind / read_node live in
+// ast_node.tc, so a drifted number here fails the kind comparisons
+// below loudly in the test suite.
 const NK_FN:       i32 = 1;
 const NK_STRUCT:   i32 = 2;
 const NK_PARAMS:   i32 = 3;
-const NK_PARAM:    i32 = 4;
 const NK_RET:      i32 = 5;
 const NK_TYPE:     i32 = 6;
-const NK_BLOCK:    i32 = 7;
 const NK_VAR_DECL: i32 = 8;
-const NK_CONST_DECL: i32 = 9;
-const NK_FIELD:    i32 = 23;
-const NK_COMMENT:  i32 = 26;
-const NK_UNKNOWN:  i32 = 99;
+const NK_CONST_DECL: i32 = 27;
 
-// Global state. AST node counter (g_nc) lives in ast_node.tc.
-var g_reader: SourceReader = 0 as SourceReader;
-var g_sp: i32 = 0;
-
-// ===== Input helpers =====
-fn peek_in() -> u8 { return peek(g_reader); }
-
-fn is_atom_end(c: u8) -> bool {
-    return c == ' ' || c == 9u8 || c == 10u8 || c == 13u8 ||
-           c == '(' || c == ')' || c == 0u8;
-}
-
-fn skip_ws_in() -> void {
-    while at_eof(g_reader) == false {
-        var c: u8 = peek(g_reader);
-        if c == ' ' || c == 9u8 || c == 10u8 || c == 13u8 {
-            next(g_reader);
-        } else { return; }
-    }
-    return;
-}
-
-fn read_atom_in(atom: U8Array) -> i32 {
-    var alen: i32 = 0;
-    while at_eof(g_reader) == false && !is_atom_end(peek(g_reader)) {
-        set(atom, alen, next(g_reader));
-        alen = alen + 1;
-    }
-    return alen;
-}
-
-// ===== Kind classification =====
-fn classify_kind(atom: U8Array, len: i32) -> i32 {
-    if streq(atom, 0, len, "fn")       { return NK_FN; }
-    if streq(atom, 0, len, "ret")      { return NK_RET; }
-    if streq(atom, 0, len, "type")     { return NK_TYPE; }
-    if streq(atom, 0, len, "block")    { return NK_BLOCK; }
-    if streq(atom, 0, len, "param")    { return NK_PARAM; }
-    if streq(atom, 0, len, "field")    { return NK_FIELD; }
-    if streq(atom, 0, len, "params")   { return NK_PARAMS; }
-    if streq(atom, 0, len, "struct")   { return NK_STRUCT; }
-    if streq(atom, 0, len, "program")  { return NK_PROGRAM; }
-    if streq(atom, 0, len, "comment")  { return NK_COMMENT; }
-    if streq(atom, 0, len, "var_decl") { return NK_VAR_DECL; }
-    if streq(atom, 0, len, "const_decl") { return NK_CONST_DECL; }
-    return NK_UNKNOWN;
-}
-
-fn is_digit_c(c: u8) -> bool { return c >= '0' && c <= '9'; }
-
-// Kinds sigscan stores in the pool. Anything else (block, field,
-// comment, all expression kinds) gets read-and-discarded by
-// consume_subtree_silent so they never touch nodes / strtab.
-fn should_keep(kind_code: i32) -> bool {
-    if kind_code == NK_PROGRAM  { return true; }
-    if kind_code == NK_FN       { return true; }
-    if kind_code == NK_STRUCT   { return true; }
-    if kind_code == NK_VAR_DECL { return true; }
-    if kind_code == NK_CONST_DECL { return true; }
-    if kind_code == NK_PARAMS   { return true; }
-    if kind_code == NK_PARAM    { return true; }
-    if kind_code == NK_RET      { return true; }
-    if kind_code == NK_TYPE     { return true; }
-    return false;
-}
-
-// Consume the rest of an S-expression (after we've already eaten
-// the opening '(' and the kind atom) without allocating any AstNode
-// or copying any byte into strtab. Used by read_node when it sees
-// a kind that should_keep() rejects.
-fn consume_subtree_silent() -> void {
-    skip_ws_in();
-    var c: u8 = peek_in();
-
-    // Skip optional value (string or atom)
-    if c == '"' {
-        next(g_reader);
-        var ch: u8 = peek_in();
-        while ch != '"' && ch != 0u8 {
-            if ch == '\\' { next(g_reader); }
-            next(g_reader);
-            ch = peek_in();
-        }
-        if ch == '"' { next(g_reader); }
-    } else if c != '(' && c != ')' && c != 0u8 {
-        while at_eof(g_reader) == false && !is_atom_end(peek(g_reader)) {
-            next(g_reader);
-        }
-    }
-
-    // Skip nested children
-    skip_ws_in();
-    while peek_in() == '(' {
-        next(g_reader);
-        skip_ws_in();
-        // Drain the kind atom of the nested node
-        while at_eof(g_reader) == false && !is_atom_end(peek(g_reader)) {
-            next(g_reader);
-        }
-        consume_subtree_silent();
-        skip_ws_in();
-    }
-
-    if peek_in() == ')' { next(g_reader); }
-    return;
-}
-
-// ===== S-expression reader =====
-// Reads a node and its subtree into the AstNode pool, but **only for
-// kinds in should_keep()**. Anything outside that set is consumed by
-// consume_subtree_silent and read_node returns -1; the caller's child
-// link loop already handles -1 by skipping. This bounds the per-top-
-// level pool footprint to the header nodes we actually emit, instead
-// of the whole function body.
-fn read_node(atom: U8Array, nodes: AstNodeArray, strtab: U8Array) -> i32 {
-    skip_ws_in();
-    if at_eof(g_reader) { return -1; }
-    if peek_in() != '(' { return -1; }
-    next(g_reader);
-    skip_ws_in();
-
-    var klen: i32 = read_atom_in(atom);
-    var actual_klen: i32 = 0;
-    while actual_klen < klen && get(atom, actual_klen) != ':' {
-        actual_klen = actual_klen + 1;
-    }
-    var kind_code: i32 = classify_kind(atom, actual_klen);
-
-    // Drop subtrees we don't need. block / field / comment / all
-    // expression nodes (NK_UNKNOWN) end up here, which is what shrinks
-    // the pool peak for big function bodies.
-    if !should_keep(kind_code) {
-        consume_subtree_silent();
-        return -1;
-    }
-
-    var n: i32 = alloc_node(nodes, kind_code);
-
-    // Store type_annot if present (after ':')
-    if actual_klen < klen {
-        var tss: i32 = g_sp;
-        var ti: i32 = actual_klen + 1;
-        while ti < klen {
-            set(strtab, g_sp, get(atom, ti));
-            g_sp = g_sp + 1;
-            ti = ti + 1;
-        }
-        n_set_tass(nodes, n, tss);
-        n_set_tasl(nodes, n, klen - actual_klen - 1);
-    }
-
-    skip_ws_in();
-
-    var c: u8 = peek_in();
-    if c == '"' {
-        // String value
-        next(g_reader);
-        var ss: i32 = g_sp;
-        var b: i32 = read_string_char(g_reader);
-        while b >= 0 {
-            set(strtab, g_sp, b as u8);
-            g_sp = g_sp + 1;
-            b = read_string_char(g_reader);
-        }
-        if peek_in() == '"' { next(g_reader); }
-        n_set_ss(nodes, n, ss);
-        n_set_sl(nodes, n, g_sp - ss);
-        skip_ws_in();
-    } else if c != '(' && c != ')' && c != 0u8 {
-        // Atom value (name, int, etc)
-        var vlen: i32 = read_atom_in(atom);
-        if kind_code == NK_UNKNOWN && vlen > 0 && is_digit_c(get(atom, 0)) {
-            // int literal
-            var ival: i32 = 0;
-            var ii: i32 = 0;
-            while ii < vlen { ival = ival * 10 + (get(atom, ii) as i32 - 48); ii = ii + 1; }
-            n_set_ival(nodes, n, ival);
-        } else {
-            var ss2: i32 = g_sp;
-            var ii2: i32 = 0;
-            while ii2 < vlen {
-                set(strtab, g_sp, get(atom, ii2));
-                g_sp = g_sp + 1;
-                ii2 = ii2 + 1;
-            }
-            n_set_ss(nodes, n, ss2);
-            n_set_sl(nodes, n, vlen);
-        }
-        skip_ws_in();
-    }
-
-    // Read children
-    c = peek_in();
-    var last_child: i32 = -1;
-    while c == '(' {
-        var child: i32 = read_node(atom, nodes, strtab);
-        if child >= 0 {
-            if last_child < 0 {
-                n_set_child(nodes, n, child);
-            } else {
-                n_set_sib(nodes, last_child, child);
-            }
-            last_child = child;
-        }
-        skip_ws_in();
-        c = peek_in();
-    }
-
-    if peek_in() == ')' { next(g_reader); }
-    return n;
-}
+// The S-expression reader (read_node mode 2: keep headers only,
+// silent-consume everything else) and emit_kind live in ast_node.tc.
 
 // ===== Output =====
-fn emit_kind(k: i32, ob: StringBuffer) -> void {
-    if k == NK_PROGRAM  { emit_string(ob, "program"); return; }
-    if k == NK_FN       { emit_string(ob, "fn"); return; }
-    if k == NK_STRUCT   { emit_string(ob, "struct"); return; }
-    if k == NK_PARAMS   { emit_string(ob, "params"); return; }
-    if k == NK_PARAM    { emit_string(ob, "param"); return; }
-    if k == NK_RET      { emit_string(ob, "ret"); return; }
-    if k == NK_TYPE     { emit_string(ob, "type"); return; }
-    if k == NK_VAR_DECL { emit_string(ob, "var_decl"); return; }
-    if k == NK_CONST_DECL { emit_string(ob, "const_decl"); return; }
-    emit_char(ob, '?');
-    return;
-}
 
 // Generic recursive emitter for nodes whose kinds we know (params,
 // param, ret, type). Used for the children of fn / var_decl.
@@ -381,9 +157,9 @@ fn write_global_var(nodes: AstNodeArray, strtab: U8Array, ob: StringBuffer, inde
 //
 // Per-top-level streaming: read "(program", then loop reading 1
 // top-level S-expression at a time, emit it, and reset the AST node
-// pool + strtab cursor before reading the next one. read_node also
-// drops anything outside should_keep() (block, field, expression
-// nodes, ...) without allocating, so the per-top-level peak is bounded
+// pool + strtab cursor before reading the next one. read_node mode 2
+// (ast_node.tc) also drops anything outside should_keep_sig() (block,
+// field, expression nodes, ...) without allocating, so the peak is bounded
 // to the few header nodes (params + ret + their immediate children).
 //
 // Measured peaks across compiler/*.tc with the skip optimization:
@@ -398,15 +174,15 @@ fn main() -> i32 {
     var atom_buf: U8Array = U8Array(256);
     var ob: StringBuffer = StringBuffer_new(1);
 
-    g_reader = SourceReader_new(0);
+    rd_set_reader(SourceReader_new(0));
     ast_set_count(0);
-    g_sp = 0;
+    rd_set_sp(0);
 
     // Consume "(program" header
     skip_ws_in();
-    if at_eof(g_reader) { sys_exit(1); }
+    if rd_at_eof() { sys_exit(1); }
     if peek_in() != '(' { sys_exit(2); }
-    next(g_reader);
+    rd_next();
     skip_ws_in();
     var pgm_len: i32 = read_atom_in(atom_buf);
     if !streq(atom_buf, 0, pgm_len, "program") { sys_exit(3); }
@@ -422,9 +198,9 @@ fn main() -> i32 {
         // a handful of top levels and read_node aborts with
         // "out of bounds".
         reset_node_pool(nodes);
-        g_sp = 0;
+        rd_set_sp(0);
 
-        var n: i32 = read_node(atom_buf, nodes, strtab);
+        var n: i32 = read_node(atom_buf, nodes, strtab, 2);
         // n == -1 is now a normal "this top-level was a skipped kind
         // (comment / import / unknown)" signal. The reader has already
         // consumed the closing ')', so just loop around.
@@ -468,13 +244,13 @@ fn main() -> i32 {
     }
 
     // Consume the closing ')' of (program ...)
-    if peek_in() == ')' { next(g_reader); }
+    if peek_in() == ')' { rd_next(); }
 
     emit_char(ob, ')');
     emit_nl(ob);
     write(ob, 1);
 
-    close(g_reader);
+    close(rd_reader());
     delete(nodes); delete(strtab); delete(atom_buf); destroy(ob);
 
     // Print "[kmem peak=N live=M]" to stderr — same line task_crt0.s

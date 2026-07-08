@@ -280,6 +280,15 @@ static BcProg *bc_parse(FILE *in) {
     BcFunc  *cur   = NULL;
     LabelTab lt    = {0};
     char     line[4096];
+    /* Multi-module concatenation support: each module's .string table
+       restarts at index 0 (codegen emits per-file tables), so when
+       several .bc bodies are concatenated (tc_run.sh pipeline /
+       bc2asm_tc methods) the tables would collide. A module's string
+       table sits at its end, so "a .fn after .string lines" marks the
+       next module: rebase its indices past everything loaded so far.
+       Both `.string N` and `push_str N` resolve as str_base + N. */
+    int      str_base   = 0;
+    int      in_strings = 0;
 
     while (fgets(line, sizeof(line), in)) {
         /* strip trailing newline */
@@ -299,7 +308,8 @@ static BcProg *bc_parse(FILE *in) {
                 char idx_s[16]; s = skip_ws(next_tok(s, idx_s, sizeof(idx_s)));
                 if (*s == '"') {
                     char buf[4096]; parse_strlit(s+1, buf, sizeof(buf));
-                    prog_set_string(p, atoi(idx_s), buf);
+                    in_strings = 1;
+                    prog_set_string(p, str_base + atoi(idx_s), buf);
                 }
             } else if (strcmp(dir, "global") == 0) {
                 char nm[128], ty[64], iv[32] = "0";
@@ -308,6 +318,9 @@ static BcProg *bc_parse(FILE *in) {
                 next_tok(s, iv, sizeof(iv));
                 prog_add_global(p, nm, ty, (int32_t)atol(iv));
             } else if (strcmp(dir, "fn") == 0) {
+                /* First .fn after a .string block = next module in a
+                   concatenated stream; rebase its string indices. */
+                if (in_strings) { str_base = p->nstrings; in_strings = 0; }
                 /* Format: .fn NAME ARG_TYPE... RET_TYPE
                    All tokens after name: last = rettype, rest = arg types */
                 char toks[30][128]; int ntok = 0;
@@ -368,7 +381,7 @@ static BcProg *bc_parse(FILE *in) {
         Instr ins; memset(&ins, 0, sizeof(ins));
 
         if      (!strcmp(op, "push_int"))   { ins.op = OP_PUSH_INT;    ins.ival = atol(skip_ws(s)); }
-        else if (!strcmp(op, "push_str"))   { ins.op = OP_PUSH_STR;    ins.ival = atol(skip_ws(s)); }
+        else if (!strcmp(op, "push_str"))   { ins.op = OP_PUSH_STR;    ins.ival = str_base + atol(skip_ws(s)); }
         else if (!strcmp(op, "load"))       { ins.op = OP_LOAD;        char n[128]; next_tok(s,n,sizeof(n)); ins.sarg=strdup(n); }
         else if (!strcmp(op, "store"))      { ins.op = OP_STORE;       char n[128]; next_tok(s,n,sizeof(n)); ins.sarg=strdup(n); }
         else if (!strcmp(op, "call")) {

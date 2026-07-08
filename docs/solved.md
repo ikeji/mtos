@@ -230,6 +230,45 @@ fib.bc / global_str.bc を Gen1 bcrun と同一出力で実行。回帰は
 これで tcheck の実 worst case は bc2asm.tc (nc=1656) → bcrun.tc
 (nc=2387) に更新。vm_run の関数分解は不要だった。
 
+### 43. S 式リーダ一本化 + bcrun 連結 .bc の string table 衝突 — 完了 (2026-07-08)
+
+リファクタ A1+A2 (`docs/task/refactor_candidates.md`): sigscan / tcheck
+/ codegen に三重複製されていた S 式リーダ (`peek_in` / `skip_ws_in` /
+`read_atom_in` / `read_node` ~100 行 / `classify_kind` / `emit_kind` /
+`read_open_kind` / `read_close_paren`) を **ast_node.tc に一本化**。
+3 ツールとも既に ast_node.tc を import 済みなので新規ファイルなし =
+self-replicate の staging / fixture 追従も不要。
+
+- `read_node(atom, nodes, strtab, mode)`: mode 0 = codegen (.tast、
+  bool は sval のまま)、mode 1 = tcheck (.ast、bool → ival)、mode 2 =
+  sigscan (should_keep_sig でヘッダのみ保持、他は silent consume)。
+  3 実装の意味差 (bool 扱い / フィルタ) は mode 引数に整理
+- リーダ状態 (SourceReader handle + strtab cursor) も ast_node.tc が
+  所有し、`rd_set_reader` / `rd_reader` / `rd_sp` / `rd_set_sp` /
+  `rd_next` / `rd_at_eof` アクセサ経由に統一。tcheck の `st_add_str`
+  も同じ cursor を使う (2 重カーソルの drift を構造的に排除)
+- **NK_ 番号の不整合を解消**: sigscan は `NK_CONST_DECL = 9` で、
+  tcheck/codegen の `NK_ASSIGN = 9` / `NK_CONST_DECL = 27` と衝突して
+  いた (各バイナリ独立なので動いてはいたが、共通化した瞬間壊れる罠)。
+  ast_node.tc の番号を正準とし、sigscan を renumber。`export const`
+  が無いため各ツールの NK_ ローカルコピーは残るが、classifier が
+  ast_node.tc の 1 箇所になったので drift はテストで loud に落ちる
+
+**副産物: bcrun の連結 .bc string table 衝突を発見・修正**。codegen は
+ファイル毎に 0 始まりの `.string` テーブルを emit するため、tc_run.sh
+の pipeline / bc2asm_tc メソッドが行う「import 閉包の .bc 連結」では
+後のモジュールのテーブルが前のを上書きしていた。従来は実行時に文字列
+を使う関数が最終モジュール (ツール本体) に集中していたため露見せず、
+classify_kind ("fn" 等のリテラル比較) を中間位置の ast_node.tc に移した
+途端 `classify("fn") = NK_UNKNOWN` で全 consistency テストが落ちた。
+修正は bcrun 側 (C 版 `bootstrap/bcrun.c` + TC 版 `bcrun.tc` の両方):
+「`.string` 行群のあとに `.fn` が来たら次モジュールの開始」とみなし、
+以後の `.string N` / `push_str N` を `str_base + N` に rebase する。
+仕様は `docs/bc_format.md` の `.string` 節に追記。
+
+検証: compiler 全 suite + root `make test` green (golden は編集した
+codegen.tc / bcrun.tc の分だけ update-golden で再生成)。
+
 ### 42. asm_pass3 が未定義 reloc ターゲットを silent skip — 完了 (2026-07-08)
 
 fs vtable (docs/task/function_pointers.md) の「typo はリンク時に loud に

@@ -47,6 +47,15 @@ tinyc コンパイラが生成するバイトコード（`.bc`）フォーマッ
 .string 1 "Error: "
 ```
 
+**複数モジュール連結**: codegen はファイルごとに 0 始まりの
+`.string` テーブルを末尾に emit するため、複数の .bc 本体を連結して
+1 本のストリームにすると index が衝突する (tc_run.sh の pipeline /
+bc2asm_tc メソッドがこの形)。bcrun (C 版 / TC 版とも) は
+「`.string` 行のあとに `.fn` が来たら次モジュールの開始」とみなし、
+以後の `.string N` / `push_str N` を「それまでに読み込んだ文字列数 +
+N」に rebase して解決する (2026-07-08)。単一モジュールの .bc では
+rebase は発生しない。
+
 ### `.global NAME TYPE INITVAL`
 グローバル変数の宣言と初期値（整数のみ）。`TYPE` は型名（`i32`, `u8`, `U8Array` など）。
 

@@ -262,6 +262,14 @@
     (type i32)
     (int 0)
   )
+  (var_decl g_str_base
+    (type i32)
+    (int 0)
+  )
+  (var_decl g_in_strings
+    (type i32)
+    (int 0)
+  )
   (var_decl g_stab_pos
     (type i32)
     (int 0)
@@ -3951,14 +3959,17 @@
                           (var strtab)
                         )
                       )
-                      (comment "var idx: i32 = int_from_stab(strtab, idx_ss, tok_len(idx_ss));")
+                      (comment "var idx: i32 = g_str_base +")
                       (var_decl idx
                         (type i32)
-                        (call int_from_stab
-                          (var strtab)
-                          (var idx_ss)
-                          (call tok_len
+                        (binop +
+                          (var g_str_base)
+                          (call int_from_stab
+                            (var strtab)
                             (var idx_ss)
+                            (call tok_len
+                              (var idx_ss)
+                            )
                           )
                         )
                       )
@@ -4027,6 +4038,10 @@
                             )
                           )
                         )
+                      )
+                      (comment "g_in_strings = 1;")
+                      (assign g_in_strings
+                        (int 1)
                       )
                       (comment "skip_line(src);")
                       (call_stmt skip_line
@@ -4194,6 +4209,23 @@
                       )
                     )
                     (block
+                      (comment "if g_in_strings == 1 {")
+                      (if
+                        (binop ==
+                          (var g_in_strings)
+                          (int 1)
+                        )
+                        (block
+                          (comment "g_str_base = g_nstrings;")
+                          (assign g_str_base
+                            (var g_nstrings)
+                          )
+                          (comment "g_in_strings = 0;")
+                          (assign g_in_strings
+                            (int 0)
+                          )
+                        )
+                      )
                       (comment "discard_tok(dir_ss);")
                       (call_stmt discard_tok
                         (var dir_ss)
@@ -5096,14 +5128,17 @@
                               (var strtab)
                             )
                           )
-                          (comment "var v: i32 = int_from_stab(strtab, v_ss, tok_len(v_ss));")
+                          (comment "var v: i32 = g_str_base +")
                           (var_decl v
                             (type i32)
-                            (call int_from_stab
-                              (var strtab)
-                              (var v_ss)
-                              (call tok_len
+                            (binop +
+                              (var g_str_base)
+                              (call int_from_stab
+                                (var strtab)
                                 (var v_ss)
+                                (call tok_len
+                                  (var v_ss)
+                                )
                               )
                             )
                           )

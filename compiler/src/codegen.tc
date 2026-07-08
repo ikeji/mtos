@@ -7,6 +7,10 @@ import "ast_node.tc";
 import "strlib.tc";
 
 // ===== AST node kind constants =====
+// Numbers must match the canonical list in ast_node.tc — TC has no
+// `export const`, so this is a manual copy; classify_kind / read_node
+// live in ast_node.tc, so a drifted number here fails the kind
+// comparisons below loudly in the test suite.
 const NK_PROGRAM: i32 = 0;
 const NK_FN: i32 = 1;
 const NK_STRUCT: i32 = 2;
@@ -39,11 +43,12 @@ const NK_UNKNOWN: i32 = 99;
 
 // ===== Global state =====
 // Note: the AST node counter (g_nc) lives in ast_node.tc now; access
-// it via ast_count() / ast_set_count() / reset_node_pool().
-var g_reader: SourceReader = 0 as SourceReader;
-var g_sp: i32 = 0;        // strtab position (ephemeral high water)
+// it via ast_count() / ast_set_count() / reset_node_pool(). The
+// S-expression reader (read_node mode 0) and its SourceReader handle
+// + strtab cursor also live there; access via rd_* (rd_set_reader /
+// rd_sp / rd_set_sp / rd_next / rd_at_eof).
 var g_sp_perm: i32 = 0;   // strtab permanent prefix (for string literals)
-var g_max_sp: i32 = 0;    // diagnostic: max g_sp ever reached
+var g_max_sp: i32 = 0;    // diagnostic: max strtab cursor ever reached
 var g_lc: i32 = 0;        // label counter
 var g_slc: i32 = 0;       // string literal count
 var g_locc: i32 = 0;      // locals count
@@ -64,176 +69,6 @@ var g_cint_tab: I32Array = 0 as I32Array;   // alloc'd in main (256 entries)
 var g_cintc: i32 = 0;                       // const-int/bool count
 var g_cur_locals: I32Array = 0 as I32Array; // = main's locals (shadow check)
 
-// ===== Input reading (via SourceReader) =====
-fn peek_in() -> u8 {
-    return peek(g_reader);
-}
-
-fn is_atom_end(c: u8) -> bool {
-    return c == ' ' || c == 9u8 || c == 10u8 || c == 13u8 ||
-           c == '(' || c == ')' || c == 0u8;
-}
-
-fn skip_ws_in() -> void {
-    while at_eof(g_reader) == false {
-        var c: u8 = peek(g_reader);
-        if c == ' ' || c == 9u8 || c == 10u8 || c == 13u8 {
-            next(g_reader);
-        } else { return; }
-    }
-    return;
-}
-
-fn read_atom_in(atom: U8Array) -> i32 {
-    var alen: i32 = 0;
-    while at_eof(g_reader) == false && !is_atom_end(peek(g_reader)) {
-        set(atom, alen, next(g_reader));
-        alen = alen + 1;
-    }
-    return alen;
-}
-
-// ===== Node pool =====
-// Pool storage and accessors live in ast_node.tc; codegen just uses
-// AstNodeArray + the n_* / alloc_node / n_nchildren / n_nth_child /
-// add_child wrappers from there.
-
-// ===== Kind classification =====
-// streq / cmp live in strlib.tc (R3).
-fn classify_kind(atom: U8Array, len: i32) -> i32 {
-    if streq(atom, 0, len, "fn")        { return NK_FN; }
-    if streq(atom, 0, len, "if")        { return NK_IF; }
-    if streq(atom, 0, len, "ret")       { return NK_RET; }
-    if streq(atom, 0, len, "int")       { return NK_INT; }
-    if streq(atom, 0, len, "str")       { return NK_STR; }
-    if streq(atom, 0, len, "var")       { return NK_VAR; }
-    if streq(atom, 0, len, "bool")      { return NK_BOOL; }
-    if streq(atom, 0, len, "type")      { return NK_TYPE; }
-    if streq(atom, 0, len, "cast")      { return NK_CAST; }
-    if streq(atom, 0, len, "call")      { return NK_CALL; }
-    if streq(atom, 0, len, "block")     { return NK_BLOCK; }
-    if streq(atom, 0, len, "param")     { return NK_PARAM; }
-    if streq(atom, 0, len, "while")     { return NK_WHILE; }
-    if streq(atom, 0, len, "binop")     { return NK_BINOP; }
-    if streq(atom, 0, len, "unary")     { return NK_UNARY; }
-    if streq(atom, 0, len, "field")     { return NK_FIELD; }
-    if streq(atom, 0, len, "break")     { return NK_BREAK; }
-    if streq(atom, 0, len, "params")    { return NK_PARAMS; }
-    if streq(atom, 0, len, "return")    { return NK_RETURN; }
-    if streq(atom, 0, len, "struct")    { return NK_STRUCT; }
-    if streq(atom, 0, len, "assign")    { return NK_ASSIGN; }
-    if streq(atom, 0, len, "import")    { return NK_IMPORT; }
-    if streq(atom, 0, len, "program")   { return NK_PROGRAM; }
-    if streq(atom, 0, len, "comment")   { return NK_COMMENT; }
-    if streq(atom, 0, len, "var_decl")  { return NK_VAR_DECL; }
-    if streq(atom, 0, len, "const_decl") { return NK_CONST_DECL; }
-    if streq(atom, 0, len, "continue")  { return NK_CONTINUE; }
-    if streq(atom, 0, len, "call_stmt") { return NK_CALL_STMT; }
-    return NK_UNKNOWN;
-}
-
-// ===== S-expression reader =====
-fn is_digit_c(c: u8) -> bool { return c >= '0' && c <= '9'; }
-
-fn read_node(atom: U8Array, nodes: AstNodeArray, strtab: U8Array) -> i32 {
-    skip_ws_in();
-    if at_eof(g_reader) { return -1; }
-    if peek_in() != '(' { return -1; }  // not '('
-    next(g_reader);
-    skip_ws_in();
-
-    // Read kind (strip :type_annot if present)
-    var klen: i32 = read_atom_in(atom);
-    var actual_klen: i32 = 0;
-    while actual_klen < klen && get(atom, actual_klen) != ':' {
-        actual_klen = actual_klen + 1;
-    }
-    var kind_code: i32 = classify_kind(atom, actual_klen);
-
-    var n: i32 = alloc_node(nodes, kind_code);
-
-    // Store type_annot if present (after ':' in kind atom)
-    if actual_klen < klen {
-        var tss: i32 = g_sp;
-        var tasl: i32 = klen - actual_klen - 1;
-        var ti: i32 = actual_klen + 1;
-        while ti < klen {
-            set(strtab, g_sp, get(atom, ti));
-            g_sp = g_sp + 1;
-            ti = ti + 1;
-        }
-        n_set_tass(nodes, n, tss);
-        n_set_tasl(nodes, n, tasl);
-    }
-
-    skip_ws_in();
-
-    // Check for sval/ival atom
-    var c: u8 = peek_in();
-    if (kind_code == NK_STR || kind_code == NK_COMMENT) && c == '"' {
-        // Quoted string: read until closing '"' with escape processing
-        next(g_reader); // consume opening '"'
-        var ss: i32 = g_sp;
-        var b: i32 = read_string_char(g_reader);
-        while b >= 0 {
-            set(strtab, g_sp, b as u8);
-            g_sp = g_sp + 1;
-            b = read_string_char(g_reader);
-        }
-        if peek_in() == '"' { next(g_reader); } // consume closing '"'
-        n_set_ss(nodes, n, ss);
-        n_set_sl(nodes, n, g_sp - ss);
-        skip_ws_in();
-        // Now at ')'; no skip_ws needed
-    } else if c != '(' && c != ')' && c != 0u8 {
-        var vlen: i32 = read_atom_in(atom);
-        if kind_code == NK_INT && vlen > 0 && (is_digit_c(get(atom, 0)) || get(atom, 0) == '-') {
-            var ival: i32 = 0;
-            var ii: i32 = 0;
-            var neg: i32 = 0;
-            if get(atom, 0) == '-' { neg = 1; ii = 1; }
-            while ii < vlen {
-                ival = ival * 10 + (get(atom, ii) as i32 - 48);
-                ii = ii + 1;
-            }
-            if neg == 1 { ival = 0 - ival; }
-            n_set_ival(nodes, n, ival);
-        } else {
-            var ss: i32 = g_sp;
-            var ii: i32 = 0;
-            while ii < vlen {
-                set(strtab, g_sp, get(atom, ii));
-                g_sp = g_sp + 1;
-                ii = ii + 1;
-            }
-            n_set_ss(nodes, n, ss);
-            n_set_sl(nodes, n, vlen);
-        }
-        skip_ws_in();
-    }
-
-    // Read children
-    c = peek_in();
-    var last_child: i32 = -1;
-    while c == '(' {
-        var child: i32 = read_node(atom, nodes, strtab);
-        if child >= 0 {
-            if last_child < 0 {
-                n_set_child(nodes, n, child);
-            } else {
-                n_set_sib(nodes, last_child, child);
-            }
-            last_child = child;
-        }
-        skip_ws_in();
-        c = peek_in();
-    }
-
-    // Consume ')'
-    if peek_in() == ')' { next(g_reader); }
-
-    return n;
-}
 
 // ===== String comparison helpers =====
 // Compare node sval with a 1/2/3/... char sequence
@@ -1036,9 +871,9 @@ fn main() -> i32 {
     g_cint_tab = I32Array(768);  // ≤ 256 const-int globals × 3 i32
     g_cur_locals = locals;
 
-    g_reader = SourceReader_new(0);
+    rd_set_reader(SourceReader_new(0));
     ast_set_count(0);
-    g_sp = 0;
+    rd_set_sp(0);
     g_lc = 0;
     g_slc = 0;
     g_locc = 0;
@@ -1051,7 +886,7 @@ fn main() -> i32 {
     // Read "(program" header
     skip_ws_in();
     if peek_in() != '(' { sys_exit(1); }
-    next(g_reader);
+    rd_next();
     skip_ws_in();
     var klen: i32 = read_atom_in(atom_buf);
     skip_ws_in();
@@ -1064,10 +899,10 @@ fn main() -> i32 {
     // live above g_sp_perm and get reclaimed on every iteration.
     var has_global: i32 = 0;
     while peek_in() == '(' {
-        if g_sp > g_max_sp { g_max_sp = g_sp; }
+        if rd_sp() > g_max_sp { g_max_sp = rd_sp(); }
         reset_node_pool(nodes);
-        g_sp = g_sp_perm;
-        var n: i32 = read_node(atom_buf, nodes, strtab);
+        rd_set_sp(g_sp_perm);
+        var n: i32 = read_node(atom_buf, nodes, strtab, 0);
         if n >= 0 {
             var k: i32 = n_kind(nodes, n);
             if k == NK_CONST_DECL {
@@ -1154,7 +989,7 @@ fn main() -> i32 {
     if has_global == 1 { emit_nl(out_buf); }
 
     // Consume closing ')'
-    if peek_in() == ')' { next(g_reader); }
+    if peek_in() == ')' { rd_next(); }
 
     // Emit string table at end
     emit_string_table(strtab, slits, out_buf);
@@ -1170,7 +1005,7 @@ fn main() -> i32 {
     // across the whole compile.
     var dbuf: U8Array = U8Array(64);
     var dp: i32 = 0;
-    if g_sp > g_max_sp { g_max_sp = g_sp; }
+    if rd_sp() > g_max_sp { g_max_sp = rd_sp(); }
     set(dbuf, dp, '[' as u8); dp = dp + 1;
     set(dbuf, dp, 'c' as u8); dp = dp + 1;
     set(dbuf, dp, 'g' as u8); dp = dp + 1;
@@ -1184,7 +1019,7 @@ fn main() -> i32 {
     sys_write(2, dbuf, dp);
     delete(dbuf);
 
-    close(g_reader); delete(atom_buf); destroy(out_buf);
+    close(rd_reader()); delete(atom_buf); destroy(out_buf);
     delete(nodes); delete(strtab); delete(slits); delete(locals);
     delete(g_cstr_tab);
     delete(g_cint_tab);

@@ -25,6 +25,15 @@
 // design_decisions.md #1 explains the export-forward-decl trick that
 // promotes the parser-generated synthetic getters/setters/constructor
 // to export linkage so the importers below can call kind(node) etc.
+//
+// 2026-07-08: the shared S-expression reader (read_node and friends)
+// also lives here — it used to be three near-identical per-file
+// copies in sigscan / tcheck / codegen. See "Shared S-expression
+// reader" below.
+
+import "string_buffer.tc";
+import "source_reader.tc";
+import "strlib.tc";
 
 struct AstNode {
     kind:         i32,
@@ -199,5 +208,373 @@ export fn add_child(arr: AstNodeArray, parent: i32, child: i32) -> void {
         while n_sib(arr, c) >= 0 { c = n_sib(arr, c); }
         n_set_sib(arr, c, child);
     }
+    return;
+}
+
+// ===== Node kind constants =====
+//
+// This file is the CANONICAL numbering. TC has no `export const`, so
+// consumers re-declare the NK_* subset they compare against — but
+// classify_kind() below is the single classifier, so a consumer whose
+// local copy drifts from these numbers fails its kind comparisons
+// loudly in the test suite (it cannot silently half-work). Before
+// 2026-07-08 sigscan had its own numbering (NK_CONST_DECL was 9,
+// colliding with NK_ASSIGN here) — keep local copies in sync with
+// this list.
+const NK_PROGRAM: i32 = 0;
+const NK_FN: i32 = 1;
+const NK_STRUCT: i32 = 2;
+const NK_PARAMS: i32 = 3;
+const NK_PARAM: i32 = 4;
+const NK_RET: i32 = 5;
+const NK_TYPE: i32 = 6;
+const NK_BLOCK: i32 = 7;
+const NK_VAR_DECL: i32 = 8;
+const NK_ASSIGN: i32 = 9;
+const NK_CALL_STMT: i32 = 10;
+const NK_CALL: i32 = 11;
+const NK_IF: i32 = 12;
+const NK_WHILE: i32 = 13;
+const NK_RETURN: i32 = 14;
+const NK_BINOP: i32 = 15;
+const NK_UNARY: i32 = 16;
+const NK_INT: i32 = 17;
+const NK_STR: i32 = 18;
+const NK_BOOL: i32 = 19;
+const NK_VAR: i32 = 20;
+const NK_CAST: i32 = 21;
+const NK_IMPORT: i32 = 22;
+const NK_FIELD: i32 = 23;
+const NK_BREAK: i32 = 24;
+const NK_CONTINUE: i32 = 25;
+const NK_COMMENT: i32 = 26;
+const NK_CONST_DECL: i32 = 27;
+const NK_UNKNOWN: i32 = 99;
+const NK_IMPORTS: i32 = 100;
+const NK_SELF: i32 = 101;
+
+// ===== Shared S-expression reader =====
+//
+// One reader for the three .ast/.tast consumers (sigscan / tcheck /
+// codegen). The reader owns the SourceReader handle and the strtab
+// cursor; tools that also touch the stream or cursor directly (the
+// top-level streaming loops, tcheck's st_add_str) go through the
+// rd_* accessors so there is a single source of truth.
+
+var g_rd: SourceReader = 0 as SourceReader;
+var g_rd_sp: i32 = 0;   // strtab cursor used by read_node
+
+export fn rd_set_reader(r: SourceReader) -> void { g_rd = r; return; }
+export fn rd_reader() -> SourceReader { return g_rd; }
+export fn rd_sp() -> i32 { return g_rd_sp; }
+export fn rd_set_sp(v: i32) -> void { g_rd_sp = v; return; }
+
+export fn peek_in() -> u8 { return peek(g_rd); }
+export fn rd_next() -> u8 { return next(g_rd); }
+export fn rd_at_eof() -> bool { return at_eof(g_rd); }
+
+export fn is_atom_end(c: u8) -> bool {
+    return c == ' ' || c == 9u8 || c == 10u8 || c == 13u8 ||
+           c == '(' || c == ')' || c == 0u8;
+}
+
+export fn skip_ws_in() -> void {
+    while at_eof(g_rd) == false {
+        var c: u8 = peek(g_rd);
+        if c == ' ' || c == 9u8 || c == 10u8 || c == 13u8 {
+            next(g_rd);
+        } else { return; }
+    }
+    return;
+}
+
+export fn read_atom_in(atom: U8Array) -> i32 {
+    var alen: i32 = 0;
+    while at_eof(g_rd) == false && !is_atom_end(peek(g_rd)) {
+        set(atom, alen, next(g_rd));
+        alen = alen + 1;
+    }
+    return alen;
+}
+
+fn is_digit_c(c: u8) -> bool { return c >= '0' && c <= '9'; }
+
+// ===== Kind classification =====
+// Full set (superset of what each consumer needs). imports / self
+// only appear in tcheck's wrapper input; they classify to NK_UNKNOWN-
+// distinct codes here and are simply never matched by the others.
+export fn classify_kind(atom: U8Array, len: i32) -> i32 {
+    if streq(atom, 0, len, "fn")        { return NK_FN; }
+    if streq(atom, 0, len, "if")        { return NK_IF; }
+    if streq(atom, 0, len, "ret")       { return NK_RET; }
+    if streq(atom, 0, len, "int")       { return NK_INT; }
+    if streq(atom, 0, len, "str")       { return NK_STR; }
+    if streq(atom, 0, len, "var")       { return NK_VAR; }
+    if streq(atom, 0, len, "bool")      { return NK_BOOL; }
+    if streq(atom, 0, len, "type")      { return NK_TYPE; }
+    if streq(atom, 0, len, "cast")      { return NK_CAST; }
+    if streq(atom, 0, len, "call")      { return NK_CALL; }
+    if streq(atom, 0, len, "block")     { return NK_BLOCK; }
+    if streq(atom, 0, len, "param")     { return NK_PARAM; }
+    if streq(atom, 0, len, "while")     { return NK_WHILE; }
+    if streq(atom, 0, len, "binop")     { return NK_BINOP; }
+    if streq(atom, 0, len, "unary")     { return NK_UNARY; }
+    if streq(atom, 0, len, "field")     { return NK_FIELD; }
+    if streq(atom, 0, len, "break")     { return NK_BREAK; }
+    if streq(atom, 0, len, "params")    { return NK_PARAMS; }
+    if streq(atom, 0, len, "return")    { return NK_RETURN; }
+    if streq(atom, 0, len, "struct")    { return NK_STRUCT; }
+    if streq(atom, 0, len, "assign")    { return NK_ASSIGN; }
+    if streq(atom, 0, len, "import")    { return NK_IMPORT; }
+    if streq(atom, 0, len, "program")   { return NK_PROGRAM; }
+    if streq(atom, 0, len, "imports")   { return NK_IMPORTS; }
+    if streq(atom, 0, len, "self")      { return NK_SELF; }
+    if streq(atom, 0, len, "comment")   { return NK_COMMENT; }
+    if streq(atom, 0, len, "var_decl")  { return NK_VAR_DECL; }
+    if streq(atom, 0, len, "const_decl") { return NK_CONST_DECL; }
+    if streq(atom, 0, len, "continue")  { return NK_CONTINUE; }
+    if streq(atom, 0, len, "call_stmt") { return NK_CALL_STMT; }
+    return NK_UNKNOWN;
+}
+
+// Kinds sigscan (read_node mode 2) stores in the pool. Anything else
+// (block, field, comment, all expression kinds) gets read-and-
+// discarded by consume_subtree_silent so they never touch nodes /
+// strtab.
+fn should_keep_sig(kind_code: i32) -> bool {
+    if kind_code == NK_PROGRAM  { return true; }
+    if kind_code == NK_FN       { return true; }
+    if kind_code == NK_STRUCT   { return true; }
+    if kind_code == NK_VAR_DECL { return true; }
+    if kind_code == NK_CONST_DECL { return true; }
+    if kind_code == NK_PARAMS   { return true; }
+    if kind_code == NK_PARAM    { return true; }
+    if kind_code == NK_RET      { return true; }
+    if kind_code == NK_TYPE     { return true; }
+    return false;
+}
+
+// Consume the rest of an S-expression (after we've already eaten
+// the opening '(' and the kind atom) without allocating any AstNode
+// or copying any byte into strtab. Used by read_node mode 2 when it
+// sees a kind that should_keep_sig() rejects.
+fn consume_subtree_silent() -> void {
+    skip_ws_in();
+    var c: u8 = peek_in();
+
+    // Skip optional value (string or atom)
+    if c == '"' {
+        next(g_rd);
+        var ch: u8 = peek_in();
+        while ch != '"' && ch != 0u8 {
+            if ch == '\\' { next(g_rd); }
+            next(g_rd);
+            ch = peek_in();
+        }
+        if ch == '"' { next(g_rd); }
+    } else if c != '(' && c != ')' && c != 0u8 {
+        while at_eof(g_rd) == false && !is_atom_end(peek(g_rd)) {
+            next(g_rd);
+        }
+    }
+
+    // Skip nested children
+    skip_ws_in();
+    while peek_in() == '(' {
+        next(g_rd);
+        skip_ws_in();
+        // Drain the kind atom of the nested node
+        while at_eof(g_rd) == false && !is_atom_end(peek(g_rd)) {
+            next(g_rd);
+        }
+        consume_subtree_silent();
+        skip_ws_in();
+    }
+
+    if peek_in() == ')' { next(g_rd); }
+    return;
+}
+
+// read_node — read one S-expression subtree into the node pool.
+//
+// mode 0: keep every node; bool value atoms stay sval ("true"/
+//         "false"). codegen reads .tast this way (its NK_BOOL paths
+//         compare the text, not ival).
+// mode 1: like 0 but NK_BOOL value atoms become ival 1/0 with no
+//         sval (matches C ast_read). tcheck reads .ast this way.
+// mode 2: sigscan header scan — only kinds in should_keep_sig() are
+//         allocated; everything else is consumed silently and
+//         read_node returns -1 (the caller's child-link loop already
+//         skips -1). This bounds the pool peak to header nodes.
+export fn read_node(atom: U8Array, nodes: AstNodeArray, strtab: U8Array, mode: i32) -> i32 {
+    skip_ws_in();
+    if rd_at_eof() { return -1; }
+    if peek_in() != '(' { return -1; }
+    next(g_rd);
+    skip_ws_in();
+
+    // Read kind (strip :type_annot if present)
+    var klen: i32 = read_atom_in(atom);
+    var actual_klen: i32 = 0;
+    while actual_klen < klen && get(atom, actual_klen) != ':' {
+        actual_klen = actual_klen + 1;
+    }
+    var kind_code: i32 = classify_kind(atom, actual_klen);
+
+    if mode == 2 && !should_keep_sig(kind_code) {
+        consume_subtree_silent();
+        return -1;
+    }
+
+    var n: i32 = alloc_node(nodes, kind_code);
+
+    // Store type_annot if present (after ':' in kind atom)
+    if actual_klen < klen {
+        var tss: i32 = g_rd_sp;
+        var ti: i32 = actual_klen + 1;
+        while ti < klen {
+            set(strtab, g_rd_sp, get(atom, ti));
+            g_rd_sp = g_rd_sp + 1;
+            ti = ti + 1;
+        }
+        n_set_tass(nodes, n, tss);
+        n_set_tasl(nodes, n, klen - actual_klen - 1);
+    }
+
+    skip_ws_in();
+
+    // Check for sval/ival atom
+    var c: u8 = peek_in();
+    if (kind_code == NK_STR || kind_code == NK_COMMENT) && c == '"' {
+        // Quoted string: read until closing '"' with escape processing
+        next(g_rd);
+        var ss: i32 = g_rd_sp;
+        var b: i32 = read_string_char(g_rd);
+        while b >= 0 {
+            set(strtab, g_rd_sp, b as u8);
+            g_rd_sp = g_rd_sp + 1;
+            b = read_string_char(g_rd);
+        }
+        if peek_in() == '"' { next(g_rd); }
+        n_set_ss(nodes, n, ss);
+        n_set_sl(nodes, n, g_rd_sp - ss);
+        skip_ws_in();
+    } else if c != '(' && c != ')' && c != 0u8 {
+        var vlen: i32 = read_atom_in(atom);
+        if kind_code == NK_INT && vlen > 0 && (is_digit_c(get(atom, 0)) || get(atom, 0) == '-') {
+            // Support negative literals: parse.tc emits e.g. `(int -1)`
+            // for hex literals whose top bit is set (0xFFFFFFFF).
+            var ival: i32 = 0;
+            var ii: i32 = 0;
+            var neg: bool = false;
+            if get(atom, 0) == '-' { neg = true; ii = 1; }
+            while ii < vlen {
+                ival = ival * 10 + (get(atom, ii) as i32 - 48);
+                ii = ii + 1;
+            }
+            if neg { ival = 0 - ival; }
+            n_set_ival(nodes, n, ival);
+        } else if mode == 1 && kind_code == NK_BOOL {
+            var bval: i32 = 0;
+            if vlen == 4 && get(atom,0)=='t' && get(atom,1)=='r' && get(atom,2)=='u' && get(atom,3)=='e' {
+                bval = 1;
+            }
+            n_set_ival(nodes, n, bval);
+        } else {
+            var ss2: i32 = g_rd_sp;
+            var ii2: i32 = 0;
+            while ii2 < vlen {
+                set(strtab, g_rd_sp, get(atom, ii2));
+                g_rd_sp = g_rd_sp + 1;
+                ii2 = ii2 + 1;
+            }
+            n_set_ss(nodes, n, ss2);
+            n_set_sl(nodes, n, vlen);
+        }
+        skip_ws_in();
+    }
+
+    // Read children
+    c = peek_in();
+    var last_child: i32 = -1;
+    while c == '(' {
+        var child: i32 = read_node(atom, nodes, strtab, mode);
+        if child >= 0 {
+            if last_child < 0 {
+                n_set_child(nodes, n, child);
+            } else {
+                n_set_sib(nodes, last_child, child);
+            }
+            last_child = child;
+        }
+        skip_ws_in();
+        c = peek_in();
+    }
+
+    // Consume ')'
+    if peek_in() == ')' { next(g_rd); }
+    return n;
+}
+
+// Read the opening "(name" of an S-expression and return its kind
+// code. On EOF or non-paren input returns -1. The returned kind is a
+// sigil for the caller to decide what to do with the wrapper; the
+// caller is responsible for then reading children and the closing ')'.
+export fn read_open_kind(atom: U8Array) -> i32 {
+    skip_ws_in();
+    if rd_at_eof() { return 0 - 1; }
+    if peek_in() != '(' { return 0 - 1; }
+    next(g_rd);
+    skip_ws_in();
+    var klen: i32 = read_atom_in(atom);
+    // Strip optional :annot suffix
+    var actual_klen: i32 = 0;
+    while actual_klen < klen && get(atom, actual_klen) != ':' {
+        actual_klen = actual_klen + 1;
+    }
+    return classify_kind(atom, actual_klen);
+}
+
+// Consume the closing ')' of a wrapper.
+export fn read_close_paren() -> void {
+    skip_ws_in();
+    if peek_in() == ')' { next(g_rd); }
+    return;
+}
+
+// ===== Kind name writer =====
+// Inverse of classify_kind, for the .th / .tast emitters (sigscan /
+// tcheck). Unknown kinds emit '?'.
+export fn emit_kind(k: i32, ob: StringBuffer) -> void {
+    if k == NK_PROGRAM  { emit_string(ob, "program"); return; }
+    if k == NK_FN       { emit_string(ob, "fn"); return; }
+    if k == NK_STRUCT   { emit_string(ob, "struct"); return; }
+    if k == NK_PARAMS   { emit_string(ob, "params"); return; }
+    if k == NK_PARAM    { emit_string(ob, "param"); return; }
+    if k == NK_RET      { emit_string(ob, "ret"); return; }
+    if k == NK_TYPE     { emit_string(ob, "type"); return; }
+    if k == NK_BLOCK    { emit_string(ob, "block"); return; }
+    if k == NK_VAR_DECL { emit_string(ob, "var_decl"); return; }
+    if k == NK_CONST_DECL { emit_string(ob, "const_decl"); return; }
+    if k == NK_ASSIGN   { emit_string(ob, "assign"); return; }
+    if k == NK_CALL_STMT { emit_string(ob, "call_stmt"); return; }
+    if k == NK_CALL     { emit_string(ob, "call"); return; }
+    if k == NK_IF       { emit_string(ob, "if"); return; }
+    if k == NK_WHILE    { emit_string(ob, "while"); return; }
+    if k == NK_RETURN   { emit_string(ob, "return"); return; }
+    if k == NK_BINOP    { emit_string(ob, "binop"); return; }
+    if k == NK_UNARY    { emit_string(ob, "unary"); return; }
+    if k == NK_INT      { emit_string(ob, "int"); return; }
+    if k == NK_STR      { emit_string(ob, "str"); return; }
+    if k == NK_BOOL     { emit_string(ob, "bool"); return; }
+    if k == NK_VAR      { emit_string(ob, "var"); return; }
+    if k == NK_CAST     { emit_string(ob, "cast"); return; }
+    if k == NK_IMPORT   { emit_string(ob, "import"); return; }
+    if k == NK_IMPORTS  { emit_string(ob, "imports"); return; }
+    if k == NK_FIELD    { emit_string(ob, "field"); return; }
+    if k == NK_BREAK    { emit_string(ob, "break"); return; }
+    if k == NK_CONTINUE { emit_string(ob, "continue"); return; }
+    if k == NK_COMMENT  { emit_string(ob, "comment"); return; }
+    emit_char(ob, '?');
     return;
 }
