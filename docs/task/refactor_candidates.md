@@ -145,7 +145,10 @@ private、peek/poke 境界なし、固定 cap 等) は除外済み。
 - [x] A1+A2: NK_ 統一 + S 式リーダ共通化 (2026-07-08 完了。副産物で
       bcrun 連結 .bc の string table 衝突を発見・修正 —
       `docs/solved.md` #43)
-- [ ] A3: compile-gen3.sh 乖離 (最低限コメント修正)
+- [x] A3: compile-gen3.sh 乖離 (2026-07-08 完了。調査の結果 in-tree
+      から一切呼ばれていない死にスクリプトと判明 — Makefile gen3 は
+      compile-gen2.sh を直接使い、test_gen3.sh は段階を自前駆動。
+      GEN2_DIR=GEN3_DIR で compile-gen2.sh に委譲する薄いラッパに置換)
 - [ ] B1+B2+B3: 死にコード削除 + loud error + arg_eq/is_digit_c
 - [ ] C1: virtio 統合
 - [ ] C2: pico2 スクリプト共通化
