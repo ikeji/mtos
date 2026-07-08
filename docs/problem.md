@@ -18,6 +18,22 @@
 
 ## 後回し
 
+### 45. fatfs: SFN base (先頭 6 文字) が同じ LFN ファイルは 9 個まで (limitation、2026-07-08)
+
+`dir_create_entry` の自動 SFN 生成 (`gen_sfn_with_n`) は
+`BASE6~N` 形式で N を 1..9 しか試さない (`while n <= 9`)。名前の
+先頭 6 文字が同じファイルを同一ディレクトリに 10 個作ると 10 個目の
+create が -1 で失敗する (例: `multi_00.txt` .. `multi_09.txt`)。
+Windows は ~10 以降や hash ベース SFN に切り替えるが未実装。
+
+D1 リファクタ (DirIter 化) の検証中に発見。旧実装でも同一挙動
+(9/20 で停止) を確認済みなので regression ではない。失敗は
+open_redir / fatfs_open 経由で呼び出し元に -1 が返り、sh は
+"spawn open_redir(out) failed" を出すので silent ではない。
+
+対処案: `n <= 9` を 2 桁 (BASE5~NN) に拡張する (gen_sfn_with_n の
+base_end 調整のみ、~30 行)。実害が出てから。
+
 ### 44. test_pico2.sh (K7 era) の UART 検証が現行カーネルで fail (limitation、2026-07-08)
 
 `kernel/tests/test_pico2.sh` は flash + boot + sh 駆動までは動くが、

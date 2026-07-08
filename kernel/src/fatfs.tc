@@ -535,6 +535,143 @@ fn lfn_extract_chars(secbuf: U8Array, off: i32,
     return 0;
 }
 
+// ===== Directory iterator =====
+//
+// One shared walker for the five directory-scanning callers
+// (dir_find_by_name / dir_has_sfn / dir_alloc_slots / dir_is_empty /
+// fatfs_readdir_dir). Owns the cluster-chain → sector → 16-entry
+// triple loop plus the LFN accumulation state machine that used to
+// be copy-pasted into each of them (refactor D1,
+// docs/task/refactor_candidates.md)。
+
+struct DirIter {
+    di_clus:   u32,     // current cluster in the chain
+    di_prev:   u32,     // last cluster visited (alloc's chain extension)
+    di_s:      i32,     // sector index within the cluster
+    di_e:      i32,     // next entry index within the sector (0..15)
+    di_sec:    u32,     // absolute sector number of the loaded buffer
+    di_loaded: i32,     // 1 = di_buf holds di_sec
+    di_off:    i32,     // byte offset of the current entry
+    di_buf:    U8Array, // 512 B sector buffer
+    di_lfnb:   U8Array, // 260 B assembled LFN name
+    di_lfnv:   i32,     // LFN chain currently valid
+    di_lfnord: i32,     // max ord of the chain (name length bound)
+    di_lfnchk: i32,     // expected SFN checksum (u8 as i32)
+    di_lfnlen: i32,     // cooked: resolved LFN length of cur entry (0 = none)
+}
+
+fn di_new(dir_clus: u32) -> DirIter {
+    return DirIter(dir_clus, 0u32, 0, 0, 0u32, 0, 0,
+                   U8Array(512), U8Array(260), 0, 0, 0, 0);
+}
+
+fn di_free(it: DirIter) -> void {
+    delete(di_buf(it));
+    delete(di_lfnb(it));
+    delete(it);
+    return;
+}
+
+// Advance to the next raw 32-byte entry (including free slots, the
+// 0x00 terminator, LFN chunks and the volume label). Returns
+//   1 = entry loaded (di_sec / di_off / di_buf valid)
+//   0 = cluster chain exhausted
+//  -1 = I/O error
+fn di_next_raw(it: DirIter) -> i32 {
+    while true {
+        var clus: u32 = di_clus(it);
+        if clus < 2u32 || clus >= 0x0FFFFFF8u32 { return 0; }
+        if di_e(it) >= 16 {
+            di_e(it, 0);
+            di_s(it, di_s(it) + 1);
+            di_loaded(it, 0);
+        }
+        if di_s(it) >= g_fat_spc {
+            di_s(it, 0);
+            di_loaded(it, 0);
+            di_prev(it, clus);
+            di_clus(it, fat_get_entry(clus));
+        } else {
+            if di_loaded(it) == 0 {
+                var sec: u32 = cluster_to_sector(clus) + (di_s(it) as u32);
+                if fat_block_read(sec, di_buf(it)) != 512 { return -1; }
+                di_sec(it, sec);
+                di_loaded(it, 1);
+            }
+            di_off(it, di_e(it) * 32);
+            di_e(it, di_e(it) + 1);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+// Advance to the next REAL file/dir entry: skips free slots and the
+// volume label, consumes LFN chunk chains into di_lfnb. Returns
+//   1 = entry available. di_lfnlen(it) > 0 when a checksum-matched
+//       LFN name for this entry sits in di_lfnb(it).
+//   0 = end of directory (0x00 terminator or chain end)
+//  -1 = I/O error
+fn di_next_entry(it: DirIter) -> i32 {
+    var lfn_buf: U8Array = di_lfnb(it);
+    while true {
+        var r: i32 = di_next_raw(it);
+        if r != 1 { return r; }
+        var secbuf: U8Array = di_buf(it);
+        var off: i32 = di_off(it);
+        var fb: u8 = get(secbuf, off);
+        if fb == 0u8 { return 0; }
+        if fb == 0xE5u8 {
+            di_lfnv(it, 0);
+        } else {
+            var attr: u8 = get(secbuf, off + 11);
+            if attr == 0x0Fu8 {
+                var seq: u8 = fb;
+                var is_last: bool = (seq & 0x40u8) != 0u8;
+                var ord: i32 = (seq & 0x1Fu8) as i32;
+                var entry_chk: u8 = get(secbuf, off + 13);
+                if ord < 1 || ord > 20 {
+                    di_lfnv(it, 0);
+                } else {
+                    if is_last {
+                        di_lfnv(it, 1);
+                        di_lfnord(it, ord);
+                        di_lfnchk(it, entry_chk as i32);
+                    } else if (entry_chk as i32) != di_lfnchk(it) {
+                        di_lfnv(it, 0);
+                    }
+                    if di_lfnv(it) == 1 {
+                        var base: i32 = (ord - 1) * 13;
+                        if base + 13 > 260 {
+                            di_lfnv(it, 0);
+                        } else if lfn_extract_chars(secbuf, off,
+                                                     lfn_buf, base) != 0 {
+                            di_lfnv(it, 0);
+                        }
+                    }
+                }
+            } else if (attr & 0x08u8) == 0u8 {
+                // Real entry — resolve the LFN name length if the
+                // accumulated chain's checksum matches this SFN.
+                var lfn_len: i32 = 0;
+                if di_lfnv(it) == 1
+                   && (lfn_chksum_buf(secbuf, off) as i32) == di_lfnchk(it) {
+                    var lim: i32 = di_lfnord(it) * 13;
+                    while lfn_len < lim && get(lfn_buf, lfn_len) != 0u8 {
+                        lfn_len = lfn_len + 1;
+                    }
+                }
+                di_lfnlen(it, lfn_len);
+                di_lfnv(it, 0);
+                return 1;
+            } else {
+                di_lfnv(it, 0);
+            }
+        }
+    }
+    return 0;
+}
+
 // ===== Directory scanning =====
 
 // Scan dir_clus for the file named name_addr[0..nlen]. Matches LFN
@@ -554,154 +691,50 @@ fn dir_find_by_name(dir_clus: u32, name_addr: u32, nlen: i32,
         try_83 = true;
     }
 
-    var lfn_buf: U8Array = U8Array(260);
-    var lfn_valid: bool = false;
-    var lfn_max_ord: i32 = 0;
-    var lfn_chksum_val: u8 = 0u8;
-
-    var secbuf: U8Array = U8Array(512);
-    var clus: u32 = dir_clus;
-
-    while clus >= 2u32 && clus < 0x0FFFFFF8u32 {
-        var sec: u32 = cluster_to_sector(clus);
-        var s: i32 = 0;
-        while s < g_fat_spc {
-            var cur_sec: u32 = sec + (s as u32);
-            if fat_block_read(cur_sec, secbuf) != 512 {
-                delete(name83);
-                delete(lfn_buf);
-                delete(secbuf);
-                return -1;
+    var it: DirIter = di_new(dir_clus);
+    while di_next_entry(it) == 1 {
+        var secbuf: U8Array = di_buf(it);
+        var off: i32 = di_off(it);
+        var matched: bool = false;
+        if di_lfnlen(it) > 0 {
+            if ascii_eq_ci(di_lfnb(it), di_lfnlen(it), name_addr, nlen) {
+                matched = true;
             }
-            var e: i32 = 0;
-            while e < 16 {
-                var off: i32 = e * 32;
-                var fb: u8 = get(secbuf, off);
-                if fb == 0u8 {
-                    delete(name83);
-                    delete(lfn_buf);
-                    delete(secbuf);
-                    return -1;
-                }
-                if fb == 0xE5u8 {
-                    lfn_valid = false;
-                } else {
-                    var attr: u8 = get(secbuf, off + 11);
-                    if attr == 0x0Fu8 {
-                        var seq: u8 = fb;
-                        var is_last: bool = (seq & 0x40u8) != 0u8;
-                        var ord: i32 = (seq & 0x1Fu8) as i32;
-                        var entry_chk: u8 = get(secbuf, off + 13);
-                        if ord < 1 || ord > 20 {
-                            lfn_valid = false;
-                        } else {
-                            if is_last {
-                                lfn_valid = true;
-                                lfn_max_ord = ord;
-                                lfn_chksum_val = entry_chk;
-                            } else if entry_chk != lfn_chksum_val {
-                                lfn_valid = false;
-                            }
-                            if lfn_valid {
-                                var base: i32 = (ord - 1) * 13;
-                                if base + 13 > 260 {
-                                    lfn_valid = false;
-                                } else if lfn_extract_chars(secbuf, off,
-                                                             lfn_buf, base) != 0 {
-                                    lfn_valid = false;
-                                }
-                            }
-                        }
-                    } else if (attr & 0x08u8) == 0u8 {
-                        var matched: bool = false;
-                        if lfn_valid {
-                            var sfn_chk: u8 = lfn_chksum_buf(secbuf, off);
-                            if sfn_chk == lfn_chksum_val {
-                                var actual_len: i32 = 0;
-                                var lim: i32 = lfn_max_ord * 13;
-                                while actual_len < lim
-                                      && get(lfn_buf, actual_len) != 0u8 {
-                                    actual_len = actual_len + 1;
-                                }
-                                if ascii_eq_ci(lfn_buf, actual_len,
-                                               name_addr, nlen) {
-                                    matched = true;
-                                }
-                            }
-                        }
-                        if matched == false && try_83 {
-                            if name83_eq(name83,
-                                         secbuf as u32 + 4u32 + (off as u32)) {
-                                matched = true;
-                            }
-                        }
-                        if matched {
-                            var hi: u32 = read_le16(secbuf, off + 20) as u32;
-                            var lo: u32 = read_le16(secbuf, off + 26) as u32;
-                            poke32(out_clus_addr, (hi << 16u32) | lo);
-                            poke32(out_size_addr, read_le32(secbuf, off + 28));
-                            poke32(out_dir_sec_addr, cur_sec);
-                            poke32(out_dir_off_addr, off as u32);
-                            delete(name83);
-                            delete(lfn_buf);
-                            delete(secbuf);
-                            return 0;
-                        }
-                        lfn_valid = false;
-                    } else {
-                        lfn_valid = false;
-                    }
-                }
-                e = e + 1;
-            }
-            s = s + 1;
         }
-        clus = fat_get_entry(clus);
+        if matched == false && try_83 {
+            if name83_eq(name83, secbuf as u32 + 4u32 + (off as u32)) {
+                matched = true;
+            }
+        }
+        if matched {
+            var hi: u32 = read_le16(secbuf, off + 20) as u32;
+            var lo: u32 = read_le16(secbuf, off + 26) as u32;
+            poke32(out_clus_addr, (hi << 16u32) | lo);
+            poke32(out_size_addr, read_le32(secbuf, off + 28));
+            poke32(out_dir_sec_addr, di_sec(it));
+            poke32(out_dir_off_addr, off as u32);
+            delete(name83);
+            di_free(it);
+            return 0;
+        }
     }
     delete(name83);
-    delete(lfn_buf);
-    delete(secbuf);
+    di_free(it);
     return -1;
 }
 
 // Quick 8.3 collision check used by dir_create_entry's `~N` retry.
 // Walks dir_clus looking for any SFN-bearing entry matching name83.
 fn dir_has_sfn(dir_clus: u32, name83: U8Array) -> bool {
-    var secbuf: U8Array = U8Array(512);
-    var clus: u32 = dir_clus;
-    while clus >= 2u32 && clus < 0x0FFFFFF8u32 {
-        var sec: u32 = cluster_to_sector(clus);
-        var s: i32 = 0;
-        while s < g_fat_spc {
-            if fat_block_read(sec + (s as u32), secbuf) != 512 {
-                delete(secbuf);
-                return false;
-            }
-            var e: i32 = 0;
-            while e < 16 {
-                var off: i32 = e * 32;
-                var fb: u8 = get(secbuf, off);
-                if fb == 0u8 {
-                    delete(secbuf);
-                    return false;
-                }
-                if fb != 0xE5u8 {
-                    var attr: u8 = get(secbuf, off + 11);
-                    if attr != 0x0Fu8 && (attr & 0x08u8) == 0u8 {
-                        if name83_eq(name83,
-                                     secbuf as u32 + 4u32 + (off as u32)) {
-                            delete(secbuf);
-                            return true;
-                        }
-                    }
-                }
-                e = e + 1;
-            }
-            s = s + 1;
+    var it: DirIter = di_new(dir_clus);
+    while di_next_entry(it) == 1 {
+        if name83_eq(name83,
+                     di_buf(it) as u32 + 4u32 + (di_off(it) as u32)) {
+            di_free(it);
+            return true;
         }
-        clus = fat_get_entry(clus);
     }
-    delete(secbuf);
+    di_free(it);
     return false;
 }
 
@@ -715,83 +748,73 @@ fn dir_has_sfn(dir_clus: u32, name83: U8Array) -> bool {
 // cluster and place the run at offset 0.
 fn dir_alloc_slots(dir_clus: u32, need: i32,
                    out_first_sec_addr: u32, out_first_off_addr: u32) -> i32 {
-    var secbuf: U8Array = U8Array(512);
-    var clus: u32 = dir_clus;
-    var prev_clus: u32 = 0u32;
+    var it: DirIter = di_new(dir_clus);
     var run_sec: u32 = 0u32;
     var run_off: i32 = 0;
     var run_len: i32 = 0;
 
-    while clus >= 2u32 && clus < 0x0FFFFFF8u32 {
-        var sec: u32 = cluster_to_sector(clus);
-        var s: i32 = 0;
-        while s < g_fat_spc {
-            var cur_sec: u32 = sec + (s as u32);
-            if fat_block_read(cur_sec, secbuf) != 512 {
-                delete(secbuf);
-                return -1;
+    // Raw scan: track runs of free slots (0xE5 tombstones), stop at
+    // the 0x00 terminator (everything after it is free).
+    var exhausted: i32 = 0;
+    while exhausted == 0 {
+        var r: i32 = di_next_raw(it);
+        if r < 0 { di_free(it); return -1; }
+        if r == 0 {
+            exhausted = 1;
+        } else {
+            var off: i32 = di_off(it);
+            var fb: u8 = get(di_buf(it), off);
+            if fb == 0u8 {
+                if run_len == 0 {
+                    run_sec = di_sec(it);
+                    run_off = off;
+                }
+                poke32(out_first_sec_addr, run_sec);
+                poke32(out_first_off_addr, run_off as u32);
+                di_free(it);
+                return 0;
             }
-            var e: i32 = 0;
-            while e < 16 {
-                var off: i32 = e * 32;
-                var fb: u8 = get(secbuf, off);
-                if fb == 0u8 {
-                    if run_len == 0 {
-                        run_sec = cur_sec;
-                        run_off = off;
-                    }
+            if fb == 0xE5u8 {
+                if run_len == 0 {
+                    run_sec = di_sec(it);
+                    run_off = off;
+                }
+                run_len = run_len + 1;
+                if run_len >= need {
                     poke32(out_first_sec_addr, run_sec);
                     poke32(out_first_off_addr, run_off as u32);
-                    delete(secbuf);
+                    di_free(it);
                     return 0;
                 }
-                if fb == 0xE5u8 {
-                    if run_len == 0 {
-                        run_sec = cur_sec;
-                        run_off = off;
-                    }
-                    run_len = run_len + 1;
-                    if run_len >= need {
-                        poke32(out_first_sec_addr, run_sec);
-                        poke32(out_first_off_addr, run_off as u32);
-                        delete(secbuf);
-                        return 0;
-                    }
-                } else {
-                    run_len = 0;
-                }
-                e = e + 1;
+            } else {
+                run_len = 0;
             }
-            s = s + 1;
         }
-        prev_clus = clus;
-        clus = fat_get_entry(clus);
     }
 
-    if prev_clus < 2u32 || prev_clus >= 0x0FFFFFF8u32 {
-        delete(secbuf);
-        return -1;
-    }
+    // Chain exhausted with neither a terminator nor a long-enough
+    // run: extend the directory with a fresh zeroed cluster.
+    var prev_clus: u32 = di_prev(it);
+    di_free(it);
+    if prev_clus < 2u32 || prev_clus >= 0x0FFFFFF8u32 { return -1; }
     var new_clus: u32 = fat_alloc_cluster();
-    if new_clus < 2u32 {
-        delete(secbuf);
-        return -1;
-    }
+    if new_clus < 2u32 { return -1; }
     fat_set_entry(prev_clus, new_clus);
+    var zbuf: U8Array = U8Array(512);
     var z: i32 = 0;
-    while z < 512 { set(secbuf, z, 0u8); z = z + 1; }
+    while z < 512 { set(zbuf, z, 0u8); z = z + 1; }
     var new_sec: u32 = cluster_to_sector(new_clus);
     var ns: i32 = 0;
     while ns < g_fat_spc {
-        if fat_block_write(new_sec + (ns as u32), secbuf) != 512 {
-            delete(secbuf);
+        if fat_block_write(new_sec + (ns as u32), zbuf) != 512 {
+            delete(zbuf);
             return -1;
         }
         ns = ns + 1;
     }
     poke32(out_first_sec_addr, new_sec);
     poke32(out_first_off_addr, 0u32);
-    delete(secbuf);
+    delete(zbuf);
     return 0;
 }
 
@@ -1324,41 +1347,21 @@ export fn fatfs_mkdir(path_addr: u32, plen: i32) -> i32 {
 // skipped; any other live entry whose name doesn't start with '.'
 // counts as non-empty.
 fn dir_is_empty(dir_clus: u32) -> bool {
-    var secbuf: U8Array = U8Array(512);
-    var clus: u32 = dir_clus;
-    while clus >= 2u32 && clus < 0x0FFFFFF8u32 {
-        var sec: u32 = cluster_to_sector(clus);
-        var s: i32 = 0;
-        while s < g_fat_spc {
-            if fat_block_read(sec + (s as u32), secbuf) != 512 {
-                delete(secbuf);
-                return false;
-            }
-            var e: i32 = 0;
-            while e < 16 {
-                var off: i32 = e * 32;
-                var fb: u8 = get(secbuf, off);
-                if fb == 0u8 {
-                    delete(secbuf);
-                    return true;
-                }
-                if fb != 0xE5u8 {
-                    var attr: u8 = get(secbuf, off + 11);
-                    if attr != 0x0Fu8 && (attr & 0x08u8) == 0u8 {
-                        if fb != '.' as u8 {
-                            delete(secbuf);
-                            return false;
-                        }
-                    }
-                }
-                e = e + 1;
-            }
-            s = s + 1;
+    var it: DirIter = di_new(dir_clus);
+    var r: i32 = di_next_entry(it);
+    while r == 1 {
+        // Anything other than the "." / ".." synthetic entries makes
+        // the directory non-empty.
+        if get(di_buf(it), di_off(it)) != '.' as u8 {
+            di_free(it);
+            return false;
         }
-        clus = fat_get_entry(clus);
+        r = di_next_entry(it);
     }
-    delete(secbuf);
-    return true;
+    di_free(it);
+    // I/O error (-1) counts as non-empty, matching the old behavior
+    // of refusing the rmdir rather than deleting blindly.
+    return r == 0;
 }
 
 // Remove an empty directory at path. Refuses non-existent paths,
@@ -1757,144 +1760,69 @@ export fn fatfs_write(fd: i32, buf_addr: u32, n: i32) -> i32 {
 // bytes written to buf. Emits the LFN name when present; otherwise
 // falls back to the 8.3 form lowercased.
 fn fatfs_readdir_dir(dir_clus: u32, buf_addr: u32, buf_size: i32) -> i32 {
-    var lfn_buf: U8Array = U8Array(260);
-    var lfn_valid: bool = false;
-    var lfn_max_ord: i32 = 0;
-    var lfn_chksum_val: u8 = 0u8;
-
-    var clus: u32 = dir_clus;
-    var secbuf: U8Array = U8Array(512);
+    var it: DirIter = di_new(dir_clus);
     var pos: i32 = 0;
 
-    while clus >= 2u32 && clus < 0x0FFFFFF8u32 {
-        var sec: u32 = cluster_to_sector(clus);
-        var s: i32 = 0;
-        while s < g_fat_spc {
-            if fat_block_read(sec + (s as u32), secbuf) != 512 {
-                delete(lfn_buf);
-                delete(secbuf);
-                return pos;
-            }
-            var e: i32 = 0;
-            while e < 16 {
-                var off: i32 = e * 32;
-                var fb: u8 = get(secbuf, off);
-                if fb == 0u8 {
-                    delete(lfn_buf);
-                    delete(secbuf);
-                    return pos;
-                }
-                if fb == 0xE5u8 {
-                    lfn_valid = false;
-                } else {
-                    var attr: u8 = get(secbuf, off + 11);
-                    if attr == 0x0Fu8 {
-                        var seq: u8 = fb;
-                        var is_last: bool = (seq & 0x40u8) != 0u8;
-                        var ord: i32 = (seq & 0x1Fu8) as i32;
-                        var entry_chk: u8 = get(secbuf, off + 13);
-                        if ord < 1 || ord > 20 {
-                            lfn_valid = false;
-                        } else {
-                            if is_last {
-                                lfn_valid = true;
-                                lfn_max_ord = ord;
-                                lfn_chksum_val = entry_chk;
-                            } else if entry_chk != lfn_chksum_val {
-                                lfn_valid = false;
-                            }
-                            if lfn_valid {
-                                var base: i32 = (ord - 1) * 13;
-                                if base + 13 > 260 {
-                                    lfn_valid = false;
-                                } else if lfn_extract_chars(secbuf, off,
-                                                             lfn_buf, base) != 0 {
-                                    lfn_valid = false;
-                                }
-                            }
-                        }
-                    } else if (attr & 0x08u8) == 0u8 {
-                        // Skip the "." and ".." synthetic entries (the
-                        // SFN starts with '.', encoded as 0x2E padded).
-                        var first: u8 = get(secbuf, off);
-                        if first != '.' as u8 {
-                            var via_lfn: bool = false;
-                            var emit_len: i32 = 0;
-                            if lfn_valid
-                               && lfn_chksum_buf(secbuf, off) == lfn_chksum_val {
-                                var actual: i32 = 0;
-                                var lim: i32 = lfn_max_ord * 13;
-                                while actual < lim
-                                      && get(lfn_buf, actual) != 0u8 {
-                                    actual = actual + 1;
-                                }
-                                emit_len = actual;
-                                via_lfn = true;
-                            }
-                            if via_lfn {
-                                if pos + emit_len + 1 <= buf_size {
-                                    var k: i32 = 0;
-                                    while k < emit_len {
-                                        poke8(buf_addr + (pos as u32),
-                                              get(lfn_buf, k));
-                                        pos = pos + 1;
-                                        k = k + 1;
-                                    }
-                                    poke8(buf_addr + (pos as u32), 0u8);
-                                    pos = pos + 1;
-                                }
-                            } else {
-                                var name_len: i32 = 8;
-                                while name_len > 0
-                                      && get(secbuf, off + name_len - 1) == ' ' as u8 {
-                                    name_len = name_len - 1;
-                                }
-                                var ext_len: i32 = 3;
-                                while ext_len > 0
-                                      && get(secbuf, off + 8 + ext_len - 1) == ' ' as u8 {
-                                    ext_len = ext_len - 1;
-                                }
-                                var total_len: i32 = name_len;
-                                if ext_len > 0 { total_len = total_len + 1 + ext_len; }
-                                if pos + total_len + 1 <= buf_size {
-                                    var k: i32 = 0;
-                                    while k < name_len {
-                                        var c: u8 = get(secbuf, off + k);
-                                        if c >= 'A' as u8 && c <= 'Z' as u8 { c = c + 32u8; }
-                                        poke8(buf_addr + (pos as u32), c);
-                                        pos = pos + 1;
-                                        k = k + 1;
-                                    }
-                                    if ext_len > 0 {
-                                        poke8(buf_addr + (pos as u32), '.' as u8);
-                                        pos = pos + 1;
-                                        k = 0;
-                                        while k < ext_len {
-                                            var c: u8 = get(secbuf, off + 8 + k);
-                                            if c >= 'A' as u8 && c <= 'Z' as u8 { c = c + 32u8; }
-                                            poke8(buf_addr + (pos as u32), c);
-                                            pos = pos + 1;
-                                            k = k + 1;
-                                        }
-                                    }
-                                    poke8(buf_addr + (pos as u32), 0u8);
-                                    pos = pos + 1;
-                                }
-                            }
-                        }
-                        lfn_valid = false;
-                    } else {
-                        lfn_valid = false;
+    while di_next_entry(it) == 1 {
+        var secbuf: U8Array = di_buf(it);
+        var off: i32 = di_off(it);
+        // Skip the "." and ".." synthetic entries (the SFN starts
+        // with '.', encoded as 0x2E padded).
+        if get(secbuf, off) != '.' as u8 {
+            var emit_len: i32 = di_lfnlen(it);
+            if emit_len > 0 {
+                if pos + emit_len + 1 <= buf_size {
+                    var lfn_buf: U8Array = di_lfnb(it);
+                    var k: i32 = 0;
+                    while k < emit_len {
+                        poke8(buf_addr + (pos as u32), get(lfn_buf, k));
+                        pos = pos + 1;
+                        k = k + 1;
                     }
+                    poke8(buf_addr + (pos as u32), 0u8);
+                    pos = pos + 1;
                 }
-                e = e + 1;
+            } else {
+                var name_len: i32 = 8;
+                while name_len > 0
+                      && get(secbuf, off + name_len - 1) == ' ' as u8 {
+                    name_len = name_len - 1;
+                }
+                var ext_len: i32 = 3;
+                while ext_len > 0
+                      && get(secbuf, off + 8 + ext_len - 1) == ' ' as u8 {
+                    ext_len = ext_len - 1;
+                }
+                var total_len: i32 = name_len;
+                if ext_len > 0 { total_len = total_len + 1 + ext_len; }
+                if pos + total_len + 1 <= buf_size {
+                    var k2: i32 = 0;
+                    while k2 < name_len {
+                        var c: u8 = get(secbuf, off + k2);
+                        if c >= 'A' as u8 && c <= 'Z' as u8 { c = c + 32u8; }
+                        poke8(buf_addr + (pos as u32), c);
+                        pos = pos + 1;
+                        k2 = k2 + 1;
+                    }
+                    if ext_len > 0 {
+                        poke8(buf_addr + (pos as u32), '.' as u8);
+                        pos = pos + 1;
+                        k2 = 0;
+                        while k2 < ext_len {
+                            var c2: u8 = get(secbuf, off + 8 + k2);
+                            if c2 >= 'A' as u8 && c2 <= 'Z' as u8 { c2 = c2 + 32u8; }
+                            poke8(buf_addr + (pos as u32), c2);
+                            pos = pos + 1;
+                            k2 = k2 + 1;
+                        }
+                    }
+                    poke8(buf_addr + (pos as u32), 0u8);
+                    pos = pos + 1;
+                }
             }
-            s = s + 1;
         }
-        clus = fat_get_entry(clus);
     }
-    delete(lfn_buf);
-    delete(secbuf);
+    di_free(it);
     return pos;
 }
 
