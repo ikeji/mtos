@@ -364,6 +364,55 @@ peek / poke は以下の用途で、そもそも「境界」が適用できな�
 
 ---
 
+## 6. kmalloc/kfree の「k」は歴史的経緯 — malloc に改名しない
+
+### 判断
+
+`compiler/src/runtime.tc` の `kmalloc` / `kfree` (+ `km_dump_*`,
+`KM_HDR`, `g_km_*`, `[kmem …]` 出力の km ファミリ) はカーネル専用
+ではなく **TC ランタイムの汎用アロケータ** だが、`malloc` /
+`free` には改名せず現状の名前を維持する。
+
+### なぜ
+
+- **実体**: runtime.tc は kernel / 全ユーザーランドタスク /
+  コンパイラツールの各バイナリに、各自の arena (`crt0_*_data.s` の
+  `__arena`) 付きでリンクされる。カーネル固有のアロケータは無く、
+  カーネルも同じ実装を自分の arena で使っているだけ。「k =
+  kernel」という含意は正しくない。
+- それでも改名しない理由:
+  1. **"malloc" は逆に紛らわしい**: gcc-bin タスク (gcc_doom 等) は
+     picolibc の本物の `malloc` を使う。ドキュメント/コメントは
+     「picolibc の malloc」と「TC ランタイムの kmalloc」を名前で
+     弁別しており (`userland/gcc-bin/gcc_doom/task.mk` 参照)、
+     両方 malloc になるとこの弁別が消える。
+  2. **露出が極小**: 直接呼ぶのは kmalloc 6 箇所 (runtime 内部 +
+     tcheck の fntab + loader) / kfree ~22 箇所 (kernel fs 群 +
+     runtime 内部) のみ。通常コードの API は `U8Array(n)` / struct
+     コンストラクタ / `delete()` で、kmalloc は下回り。
+  3. **km_ ファミリの一貫性とコスト**: kmalloc だけ変えると
+     kfree / km_dump_peak / `[kmem …]` (テストが grep する出力) と
+     ちぐはぐになる。家族ごと変えるなら golden 再生成 + 実機
+     self-replicate byte-exact 再検証 (~1 時間) がセットで、利得に
+     見合わない。
+
+### 使い方
+
+- 新しい TC コードでメモリが欲しいときは `U8Array(n)` 等の
+  コンストラクタと `delete()` を使う。`kmalloc` / `kfree` を直接
+  呼ぶのは「型付きオブジェクトにできない raw バッファをカーネルが
+  管理する」場合だけ (procfs の snapshot バッファ等)。
+- 将来 k 接頭辞をどうしても整理したくなったら、`malloc` ではなく
+  ランタイム所属が分かる名前 (`rt_alloc` / `rt_free` 等) で
+  **family 一括** + 実機再検証をセットにすること。
+
+### 関連
+
+- `compiler/src/runtime.tc` の kmalloc コメント (同じ注意書き)
+- `docs/problem.md` #20 (peek/poke intrinsic 化計画 — kmalloc とは別)
+
+---
+
 ## 追加のガイドライン
 
 ここに載る判断は以下の性質のもの:

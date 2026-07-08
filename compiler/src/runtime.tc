@@ -262,6 +262,14 @@ fn large_free(blk: u32, bsz: i32) -> void {
 
 // kmalloc — size バイトのメモリを確保し、ユーザポインタを返す。
 //
+// 名前の「k」は歴史的経緯で、カーネル専用ではない。これは TC
+// ランタイムの汎用アロケータで、kernel / 全ユーザーランドタスク /
+// コンパイラツールの各バイナリが runtime.tc を自分の arena
+// (crt0_*_data.s の __arena) 付きでリンクして使う。通常の TC コードは
+// U8Array(n) / struct コンストラクタ / delete() を使うべきで、
+// kmalloc/kfree を直接呼ぶのはランタイム下回りとカーネルの raw
+// バッファ管理のみ (改名しない判断は docs/design_decisions.md #6)。
+//
 // 1. size がバケット範囲内 (≤ 2048) の場合:
 //    a. 該当バケットのフリーリストにノードがあれば pop して O(1) で返す。
 //       ノードにはヘッダ (total_size) を書き込んでから返却する。
