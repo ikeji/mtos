@@ -17,6 +17,19 @@ I_InitGraphics) を完走、`DG_DrawFrame` から `/dev/fb` mode=0
 band-blit 経由で LCD に DOOM ロゴ + Doomguy を表示するまで到達。
 
 **最近の改善 (K21 / K22 / 2026-07-05〜08)**:
+- 2026-07-08 (夕): **リファクタ 6 連 (A〜D) 完走**
+  (`docs/task/refactor_candidates.md`)。①S 式リーダ + classify_kind /
+  emit_kind を ast_node.tc に一本化 + NK_ 番号不整合解消 (副産物:
+  bcrun の連結 .bc string table 衝突を発見・修正 — `docs/solved.md`
+  #43)、②compile-gen3.sh を compile-gen2.sh への委譲ラッパ化 (180 行
+  の乖離コピー廃止)、③死にコード ~230 行削除 + fd table 満杯 7 箇所
+  loud 化 + arg_eq/err を strlib 集約、④virtio-blk ドライバ 2 本を
+  統合、⑤pico2 実機スクリプト 10 本の flash/UF2/UART ブロックを
+  `integration/lib/pico2_hw.sh` に集約 (副産物: build.sh の console
+  jpfont link 欠落ほか stale 参照 3 件修正)、⑥fatfs ディレクトリ走査
+  5 関数を DirIter 化 (既存 limitation `docs/problem.md` #45 発見)。
+  **実機 self-replicate byte-exact MATCH 再確認済** (kernel.bin md5
+  5af1c5bb…、uf2 cb918de4…、end-to-end ~55 min)
 - 2026-07-08: **fs ディスパッチを関数ポインタ vtable 化**
   (`docs/task/function_pointers.md`)。言語・コンパイラ無改造の
   ライブラリ方式: trap_common.s の callN (間接呼び出しトランポリン) +

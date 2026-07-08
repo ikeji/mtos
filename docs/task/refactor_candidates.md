@@ -170,4 +170,13 @@ private、peek/poke 境界なし、固定 cap 等) は除外済み。
       (test_pico2.sh の flash/boot)、flash_run 経路 (console-land
       焼き戻し + boot 確認)。test_pico2.sh の UART 検証 fail は既存の
       capture byte-lossy 問題 — docs/problem.md #44)
-- [ ] D1: fatfs イテレータ化 + 実機 self-replicate 再検証
+- [x] D1: fatfs イテレータ化 + 実機 self-replicate 再検証
+      (2026-07-08 完了、commit 46c1011。DirIter カーソル型で 5 関数を
+      共通化、qemu FAT スモーク全パス + 24 LFN ファイルの 7 クラスタ
+      跨ぎ成長 OK。検証中に既存 limitation #45 (SFN base 同一は ~9 まで)
+      を発見・記録。**実機 self-replicate byte-exact MATCH 再確認**:
+      host/device とも kernel.bin md5 5af1c5bb938855e7e0be117a284801f6
+      / kernel.uf2 cb918de48f25167a6428d55d9781c0b8、リファクタ A〜D
+      全部入りのツールチェーン+カーネルで維持)
+
+全 6 項目完了 (2026-07-08)。次にやるなら §E から。
