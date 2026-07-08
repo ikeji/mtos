@@ -5,7 +5,6 @@
 import "kernel_common.tc";
 import "../platform/virt/platform_virt.tc";
 import "../platform/virt/block_virtio.tc";
-import "../platform/virt/block_fat_virtio.tc";
 import "mtfs.tc";
 import "fatfs.tc";
 import "vfs.tc";

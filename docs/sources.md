@@ -280,7 +280,7 @@ kernel/
 | `platform_virt.tc` | virt platform 固有 helper |
 | `crt0_data.s` | virt 用 BSS (`__arena .space 96 MB`) |
 | `block_virtio.tc` | virtio-mmio (legacy v1) ブロックデバイスドライバ |
-| `block_fat_virtio.tc` / `block_fat_stub.tc` | FAT block adapter |
+| `block_fat_stub.tc` | FAT block stub (2nd device 無し platform 用。virt の FAT 実体は block_virtio.tc の fat_block_* に統合済) |
 | `dev_backend_virt.tc` | qemu virt 用 /dev/fb (UART dump) + /dev/kbd (UART RX) |
 
 ### pico2 platform (`kernel/platform/pico2/`)

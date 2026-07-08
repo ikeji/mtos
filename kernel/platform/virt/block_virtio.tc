@@ -1,7 +1,16 @@
 // kernel/block_virtio.tc — virtio-mmio block device driver (qemu virt)
 //
-// Targets legacy virtio-mmio (version 1) since that's what qemu-system-riscv32
-// -M virt exposes by default. Uses a single queue (size 8) with polling.
+// Targets legacy virtio-mmio (version 1) since that's what
+// qemu-system-riscv32 -M virt exposes by default. Uses a single queue
+// (size 8) with polling.
+//
+// One parameterized core drives BOTH virt block devices (2026-07-08,
+// refactor C1 — this used to be two near-identical files,
+// block_virtio.tc + block_fat_virtio.tc):
+//   - block_*     : 1st virtio-blk = mtfs disk (read-only)
+//   - fat_block_* : 2nd virtio-blk = FAT32 disk (read/write)
+// Platforms without these devices link block_flash.tc / block_sd.tc
+// (pico2) or block_fat_stub.tc instead — the export sets match.
 
 // MMIO base and scan
 const VIRTIO_BASE: u32   = 0x10001000u32;
@@ -17,7 +26,7 @@ const REG_DEVICE_ID:     u32 = 0x008u32;
 const REG_HOST_FEAT:     u32 = 0x010u32;
 const REG_HOST_FEAT_SEL: u32 = 0x014u32;
 const REG_GUEST_FEAT:    u32 = 0x020u32;
-var REG_GUEST_FEAT_SEL:u32 = 0x024u32;
+const REG_GUEST_FEAT_SEL:u32 = 0x024u32;
 const REG_GUEST_PGSIZE:  u32 = 0x028u32;
 const REG_QUEUE_SEL:     u32 = 0x030u32;
 const REG_QUEUE_NUM_MAX: u32 = 0x034u32;
@@ -37,7 +46,8 @@ const STATUS_DRIVER_OK:   u32 = 4u32;
 const STATUS_FEATURES_OK: u32 = 8u32;
 
 // virtio-blk request types
-const VBLK_T_IN: u32 = 0u32;  // read
+const VBLK_T_IN:  u32 = 0u32;  // read
+const VBLK_T_OUT: u32 = 1u32;  // write
 
 // Descriptor flags
 const DESC_F_NEXT:  u16 = 1u16;
@@ -64,128 +74,110 @@ const OFF_DATA:   u32 = 4184u32;
 const OFF_STATUS: u32 = 4696u32;
 const MEM_RESERVE: i32 = 12288;  // 3 * 4096, guarantees aligned slot
 
-// Discovered / initialized state
+// Per-device state. Device 0 = mtfs disk, device 1 = FAT disk.
 var g_vblk_base:    u32 = 0u32;
-var g_vblk_version: i32 = 0;
 var g_vblk_ready:   i32 = 0;
-
-// Queue memory (retained across calls)
 var g_mem_buf:  U8Array = 0 as U8Array;
 var g_mem_base: u32 = 0u32;   // 4 KB-aligned
 
-fn mmio_r(off: u32) -> u32 {
-    return peek32(g_vblk_base + off);
-}
+var g_fat_blk_base:    u32 = 0u32;
+var g_fat_blk_ready:   i32 = 0;
+var g_fat_mem_buf:  U8Array = 0 as U8Array;
+var g_fat_mem_base: u32 = 0u32;
 
-fn mmio_w(off: u32, val: u32) -> void {
-    poke32(g_vblk_base + off, val);
-    return;
-}
+// ===== Shared core (explicit base / mem_base parameters) =====
 
-fn scan_for_block() -> i32 {
+// Find the Nth virtio-blk device (0-indexed). Returns the MMIO base,
+// or 0 if not found. skip=1 finds the second device.
+fn vblk_scan(skip: i32) -> u32 {
+    var found: i32 = 0;
     var i: i32 = 0;
     while i < VIRTIO_SLOTS {
         var base: u32 = VIRTIO_BASE + (i as u32) * VIRTIO_STRIDE;
         if peek32(base + REG_MAGIC) == VIRTIO_MAGIC {
             if peek32(base + REG_DEVICE_ID) == DEVICE_ID_BLOCK {
-                g_vblk_base = base;
-                g_vblk_version = peek32(base + REG_VERSION) as i32;
-                return 0;
+                if found == skip { return base; }
+                found = found + 1;
             }
         }
         i = i + 1;
     }
-    return -1;
+    return 0u32;
 }
 
-fn alloc_queue_mem() -> void {
-    g_mem_buf = U8Array((MEM_RESERVE) as u32);
-    var raw: u32 = (g_mem_buf as u32) + 4u32;
-    g_mem_base = (raw + 0xFFFu32) & 0xFFFFF000u32;
-    // Zero the queue region (just DESC/AVAIL/USED area)
-    var p: u32 = g_mem_base;
-    var end: u32 = g_mem_base + OFF_STATUS + 1u32;
+// Compute the 4 KB-aligned queue base inside `buf` and zero the queue
+// region (DESC/AVAIL/USED + HDR/DATA/STATUS).
+fn vblk_queue_mem_base(buf: U8Array) -> u32 {
+    var raw: u32 = (buf as u32) + 4u32;
+    var mem_base: u32 = (raw + 0xFFFu32) & 0xFFFFF000u32;
+    var p: u32 = mem_base;
+    var end: u32 = mem_base + OFF_STATUS + 1u32;
     while p < end {
         poke32(p, 0);
         p = p + 4u32;
     }
-    return;
+    return mem_base;
 }
 
-export fn block_init() -> i32 {
-    g_vblk_base = 0u32;
-    g_vblk_version = 0;
-    g_vblk_ready = 0;
-
-    if scan_for_block() != 0 { return -1; }
-
+// Full legacy-transport init sequence for the device at `base`:
+// reset → ACK/DRIVER → feature negotiation (accept nothing special;
+// legacy devices still accept FEATURES_OK in the transitional path) →
+// guest page size → queue 0 setup → DRIVER_OK.
+fn vblk_init_at(base: u32, mem_base: u32) -> i32 {
     // Legacy transport only (version 1)
-    if g_vblk_version != 1 { return -1; }
+    if peek32(base + REG_VERSION) != 1u32 { return -1; }
 
-    alloc_queue_mem();
+    poke32(base + REG_STATUS, 0);
+    poke32(base + REG_STATUS, STATUS_ACK);
+    poke32(base + REG_STATUS, STATUS_ACK | STATUS_DRIVER);
 
-    // Reset
-    mmio_w(REG_STATUS, 0);
+    poke32(base + REG_HOST_FEAT_SEL, 0);
+    var feat0: u32 = peek32(base + REG_HOST_FEAT);
+    poke32(base + REG_GUEST_FEAT_SEL, 0);
+    poke32(base + REG_GUEST_FEAT, feat0);
+    poke32(base + REG_STATUS, STATUS_ACK | STATUS_DRIVER | STATUS_FEATURES_OK);
 
-    // ACKNOWLEDGE + DRIVER
-    mmio_w(REG_STATUS, STATUS_ACK);
-    mmio_w(REG_STATUS, STATUS_ACK | STATUS_DRIVER);
+    poke32(base + REG_GUEST_PGSIZE, 4096);
 
-    // Feature negotiation: accept nothing special.
-    // Legacy devices still accept FEATURES_OK in the transitional init path.
-    mmio_w(REG_HOST_FEAT_SEL, 0);
-    var feat0: u32 = mmio_r(REG_HOST_FEAT);
-    mmio_w(REG_GUEST_FEAT_SEL, 0);
-    mmio_w(REG_GUEST_FEAT, feat0);
-
-    mmio_w(REG_STATUS, STATUS_ACK | STATUS_DRIVER | STATUS_FEATURES_OK);
-
-    // Legacy guest page size
-    mmio_w(REG_GUEST_PGSIZE, 4096);
-
-    // Queue 0 setup
-    mmio_w(REG_QUEUE_SEL, 0);
-    var qmax: u32 = mmio_r(REG_QUEUE_NUM_MAX);
+    poke32(base + REG_QUEUE_SEL, 0);
+    var qmax: u32 = peek32(base + REG_QUEUE_NUM_MAX);
     if qmax == 0u32 { return -1; }
-    mmio_w(REG_QUEUE_NUM, QUEUE_SIZE);
-    mmio_w(REG_QUEUE_ALIGN, QUEUE_ALIGN);
-    mmio_w(REG_QUEUE_PFN, g_mem_base >> 12u32);
+    poke32(base + REG_QUEUE_NUM, QUEUE_SIZE);
+    poke32(base + REG_QUEUE_ALIGN, QUEUE_ALIGN);
+    poke32(base + REG_QUEUE_PFN, mem_base >> 12u32);
 
-    // DRIVER_OK
-    mmio_w(REG_STATUS, STATUS_ACK | STATUS_DRIVER | STATUS_FEATURES_OK | STATUS_DRIVER_OK);
-
-    g_vblk_ready = 1;
+    poke32(base + REG_STATUS,
+           STATUS_ACK | STATUS_DRIVER | STATUS_FEATURES_OK | STATUS_DRIVER_OK);
     return 0;
 }
 
-export fn block_sector_size() -> i32 {
-    return 512;
-}
-
-export fn block_count() -> u32 {
-    if g_vblk_ready == 0 { return 0u32; }
-    // virtio-blk config: u64 capacity (sectors of 512 B) at offset 0
-    return peek32(g_vblk_base + REG_CONFIG);
-}
-
-export fn block_read(sector: u32, buf: U8Array) -> i32 {
-    if g_vblk_ready == 0 { return -1; }
-
-    var desc:   u32 = g_mem_base + OFF_DESC;
-    var avail:  u32 = g_mem_base + OFF_AVAIL;
-    var used:   u32 = g_mem_base + OFF_USED;
-    var hdr:    u32 = g_mem_base + OFF_HDR;
-    var data:   u32 = g_mem_base + OFF_DATA;
-    var status: u32 = g_mem_base + OFF_STATUS;
+// Submit one virtio-blk request (read or write) and poll for
+// completion. Returns 512 on success, -1 on error / timeout.
+fn vblk_request(base: u32, mem_base: u32, req_type: u32, sector: u32, buf: U8Array) -> i32 {
+    var desc:   u32 = mem_base + OFF_DESC;
+    var avail:  u32 = mem_base + OFF_AVAIL;
+    var used:   u32 = mem_base + OFF_USED;
+    var hdr:    u32 = mem_base + OFF_HDR;
+    var data:   u32 = mem_base + OFF_DATA;
+    var status: u32 = mem_base + OFF_STATUS;
 
     // virtio_blk_req header: type(u32) + reserved(u32) + sector(u64)
-    poke32(hdr + 0u32,  VBLK_T_IN);
+    poke32(hdr + 0u32,  req_type);
     poke32(hdr + 4u32,  0);
     poke32(hdr + 8u32,  sector);
     poke32(hdr + 12u32, 0);
 
     // Distinctive value so we can tell the device set it
     poke8(status, 0xFFu8);
+
+    // For write: copy data into the queue buffer first
+    if req_type == VBLK_T_OUT {
+        var k: i32 = 0;
+        while k < 512 {
+            poke8(data + (k as u32), get(buf, k));
+            k = k + 1;
+        }
+    }
 
     // Descriptor 0: header (device-readable)
     poke32(desc + 0u32,  hdr);
@@ -198,7 +190,11 @@ export fn block_read(sector: u32, buf: U8Array) -> i32 {
     poke32(desc + 16u32, data);
     poke32(desc + 20u32, 0);
     poke32(desc + 24u32, 512);
-    poke16(desc + 28u32, DESC_F_NEXT | DESC_F_WRITE);
+    if req_type == VBLK_T_IN {
+        poke16(desc + 28u32, DESC_F_NEXT | DESC_F_WRITE);
+    } else {
+        poke16(desc + 28u32, DESC_F_NEXT);
+    }
     poke16(desc + 30u32, 2u16);
 
     // Descriptor 2: status byte (device-writable)
@@ -218,7 +214,7 @@ export fn block_read(sector: u32, buf: U8Array) -> i32 {
     poke16(avail + 2u32, (avail_idx + 1u32) as u16);
 
     // Notify device (queue index 0)
-    mmio_w(REG_QUEUE_NOTIFY, 0);
+    poke32(base + REG_QUEUE_NOTIFY, 0);
 
     // Poll for completion
     var timeout: i32 = 10000000;
@@ -227,11 +223,13 @@ export fn block_read(sector: u32, buf: U8Array) -> i32 {
         if new_used != last_used {
             var s: u8 = peek8(status);
             if s != 0u8 { return -1; }
-            // Copy the 512 B payload into the caller's buffer
-            var i: i32 = 0;
-            while i < 512 {
-                set(buf, i, peek8(data + (i as u32)));
-                i = i + 1;
+            // For read: copy the 512 B payload into the caller's buffer
+            if req_type == VBLK_T_IN {
+                var i: i32 = 0;
+                while i < 512 {
+                    set(buf, i, peek8(data + (i as u32)));
+                    i = i + 1;
+                }
             }
             return 512;
         }
@@ -240,8 +238,41 @@ export fn block_read(sector: u32, buf: U8Array) -> i32 {
     return -1;  // timeout
 }
 
+// ===== Device 0: mtfs disk (block_*) =====
+
+export fn block_init() -> i32 {
+    g_vblk_base = 0u32;
+    g_vblk_ready = 0;
+
+    var base: u32 = vblk_scan(0);
+    if base == 0u32 { return -1; }
+
+    g_mem_buf = U8Array((MEM_RESERVE) as u32);
+    g_mem_base = vblk_queue_mem_base(g_mem_buf);
+    if vblk_init_at(base, g_mem_base) != 0 { return -1; }
+
+    g_vblk_base = base;
+    g_vblk_ready = 1;
+    return 0;
+}
+
+export fn block_sector_size() -> i32 {
+    return 512;
+}
+
+export fn block_count() -> u32 {
+    if g_vblk_ready == 0 { return 0u32; }
+    // virtio-blk config: u64 capacity (sectors of 512 B) at offset 0
+    return peek32(g_vblk_base + REG_CONFIG);
+}
+
+export fn block_read(sector: u32, buf: U8Array) -> i32 {
+    if g_vblk_ready == 0 { return -1; }
+    return vblk_request(g_vblk_base, g_mem_base, VBLK_T_IN, sector, buf);
+}
+
 export fn block_write(sector: u32, buf: U8Array) -> i32 {
-    return -1;  // read-only for now
+    return -1;  // mtfs disk stays read-only
 }
 
 // virtio-blk is not memory-mapped; block data has to be copied by
@@ -250,10 +281,35 @@ export fn block_xip_base() -> u32 {
     return 0u32;
 }
 
-export fn virtio_blk_base() -> u32 {
-    return g_vblk_base;
+// ===== Device 1: FAT32 disk (fat_block_*) =====
+
+export fn fat_block_init() -> i32 {
+    g_fat_blk_base = 0u32;
+    g_fat_blk_ready = 0;
+
+    // Find the second virtio-blk device (skip=1)
+    var base: u32 = vblk_scan(1);
+    if base == 0u32 { return -1; }
+
+    g_fat_mem_buf = U8Array((MEM_RESERVE) as u32);
+    g_fat_mem_base = vblk_queue_mem_base(g_fat_mem_buf);
+    if vblk_init_at(base, g_fat_mem_base) != 0 { return -1; }
+
+    g_fat_blk_base = base;
+    g_fat_blk_ready = 1;
+    return 0;
 }
 
-export fn virtio_blk_version() -> i32 {
-    return g_vblk_version;
+export fn fat_block_read(sector: u32, buf: U8Array) -> i32 {
+    if g_fat_blk_ready == 0 { return -1; }
+    return vblk_request(g_fat_blk_base, g_fat_mem_base, VBLK_T_IN, sector, buf);
 }
+
+export fn fat_block_write(sector: u32, buf: U8Array) -> i32 {
+    if g_fat_blk_ready == 0 { return -1; }
+    return vblk_request(g_fat_blk_base, g_fat_mem_base, VBLK_T_OUT, sector, buf);
+}
+
+// virtio-blk writes complete synchronously in vblk_request; there is
+// no write burst to flush (the hook exists for block_sd's CMD25).
+export fn fat_block_sync() -> i32 { return 0; }

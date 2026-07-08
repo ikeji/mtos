@@ -154,6 +154,10 @@ private、peek/poke 境界なし、固定 cap 等) は除外済み。
       「将来用」コメントを明記して温存)、fd/table 満杯 7 箇所に kputs
       loud error、arg_eq ×4 + err ×3 を strlib.tc に集約
       (is_digit_c ×3 は A2 で解消済み)
-- [ ] C1: virtio 統合
+- [x] C1: virtio 統合 (2026-07-08 完了。block_fat_virtio.tc を削除し
+      block_virtio.tc に vblk_scan/vblk_init_at/vblk_request の
+      パラメタ化コアで統合、未使用の virtio_blk_base/version も削除。
+      検証: make -C kernel test 8/8 + qemu FAT smoke (mount/read/
+      write/readdir) + qemu_mr_scale.py)
 - [ ] C2: pico2 スクリプト共通化
 - [ ] D1: fatfs イテレータ化 + 実機 self-replicate 再検証
