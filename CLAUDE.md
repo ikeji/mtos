@@ -116,6 +116,8 @@ as-String 片付け (`path: String` syscall ABI)、フェーズ 8 部分着手
 
 **次の候補** (どれも独立):
 
+- **Tang Nano 20K に自作 RV32IM コア + SoC を作って OS を載せる**:
+  計画は `docs/task/tang_nano_20k.md` (2026-08-28、未着手)
 - **K22 続編 (DOOM 実プレイ)**: TITLEPIC まで来たので autostart E1M1
   を狙う。`P_SetupLevel` が ~24 KB の PU_LEVEL を要求 (blockmap 17 KB
   ほか) するので zone 112 KB 不足。blockmap など大物を .bss に固定
