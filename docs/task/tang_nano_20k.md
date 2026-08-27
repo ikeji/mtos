@@ -24,10 +24,10 @@ Gowin プリミティブを使ってよい (自作 CPU が主題であり、周�
 |---|---|
 | FPGA | GW2AR-LV18QN88C8/I7 — 20,736 LUT4 / 15,552 FF |
 | BSRAM | 828 Kbit ≒ **103 KB** (18 Kbit × 46 ブロック) |
-| SDRAM | 64 Mbit = **8 MB** (パッケージ内蔵、16-bit バス) |
+| SDRAM | 64 Mbit = **8 MB** (パッケージ内蔵、32-bit バス) |
 | 発振 | 27 MHz 水晶 (PLL で逓倍可) |
 | USB | BL616 が JTAG + **UART** ブリッジ (115200〜数 Mbps) |
-| ストレージ | microSD スロット (SPI モード可)、SPI flash ★容量 (bitstream 用、ユーザ領域の空きは要計測) |
+| ストレージ | microSD スロット (SPI モード可)、**SPI flash 64 Mbit = 8 MB** (bitstream 用。GW2AR-18 の bitstream は ~0.7 MB なので **~7 MB が空く**、正確な空きは Phase 0 で実測 ★) |
 | その他 | HDMI、LED×6、ボタン×2、PMOD、RGB LED |
 
 ★ は着手時に実測/データシートで確定させ、この表を更新する。
@@ -74,8 +74,10 @@ CSR で決まる。
   BSRAM 上のブート ROM が kernel.bin を SDRAM `0x8000_0000` に
   コピーして jump する。**本番は SPI flash** (スタンドアロン起動)、
   開発中は **UART** (焼かずに試す) の 2 経路を同じローダに持たせる。
-  flash の空き容量が 3.5 MB 未満なら kernel を DROP_TASKS で slim 化
-  するか、flash には最小 kernel だけ置いて `/bin` を SD から読む。
+  flash 8 MB − bitstream ~0.7 MB ≒ 7 MB の空きに対し kernel.bin
+  (EXTRA 込み) は ~3.5 MB なので **pico2 の 4 MiB 制約より余裕がある**。
+  DOOM (gcc_doom 4.5 MB) を同居させると溢れるので、その場合だけ
+  DROP_TASKS か「/bin を SD から」で逃げる。
 
 ## 4. 設計方針
 
@@ -262,7 +264,7 @@ hw/
 | 性能不足 (マルチサイクル 27 MHz で self-replicate が数時間) | Phase 4 の sh 起動を先に達成し、性能は Phase 6 で扱う。比較基準として pico2 の数値 (`docs/scaling.md`) を使う |
 | UART ローダが大きい kernel.bin (3.5 MB) で遅い | 115200 bps では ~5 分。BL616 UART を 1〜3 Mbps で使う、または EXTRA を落として 1 MB 級に |
 | コアのバグが kernel 起動時に初めて出る | Phase 1〜2 で riscv-tests + 自前 .tc bin を網羅。Phase 4 は必ず Verilator 先行、実機は最後 |
-| SPI flash の空きが kernel.bin (~3.5 MB) に足りない | 主記憶は SDRAM なので XIP 不要。DROP_TASKS で slim 化、または最小 kernel + `/bin` は SD から (mtfs を SD 上のイメージから読む) |
+| SPI flash の空き (~7 MB) を DOOM 同居などで超える | 主記憶は SDRAM なので XIP 不要。DROP_TASKS で slim 化、または最小 kernel + `/bin` は SD から (mtfs を SD 上のイメージから読む) |
 | GPIO bit-bang の LCD が遅い | SCK/MOSI は SPI master 化 (pico2 の PIO 相当)。CPU が遅い分は Phase 7 で回収 |
 
 ## 8. 進捗
