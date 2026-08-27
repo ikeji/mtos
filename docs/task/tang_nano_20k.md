@@ -27,7 +27,7 @@ Gowin プリミティブを使ってよい (自作 CPU が主題であり、周�
 | SDRAM | 64 Mbit = **8 MB** (パッケージ内蔵、32-bit バス) |
 | 発振 | 27 MHz 水晶 (PLL で逓倍可) |
 | USB | BL616 が JTAG + **UART** ブリッジ (115200〜数 Mbps) |
-| ストレージ | microSD スロット (SPI モード可)、**SPI flash 64 Mbit = 8 MB** (bitstream 用。GW2AR-18 の bitstream は ~0.7 MB なので **~7 MB が空く**、正確な空きは Phase 0 で実測 ★) |
+| ストレージ | microSD スロット (SPI モード可)、**SPI flash 64 Mbit = 8 MB** (bitstream 用。GW2AR-18 の bitstream は実測 ~580 KB (top_blink.fs 4.6 Mbit) なので **~7.4 MB が空く**) |
 | その他 | HDMI、LED×6、ボタン×2、PMOD、RGB LED |
 
 ★ は着手時に実測/データシートで確定させ、この表を更新する。
@@ -305,7 +305,7 @@ hw/
 
 ## 8. 進捗
 
-- [ ] Phase 0 足場
+- [~] Phase 0 足場 — 2026-08-28: oss-cad-suite 20260827 を ~/opt に導入 (yosys 0.68 / nextpnr-himbaechel 0.11 / apicula)、`hw/` 雛形 + uart_tx/rx + top_blink (LED + UART echo) を合成 → .fs 生成 OK、`make -C hw test` (iverilog UART loopback) PASS。残: 実機書き込み (`hw/tests/test_blink.sh`)
 - [ ] Phase 1 RV32I コア
 - [ ] Phase 2 M + CSR + trap + CLINT
 - [ ] Phase 3 SDRAM + GPIO/SPI + ブート ROM (UART / flash)
