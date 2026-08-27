@@ -6,9 +6,14 @@
 
 Sipeed Tang Nano 20K (Gowin GW2AR-18) に自作の RV32IM ソフトコア + 最小
 SoC を実装し、その上で本リポジトリの OS (kernel + sh + coreutils) を
-UART コンソール付きで起動する。最終目標は pico2 と同じ
+起動する。最終形は **PC から独立したスタンドアロン機**: 電源を
+入れると SPI flash から kernel が SDRAM に載り、pico2 と同じ
+**ILI9488 LCD (320x480 SPI) + 5x12 マトリクスキーボード** を
+コンソールにして `console` タスクが立ち上がる。UART は開発・
+デバッグ用の副次経路に留める。その上で pico2 と同じ
 **self-replicate (実機上でコンパイラ + kernel を再生成し byte-exact 一致)**
-だが、マイルストーンは「sh プロンプトが出る」を第一に置く。
+を目指すが、マイルストーンは「UART で sh プロンプト」→「LCD +
+キーボードで sh」の順に置く。
 
 「作る」のは CPU コア本体。SDRAM コントローラなど周辺は既存 IP /
 Gowin プリミティブを使ってよい (自作 CPU が主題であり、周辺は手段)。
@@ -58,9 +63,19 @@ CSR で決まる。
   したがって **BSRAM 103 KB では足りず、8 MB SDRAM が主記憶**。
   kernel.bin (mtfs 込み、EXTRA 込み) は pico2 で ~3.5 MB なので
   SDRAM に丸ごと載る (XIP 不要)。
+- **LCD / キーボード / SD / タッチ** (`kernel/platform/pico2/
+  display_ili9488.tc`, `keyboard_matrix.tc`, `block_sd.tc`,
+  `touch_xpt2046.tc`) は **全部 GPIO bit-bang** で、触るのは SIO の
+  `OUT_SET / OUT_CLR / OE_SET / OE_CLR / IN` と pad の pull-up 設定
+  だけ (LCD の SCK/MOSI のみ PIO で高速化)。SoC に同じ流儀の GPIO
+  ブロックを置けば、レジスタ定数の差し替えで移植できる。
+  pico2 の pin 割当は `docs/pico2_hardware.md`。
 - **ロード方法**: pico2 は flash XIP、virt は qemu loader。tn20k では
-  「BSRAM 上のブート ROM が UART (または SD) から kernel.bin を SDRAM
-  に流し込む」方式を採る (SPI flash から読む案は容量確定後)。
+  BSRAM 上のブート ROM が kernel.bin を SDRAM `0x8000_0000` に
+  コピーして jump する。**本番は SPI flash** (スタンドアロン起動)、
+  開発中は **UART** (焼かずに試す) の 2 経路を同じローダに持たせる。
+  flash の空き容量が 3.5 MB 未満なら kernel を DROP_TASKS で slim 化
+  するか、flash には最小 kernel だけ置いて `/bin` を SD から読む。
 
 ## 4. 設計方針
 
@@ -76,7 +91,8 @@ Verilator シミュレーションで `virt_kernel.bin` 相当 (mtfs 埋め込�
 | Boot ROM | `0x0000_0000` | BSRAM 4〜8 KB (UART ローダ) |
 | CLINT | `0x0200_0000` (`mtimecmp` +0x4000, `mtime` +0xBFF8) | 64-bit カウンタ + コンパレータ |
 | UART | `0x1000_0000` | 16550 サブセット (DR / LSR + TX ready) |
-| SPI (SD) | `0x1001_0000` (新規) | 単純 SPI master (CS / 8-bit xfer / clkdiv) |
+| GPIO | `0x1001_0000` (新規) | SIO 風: IN / OUT / OUT_SET / OUT_CLR / OE_SET / OE_CLR / PULLUP。32 本 |
+| SPI master | `0x1002_0000` (新規) | 8-bit xfer + clkdiv + CS。LCD の SCK/MOSI (pico2 で PIO の代替) と SPI flash 読み出しに使う。SD / touch は最初 GPIO bit-bang のまま |
 | SDRAM | `0x8000_0000` 〜 8 MB | kernel + mtfs + arena + task |
 | exit/LED | `0x0010_0000` (SiFive test 互換) | `_park` の書き込みを LED 表示に流用 |
 
@@ -111,7 +127,23 @@ kernel はロードアドレス `0x8000_0000`、sp 初期値は virt の
 - Phase 3 までは BSRAM だけで動くようにし、SDRAM は差し替え可能な
   バス slave として後から追加する。
 
-### 4.4 ツールチェーン
+### 4.4 ピン割当 (概略、Phase 0 で確定)
+
+Tang Nano 20K の 2 列ヘッダ (約 40 pin) に、pico2 の 2026-05-21 ボード
+と同じ配線を **配線順は自由 (FPGA 側で並べ替えられる)** で繋ぐ:
+
+| デバイス | 本数 | 備考 |
+|---|---|---|
+| ILI9488 | 7 (DC/CS/SCK/MOSI/MISO/RST/BL) | SCK/MOSI は SPI master、他は GPIO |
+| マトリクスキーボード | 11 (row 5 + col 6) | 全部 GPIO、内部 pull-up 必要 (FPGA の pull-up 属性で代替) |
+| XPT2046 タッチ | 5 | GPIO bit-bang (任意) |
+| microSD | 4 | オンボードスロット (FPGA に直結、ヘッダ不要) |
+| UART | 2 | BL616 経由、ヘッダ不要 |
+
+3.3 V I/O は両者一致。LCD/キーボード基板側の配線は pico2 用のものを
+そのまま使う (ケーブル差し替えで両機を行き来できるようにする)。
+
+### 4.5 ツールチェーン
 
 - オープン: `yosys` + `nextpnr-himbaechel` (Project Apicula、GW2A 対応)
   + `openFPGALoader`。**現在ホストには未インストール**
@@ -159,13 +191,18 @@ hw/
 - 完了条件: `compiler/tests/test_timer.tc` (test_asm.sh で使う CSR /
   タイマ検証) が sim + 実機で通る。riscv-tests rv32um 追加。
 
-### Phase 3: SDRAM + ブート ROM
+### Phase 3: SDRAM + GPIO/SPI + ブート ROM
 - SDRAM コントローラ接続、メモリテスト (walking 1s、疑似乱数 fill)。
-- BSRAM ブート ROM: UART から `[len][data][sum32]` フレームを受け
-  SDRAM `0x8000_0000` に書いて jump。プロトコルは `mr -a` (K21) の
-  ACK/NAK 方式を流用し、送信側は `integration/pico2_upload.py` を
-  一般化する。
-- 完了条件: 2 MB 級のダミーを UART 経由で載せ、末尾まで CRC 一致。
+- GPIO ブロック + SPI master (LED / ボタンで動作確認)。
+- BSRAM ブート ROM (2 経路):
+  - UART: `[len][data][sum32]` フレームを受け SDRAM `0x8000_0000` に
+    書いて jump。プロトコルは `mr -a` (K21) の ACK/NAK 方式を流用し、
+    送信側は `integration/pico2_upload.py` を一般化する。
+  - SPI flash: 固定オフセット (bitstream の後ろ) から `[len][sum32]`
+    ヘッダ付き kernel.bin を SDRAM にコピーして jump。UART で数秒待って
+    何も来なければ flash 起動、という優先順にする。
+- 完了条件: 2 MB 級のダミーを UART / flash の両方から載せ、末尾まで
+  CRC 一致。flash の実効容量を測って §2 の ★ を埋める。
 
 ### Phase 4: kernel 移植 → sh プロンプト
 - `kernel/platform/tn20k/{platform_tn20k.s,platform_tn20k.tc,crt0_tn20k_data.s}`、
@@ -179,19 +216,30 @@ hw/
   を pico2 版に倣って作る (`integration/lib/pico2_hw.sh` 相当の
   `tn20k_hw.sh`)。
 
-### Phase 5: SD カード → コンパイラ → self-replicate
-- SPI master MMIO + `block_sd.tc` の SPI 層を差し替えた
-  `block_sd_tn20k.tc`、fatfs mount。
+### Phase 5: LCD + キーボード → スタンドアロン
+- `kernel/platform/tn20k/display_ili9488.tc` / `keyboard_matrix.tc`:
+  pico2 版から SIO/PADS 定数を GPIO ブロックのものに差し替え、LCD の
+  SCK/MOSI を PIO → SPI master に置換。`docs/problem.md` の pico2 LCD
+  知見 (MADCTL、大きい fill の分割、`memory/pico2_lcd_*.md`) はそのまま
+  適用。
+- `make -C kernel tn20k-console-land` + flash 書き込みで、**電源投入
+  だけで LCD に console + キーボード入力で sh が使える**。ここで
+  「PC から独立」を達成。
+- `kernel/tests/test_tn20k_hw.sh` (pico2 の `test_pico2_hw.sh` 相当)。
+
+### Phase 6: SD カード → コンパイラ → self-replicate
+- `block_sd_tn20k.tc` (最初は pico2 同様 GPIO bit-bang、遅ければ SPI
+  master へ)、fatfs mount。
 - `integration/test_phase7.sh` 相当 (parse → … → asm_pass3 → hello)
   を実機で完走。
 - `pico2_self_replicate.sh` を一般化して tn20k で kernel.bin の
   byte-exact self-replicate。pico2 (150 MHz、~55 min) との比較で
   性能課題を洗い出す。
 
-### Phase 6 (任意): 性能と周辺
+### Phase 7 (任意): 性能と周辺
 - 5 段パイプライン化、I/D キャッシュ (BSRAM 利用)、クロック引き上げ。
-- HDMI テキストコンソール (`/dev/fb` の tn20k backend)、キーボード
-  (PS/2 on PMOD)。既存の `console` タスクが動く。
+- タッチ (`touch_xpt2046.tc` 移植)、HDMI 出力 (`/dev/fb` の第 2
+  backend)、DOOM (gcc タスクは picolibc + RV32IM なので原理的に動く)。
 
 ## 6. テスト戦略
 
@@ -214,21 +262,25 @@ hw/
 | 性能不足 (マルチサイクル 27 MHz で self-replicate が数時間) | Phase 4 の sh 起動を先に達成し、性能は Phase 6 で扱う。比較基準として pico2 の数値 (`docs/scaling.md`) を使う |
 | UART ローダが大きい kernel.bin (3.5 MB) で遅い | 115200 bps では ~5 分。BL616 UART を 1〜3 Mbps で使う、または EXTRA を落として 1 MB 級に |
 | コアのバグが kernel 起動時に初めて出る | Phase 1〜2 で riscv-tests + 自前 .tc bin を網羅。Phase 4 は必ず Verilator 先行、実機は最後 |
-| 4 MiB 制約の再来 (flash) | 主記憶は SDRAM 8 MB、flash は使わない設計にしたので該当なし |
+| SPI flash の空きが kernel.bin (~3.5 MB) に足りない | 主記憶は SDRAM なので XIP 不要。DROP_TASKS で slim 化、または最小 kernel + `/bin` は SD から (mtfs を SD 上のイメージから読む) |
+| GPIO bit-bang の LCD が遅い | SCK/MOSI は SPI master 化 (pico2 の PIO 相当)。CPU が遅い分は Phase 7 で回収 |
 
 ## 8. 進捗
 
 - [ ] Phase 0 足場
 - [ ] Phase 1 RV32I コア
 - [ ] Phase 2 M + CSR + trap + CLINT
-- [ ] Phase 3 SDRAM + ブート ROM
-- [ ] Phase 4 kernel 移植 → sh
-- [ ] Phase 5 SD → コンパイラ → self-replicate
-- [ ] Phase 6 性能 / HDMI
+- [ ] Phase 3 SDRAM + GPIO/SPI + ブート ROM (UART / flash)
+- [ ] Phase 4 kernel 移植 → UART で sh
+- [ ] Phase 5 LCD + キーボード → スタンドアロン
+- [ ] Phase 6 SD → コンパイラ → self-replicate
+- [ ] Phase 7 性能 / タッチ / HDMI
 
 ## 関連
 
 - `docs/task/pico2_port.md` — 前回のハード移植 (bring-up 手順の雛形)
+- `docs/pico2_hardware.md` — LCD / キーボード / SD の配線と実測値
+- `docs/task/io_devices.md`, `docs/task/lcd_pio_debug.md` — /dev/fb, /dev/kbd の設計と LCD の落とし穴
 - `docs/task/kernel_platform_split.md` — platform 層の分け方
 - `docs/task/pipeline_100kb.md` — コンパイラ各段のメモリ要件
 - `kernel/src/trap_common.s` — CSR / trap の使い方の一次資料
