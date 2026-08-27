@@ -162,7 +162,26 @@ pico2 は VSYS 1.8〜5.5 V を受ける内蔵 buck-boost があるので、
 USB 給電と電池を同時に挿さないよう、電池側はショットキー or 排他
 スイッチを入れる。
 
-### 4.6 ツールチェーン
+### 4.6 ライセンス方針 (外部 IP)
+
+- 取り込むのは **permissive (ISC / MIT / BSD / Apache-2.0) のみ**。
+  `hw/rtl/third_party/<name>/` に元の LICENSE ごと置き、`hw/README.md`
+  に一覧を書く。**GPL/LGPL 系 (OpenCores の古い IP、ZipCPU の
+  wbuart32 等) は不採用** — bitstream が派生物扱いになる余地がある。
+- コア: 退避先の PicoRV32 は ISC。他候補 (SERV ISC、VexRiscv MIT、
+  FemtoRV/darkriscv BSD-3、Ibex Apache-2.0) も permissive。
+- 周辺で借りるのは実質 **SDRAM コントローラ 1 個**。nand2mario
+  (NESTang/SNESTang) 系の Tang Nano 20K 実績品 (MIT) を第一候補に
+  する。UART / CLINT / GPIO / SPI / ブート ROM は自作。
+- **Gowin 純正 IP** (IP Generator の SDRAM / PLL / DVI_TX) は EDA の
+  EULA 下で生成 RTL の再配布不可 → apicula で SDRAM が動かなかった
+  ときの退避先に限定し、使う場合は生成手順だけ commit して RTL は
+  gitignore。プリミティブ (`rPLL`, BSRAM, `IOBUF`) の直接
+  インスタンス化はこの制約に当たらない。
+- 各ライセンスは着手時にリポジトリ現物で再確認する (上記は 2026-01
+  時点の知識)。
+
+### 4.7 ツールチェーン
 
 - オープン: `yosys` + `nextpnr-himbaechel` (Project Apicula、GW2A 対応)
   + `openFPGALoader`。**現在ホストには未インストール**
