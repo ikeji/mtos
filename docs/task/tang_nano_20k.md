@@ -145,7 +145,24 @@ Tang Nano 20K の 2 列ヘッダ (約 40 pin) に、pico2 の 2026-05-21 ボー�
 3.3 V I/O は両者一致。LCD/キーボード基板側の配線は pico2 用のものを
 そのまま使う (ケーブル差し替えで両機を行き来できるようにする)。
 
-### 4.5 ツールチェーン
+### 4.5 電源 (エネループ 2 本運用)
+
+pico2 は VSYS 1.8〜5.5 V を受ける内蔵 buck-boost があるので、
+エネループ 2 本 (2.4 V 公称、2.0〜2.7 V) を直結できた。Tang Nano 20K は
+**USB-C の 5 V 前提** で、基板上の LDO が 3.3 V / 1.8 V (★) / 0.9 V コア
+を作るだけ。2.4 V を直結しても FPGA は起動しない。
+
+対策: **昇圧 DC-DC (2 セル → 5 V) を 1 個入れて 5 V ピン (ヘッダの
+5V/VBUS) に給電する**。MT3608 系や TPS61023 モジュールで足りる。
+消費は pico2 より大きい見込み (GW2AR-18 + SDRAM + 50 MHz 級 CPU で
+150〜300 mA @ 5 V、LCD バックライトは両機共通で +50〜100 mA) なので、
+エネループ 2000 mAh で **数時間** (pico2 の数分の一)。Phase 5 で
+実測して、足りなければ (a) 未使用ブロック (HDMI/BL616) を止める、
+(b) CPU クロックを落とす、(c) 3 本化 (3.6 V → 昇圧効率向上) を検討。
+USB 給電と電池を同時に挿さないよう、電池側はショットキー or 排他
+スイッチを入れる。
+
+### 4.6 ツールチェーン
 
 - オープン: `yosys` + `nextpnr-himbaechel` (Project Apicula、GW2A 対応)
   + `openFPGALoader`。**現在ホストには未インストール**
@@ -274,7 +291,7 @@ hw/
 - [ ] Phase 2 M + CSR + trap + CLINT
 - [ ] Phase 3 SDRAM + GPIO/SPI + ブート ROM (UART / flash)
 - [ ] Phase 4 kernel 移植 → UART で sh
-- [ ] Phase 5 LCD + キーボード → スタンドアロン
+- [ ] Phase 5 LCD + キーボード → スタンドアロン (電池運用の消費電流実測含む)
 - [ ] Phase 6 SD → コンパイラ → self-replicate
 - [ ] Phase 7 性能 / タッチ / HDMI
 
