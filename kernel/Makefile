@@ -326,8 +326,9 @@ $(BUILD_DIR)/pico2_kernel_console_land.uf2: $(KERNEL_COMPILE_DEPS) $(BUILD_DIR)/
 
 # ===== tn20k kernel (Tang Nano 20K, hw/ SoC): raw bin, mtfs embedded like pico2 =====
 # Loaded into SDRAM at 0x80000000 by the hw/ boot ROM (hw/tools/uart_load.py).
-tn20k:       $(BUILD_DIR)/tn20k_kernel.bin
-tn20k-extra: $(BUILD_DIR)/tn20k_kernel_extra.bin
+tn20k:              $(BUILD_DIR)/tn20k_kernel.bin
+tn20k-extra:        $(BUILD_DIR)/tn20k_kernel_extra.bin
+tn20k-console-land: $(BUILD_DIR)/tn20k_kernel_console_land.bin
 
 define TN20K_KERNEL_RECIPE
 	@echo "Building kernel: tn20k (disk=$(TN20K_DISK))" >&2
@@ -356,11 +357,19 @@ $(BUILD_DIR)/tn20k_kernel_extra.bin: $(KERNEL_COMPILE_DEPS) $(BUILD_DIR)/disk-ex
     $(ROOT)/userland/scripts/bin2s_incbin.sh | $(BUILD_DIR)
 	$(TN20K_KERNEL_RECIPE)
 
+$(BUILD_DIR)/tn20k_kernel_console_land.bin: TN20K_DISK := $(BUILD_DIR)/disk-console-land.img
+$(BUILD_DIR)/tn20k_kernel_console_land.bin: $(KERNEL_COMPILE_DEPS) $(BUILD_DIR)/disk-console-land.img \
+    $(ROOT)/userland/scripts/bin2s_incbin.sh | $(BUILD_DIR)
+	$(TN20K_KERNEL_RECIPE)
+
 # run-tn20k: flash the SoC bitstream (hw/), load the kernel through the
 # boot ROM and open an interactive UART terminal (Ctrl-a x to quit).
 run-tn20k: tn20k
 	$(MAKE) -C $(ROOT)/hw TOP=top_soc_sdram flash
 	sleep 0.5 && python3 $(ROOT)/hw/tools/uart_load.py -i $(BUILD_DIR)/tn20k_kernel.bin
+run-tn20k-console-land: tn20k-console-land
+	$(MAKE) -C $(ROOT)/hw TOP=top_soc_sdram flash
+	sleep 0.5 && python3 $(ROOT)/hw/tools/uart_load.py -i $(BUILD_DIR)/tn20k_kernel_console_land.bin
 run-tn20k-extra: tn20k-extra
 	$(MAKE) -C $(ROOT)/hw TOP=top_soc_sdram flash
 	sleep 0.5 && python3 $(ROOT)/hw/tools/uart_load.py -i $(BUILD_DIR)/tn20k_kernel_extra.bin

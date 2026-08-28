@@ -19,7 +19,11 @@ import "vfs.tc";
 import "loader.tc";
 // /dev/fb backend: a UART-dump stub (qemu virt has no SPI display).
 // Defines fb_backend_write, which devfs.tc forward-declares.
-import "../platform/virt/dev_backend_virt.tc";
+// /dev/fb, /dev/kbd, /dev/touch backends: ILI9488 + matrix keyboard on the
+// header GPIO (hw/ SoC SIO-compatible block), touch stubbed for now.
+import "../platform/tn20k/display_ili9488.tc";
+import "../platform/tn20k/keyboard_matrix.tc";
+import "../platform/tn20k/touch_stub.tc";
 
 // Assembly-defined functions
 fn csr_read_mie() -> u32;
@@ -187,6 +191,47 @@ fn cat_hello_txt() -> void {
     }
     delete(buf);
     vfs_close(fd);
+    return;
+}
+
+// Print "[N ms] " prefix for boot trace messages. N is wall-clock
+// elapsed since power-on, computed from full 64-bit SIO_MTIME
+// (kern_uptime_us / 1000) so it doesn't wrap every 32 sec the way
+// reading just the low 32 bits would.
+export fn kput_ms() -> void {
+    var t: u32 = kern_uptime_us() / 1000u32;
+    var buf: U8Array = U8Array(16);
+    var n: i32 = 0;
+    if t == 0u32 {
+        set(buf, n, '0' as u8);
+        n = n + 1;
+    } else {
+        var tmp: U8Array = U8Array(12);
+        var k: i32 = 0;
+        while t > 0u32 {
+            set(tmp, k, ('0' as i32 + (t % 10u32) as i32) as u8);
+            k = k + 1;
+            t = t / 10u32;
+        }
+        while k > 0 {
+            set(buf, n, get(tmp, k - 1));
+            n = n + 1;
+            k = k - 1;
+        }
+        delete(tmp);
+    }
+    uart_emit_frame("KERN", (buf as u32) + 4u32, n);
+    uart_emit_frame("KERN", ("ms] " as u32) + 4u32, 4);
+    delete(buf);
+    return;
+}
+
+// kputs_t = kput_ms + kputs.  Use at boot trace points to make the
+// per-step latency visible without re-reading kern.conf each time.
+export fn kputs_t(s: StringLiteral) -> void {
+    kputs("[");
+    kput_ms();
+    kputs(s);
     return;
 }
 

@@ -320,3 +320,20 @@ platform_*.s は `do_exit` が live なので該当しない。
 なら、同一セクションの次シンボル Y も live」という fall-through 辺を
 BFS に足す。コンパイラ変更なので Gen2==Gen3 + 実機 byte-exact の
 再検証が必要。
+
+### 47. asm_pass3 の hard error が stdout に出て compile-gen2.sh が隠す + 部分出力が残る (2026-08-28)
+
+**現象**: tn20k kernel のリンクで `asm:: undefined reloc target
+'kputs_t__StringLiteral'` (solved.md #42 の hard error) が起きたとき、
+`compile-gen2.sh -o out.bin` は rc=1 で終わるが (a) メッセージは
+asm_pass3 の **stdout** に出るため `2>&1` で stderr だけ見ていると
+何も出ず、(b) `--out` に書きかけの **部分バイナリ (367 KB) が残る**
+ので、make の `.DELETE_ON_ERROR` が無い経路 (手動実行、compile-gen2.sh
+単体) では「サイズが小さいだけの壊れた bin」に見える。
+`bash -x` で asm_pass3 が最後のコマンドと分かり、asm_pass3 を手で
+叩いて初めてメッセージが見えた。
+
+**修正案**: asm_pass3 の err 経路 (strlib.tc `err` / asm_common
+`asm_err_end`) を fd 2 に統一し、hard error 時は `--out` を unlink
+(または tmp に書いて rename)。compile-gen2.sh も失敗時に `-o` を消す。
+コンパイラ変更なので Gen2==Gen3 再検証が要る (出力自体は変わらない)。

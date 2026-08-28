@@ -1,0 +1,250 @@
+// kernel/platform/tn20k/keyboard_matrix.tc — GPIO matrix keyboard backend for
+// /dev/kbd on the Tang Nano 20K (hw/ SoC). Verbatim copy of the pico2
+// driver: the SoC's GPIO block mirrors the RP2350 SIO layout and the rows/
+// cols sit on GP1..GP12 exactly as on the pico2 board (top_soc_sdram.v maps
+// them to header pins). The IO_BANK0 / PADS pokes are no-ops on the SoC;
+// the pull-ups are static IO attributes in tang_nano_20k.cst.
+// Keep this file in sync with the pico2 original when it changes.
+// DIAG: dump scancode → ASCII to UART so we can rebuild the keymap.
+fn kdbg_kbd_sc(sc: i32, ch: u8) -> void;
+
+// ===== RP2350 register addresses =====
+const KBD_IO_BANK0: u32 = 0x40028000u32;
+const KBD_PADS_SET: u32 = 0x4003A000u32;
+const KBD_PADS_CLR: u32 = 0x4003B000u32;
+const KBD_SIO:      u32 = 0xD0000000u32;
+
+// SIO register offsets (low-GPIO group, GP0-31).
+const SIO_IN:      u32 = 0x04u32;
+const SIO_OUT_SET: u32 = 0x18u32;
+const SIO_OUT_CLR: u32 = 0x20u32;
+const SIO_OE_SET:  u32 = 0x38u32;
+const SIO_OE_CLR:  u32 = 0x40u32;
+
+// Physical row/col GPIO numbers (computed → masks at init).
+const KBD_ROW_GP0: i32 = 2;
+const KBD_ROW_GP1: i32 = 1;
+const KBD_ROW_GP2: i32 = 4;
+const KBD_ROW_GP3: i32 = 3;
+const KBD_ROW_GP4: i32 = 6;
+const KBD_COL_GP0: i32 = 5;
+const KBD_COL_GP1: i32 = 8;
+const KBD_COL_GP2: i32 = 7;
+const KBD_COL_GP3: i32 = 10;
+const KBD_COL_GP4: i32 = 9;
+const KBD_COL_GP5: i32 = 12;
+
+var g_kbd_rows_mask: u32 = 0u32;
+var g_kbd_cols_mask: u32 = 0u32;
+var g_kbd_inited: i32 = 0;
+
+// 60-bit key state (scancode 0..59): current scan + previous scan.
+var g_cur_lo:  u32 = 0u32;
+var g_cur_hi:  u32 = 0u32;
+var g_prev_lo: u32 = 0u32;
+var g_prev_hi: u32 = 0u32;
+
+// scancode -> ASCII. scancode = row * 12 + logical_col, where logical
+// columns are wired to physical positions in this order (see the
+// 2026-05-21 board's diode-reversed matrix scan):
+//
+//     logical_col:   0   1   2   3   4   5   6   7   8   9  10  11
+//     physical_col: 12  11  10   9   8   7   1   2   3   4   5   6
+//
+// So per row, the leftmost 6 physical keys are logical 6-11 and the
+// rightmost 6 are logical 5-0 (i.e. right half reversed). We just
+// write each row in logical-col order below.
+//
+// Physical layout (12 cols × 5 rows):
+//   ESC  1   2   3   4   5   6   7   8   9   0   BS
+//   TAB  q   w   e   r   t   y   u   i   o   p   '
+//   CTL  a   s   d   f   g   h   j   k   l   :   ENT
+//   SFT  z   x   c   v   b   n   m   ,   .   /   SFT
+//   FN   sp  sp  sp  sp  sp  sp  sp  sp  sp  sp  FN
+//
+// A string const compiles as an alias for its literal (loads become
+// push_str → la to the .rodata strobj; #36 → const_decl). Note `+`
+// between StringLiterals is still pointer arithmetic, not concat —
+// keep this a single literal.
+//
+// Underscores are placeholders for keys that need a non-printable byte
+// (BS / ESC / TAB / ENT) or are modifiers with no input byte (CTL /
+// SFT / FN, patched to 0 below so kbd_backend_read skips them).
+const KBD_KEYMAP: StringLiteral = "_09876_12345'poiuy_qwert_:lkjh_asdfg_/.,mn_zxcvb_     _     ";
+var g_keymap: U8Array = 0 as U8Array;
+
+// Short busy-wait so a driven line settles before it is sampled.
+fn kbd_settle() -> void {
+    var i: i32 = 0;
+    while i < 200 { i = i + 1; }
+    return;
+}
+
+fn kbd_row_gp(r: i32) -> i32 {
+    if r == 0 { return KBD_ROW_GP0; }
+    if r == 1 { return KBD_ROW_GP1; }
+    if r == 2 { return KBD_ROW_GP2; }
+    if r == 3 { return KBD_ROW_GP3; }
+    return KBD_ROW_GP4;
+}
+
+fn kbd_col_gp(c: i32) -> i32 {
+    if c == 0 { return KBD_COL_GP0; }
+    if c == 1 { return KBD_COL_GP1; }
+    if c == 2 { return KBD_COL_GP2; }
+    if c == 3 { return KBD_COL_GP3; }
+    if c == 4 { return KBD_COL_GP4; }
+    return KBD_COL_GP5;
+}
+
+fn kbd_setup_pin(gp: i32) -> void {
+    // funcsel 5 = SIOB_PROC. Clear ISO + PDE (PDE resets to 1, so PUE
+    // alone would conflict and the line would float mid-rail). Set
+    // IE + PUE so undriven lines idle high — the matrix scan reads a
+    // pressed key as the driven partner pulling its read line low.
+    poke32(KBD_IO_BANK0 + ((8 * gp + 4) as u32), 5u32);
+    poke32(KBD_PADS_CLR + ((4 + 4 * gp) as u32), 0x104u32);  // ISO | PDE
+    poke32(KBD_PADS_SET + ((4 + 4 * gp) as u32), 0x48u32);   // IE | PUE
+    return;
+}
+
+fn kbd_init() -> void {
+    if g_kbd_inited != 0 { return; }
+    var r: i32 = 0;
+    while r < 5 {
+        var gp: i32 = kbd_row_gp(r);
+        kbd_setup_pin(gp);
+        g_kbd_rows_mask = g_kbd_rows_mask | (1u32 << (gp as u32));
+        r = r + 1;
+    }
+    var c: i32 = 0;
+    while c < 6 {
+        var gp2: i32 = kbd_col_gp(c);
+        kbd_setup_pin(gp2);
+        g_kbd_cols_mask = g_kbd_cols_mask | (1u32 << (gp2 as u32));
+        c = c + 1;
+    }
+    // Build the runtime keymap from KBD_KEYMAP, then patch controls.
+    var src: StringLiteral = KBD_KEYMAP;
+    g_keymap = U8Array(60u32);
+    var i: i32 = 0;
+    while i < 60 {
+        set(g_keymap, i, get(src, i));
+        i = i + 1;
+    }
+    // Patch in the control bytes and modifier no-ops. Each row's
+    // physical col 1 → logical 6 (index row*12+6), and physical col 12
+    // → logical 0 (index row*12+0). Modifier keys (CTL/SFT/FN) get 0
+    // so kbd_backend_read skips them entirely instead of emitting a
+    // bogus printable char.
+    set(g_keymap,  0,  8u8);    // row 0 logical 0  — BS  (phys col 12)
+    set(g_keymap,  6, 27u8);    // row 0 logical 6  — ESC (phys col 1)
+    set(g_keymap, 18,  9u8);    // row 1 logical 6  — TAB (phys col 1)
+    set(g_keymap, 24, 10u8);    // row 2 logical 0  — ENT (phys col 12)
+    set(g_keymap, 30,  0u8);    // row 2 logical 6  — CTL (phys col 1)
+    set(g_keymap, 36,  0u8);    // row 3 logical 0  — SFT (phys col 12)
+    set(g_keymap, 42,  0u8);    // row 3 logical 6  — SFT (phys col 1)
+    set(g_keymap, 48,  0u8);    // row 4 logical 0  — FN  (phys col 12)
+    set(g_keymap, 54,  0u8);    // row 4 logical 6  — FN  (phys col 1)
+    g_kbd_inited = 1;
+    return;
+}
+
+// Mark scancode `sc` pressed in the current-scan bitset.
+fn kbd_mark(sc: i32) -> void {
+    if sc < 32 {
+        g_cur_lo = g_cur_lo | (1u32 << (sc as u32));
+    } else {
+        g_cur_hi = g_cur_hi | (1u32 << ((sc - 32) as u32));
+    }
+    return;
+}
+
+fn kbd_bit(lo: u32, hi: u32, sc: i32) -> i32 {
+    if sc < 32 { return ((lo >> (sc as u32)) & 1u32) as i32; }
+    return ((hi >> ((sc - 32) as u32)) & 1u32) as i32;
+}
+
+// Phase A: rows are outputs (idle high, pulse low one at a time),
+// columns inputs. A low column reads a pressed key in logical cols 0-5.
+fn kbd_scan_a() -> void {
+    poke32(KBD_SIO + SIO_OE_SET, g_kbd_rows_mask);
+    poke32(KBD_SIO + SIO_OE_CLR, g_kbd_cols_mask);
+    poke32(KBD_SIO + SIO_OUT_SET, g_kbd_rows_mask);
+    var r: i32 = 0;
+    while r < 5 {
+        var row_gp: i32 = kbd_row_gp(r);
+        var rowbit: u32 = 1u32 << (row_gp as u32);
+        poke32(KBD_SIO + SIO_OUT_CLR, rowbit);
+        kbd_settle();
+        var inv: u32 = peek32(KBD_SIO + SIO_IN);
+        var c: i32 = 0;
+        while c < 6 {
+            var col_gp: i32 = kbd_col_gp(c);
+            if (inv & (1u32 << (col_gp as u32))) == 0u32 {
+                kbd_mark(r * 12 + c);
+            }
+            c = c + 1;
+        }
+        poke32(KBD_SIO + SIO_OUT_SET, rowbit);
+        r = r + 1;
+    }
+    return;
+}
+
+// Phase B: columns are outputs, rows inputs. The diode-reversed right
+// half (logical cols 6-11) is visible here.
+fn kbd_scan_b() -> void {
+    poke32(KBD_SIO + SIO_OE_SET, g_kbd_cols_mask);
+    poke32(KBD_SIO + SIO_OE_CLR, g_kbd_rows_mask);
+    poke32(KBD_SIO + SIO_OUT_SET, g_kbd_cols_mask);
+    var c: i32 = 0;
+    while c < 6 {
+        var col_gp: i32 = kbd_col_gp(c);
+        var colbit: u32 = 1u32 << (col_gp as u32);
+        poke32(KBD_SIO + SIO_OUT_CLR, colbit);
+        kbd_settle();
+        var inv: u32 = peek32(KBD_SIO + SIO_IN);
+        var r: i32 = 0;
+        while r < 5 {
+            var row_gp: i32 = kbd_row_gp(r);
+            if (inv & (1u32 << (row_gp as u32))) == 0u32 {
+                kbd_mark(r * 12 + (c + 6));
+            }
+            r = r + 1;
+        }
+        poke32(KBD_SIO + SIO_OUT_SET, colbit);
+        c = c + 1;
+    }
+    return;
+}
+
+// /dev/kbd backend: scan the matrix and return the ASCII of every key
+// pressed since the previous call. Returns the byte count (0 = none).
+fn kbd_backend_read(buf_addr: u32, n: i32) -> i32 {
+    if g_kbd_inited == 0 { kbd_init(); }
+    g_cur_lo = 0u32;
+    g_cur_hi = 0u32;
+    kbd_scan_a();
+    kbd_scan_b();
+    var emitted: i32 = 0;
+    var sc: i32 = 0;
+    while sc < 60 && emitted < n {
+        // Rising edge: pressed now, not pressed in the previous scan.
+        if kbd_bit(g_cur_lo, g_cur_hi, sc) != 0
+            && kbd_bit(g_prev_lo, g_prev_hi, sc) == 0 {
+            var ch: u8 = get(g_keymap, sc);
+            // DIAG: dump scancode → ASCII so callers can rebuild
+            // KBD_KEYMAP for their physical board layout.
+            kdbg_kbd_sc(sc, ch);
+            if ch != 0u8 {
+                poke8(buf_addr + (emitted as u32), ch);
+                emitted = emitted + 1;
+            }
+        }
+        sc = sc + 1;
+    }
+    g_prev_lo = g_cur_lo;
+    g_prev_hi = g_cur_hi;
+    return emitted;
+}

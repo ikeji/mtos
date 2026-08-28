@@ -1,0 +1,5 @@
+// kernel/platform/tn20k/touch_stub.tc — no touch panel wired yet on the
+// Tang Nano 20K build; /dev/touch reads return 0 bytes (no sample).
+export fn touch_backend_read(buf_addr: u32, n: i32) -> i32 {
+    return 0;
+}

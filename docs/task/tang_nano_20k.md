@@ -129,21 +129,40 @@ kernel はロードアドレス `0x8000_0000`、sp 初期値は virt の
 - Phase 3 までは BSRAM だけで動くようにし、SDRAM は差し替え可能な
   バス slave として後から追加する。
 
-### 4.4 ピン割当 (概略、Phase 0 で確定)
+### 4.4 ピン割当 (2026-08-28 確定、`hw/boards/tang_nano_20k/tang_nano_20k.cst`)
 
-Tang Nano 20K の 2 列ヘッダ (約 40 pin) に、pico2 の 2026-05-21 ボード
-と同じ配線を **配線順は自由 (FPGA 側で並べ替えられる)** で繋ぐ:
+SoC 側の GPIO 番号は pico2 ボードと同じ (キーボード GP1〜12、LCD
+GP38〜44) にしてあるので、kernel ドライバはピン定数を変えずに動く。
+ヘッダ (2.54 mm、左右 20 pin) の FPGA ピン番号との対応:
 
-| デバイス | 本数 | 備考 |
-|---|---|---|
-| ILI9488 | 7 (DC/CS/SCK/MOSI/MISO/RST/BL) | SCK/MOSI は SPI master、他は GPIO |
-| マトリクスキーボード | 11 (row 5 + col 6) | 全部 GPIO、内部 pull-up 必要 (FPGA の pull-up 属性で代替) |
-| XPT2046 タッチ | 5 | GPIO bit-bang (任意) |
-| microSD | 4 | オンボードスロット (FPGA に直結、ヘッダ不要) |
-| UART | 2 | BL616 経由、ヘッダ不要 |
+| 信号 | SoC GPIO | Tang Nano 20K ピン | 備考 |
+|---|---|---|---|
+| KBD ROW1 | GP1 | 73 | 左ヘッダ 3 番目 |
+| KBD ROW0 | GP2 | 74 | |
+| KBD ROW3 | GP3 | 75 | |
+| KBD ROW2 | GP4 | 77 | |
+| KBD COL0 | GP5 | 27 | |
+| KBD ROW4 | GP6 | 28 | |
+| KBD COL2 | GP7 | 25 | |
+| KBD COL1 | GP8 | 26 | |
+| KBD COL4 | GP9 | 29 | |
+| KBD COL3 | GP10 | 30 | |
+| KBD COL5 | GP12 | 31 | GP11 (スピーカ) は未配線 |
+| LCD DC | GP38 | 76 | 右ヘッダ |
+| LCD CS | GP39 | 42 | |
+| LCD SCK | GP40 | 41 | |
+| LCD MOSI | GP41 | 48 | |
+| LCD MISO | GP42 | 49 | 未使用 (pull-up) |
+| LCD RST | GP43 | 86 | |
+| LCD BL | GP44 | 72 | |
+| 3.3 V / GND | — | ヘッダ両端 | LCD / キーボードの電源 |
 
-3.3 V I/O は両者一致。LCD/キーボード基板側の配線は pico2 用のものを
-そのまま使う (ケーブル差し替えで両機を行き来できるようにする)。
+pico2 側の GP ↔ 役割は `docs/pico2_hardware.md` (ROW0=GP2, ROW1=GP1,
+ROW2=GP4, ROW3=GP3, ROW4=GP6, COL0=GP5, COL1=GP8, COL2=GP7, COL3=GP10,
+COL4=GP9, COL5=GP12; LCD DC/CS/SCK/MOSI/MISO/RST/BL = GP38〜44)。
+残り空きピンは 71 (+ 共用可の 56/54/55/79/53/52)。タッチ (5 本) を
+繋ぐときはここから。3.3 V I/O は両者一致。キーボードの pull-up は
+cst の `PULL_MODE=UP` (ドライバの PADS 書き込みは SoC では no-op)。
 
 ### 4.5 電源 (エネループ 2 本運用)
 

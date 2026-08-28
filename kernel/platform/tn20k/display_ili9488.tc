@@ -1,0 +1,511 @@
+// kernel/platform/tn20k/display_ili9488.tc — ILI9488 backend for /dev/fb on
+// the Tang Nano 20K (hw/ SoC). Copy of the pico2 driver: the SoC's GPIO
+// block mirrors the RP2350 SIO register layout (hw/rtl/soc/gpio_sio.v) and
+// GP38..44 carry the same roles, so only two things differ:
+//   * g_lcd_use_pio = 0 — no PIO on the SoC, SCK/MOSI are bit-banged via SIO
+//   * LCD_MTIME_PER_MS = 27000 — mtime runs at the 27 MHz CPU clock
+// IO_BANK0 / PADS / RESETS / PIO2 addresses are unmapped on the SoC (writes
+// ignored, reads 0); pull-ups are static pin attributes in the .cst.
+// Keep this file in sync with the pico2 original when it changes.
+// SIO timer (kernel_pico2.tc) — used for the power-on delays.
+fn read_mtime() -> u32;
+fn kputs_t(s: StringLiteral) -> void;
+
+// ===== RP2350 register addresses =====
+const LCD_IO_BANK0:    u32 = 0x40028000u32;
+const LCD_PADS_SET:    u32 = 0x4003A000u32;
+const LCD_PADS_CLR:    u32 = 0x4003B000u32;
+const LCD_SIO:         u32 = 0xD0000000u32;
+
+// High-GPIO SIO offsets (GP32-47).
+const LCD_HI_OUT_SET:  u32 = 0x01Cu32;
+const LCD_HI_OUT_CLR:  u32 = 0x024u32;
+const LCD_HI_OE_SET:   u32 = 0x03Cu32;
+
+// Per-GPIO masks (n - 32) for all seven pins.
+const LCD_DC_MASK:   u32 = 0x040u32;   // GP38
+const LCD_CS_MASK:   u32 = 0x080u32;   // GP39
+const LCD_SCK_MASK:  u32 = 0x100u32;   // GP40
+const LCD_MOSI_MASK: u32 = 0x200u32;   // GP41
+const LCD_RST_MASK:  u32 = 0x800u32;   // GP43
+const LCD_BL_MASK:   u32 = 0x1000u32;  // GP44
+
+// IO_BANK0 GPIO_CTRL offsets (= 4 + 8*n) for GP38-44.
+const LCD_CTRL_DC:   u32 = 0x134u32;
+const LCD_CTRL_CS:   u32 = 0x13Cu32;
+const LCD_CTRL_SCK:  u32 = 0x144u32;
+const LCD_CTRL_MOSI: u32 = 0x14Cu32;
+const LCD_CTRL_MISO: u32 = 0x154u32;
+const LCD_CTRL_RST:  u32 = 0x15Cu32;
+const LCD_CTRL_BL:   u32 = 0x164u32;
+
+// PADS_BANK0 offsets (= 4 + 4*n) for GP38-44.
+const LCD_PAD_DC:   u32 = 0x09Cu32;
+const LCD_PAD_CS:   u32 = 0x0A0u32;
+const LCD_PAD_SCK:  u32 = 0x0A4u32;
+const LCD_PAD_MOSI: u32 = 0x0A8u32;
+const LCD_PAD_MISO: u32 = 0x0ACu32;
+const LCD_PAD_RST:  u32 = 0x0B0u32;
+const LCD_PAD_BL:   u32 = 0x0B4u32;
+
+// SIO MTIME tick rate on the Pico 2 (~131.5 MHz — see kernel_pico2.tc).
+const LCD_MTIME_PER_MS: u32 = 27000u32;
+
+// ===== PIO2 SPI for SCK (GP40) + MOSI (GP41) =====
+//
+// PIO0/PIO1 internal pin numbering covers GPIO 0-31. The high-GPIO
+// range (32-47) where our LCD lives is only directly addressable from
+// PIO2, whose pin 0 maps to GPIO 16 — so GP40 = PIO2 pin 24, GP41 = 25.
+//
+// 2-instruction program, autopull threshold 8, MSB first:
+//   addr 0:  OUT PINS, 1   SIDE 0   (MOSI ← OSR[7], SCK low)
+//   addr 1:  NOP            SIDE 1   (SCK high — slave samples)
+//
+// CLKDIV = 4 / FRAC 0 → SPI clock = 150 MHz / (4 × 2) = 18.75 MHz, safe
+// under the ILI9488's 20 MHz SPI ceiling. clkdiv 2 = 37.5 MHz works on
+// many panels but is past spec; not enabling by default.
+const PIO2_BASE:         u32 = 0x50400000u32;
+const PIO_CTRL:          u32 = 0x000u32;
+const PIO_FSTAT:         u32 = 0x004u32;
+const PIO_TXF0:          u32 = 0x010u32;
+const PIO_INSTR_MEM0:    u32 = 0x048u32;
+const PIO_SM0_CLKDIV:    u32 = 0x0C8u32;
+const PIO_SM0_EXECCTRL:  u32 = 0x0CCu32;
+const PIO_SM0_SHIFTCTRL: u32 = 0x0D0u32;
+const PIO_SM0_INSTR:     u32 = 0x0D8u32;
+const PIO_SM0_PINCTRL:   u32 = 0x0DCu32;
+// RP2350 added a GPIOBASE register to PIO2 that selects whether its
+// 32 internal pins map to GPIO 0-31 (GPIOBASE=0, default) or GPIO
+// 16-47 (GPIOBASE=1). The pico-sdk header puts it at offset 0x168.
+// (0x180 looked promising in an earlier GDB probe because writes
+// stuck there — but that's actually IRQ1_INTF, not GPIOBASE.)
+const PIO_GPIOBASE:      u32 = 0x168u32;
+
+// RP2350 RESETS block. The chip powers up with every non-essential
+// peripheral held in reset; PIO2 is no exception. We have to clear its
+// reset bit (RESETS.RESET[13]) and wait for RESETS.RESET_DONE[13] to
+// go high before any PIO2 register accesses do anything visible.
+const RESETS_BASE:       u32 = 0x40020000u32;
+const RESETS_RESET_CLR:  u32 = 0x3000u32;     // atomic CLR alias
+const RESETS_DONE:       u32 = 0x008u32;
+const RESETS_PIO2_BIT:   u32 = 0x2000u32;     // bit 13
+
+// PIO2 sees GPIO 16-47 as its pin 0-31.
+const PIO2_PIN_SCK:  i32 = 24;   // GP40
+const PIO2_PIN_MOSI: i32 = 25;   // GP41
+const LCD_FUNC_PIO2: u32 = 8u32;
+
+// Bit masks for FSTAT. Per RP2350 PIO datasheet
+// (pico-sdk hardware/regs/pio.h):
+//   bits 24-27: TXEMPTY (SM0 = bit 24, mask 0x01000000)
+//   bits 16-19: TXFULL  (SM0 = bit 16, mask 0x00010000)
+//   bits  8-11: RXEMPTY
+//   bits  0- 3: RXFULL
+// Previous TXFULL = 0x10000000 was bit 28, which has nothing in
+// FSTAT (RP2350 PIO only has SMs 0-3). The wait loop in
+// pio_spi_byte therefore never blocked, the TX FIFO overflowed,
+// and only the first ~1/4 of fb_fill's pixel stream reached the
+// LCD — the rest landed in a full FIFO and was silently dropped.
+const FSTAT_TXFULL_SM0:  u32 = 0x00010000u32;  // bit 16
+const FSTAT_TXEMPTY_SM0: u32 = 0x01000000u32;  // bit 24
+
+var g_pio_lcd_inited: i32 = 0;
+// 1 → drive SCK/MOSI from PIO2, 0 → fall back to the original SIO
+// bit-bang. Useful kill-switch while bringing PIO up: if the screen
+// stays white with PIO on but is fine with PIO off, we know the LCD +
+// init sequence is healthy and the bug is in our PIO config.
+var g_lcd_use_pio:    i32 = 0;   // tn20k: always bit-bang
+// Track DC state to avoid wait_idle + GPIO write on every byte when DC
+// doesn't actually change (e.g. while streaming pixel data after the
+// initial RAMWR command).
+var g_lcd_dc_is_data:  i32 = 0 - 1;
+
+fn pio_lcd_init() -> void {
+    if g_pio_lcd_inited != 0 { return; }
+
+    // Release PIO2 from reset and wait until the peripheral confirms
+    // it is out of reset. Otherwise our INSTR_MEM / CTRL writes below
+    // silently no-op and the SM never starts — which presents as a
+    // completely blank (white-ish) LCD because no SPI clock is ever
+    // generated and the panel never sees its init commands.
+    poke32(RESETS_BASE + RESETS_RESET_CLR, RESETS_PIO2_BIT);
+    while (peek32(RESETS_BASE + RESETS_DONE) & RESETS_PIO2_BIT) == 0u32 { }
+
+    // GPIOBASE = 0x10 (bit 4). The register is at PIO_GPIOBASE
+    // (offset 0x168) per pico-sdk's rp2350 hardware_regs/pio.h,
+    // BUT the writeable bit is bit 4 (mask 0x10), not bit 0. The
+    // previous attempt (problem.md #37) wrote 0x1 — bit 0 of a
+    // register whose only writable bit is bit 4, so the write was
+    // a no-op, SM kept driving its internal pins 24/25 which were
+    // routed to GP24/25 (low half) instead of the LCD's GP40/41.
+    // With 0x10 the routing flips to GP16-47 and SCK/MOSI land on
+    // the LCD.
+    poke32(PIO2_BASE + PIO_GPIOBASE, 0x10u32);
+
+    // Disable SM0 while we reload.
+    poke32(PIO2_BASE + PIO_CTRL, 0u32);
+
+    // Program: 2 instructions, wrap from 1 back to 0.
+    poke32(PIO2_BASE + PIO_INSTR_MEM0,         0x6001u32);  // out pins,1 side 0
+    poke32(PIO2_BASE + PIO_INSTR_MEM0 + 4u32,  0xB042u32);  // nop          side 1
+
+    // CLKDIV: INT in bits 31:16, FRAC in bits 15:8. SM clock =
+    // clk_sys / (INT + FRAC/256); SPI clock = SM clock / 2 (two SM
+    // cycles per bit). INT=4 → SM 37.5 MHz → SPI 18.75 MHz, right at
+    // the ILI9488's 20 MHz spec ceiling. Verified working on this
+    // panel; back off to INT=8 (9.4 MHz) if you see screen tearing /
+    // pixel garbage on a different unit.
+    poke32(PIO2_BASE + PIO_SM0_CLKDIV, 4u32 << 16u32);
+
+    // EXECCTRL: WRAP_TOP=1 (bits 16:12), WRAP_BOTTOM=0 (bits 11:7).
+    poke32(PIO2_BASE + PIO_SM0_EXECCTRL, 1u32 << 12u32);
+
+    // SHIFTCTRL: PULL_THRESH = 8 (bits 29:25), AUTOPULL (bit 17),
+    // OUT_SHIFTDIR = 0 (= shift left, MSB first).
+    poke32(PIO2_BASE + PIO_SM0_SHIFTCTRL,
+           (8u32 << 25u32) | (1u32 << 17u32));
+
+    // PINCTRL:
+    //   SIDESET_COUNT = 1 (bits 31:29)  ← SCK
+    //   SET_COUNT     = 2 (bits 28:26)  ← used once for SET PINDIRS init
+    //   OUT_COUNT     = 1 (bits 25:20)  ← MOSI
+    //   SIDESET_BASE  = 24 (bits 14:10)
+    //   SET_BASE      = 24 (bits 9:5)
+    //   OUT_BASE      = 25 (bits 4:0)
+    poke32(PIO2_BASE + PIO_SM0_PINCTRL,
+           (1u32  << 29u32) |
+           (2u32  << 26u32) |
+           (1u32  << 20u32) |
+           ((PIO2_PIN_SCK as u32) << 10u32) |
+           ((PIO2_PIN_SCK as u32) <<  5u32) |
+            (PIO2_PIN_MOSI as u32));
+
+    // Push SET PINDIRS 0b11 into INSTR — runs once, sets OE for SCK
+    // and MOSI from the PIO side (SIO's OE_SET no longer applies once
+    // the pin is on funcsel 8). Opcode 111 (SET), no side/delay,
+    // destination 100 (PINDIRS), data 00011 = 0xE083.
+    poke32(PIO2_BASE + PIO_SM0_INSTR, 0xE083u32);
+
+    // Connect SCK + MOSI to PIO2.
+    poke32(LCD_IO_BANK0 + LCD_CTRL_SCK,  LCD_FUNC_PIO2);
+    poke32(LCD_IO_BANK0 + LCD_CTRL_MOSI, LCD_FUNC_PIO2);
+
+    // Enable SM0.
+    poke32(PIO2_BASE + PIO_CTRL, 1u32);
+
+    g_pio_lcd_inited = 1;
+    return;
+}
+
+// Push one byte to PIO2 SM0's TX FIFO. Blocks until the FIFO has room.
+// The byte is left-justified into bits 31:24 of the 32-bit FIFO entry:
+// our PIO program shifts the OSR LEFT (out from the high end), and
+// autopull only pulls when 8 bits have been shifted out. If we wrote
+// the byte at the low end, the first 8 OUTs would all read zero from
+// the high 24 bits and the actual data would never reach MOSI — the
+// LCD then sees an all-zero command stream and stays at power-on
+// (white-ish) GRAM contents.
+fn pio_spi_byte(b: i32) -> void {
+    while (peek32(PIO2_BASE + PIO_FSTAT) & FSTAT_TXFULL_SM0) != 0u32 { }
+    poke32(PIO2_BASE + PIO_TXF0, ((b & 0xFF) << 24) as u32);
+    return;
+}
+
+// Wait until the PIO has actually drained the last byte onto the wire.
+// FSTAT.TXEMPTY = 1 means the FIFO is empty, but the SM may still be
+// shifting out the byte currently in the OSR — at 18.75 MHz one byte
+// takes ~430 ns, so spin a small loop after FIFO empty.
+fn pio_spi_wait_idle() -> void {
+    while (peek32(PIO2_BASE + PIO_FSTAT) & FSTAT_TXEMPTY_SM0) == 0u32 { }
+    var i: i32 = 0;
+    while i < 200 { i = i + 1; }
+    return;
+}
+
+var g_lcd_inited: i32 = 0;
+
+// Busy-wait `ms` milliseconds against the SIO timer.
+fn lcd_delay_ms(ms: i32) -> void {
+    var start: u32 = read_mtime();
+    var want:  u32 = (ms as u32) * LCD_MTIME_PER_MS;
+    while (read_mtime() - start) < want { }
+    return;
+}
+
+// Drive one high-GPIO line high (hi != 0) or low.
+fn lcd_gpio(mask: u32, hi: i32) -> void {
+    if hi != 0 {
+        poke32(LCD_SIO + LCD_HI_OUT_SET, mask);
+    } else {
+        poke32(LCD_SIO + LCD_HI_OUT_CLR, mask);
+    }
+    return;
+}
+
+// Bit-bang fallback: 8 GPIO-toggle loop, SPI mode 0.
+fn lcd_spi_bitbang(b: i32) -> void {
+    var out: u32 = (b & 0xFF) as u32;
+    var i: i32 = 0;
+    while i < 8 {
+        if (out & 0x80u32) == 0u32 {
+            poke32(LCD_SIO + LCD_HI_OUT_CLR, LCD_MOSI_MASK);
+        } else {
+            poke32(LCD_SIO + LCD_HI_OUT_SET, LCD_MOSI_MASK);
+        }
+        out = out << 1u32;
+        poke32(LCD_SIO + LCD_HI_OUT_SET, LCD_SCK_MASK);
+        poke32(LCD_SIO + LCD_HI_OUT_CLR, LCD_SCK_MASK);
+        i = i + 1;
+    }
+    return;
+}
+
+// Shift one byte out via either PIO2 SM0 or the bit-bang fallback.
+// g_lcd_use_pio gates the switch so we can sanity-check the LCD with
+// the known-good bit-bang path while debugging PIO.
+fn lcd_spi(b: i32) -> void {
+    if g_lcd_use_pio != 0 {
+        pio_spi_byte(b);
+    } else {
+        lcd_spi_bitbang(b);
+    }
+    return;
+}
+
+// Send a command byte (DC = 0) / a data byte (DC = 1). When PIO is
+// active we have to wait for the SM to drain before flipping DC so
+// the trailing bytes of the previous command don't land under the
+// new DC level. Bit-bang is synchronous so no wait is needed.
+fn lcd_cmd(c: i32) -> void {
+    if g_lcd_dc_is_data != 0 {
+        if g_lcd_use_pio != 0 { pio_spi_wait_idle(); }
+        lcd_gpio(LCD_DC_MASK, 0);
+        g_lcd_dc_is_data = 0;
+    }
+    lcd_spi(c);
+    return;
+}
+fn lcd_dat(d: i32) -> void {
+    if g_lcd_dc_is_data != 1 {
+        if g_lcd_use_pio != 0 { pio_spi_wait_idle(); }
+        lcd_gpio(LCD_DC_MASK, 1);
+        g_lcd_dc_is_data = 1;
+    }
+    lcd_spi(d);
+    return;
+}
+
+// Read a little-endian u16 from a raw address.
+fn fb_rd16(addr: u32) -> i32 {
+    return (peek8(addr) as i32) | ((peek8(addr + 1u32) as i32) << 8);
+}
+
+// Bring up the bit-banged SPI + the ILI9488. Idempotent.
+fn lcd_init() -> void {
+    if g_lcd_inited != 0 { return; }
+
+    // 1. Funcsel 5 (SIOB_PROC) on all seven LCD pins.
+    poke32(LCD_IO_BANK0 + LCD_CTRL_DC,   5u32);
+    poke32(LCD_IO_BANK0 + LCD_CTRL_CS,   5u32);
+    poke32(LCD_IO_BANK0 + LCD_CTRL_SCK,  5u32);
+    poke32(LCD_IO_BANK0 + LCD_CTRL_MOSI, 5u32);
+    poke32(LCD_IO_BANK0 + LCD_CTRL_MISO, 5u32);
+    poke32(LCD_IO_BANK0 + LCD_CTRL_RST,  5u32);
+    poke32(LCD_IO_BANK0 + LCD_CTRL_BL,   5u32);
+
+    // 2. Pads: clear ISO (bit 8) on all seven.
+    poke32(LCD_PADS_CLR + LCD_PAD_DC,   0x100u32);
+    poke32(LCD_PADS_CLR + LCD_PAD_CS,   0x100u32);
+    poke32(LCD_PADS_CLR + LCD_PAD_SCK,  0x100u32);
+    poke32(LCD_PADS_CLR + LCD_PAD_MOSI, 0x100u32);
+    poke32(LCD_PADS_CLR + LCD_PAD_MISO, 0x100u32);
+    poke32(LCD_PADS_CLR + LCD_PAD_RST,  0x100u32);
+    poke32(LCD_PADS_CLR + LCD_PAD_BL,   0x100u32);
+
+    // 3. Idle the control lines, then enable their outputs: CS + RST
+    //    high (idle), DC + BL + SCK + MOSI low. MISO stays input.
+    poke32(LCD_SIO + LCD_HI_OUT_SET, LCD_CS_MASK | LCD_RST_MASK);
+    poke32(LCD_SIO + LCD_HI_OUT_CLR,
+        LCD_DC_MASK | LCD_BL_MASK | LCD_SCK_MASK | LCD_MOSI_MASK);
+    poke32(LCD_SIO + LCD_HI_OE_SET,
+        LCD_DC_MASK | LCD_CS_MASK | LCD_SCK_MASK | LCD_MOSI_MASK |
+        LCD_RST_MASK | LCD_BL_MASK);
+
+    // 4. Backlight on; hardware reset pulse (RST low ~20 ms).
+    lcd_gpio(LCD_BL_MASK, 1);
+    lcd_gpio(LCD_RST_MASK, 1);  lcd_delay_ms(5);
+    lcd_gpio(LCD_RST_MASK, 0);  lcd_delay_ms(20);
+    lcd_gpio(LCD_RST_MASK, 1);  lcd_delay_ms(150);
+
+    // 5. CS low — a single device owns the bus, so it is held asserted.
+    lcd_gpio(LCD_CS_MASK, 0);
+
+    // 5b. Optionally hand SCK + MOSI over to PIO2 SM0. Until this
+    //     point they were SIO outputs driven low (step 3); pio_lcd_init
+    //     re-funcsels them to PIO2 and configures the SPI state
+    //     machine. When g_lcd_use_pio = 0, we leave them on SIO and
+    //     fall back to the original bit-bang in lcd_spi.
+    if g_lcd_use_pio != 0 { pio_lcd_init(); }
+
+    // 6. ILI9488 init. Software reset, power/VCOM, MADCTL, 18-bit
+    //    pixel format, gamma, then the vertical-scroll area and
+    //    display-on. The 0xE0/0xE1 gamma tables are the values ILI
+    //    publishes as the recommended starting point in the 9488
+    //    application note (Adafruit / Waveshare ILI9488 demos use the
+    //    same numbers). Skipping them leaves the reset default gamma,
+    //    which biases the panel toward red and crushes greens.
+    lcd_cmd(0x01);  lcd_delay_ms(120);                          // SWRESET
+    lcd_cmd(0xC0);  lcd_dat(0x17); lcd_dat(0x15);               // Power Ctl 1
+    lcd_cmd(0xC1);  lcd_dat(0x41);                              // Power Ctl 2
+    lcd_cmd(0xC5);  lcd_dat(0x00); lcd_dat(0x12); lcd_dat(0x80);// VCOM
+    lcd_cmd(0x36);  lcd_dat(0x48);             // MADCTL: portrait, BGR
+    lcd_cmd(0x3A);  lcd_dat(0x66);             // pixel format: 18 bpp
+    lcd_cmd(0xB0);  lcd_dat(0x00);             // interface mode control
+    lcd_cmd(0xB1);  lcd_dat(0xA0);             // frame rate
+    lcd_cmd(0xB4);  lcd_dat(0x02);             // display inversion control
+    lcd_cmd(0xB6);  lcd_dat(0x02); lcd_dat(0x02); lcd_dat(0x3B);// disp func
+    // Positive gamma (0xE0): 15 bytes per ILI9488 reference init.
+    lcd_cmd(0xE0);
+    lcd_dat(0x00); lcd_dat(0x03); lcd_dat(0x09); lcd_dat(0x08);
+    lcd_dat(0x16); lcd_dat(0x0A); lcd_dat(0x3F); lcd_dat(0x78);
+    lcd_dat(0x4C); lcd_dat(0x09); lcd_dat(0x0A); lcd_dat(0x08);
+    lcd_dat(0x16); lcd_dat(0x1A); lcd_dat(0x0F);
+    // Negative gamma (0xE1): 15 bytes, paired with the positive curve.
+    lcd_cmd(0xE1);
+    lcd_dat(0x00); lcd_dat(0x16); lcd_dat(0x19); lcd_dat(0x03);
+    lcd_dat(0x0F); lcd_dat(0x05); lcd_dat(0x32); lcd_dat(0x45);
+    lcd_dat(0x46); lcd_dat(0x04); lcd_dat(0x0E); lcd_dat(0x0D);
+    lcd_dat(0x35); lcd_dat(0x37); lcd_dat(0x0F);
+    // Vertical scroll: full 480-line area (TFA = 0, VSA = 480, BFA = 0).
+    lcd_cmd(0x33);
+    lcd_dat(0x00); lcd_dat(0x00);
+    lcd_dat(0x01); lcd_dat(0xE0);
+    lcd_dat(0x00); lcd_dat(0x00);
+    lcd_cmd(0x11);  lcd_delay_ms(120);         // sleep out
+    lcd_cmd(0x29);                             // display on
+
+    g_lcd_inited = 1;
+    return;
+}
+
+// Set the GRAM address window to (x0,y0)-(x1,y1) and issue RAMWR, so
+// the bytes that follow are pixel data.
+fn lcd_window(x0: i32, y0: i32, x1: i32, y1: i32) -> void {
+    lcd_cmd(0x2A);                                  // CASET
+    lcd_dat((x0 >> 8) & 0xFF); lcd_dat(x0 & 0xFF);
+    lcd_dat((x1 >> 8) & 0xFF); lcd_dat(x1 & 0xFF);
+    lcd_cmd(0x2B);                                  // PASET
+    lcd_dat((y0 >> 8) & 0xFF); lcd_dat(y0 & 0xFF);
+    lcd_dat((y1 >> 8) & 0xFF); lcd_dat(y1 & 0xFF);
+    lcd_cmd(0x2C);                                  // RAMWR
+    return;
+}
+
+// Push one RGB565 colour as a single 18-bit ILI9488 pixel (3 bytes:
+// each colour component left-justified in its byte).
+fn lcd_pixel(c: i32) -> void {
+    lcd_dat(((c >> 11) & 0x1F) << 3);   // R: 5 bits -> bits 7..3
+    lcd_dat(((c >> 5)  & 0x3F) << 2);   // G: 6 bits -> bits 7..2
+    lcd_dat(( c        & 0x1F) << 3);   // B: 5 bits -> bits 7..3
+    return;
+}
+
+// mode 1: fill the rect (x,y,w,h) with one RGB565 colour.
+fn lcd_fill(x: i32, y: i32, w: i32, h: i32, col: i32) -> void {
+    if w <= 0 || h <= 0 { return; }
+    lcd_window(x, y, x + w - 1, y + h - 1);
+    var rb: i32 = ((col >> 11) & 0x1F) << 3;
+    var gb: i32 = ((col >> 5)  & 0x3F) << 2;
+    var bb: i32 = ( col        & 0x1F) << 3;
+    var count: i32 = w * h;
+
+    if g_lcd_use_pio == 0 {
+        // Bit-bang fallback: keep the simple lcd_dat path.
+        var i: i32 = 0;
+        while i < count {
+            lcd_dat(rb); lcd_dat(gb); lcd_dat(bb);
+            i = i + 1;
+        }
+        return;
+    }
+
+    // PIO fast path: flip DC to data once (via one lcd_dat), then
+    // push RGB triplets straight to TXF0 without going through
+    // lcd_dat / lcd_spi for every byte. Saves ~3 function-call
+    // overheads per pixel — fb_fill on 320×480 drops from ~1.1 s
+    // to a few hundred ms with this loop.
+    lcd_dat(rb);  // primes DC and pushes pixel 0's R channel
+    var pre_rb: u32 = ((rb & 0xFF) << 24) as u32;
+    var pre_gb: u32 = ((gb & 0xFF) << 24) as u32;
+    var pre_bb: u32 = ((bb & 0xFF) << 24) as u32;
+    var fstat:  u32 = PIO2_BASE + PIO_FSTAT;
+    var txf0:   u32 = PIO2_BASE + PIO_TXF0;
+    var txfull: u32 = FSTAT_TXFULL_SM0;
+    // Push gb + bb for pixel 0, then full RGB for pixels 1..count-1.
+    while (peek32(fstat) & txfull) != 0u32 { }
+    poke32(txf0, pre_gb);
+    while (peek32(fstat) & txfull) != 0u32 { }
+    poke32(txf0, pre_bb);
+    var i: i32 = 1;
+    while i < count {
+        while (peek32(fstat) & txfull) != 0u32 { }
+        poke32(txf0, pre_rb);
+        while (peek32(fstat) & txfull) != 0u32 { }
+        poke32(txf0, pre_gb);
+        while (peek32(fstat) & txfull) != 0u32 { }
+        poke32(txf0, pre_bb);
+        i = i + 1;
+    }
+    return;
+}
+
+// mode 0: blit w*h RGB565 pixels from `pix` into the rect (x,y,w,h).
+fn lcd_blit(x: i32, y: i32, w: i32, h: i32, pix: u32) -> void {
+    if w <= 0 || h <= 0 { return; }
+    lcd_window(x, y, x + w - 1, y + h - 1);
+    var count: i32 = w * h;
+    var i: i32 = 0;
+    while i < count {
+        var o: u32 = pix + ((i * 2) as u32);
+        lcd_pixel((peek8(o) as i32) | ((peek8(o + 1u32) as i32) << 8));
+        i = i + 1;
+    }
+    return;
+}
+
+// /dev/fb backend: render one framed blit.
+export fn fb_backend_write(buf_addr: u32, n: i32) -> void {
+    if g_lcd_inited == 0 {
+        kputs_t("LCD: lcd_init begin\r\n");
+        lcd_init();
+        kputs_t("LCD: lcd_init done\r\n");
+    }
+    if n < 10 { return; }
+    var x:    i32 = fb_rd16(buf_addr);
+    var y:    i32 = fb_rd16(buf_addr + 2u32);
+    var w:    i32 = fb_rd16(buf_addr + 4u32);
+    var h:    i32 = fb_rd16(buf_addr + 6u32);
+    var mode: i32 = fb_rd16(buf_addr + 8u32);
+    if mode == 0 {
+        lcd_blit(x, y, w, h, buf_addr + 10u32);
+    } else if mode == 1 {
+        if n >= 12 { lcd_fill(x, y, w, h, fb_rd16(buf_addr + 10u32)); }
+    } else if mode == 2 {
+        // hardware vertical scroll — VSCRSADD
+        if n >= 12 {
+            lcd_cmd(0x37);
+            var line: i32 = fb_rd16(buf_addr + 10u32);
+            lcd_dat((line >> 8) & 0xFF);
+            lcd_dat(line & 0xFF);
+        }
+    } else if mode == 3 {
+        // Set MADCTL (memory access control: rotation / mirroring).
+        // The low 8 bits of buf+10 select the ILI9488 MADCTL value.
+        // Portrait (default) = 0x48, landscape = 0x28 / 0xE8 etc.
+        if n >= 12 {
+            lcd_cmd(0x36);
+            lcd_dat(fb_rd16(buf_addr + 10u32) & 0xFF);
+        }
+    }
+    return;
+}
