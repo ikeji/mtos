@@ -17,7 +17,7 @@ FAMILY   := GW2A-18C
 TOP      ?= top_blink
 BUILD    := build
 RTL_SOC  := $(wildcard rtl/soc/*.v)
-RTL_CPU  := $(wildcard rtl/cpu/*.v)
+RTL_CPU  := $(wildcard rtl/cpu/*.v) $(wildcard rtl/sdram/*.v)
 CST      := boards/$(BOARD)/$(BOARD).cst
 
 .DELETE_ON_ERROR:
@@ -26,7 +26,8 @@ CST      := boards/$(BOARD)/$(BOARD).cst
 all: bit
 
 # ---- simulation -------------------------------------------------------
-test: $(BUILD)/tb_uart.vvp $(BUILD)/tb_top_blink.vvp test-soc test-riscv
+test: $(BUILD)/tb_uart.vvp $(BUILD)/tb_top_blink.vvp $(BUILD)/tb_sdram.vvp test-soc test-riscv
+	@vvp -N $(BUILD)/tb_sdram.vvp | tee $(BUILD)/tb_sdram.log | grep -q '^PASS' || { cat $(BUILD)/tb_sdram.log; exit 1; }
 	@vvp -N $(BUILD)/tb_uart.vvp | tee $(BUILD)/tb_uart.log | grep -q '^PASS' || { cat $(BUILD)/tb_uart.log; exit 1; }
 	@vvp -N $(BUILD)/tb_top_blink.vvp | tee $(BUILD)/tb_top_blink.log | grep -q '^PASS' || { cat $(BUILD)/tb_top_blink.log; exit 1; }
 	@echo "hw test: PASS"
@@ -71,6 +72,9 @@ test-soc: $(BUILD)/tb_soc.vvp $(BUILD)/smoke.bin $(addprefix $(BUILD)/,$(addsuff
 # riscv-tests rv32ui/rv32um (skipped unless third_party/riscv-tests is cloned)
 test-riscv: $(BUILD)/tb_soc.vvp
 	@if [ -d third_party/riscv-tests/isa ]; then tests/run_riscv_tests.sh | tail -1; else echo "riscv-tests: SKIP (git clone --depth 1 https://github.com/riscv-software-src/riscv-tests.git hw/third_party/riscv-tests)"; fi
+
+$(BUILD)/tb_sdram.vvp: sim/tb_sdram.v sim/sdram_model.v rtl/sdram/sdram_ctrl.v | $(BUILD)
+	iverilog -g2012 -o $@ $^
 
 $(BUILD)/tb_top_blink.vvp: sim/tb_top_blink.v boards/$(BOARD)/top_blink.v rtl/soc/uart_tx.v rtl/soc/uart_rx.v | $(BUILD)
 	iverilog -g2012 -o $@ $^

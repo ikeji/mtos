@@ -170,9 +170,10 @@ USB 給電と電池を同時に挿さないよう、電池側はショットキ�
   wbuart32 等) は不採用** — bitstream が派生物扱いになる余地がある。
 - コア: 退避先の PicoRV32 は ISC。他候補 (SERV ISC、VexRiscv MIT、
   FemtoRV/darkriscv BSD-3、Ibex Apache-2.0) も permissive。
-- 周辺で借りるのは実質 **SDRAM コントローラ 1 個**。nand2mario
-  (NESTang/SNESTang) 系の Tang Nano 20K 実績品 (MIT) を第一候補に
-  する。UART / CLINT / GPIO / SPI / ブート ROM は自作。
+- 周辺は結局 **全部自作** した (SDRAM コントローラ含む)。候補だった
+  nand2mario の NESTang は確認したら **GPL-3** で不採用 (2026-08-28)。
+  参照したのは apicula `doc/sdram.md` のピン表と SDRAM の構成
+  (2M×32、row 11 / col 8 / bank 2 bit) という事実だけ。
 - **Gowin 純正 IP** (IP Generator の SDRAM / PLL / DVI_TX) は EDA の
   EULA 下で生成 RTL の再配布不可 → apicula で SDRAM が動かなかった
   ときの退避先に限定し、使う場合は生成手順だけ commit して RTL は
@@ -330,7 +331,15 @@ hw/
   ma_data は core が仕様どおり trap するので skip)、test_timer.tc が
   sim と実機で TIMER_OK。発見したバグ: `cond ? $signed(x) >>> n : y`
   は unsigned 文脈で論理シフトになる (sra/srai が riscv-tests で発覚)
-- [ ] Phase 3 SDRAM + GPIO/SPI + ブート ROM (UART / flash)
+- [~] Phase 3 SDRAM + GPIO/SPI + ブート ROM (UART / flash) —
+  2026-08-28: 自作 `rtl/sdram/sdram_ctrl.v` (単一ワード ACT→R/W→
+  明示 PRECHARGE、CL=2、7.8 µs リフレッシュ、27 MHz 同相クロック) +
+  `sim/sdram_model.v`。**実機 `top_memtest` で全 2M ワード (8 MB)
+  書き→読みがエラー 0** (1 パス ~1.7 s、複数パス連続)。A10 自動
+  プリチャージだけだと行が切り替わらず 1024 ワードしか正しくなかった
+  ので明示 PRECHARGE に変更。NESTang は GPL-3 だったので不採用
+  (§4.6 訂正)。残: SoC 統合、ブート ROM + UART ローダ、GPIO/SPI、
+  flash ブート
 - [ ] Phase 4 kernel 移植 → UART で sh
 - [ ] Phase 5 LCD + キーボード → スタンドアロン (電池運用の消費電流実測含む)
 - [ ] Phase 6 SD → コンパイラ → self-replicate
