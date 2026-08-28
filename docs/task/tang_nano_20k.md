@@ -324,7 +324,12 @@ hw/
   58 MHz。副産物: dead-strip の fall-through 未対応 (`docs/problem.md`
   #46) を発見、crt0 に `j _park` で回避。
   残: riscv-tests、LUT 削減 (regfile → RAM、64-bit カウンタ縮小)
-- [ ] Phase 2 M + CSR + trap + CLINT
+- [x] Phase 2 M + CSR + trap + CLINT — 2026-08-28 完了 (Phase 1 と
+  同時)。riscv-tests rv32ui/rv32um **48/48 PASS** (`hw/tests/
+  run_riscv_tests.sh`、自前 env は PASS/FAIL を exit device に書く。
+  ma_data は core が仕様どおり trap するので skip)、test_timer.tc が
+  sim と実機で TIMER_OK。発見したバグ: `cond ? $signed(x) >>> n : y`
+  は unsigned 文脈で論理シフトになる (sra/srai が riscv-tests で発覚)
 - [ ] Phase 3 SDRAM + GPIO/SPI + ブート ROM (UART / flash)
 - [ ] Phase 4 kernel 移植 → UART で sh
 - [ ] Phase 5 LCD + キーボード → スタンドアロン (電池運用の消費電流実測含む)
