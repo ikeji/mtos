@@ -397,7 +397,13 @@ hw/
   キー入力の確認 (ユーザーが pico2 側の LCD / キーボード配線を
   Tang Nano 20K のヘッダに付け替える必要あり)、SPI flash ブート、
   電池運用の消費電流実測
-- [ ] Phase 6 SD → コンパイラ → self-replicate
+- [~] Phase 6 SD → コンパイラ → self-replicate — 2026-08-28: オンボード
+  microSD スロット (FPGA 直結、SPI モード: MISO/CS/SCK/MOSI = SDIO_D0/
+  D3/CLK/CMD = ピン 84/81/83/82) を SoC GPIO GP34〜37 に配線し、pico2 の
+  `block_sd.tc` を**無改造で** kernel_tn20k に import (SIO HI レジスタ
+  互換のおかげ)。実機ではまだ `SD: card init failed` — **microSD
+  カードが刺さっているか要確認** (刺さっていれば配線/タイミングの問題)。
+  残: カード動作確認 → `/sd` に FAT → コンパイラ pipeline → self-replicate
 - [ ] Phase 7 性能 / タッチ / HDMI
 
 ## 9. Phase 0 で得た実機の知見

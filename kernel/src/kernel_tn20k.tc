@@ -8,11 +8,12 @@
 // See docs/task/tang_nano_20k.md Phase 4.
 import "kernel_common.tc";
 import "../platform/virt/platform_virt.tc";
-// mtfs image embedded in the kernel (.incbin), XIP from SDRAM; no SD card
-// yet (tn20k Phase 6) so FAT gets the stub. NOTE: no trailing comments on
-// import lines — collect_imports.sh would not see them.
+// mtfs image embedded in the kernel (.incbin), XIP from SDRAM. FAT lives on
+// the on-board microSD, driven by the pico2 SPI bit-bang driver unchanged
+// (GP34..37 map to the slot in top_soc_sdram.v). NOTE: no trailing
+// comments on import lines — collect_imports.sh would not see them.
 import "../platform/pico2/block_flash.tc";
-import "../platform/virt/block_fat_stub.tc";
+import "../platform/pico2/block_sd.tc";
 import "mtfs.tc";
 import "fatfs.tc";
 import "vfs.tc";
@@ -252,12 +253,15 @@ fn main() -> i32 {
     kputs("MTFS: mounted\n");
 
     if fat_block_init() == 0 {
+        kputs("SD: card ready\n");
         if fatfs_mount() == 0 {
             kputs("FATFS: mounted\n");
             vfs_set_fatfs_ready();
         } else {
             kputs("FATFS: mount failed\n");
         }
+    } else {
+        kputs("SD: card init failed (no card / wiring?)\n");
     }
 
     cat_hello_txt();
