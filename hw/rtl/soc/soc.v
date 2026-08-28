@@ -93,9 +93,15 @@ module soc #(
     wire        sd_ready, sd_init_done;
     wire        sd_valid;   // held while the access is in flight (refresh may delay acceptance)
     generate if (USE_SDRAM) begin : g_sdram
-        sdram_ctrl #(.CLK_HZ(CLK_HZ)) sd (
+        // 8 KB direct-mapped write-through cache in front of the SDRAM
+        wire c_valid, c_ready; wire [20:0] c_addr; wire [31:0] c_wdata, c_rdata; wire [3:0] c_wstrb;
+        sdram_cache #(.LINES(2048)) cache (
             .clk(clk), .rst(rst), .valid(sd_valid), .ready(sd_ready),
-            .addr(mem_addr[22:2]), .wdata(mem_wdata), .wstrb(mem_wstrb), .rdata(ram_q), .init_done(sd_init_done),
+            .addr(mem_addr[22:2]), .wdata(mem_wdata), .wstrb(mem_wstrb), .rdata(ram_q),
+            .m_valid(c_valid), .m_ready(c_ready), .m_addr(c_addr), .m_wdata(c_wdata), .m_wstrb(c_wstrb), .m_rdata(c_rdata));
+        sdram_ctrl #(.CLK_HZ(CLK_HZ)) sd (
+            .clk(clk), .rst(rst), .valid(c_valid), .ready(c_ready),
+            .addr(c_addr), .wdata(c_wdata), .wstrb(c_wstrb), .rdata(c_rdata), .init_done(sd_init_done),
             .sdram_clk(sdram_clk), .sdram_cke(sdram_cke), .sdram_cs_n(sdram_cs_n), .sdram_ras_n(sdram_ras_n),
             .sdram_cas_n(sdram_cas_n), .sdram_we_n(sdram_we_n), .sdram_addr(sdram_addr), .sdram_ba(sdram_ba),
             .sdram_dqm(sdram_dqm), .sdram_dq(sdram_dq));
