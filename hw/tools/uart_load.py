@@ -7,6 +7,7 @@ ap = argparse.ArgumentParser()
 ap.add_argument('-p', '--port', default='/dev/ttyUSB1')
 ap.add_argument('-b', '--baud', type=int, default=115200)
 ap.add_argument('-t', '--tail', type=float, default=5.0)
+ap.add_argument('-i', '--interactive', action='store_true', help='after K, raw terminal (Ctrl-a x quits)')
 ap.add_argument('bin')
 a = ap.parse_args()
 data = open(a.bin, 'rb').read()
@@ -34,6 +35,27 @@ if b'K' in resp:
     print(f'[uart_load] {len(data)} bytes OK in {dt:.1f}s', file=sys.stderr)
     out = resp[resp.index(b'K') + 1:]
     sys.stdout.buffer.write(out); sys.stdout.flush()
+    if a.interactive:
+        import tty, select
+        old = termios.tcgetattr(sys.stdin.fileno()); tty.setraw(sys.stdin.fileno())
+        try:
+            esc = False
+            while True:
+                r, _, _ = select.select([fd, sys.stdin.fileno()], [], [], 0.05)
+                if fd in r:
+                    try: sys.stdout.buffer.write(os.read(fd, 4096)); sys.stdout.flush()
+                    except BlockingIOError: pass
+                if sys.stdin.fileno() in r:
+                    c = os.read(sys.stdin.fileno(), 1)
+                    if esc:
+                        esc = False
+                        if c == b'x': break
+                        os.write(fd, b'\x01' + c)
+                    elif c == b'\x01': esc = True
+                    else: os.write(fd, c)
+        finally:
+            termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, old); print()
+        sys.exit(0)
     if a.tail > 0:
         end = time.time() + a.tail
         while time.time() < end:

@@ -97,9 +97,9 @@ module soc #(
     uart_rx #(.CLK_HZ(CLK_HZ), .BAUD(BAUD)) urx (.clk(clk), .rst(rst), .rx(uart_rx), .data(rx_data), .valid(rx_valid));
     reg  [7:0] tx_data; reg tx_valid; wire tx_busy;
     uart_tx #(.CLK_HZ(CLK_HZ), .BAUD(BAUD)) utx (.clk(clk), .rst(rst), .data(tx_data), .valid(tx_valid), .busy(tx_busy), .tx(uart_tx));
-    // 16-byte RX FIFO
-    reg [7:0] rxf [0:15];
-    reg [3:0] rx_wp, rx_rp;
+    // 64-byte RX FIFO (the kernel drains it from the 1 ms timer tick)
+    reg [7:0] rxf [0:63];
+    reg [5:0] rx_wp, rx_rp;
     wire rx_empty = (rx_wp == rx_rp);
     always @(posedge clk) begin
         if (rst) rx_wp <= 0;

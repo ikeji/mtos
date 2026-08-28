@@ -69,9 +69,12 @@ $(SHARED_S):       _userland-shared
 # ----- Kernel sources -----
 KERNEL_TC_SOURCES := $(wildcard $(ROOT)/kernel/src/*.tc) \
                      $(wildcard $(ROOT)/kernel/platform/virt/*.tc) \
-                     $(wildcard $(ROOT)/kernel/platform/pico2/*.tc)
+                     $(wildcard $(ROOT)/kernel/platform/pico2/*.tc) \
+                     $(wildcard $(ROOT)/kernel/platform/tn20k/*.tc)
 KERNEL_S_SOURCES  := $(ROOT)/kernel/platform/virt/platform_virt.s \
                      $(ROOT)/kernel/platform/pico2/platform_pico2.s \
+                     $(ROOT)/kernel/platform/tn20k/platform_tn20k.s \
+                     $(ROOT)/kernel/platform/tn20k/crt0_tn20k_data.s \
                      $(ROOT)/kernel/src/trap_common.s \
                      $(ROOT)/kernel/platform/virt/crt0_data.s \
                      $(ROOT)/kernel/platform/pico2/crt0_pico2_data.s \
@@ -320,6 +323,47 @@ $(BUILD_DIR)/pico2_kernel_console_land.uf2: PICO2_DISK := $(BUILD_DIR)/disk-cons
 $(BUILD_DIR)/pico2_kernel_console_land.uf2: $(KERNEL_COMPILE_DEPS) $(BUILD_DIR)/disk-console-land.img \
     $(ROOT)/userland/scripts/bin2s_incbin.sh $(GEN2_DIR)/bin2uf2 | $(BUILD_DIR)
 	$(PICO2_KERNEL_RECIPE)
+
+# ===== tn20k kernel (Tang Nano 20K, hw/ SoC): raw bin, mtfs embedded like pico2 =====
+# Loaded into SDRAM at 0x80000000 by the hw/ boot ROM (hw/tools/uart_load.py).
+tn20k:       $(BUILD_DIR)/tn20k_kernel.bin
+tn20k-extra: $(BUILD_DIR)/tn20k_kernel_extra.bin
+
+define TN20K_KERNEL_RECIPE
+	@echo "Building kernel: tn20k (disk=$(TN20K_DISK))" >&2
+	@_tmp=$$(mktemp -d) && \
+	_labdir=$(ROOT)/build/intermediate/gen2/kernel_tn20k && \
+	mkdir -p "$$_labdir" && \
+	cp $(TN20K_DISK) "$$_labdir/dx.img" && \
+	cd $(ROOT) && userland/scripts/bin2s_incbin.sh $(TN20K_DISK) _mtfs_image dx.img > "$$_tmp/mtfs_image.s" && \
+	cd $(ROOT) && CRT0="kernel/platform/tn20k/platform_tn20k.s kernel/src/trap_common.s" \
+	    CRT0_DATA="kernel/platform/tn20k/crt0_tn20k_data.s $$_tmp/mtfs_image.s" \
+	    ASM_PROLOGUE="; raw" GEN2_DIR=compiler/build/gen2 \
+	    CACHED_S_DIR=userland/build/shared \
+	    ./compiler/scripts/compile-gen2.sh -o $@ kernel/src/kernel_tn20k.tc 2>/dev/null && \
+	_ksz=$$(wc -c < $@) && _dsz=$$(wc -c < $(TN20K_DISK)) && \
+	printf '  kernel.bin: %s bytes, disk: %s bytes\n' "$$_ksz" "$$_dsz" >&2 && \
+	rm -rf "$$_tmp"
+endef
+
+$(BUILD_DIR)/tn20k_kernel.bin: TN20K_DISK := $(BUILD_DIR)/disk.img
+$(BUILD_DIR)/tn20k_kernel.bin: $(KERNEL_COMPILE_DEPS) $(BUILD_DIR)/disk.img \
+    $(ROOT)/userland/scripts/bin2s_incbin.sh | $(BUILD_DIR)
+	$(TN20K_KERNEL_RECIPE)
+
+$(BUILD_DIR)/tn20k_kernel_extra.bin: TN20K_DISK := $(BUILD_DIR)/disk-extra.img
+$(BUILD_DIR)/tn20k_kernel_extra.bin: $(KERNEL_COMPILE_DEPS) $(BUILD_DIR)/disk-extra.img \
+    $(ROOT)/userland/scripts/bin2s_incbin.sh | $(BUILD_DIR)
+	$(TN20K_KERNEL_RECIPE)
+
+# run-tn20k: flash the SoC bitstream (hw/), load the kernel through the
+# boot ROM and open an interactive UART terminal (Ctrl-a x to quit).
+run-tn20k: tn20k
+	$(MAKE) -C $(ROOT)/hw TOP=top_soc_sdram flash
+	sleep 0.5 && python3 $(ROOT)/hw/tools/uart_load.py -i $(BUILD_DIR)/tn20k_kernel.bin
+run-tn20k-extra: tn20k-extra
+	$(MAKE) -C $(ROOT)/hw TOP=top_soc_sdram flash
+	sleep 0.5 && python3 $(ROOT)/hw/tools/uart_load.py -i $(BUILD_DIR)/tn20k_kernel_extra.bin
 
 # ===== FAT32 disk image (second virtio-blk drive for virt) =====
 MKFS_FAT := $(shell which mkfs.fat 2>/dev/null || echo /sbin/mkfs.fat)
