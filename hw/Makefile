@@ -39,6 +39,15 @@ $(BUILD)/tb_soc.vvp: sim/tb_soc.v $(SOC_SRCS) | $(BUILD)
 $(BUILD)/smoke.bin: tools/mkasm_smoke.py | $(BUILD)
 	python3 $< $@
 
+# ---- TC programs for the SoC (compile-gen2.sh with the tn20k crt0) ----
+ROOT     := ..
+GEN2_DIR ?= $(ROOT)/compiler/build/gen2
+TC_CRT0  := sw/crt0_tn20k.s
+# make tc BIN=build/hello2.bin from compiler/tests/hello2.tc etc.
+$(BUILD)/%.bin: $(ROOT)/compiler/tests/%.tc $(TC_CRT0) | $(BUILD)
+	cd $(ROOT) && CRT0=hw/$(TC_CRT0) ASM_PROLOGUE='; raw' GEN2_DIR=compiler/build/gen2 \
+	    ./compiler/scripts/compile-gen2.sh -o hw/$@ compiler/tests/$*.tc 2>/dev/null
+
 # make run BIN=path/to/raw.bin [TIMEOUT=cycles]
 BIN ?= $(BUILD)/smoke.bin
 TIMEOUT ?= 2000000
@@ -46,9 +55,18 @@ run: $(BUILD)/tb_soc.vvp $(BIN)
 	python3 tools/bin2hex.py $(BIN) $(BUILD)/run.hex
 	vvp -N $(BUILD)/tb_soc.vvp +hex=$(BUILD)/run.hex +timeout=$(TIMEOUT)
 
-test-soc: $(BUILD)/tb_soc.vvp $(BUILD)/smoke.bin
+# TC programs are only run when the Gen2 toolchain has been built
+# (`make -C compiler gen2`); otherwise just the hand-encoded smoke.
+TC_TESTS := $(if $(wildcard $(GEN2_DIR)/asm_pass3),hello2 test_timer,)
+test-soc: $(BUILD)/tb_soc.vvp $(BUILD)/smoke.bin $(addprefix $(BUILD)/,$(addsuffix .bin,$(TC_TESTS)))
 	@python3 tools/bin2hex.py $(BUILD)/smoke.bin $(BUILD)/smoke.hex
-	@vvp -N $(BUILD)/tb_soc.vvp +hex=$(BUILD)/smoke.hex 2>&1 | grep -q '^\[tb\] PASS' || { echo "test-soc: FAIL"; exit 1; }
+	@vvp -N $(BUILD)/tb_soc.vvp +hex=$(BUILD)/smoke.hex 2>&1 | grep -q '^\[tb\] PASS' || { echo "test-soc: smoke FAIL"; exit 1; }
+	@for t in $(TC_TESTS); do \
+	    python3 tools/bin2hex.py $(BUILD)/$$t.bin $(BUILD)/$$t.hex; \
+	    vvp -N $(BUILD)/tb_soc.vvp +hex=$(BUILD)/$$t.hex +timeout=60000000 > $(BUILD)/$$t.log 2>&1; \
+	    grep -q '^\[tb\] PASS' $(BUILD)/$$t.log || { echo "test-soc: $$t FAIL"; tail -5 $(BUILD)/$$t.log; exit 1; }; \
+	    echo "test-soc: $$t PASS"; \
+	done
 
 $(BUILD)/tb_top_blink.vvp: sim/tb_top_blink.v boards/$(BOARD)/top_blink.v rtl/soc/uart_tx.v rtl/soc/uart_rx.v | $(BUILD)
 	iverilog -g2012 -o $@ $^

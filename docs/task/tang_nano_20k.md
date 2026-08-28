@@ -312,15 +312,18 @@ hw/
   test` (iverilog 2 本) PASS、`make -C hw bit` → LUT4 303、実機で
   `hw/tests/test_blink.sh` PASS (JTAG 書き込み → UART echo)。
   bitstream 実測 ~580 KB。得られた知見は §9
-- [~] Phase 1 RV32IM コア — 2026-08-28: `rtl/cpu/rv32_core.v`
-  (RV32IM + Zicsr、マルチサイクル FSM、mul/div 逐次 32 cycle、
-  M-mode CSR、trap、timer irq) + `rtl/soc/soc.v` (virt 互換マップ:
-  UART 0x1000_0000 / CLINT 0x0200_0000 / exit 0x0010_0000 / RAM
-  0x8000_0000) + `ram32.v`。hand-encode の smoke (`tools/mkasm_smoke.py`)
-  が iverilog (`make -C hw run`) と **実機 BSRAM 32 KB** の両方で
-  "Hi" + exit 0x5555。LUT4 ~8000 (38%) / DFF ~2000 / Fmax 58 MHz。
-  残: hello2.tc raw bin (要 RISC-V gcc + Gen2)、riscv-tests、
-  LUT 削減 (regfile を RAM に、64-bit カウンタ縮小)
+- [x] Phase 1 RV32IM コア — 2026-08-28 完了。`rtl/cpu/rv32_core.v`
+  (RV32IM + Zicsr、マルチサイクル FSM、mul/div 逐次 32 cycle、M-mode
+  CSR、trap、timer irq) + `rtl/soc/soc.v` (virt 互換マップ: UART
+  0x1000_0000 / CLINT 0x0200_0000 / exit 0x0010_0000 / RAM 0x8000_0000)
+  + `ram32.v`。**hello2.tc (compile-gen2.sh + `hw/sw/crt0_tn20k*.s`)
+  が iverilog と実機 BSRAM 32 KB の両方で "Hello, World"**、
+  test_timer.tc も sim で TIMER_OK (Phase 2 の CSR / timer 割り込みは
+  実質できている)。`make -C hw test` = uart / top_blink / smoke /
+  hello2 / test_timer (~2 s)。LUT4 ~8000 (38%) / DFF ~2000 / Fmax
+  58 MHz。副産物: dead-strip の fall-through 未対応 (`docs/problem.md`
+  #46) を発見、crt0 に `j _park` で回避。
+  残: riscv-tests、LUT 削減 (regfile → RAM、64-bit カウンタ縮小)
 - [ ] Phase 2 M + CSR + trap + CLINT
 - [ ] Phase 3 SDRAM + GPIO/SPI + ブート ROM (UART / flash)
 - [ ] Phase 4 kernel 移植 → UART で sh

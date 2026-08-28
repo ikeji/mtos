@@ -14,6 +14,28 @@ module tb_soc;
     wire [7:0] ch; wire chv;
     uart_rx #(.CLK_HZ(27_000_000), .BAUD(2_700_000)) mon (.clk(clk), .rst(rst), .rx(uart_tx), .data(ch), .valid(chv));
     always @(posedge clk) if (chv) $write("%c", ch);
+    // Trap trace: the first 16 traps are always printed (cheap, and the
+    // usual reason a program hangs).
+    integer ntrap = 0, k;
+    reg [31:0] hist [0:255]; integer hp = 0;
+    reg exec_d = 0; integer trace_n = 0, traced = 0;
+    initial if (!$value$plusargs("trace=%d", trace_n)) trace_n = 0;
+    always @(posedge clk) begin
+        exec_d <= (dut.cpu.state == 3'd1);
+        if (dut.cpu.state == 3'd1 && !exec_d) begin
+            hist[hp] = dut.cpu.pc; hp = (hp + 1) % 256;
+            if (traced < trace_n) begin traced = traced + 1; $display("[tb] pc=%08x instr=%08x", dut.cpu.pc, dut.cpu.instr); end
+        end
+    end
+    always @(posedge clk) if (dut.cpu.state == 3'd4 && ntrap < 16) begin
+        ntrap = ntrap + 1;
+        $display("[tb] trap cause=%08x epc=%08x tval=%08x", dut.cpu.trap_cause, dut.cpu.trap_epc, dut.cpu.trap_tval);
+        if (ntrap == 1 && !dut.cpu.trap_cause[31]) begin   // exceptions only, not interrupts
+            $write("[tb] last pcs:");
+            for (k = 0; k < 256; k = k + 1) $write(" %08x", hist[(hp + k) % 256]);
+            $write("\n");
+        end
+    end
     integer cyc = 0;
     always @(posedge clk) begin
         cyc = cyc + 1;

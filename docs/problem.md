@@ -298,3 +298,25 @@ sender を合わせる)** か **mr のスループット改善**:
 - 旧: 大容量は host 側で SD 抜いて manual cp (`pico2_link_kernel_run.sh
   SKIP_UPLOAD=1`、walked-source 退役時に削除 commit 4fd9027)
 
+
+### 46. asm_pass2 dead-strip は fall-through を辺として扱わない (limitation、2026-08-28)
+
+**現象**: `compiler/tests/virt_crt0.s` の `_start` は `call main` の直後に
+`_park:` (exit device 書き込み) が続き、main が return すると fall-through
+で `_park` に入る想定だった。しかし dead-strip (`docs/task/asm_dead_strip.md`)
+はシンボル単位の参照グラフ + BFS で live set を作るので、`_park` を参照
+するのが `do_exit__i32` (`j _park`) だけ、かつプログラムが exit を呼ばない
+(hello2.tc) と `do_exit` ごと `_park` が strip され、main return 後の
+実行が次のシンボル `_trap_entry` に落ちる。qemu virt の test_asm.sh は
+UART 出力の grep だけなので発覚せず、hw/ の SoC シミュレーション
+(exit device で終了判定) で発見。
+
+**回避**: crt0 側で `call main` の直後に `j _park` を置き、明示参照で
+live にした (virt_crt0.s / hw/sw/crt0_tn20k.s)。kernel の
+platform_*.s は `do_exit` が live なので該当しない。
+
+**本質的な修正案**: asm_pass2 で「シンボル X が live で、X のブロック末尾が
+無条件ジャンプ (`j` / `jr` / `ret` / `mret` / `tail` / `jalr x0`) でない
+なら、同一セクションの次シンボル Y も live」という fall-through 辺を
+BFS に足す。コンパイラ変更なので Gen2==Gen3 + 実機 byte-exact の
+再検証が必要。

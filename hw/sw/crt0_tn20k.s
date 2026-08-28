@@ -1,4 +1,5 @@
-# tests/virt_crt0.s — minimal crt0 for qemu-system-riscv32 -M virt
+# hw/sw/crt0_tn20k.s — crt0 for the hw/ SoC (derived from compiler/tests/virt_crt0.s;
+# only sp differs: the SoC has 8 MB of RAM at 0x80000000, qemu virt has 128 MB)
 #
 # Used by tests/test_asm.sh to run TC programs end-to-end on the virt
 # machine. UART output goes to 16550 @ 0x10000000 (no THRE wait — qemu
@@ -13,9 +14,9 @@
     .globl _start
 _start:
     la   gp, __global_pointer$
-    # RAM on `-machine virt -m 128` is 0x80000000..0x88000000.
+    # RAM on the SoC is 0x80000000..0x80800000 (8 MB SDRAM / sim).
     # Point sp at the top so stack grows downward through free RAM.
-    li   sp, 0x88000000
+    li   sp, 0x80800000
     la   a0, __arena
     li   a1, 4648960
     call __runtime_init__u32__i32
