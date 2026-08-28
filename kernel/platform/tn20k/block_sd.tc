@@ -17,9 +17,9 @@ fn uart_rx_drain() -> void;
 const SD_SPI_DATA:   u32 = 0x10030000u32;
 const SD_SPI_STATUS: u32 = 0x10030004u32;
 const SD_SPI_CTRL:   u32 = 0x10030008u32;
-const SD_DIV_INIT:   u32 = 33u32;   // 27 MHz / (2*34) ≈ 397 kHz
-const SD_DIV_FAST:   u32 = 0u32;    // 13.5 MHz
-var g_sd_div: u32 = 33u32;
+const SD_DIV_INIT:   u32 = 50u32;   // 40.5 MHz / (2*51) ≈ 397 kHz (27 MHz → 265 kHz, still in spec)
+const SD_DIV_FAST:   u32 = 0u32;    // clk/2 = 20.25 MHz at 40.5 MHz (SD SPI mode allows 25)
+var g_sd_div: u32 = 50u32;
 // ----- module state -----
 var g_sd_sdhc:        i32 = 0;     // 1 = SDHC, 0 = SDSC
 var g_sd_inited:      i32 = 0;

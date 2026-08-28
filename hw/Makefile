@@ -15,6 +15,7 @@ export PATH := $(OSS_CAD)/bin:$(PATH)
 
 # UART baud for the SoC tops (boot ROM loader + kernel console). 921600
 # loads a 2.2 MB kernel in ~25 s; use UART_BAUD=115200 for the old rate.
+SYS_CLK_HZ ?= 40500000   # rPLL x1.5 (top_soc_sdram only; Fmax ~46 MHz). 27000000 = crystal direct. kernel/tn20k timer + SD + LCD constants assume 40.5
 UART_BAUD ?= 115200   # 921600 works for uart_load (kernel in 24 s) but the SoC's own TX garbles at that rate — under investigation
 BOARD    := tang_nano_20k
 DEVICE   := GW2AR-LV18QN88C8/I7
@@ -118,11 +119,11 @@ $(BUILD)/prog.hex: $(PROG) | $(BUILD)
 	python3 tools/bin2hex.py $< $@
 
 $(BUILD)/$(TOP).json: boards/$(BOARD)/$(TOP).v $(RTL_SOC) $(RTL_CPU) $(BUILD)/prog.hex $(BUILD)/bootrom.hex | $(BUILD)
-	yosys -q -l $(BUILD)/$(TOP).yosys.log -p "read_verilog -sv $(if $(UART_BAUD),-DUART_BAUD=$(UART_BAUD)) $(filter %.v,$^); synth_gowin -top $(TOP) -json $@"
+	yosys -q -l $(BUILD)/$(TOP).yosys.log -p "read_verilog -sv $(if $(UART_BAUD),-DUART_BAUD=$(UART_BAUD)) -DSYS_CLK_HZ=$(SYS_CLK_HZ) $(if $(USE_CACHE),-DUSE_CACHE=$(USE_CACHE)) $(filter %.v,$^); synth_gowin -top $(TOP) -json $@"
 
 $(BUILD)/$(TOP)_pnr.json: $(BUILD)/$(TOP).json $(CST)
 	nextpnr-himbaechel -q -l $(BUILD)/$(TOP).pnr.log --json $< --write $@ \
-	    --device $(DEVICE) --vopt family=$(FAMILY) --vopt cst=$(CST) --freq 27
+	    --device $(DEVICE) --vopt family=$(FAMILY) --vopt cst=$(CST) --freq $(shell echo $$(( $(SYS_CLK_HZ) / 1000000 )))
 
 $(BUILD)/$(TOP).fs: $(BUILD)/$(TOP)_pnr.json
 	gowin_pack -d $(FAMILY) --mspi_as_gpio -o $@ $<   # mspi_as_gpio: the boot ROM bit-bangs the config flash

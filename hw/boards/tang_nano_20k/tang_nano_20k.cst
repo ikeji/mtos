@@ -1,6 +1,8 @@
 // Tang Nano 20K pin constraints (GW2AR-LV18QN88). Bank voltages are 3.3 V.
 IO_LOC "clk" 4;
 IO_PORT "clk" PULL_MODE=UP;
+IO_LOC "clk27" 4;
+IO_PORT "clk27" PULL_MODE=UP;
 
 // Buttons S1 / S2. They read LOW when idle and HIGH when pressed
 // (active high) — a design that gates reset on ~key[0] never starts.

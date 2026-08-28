@@ -27,8 +27,11 @@ band-blit 経由で LCD に DOOM ロゴ + Doomguy を表示するまで到達。
   `run-tn20k`。`make -C hw test` (~10 s) が sim 一式、実機は
   `hw/tests/test_{blink,soc_hw,kernel_hw}.sh`。**SPI flash ブート済**
   (`hw/tools/flash_kernel.sh` + `make -C hw flash-rom` で電源投入のみで
-  `sh$`、14 s)。GPIO (SIO 互換) + LCD/キーボードドライバ移植済で
-  配線待ち。次: 配線 → LCD console、電池運用
+  `sh$`、14 s)。microSD (HW SPI) で `/sd` 読み書き OK、**コンパイラ
+  pipeline を実機で完走 (hw.tc → Hello, World!、304 s)**、8 KB キャッシュ
+  + 40.5 MHz。副産物: mkfs.tc の末尾切り落としバグ修正 (solved.md
+  #48)。GPIO (SIO 互換) + LCD/キーボードドライバ移植済で配線待ち。
+  次: 配線 → LCD console、コア高速化 → self-replicate
 **最近の改善 (K21 / K22 / 2026-07-05〜08)**:
 - 2026-07-08 (夕): **リファクタ 6 連 (A〜D) 完走**
   (`docs/task/refactor_candidates.md`)。①S 式リーダ + classify_kind /

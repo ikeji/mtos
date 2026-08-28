@@ -3,7 +3,7 @@
 // block mirrors the RP2350 SIO register layout (hw/rtl/soc/gpio_sio.v) and
 // GP38..44 carry the same roles, so only two things differ:
 //   * g_lcd_use_pio = 0 — no PIO on the SoC, SCK/MOSI are bit-banged via SIO
-//   * LCD_MTIME_PER_MS = 27000 — mtime runs at the 27 MHz CPU clock
+//   * LCD_MTIME_PER_MS = 40500 — mtime runs at the 40.5 MHz CPU clock (hw/Makefile SYS_CLK_HZ)
 // IO_BANK0 / PADS / RESETS / PIO2 addresses are unmapped on the SoC (writes
 // ignored, reads 0); pull-ups are static pin attributes in the .cst.
 // Keep this file in sync with the pico2 original when it changes.
@@ -49,7 +49,7 @@ const LCD_PAD_RST:  u32 = 0x0B0u32;
 const LCD_PAD_BL:   u32 = 0x0B4u32;
 
 // SIO MTIME tick rate on the Pico 2 (~131.5 MHz — see kernel_pico2.tc).
-const LCD_MTIME_PER_MS: u32 = 27000u32;
+const LCD_MTIME_PER_MS: u32 = 40500u32;
 
 // ===== PIO2 SPI for SCK (GP40) + MOSI (GP41) =====
 //

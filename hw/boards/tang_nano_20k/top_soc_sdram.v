@@ -8,7 +8,7 @@
 //   ILI9488 DC/CS/SCK/MOSI/MISO/RST/BL = GP38..GP44 → header pins 76 42 41 48 49 86 72
 //   on-board microSD (SPI mode) = SoC SPI master 1 (0x1003_0000) → SDIO_D0/D3/CLK/CMD = pins 84 81 83 82
 module top_soc_sdram (
-    input  wire       clk, input wire [1:0] key, output wire [5:0] led,
+    input  wire       clk27, input wire [1:0] key, output wire [5:0] led,
     input  wire       uart_rx, output wire uart_tx,
     inout  wire [10:0] kbd,      // GP1..GP10, GP12 (index 10 = GP12)
     inout  wire [6:0]  lcd,      // GP38..GP44
@@ -22,11 +22,25 @@ module top_soc_sdram (
 `ifndef UART_BAUD
 `define UART_BAUD 115200
 `endif
-    reg [8:0] por = 0; wire rst = ~por[8] | key[0];
+`ifndef USE_CACHE
+`define USE_CACHE 1
+`endif
+`ifndef SYS_CLK_HZ
+`define SYS_CLK_HZ 27000000
+`endif
+    // System clock: the 27 MHz crystal directly, or the rPLL at 40.5 MHz
+    // (make SYS_CLK_HZ=40500000). Everything downstream is clocked by `clk`.
+    wire clk, pll_lock;
+    generate if (`SYS_CLK_HZ == 40500000) begin : g_pll
+        pll_40m5 pll (.clkin(clk27), .clkout(clk), .lock(pll_lock));
+    end else begin : g_nopll
+        assign clk = clk27; assign pll_lock = 1'b1;
+    end endgenerate
+    reg [8:0] por = 0; wire rst = ~por[8] | key[0] | ~pll_lock;
     always @(posedge clk) if (!por[8]) por <= por + 1'b1;
     wire [31:0] exit_code; wire exit_valid;
     wire [47:0] go, goe; wire [47:0] gi;
-    soc #(.USE_SDRAM(1), .CLK_HZ(27_000_000), .BAUD(`UART_BAUD), .RESET_PC(32'h0), .ROM_WORDS(2048), .ROM_INIT("build/bootrom.hex")) u_soc (
+    soc #(.USE_SDRAM(1), .USE_CACHE(`USE_CACHE), .CLK_HZ(`SYS_CLK_HZ), .BAUD(`UART_BAUD), .RESET_PC(32'h0), .ROM_WORDS(2048), .ROM_INIT("build/bootrom.hex")) u_soc (
         .clk(clk), .rst(rst), .uart_rx(uart_rx), .uart_tx(uart_tx),
         .sdram_clk(O_sdram_clk), .sdram_cke(O_sdram_cke), .sdram_cs_n(O_sdram_cs_n), .sdram_ras_n(O_sdram_ras_n), .sdram_cas_n(O_sdram_cas_n), .sdram_we_n(O_sdram_wen_n),
         .sdram_addr(O_sdram_addr), .sdram_ba(O_sdram_ba), .sdram_dqm(O_sdram_dqm), .sdram_dq(IO_sdram_dq),

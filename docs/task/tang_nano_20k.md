@@ -411,9 +411,17 @@ hw/
   空きクラスタ探索、読み戻し一致)。SDRAM 前段に 8 KB ダイレクトマップ
   ・ライトスルーキャッシュ (`rtl/sdram/sdram_cache.v`、Phase 7 前倒し)
   を入れて 64 KB read 62 → 28.7 s、write 173 → 102 s、起動 15.8 →
-  13.5 s (flash 読み出しが大半)。残: コンパイラ pipeline (tn20k-extra
-  kernel) の実機実行、self-replicate。実用速度はさらにコア高速化が要る。
-- [~] Phase 7 性能 — 8 KB キャッシュ済 (上記)。次候補: 4 ワード行 + 連続バースト、regfile を RAM 化 (LUT 削減)、5 段パイプライン、クロック引き上げ (Fmax ~50 MHz なので 27 → 40.5 MHz は PLL だけで可能)。タッチ / HDMI は未着手
+  13.5 s (flash 読み出しが大半)。**コンパイラ pipeline 実機完走**
+  (2026-08-29): `make -C kernel tn20k-extra` (4.6 MB、flash 0x100000
+  から 22 s で起動) で test_phase7 と同じ 15 段 (parse → sigscan → cat
+  wrap → tcheck → codegen → bc2asm → asm_pass1 → asm_pass2 → asm_pass3
+  → 実行) を UART から流し、**`/tmp/hw` が "Hello, World!"** (304 s、
+  asm_pass2 212 s / asm_pass3 36 s が支配的; 40.5 MHz + キャッシュ)。
+  途中で mkfs.tc の末尾切り落としバグ (`docs/solved.md` #48、qemu でも
+  再現) を発見・修正。残: self-replicate (kernel + コンパイラ 8 本を
+  実機で再生成し byte-exact) — pico2 で ~55 min だったので、この CPU
+  では数時間規模。コア高速化が先。
+- [~] Phase 7 性能 — 8 KB キャッシュ + **rPLL で 40.5 MHz (既定、`hw/rtl/soc/pll_40m5.v`、Fmax 46 MHz、PnR ~20 min)**: SD 64 KB read 28.7 → 18.4 s。次候補: 4 ワード行 + 連続バースト、regfile を RAM 化 (LUT 削減)、5 段パイプライン。タッチ / HDMI は未着手
 
 ## 9. Phase 0 で得た実機の知見
 

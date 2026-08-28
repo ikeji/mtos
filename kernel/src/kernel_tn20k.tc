@@ -41,9 +41,9 @@ const MTIMECMP_LO: u32 = 0x02004000u32;
 const MTIMECMP_HI: u32 = 0x02004004u32;
 const MTIME_LO: u32    = 0x0200BFF8u32;
 const MTIME_HI: u32    = 0x0200BFFCu32;
-// hw/ SoC CLINT mtime runs at the CPU clock (27 MHz), so 27_000 ticks
+// hw/ SoC CLINT mtime runs at the CPU clock (40.5 MHz rPLL; hw/Makefile SYS_CLK_HZ), so 40_500 ticks
 // ≈ 1 ms between preemptions.
-const TIMER_INTERVAL: u32 = 27000u32;
+const TIMER_INTERVAL: u32 = 40500u32;
 
 // Provided to kernel_common (called from trap_handler). 64-bit
 // mtimecmp update: (a) guard against a spurious interrupt during the
@@ -70,9 +70,9 @@ fn read_mtime_hi() -> u32 {
     return peek32(MTIME_HI);
 }
 
-// 27 MHz CLINT: 27000 ticks per millisecond
+// 40.5 MHz CLINT: 40500 ticks per millisecond
 fn ticks_per_ms() -> u32 {
-    return 27000u32;
+    return 40500u32;
 }
 
 // ===== goldfish-rtc (qemu virt) — backs /dev/rtc via rtc.tc =====

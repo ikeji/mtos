@@ -21,6 +21,7 @@ module soc #(
     parameter integer BAUD      = 115_200,
     parameter         RAM_INIT  = "",            // $readmemh base name (BSRAM mode)
     parameter integer USE_SDRAM = 0,
+    parameter integer USE_CACHE = 1,             // sdram_cache in front of the SDRAM
     parameter integer ROM_WORDS = 2048,          // 8 KB boot ROM
     parameter         ROM_INIT  = "",
     parameter [31:0]  RESET_PC  = 32'h8000_0000,
@@ -93,12 +94,17 @@ module soc #(
     wire        sd_ready, sd_init_done;
     wire        sd_valid;   // held while the access is in flight (refresh may delay acceptance)
     generate if (USE_SDRAM) begin : g_sdram
-        // 8 KB direct-mapped write-through cache in front of the SDRAM
+        // 8 KB direct-mapped write-through cache in front of the SDRAM (USE_CACHE=0 bypasses it)
         wire c_valid, c_ready; wire [20:0] c_addr; wire [31:0] c_wdata, c_rdata; wire [3:0] c_wstrb;
-        sdram_cache #(.LINES(2048)) cache (
-            .clk(clk), .rst(rst), .valid(sd_valid), .ready(sd_ready),
-            .addr(mem_addr[22:2]), .wdata(mem_wdata), .wstrb(mem_wstrb), .rdata(ram_q),
-            .m_valid(c_valid), .m_ready(c_ready), .m_addr(c_addr), .m_wdata(c_wdata), .m_wstrb(c_wstrb), .m_rdata(c_rdata));
+        if (USE_CACHE) begin : g_cache
+            sdram_cache #(.LINES(2048)) cache (
+                .clk(clk), .rst(rst), .valid(sd_valid), .ready(sd_ready),
+                .addr(mem_addr[22:2]), .wdata(mem_wdata), .wstrb(mem_wstrb), .rdata(ram_q),
+                .m_valid(c_valid), .m_ready(c_ready), .m_addr(c_addr), .m_wdata(c_wdata), .m_wstrb(c_wstrb), .m_rdata(c_rdata));
+        end else begin : g_nocache
+            assign c_valid = sd_valid; assign sd_ready = c_ready; assign c_addr = mem_addr[22:2];
+            assign c_wdata = mem_wdata; assign c_wstrb = mem_wstrb; assign ram_q = c_rdata;
+        end
         sdram_ctrl #(.CLK_HZ(CLK_HZ)) sd (
             .clk(clk), .rst(rst), .valid(c_valid), .ready(c_ready),
             .addr(c_addr), .wdata(c_wdata), .wstrb(c_wstrb), .rdata(c_rdata), .init_done(sd_init_done),
