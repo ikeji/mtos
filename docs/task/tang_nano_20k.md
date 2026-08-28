@@ -347,7 +347,25 @@ hw/
   UART へ余計なバイトを送らない (uart_probe.py の "ping" で 1 回
   はまった)。残: GPIO / SPI master (Phase 5 で LCD と一緒に)、SPI
   flash ブート (Phase 5 の後)
-- [ ] Phase 4 kernel 移植 → UART で sh
+- [x] Phase 4 kernel 移植 → UART で sh — 2026-08-28 完了。
+  `kernel/src/kernel_tn20k.tc` (virt 版ベース、mtfs は pico2 方式で
+  `.incbin` 埋め込み + block_flash.tc で SDRAM 上 XIP、FAT は stub、
+  タイマ定数 27 MHz)、`kernel/platform/tn20k/{platform_tn20k.s,
+  crt0_tn20k_data.s}` (sp=0x80800000、arena = RAM 末尾 − 64 KB −
+  __arena を実行時計算、**.bss〜RAM 末尾をゼロ埋め** — qemu は RAM
+  ゼロ初期化、pico2 は crt0 が SRAM をゼロ埋めしていたが SDRAM は
+  ゴミなので必須。sim で `epc=8000cdfX tval=xxxxxxxx` の X が手掛かり)。
+  `make -C kernel tn20k` (raw bin 2.2 MB、mtfs 1.8 MB 込み、gcc
+  タスクは `DROP_TASKS="gcc_hello gcc_doom gcc_doom_pico2"` で除外 —
+  このホストに PIC picolibc が無い)、`make -C kernel run-tn20k`
+  (flash + uart_load -i)。**実機: UART ロード 191 s → `KERN: starting`
+  … `MTFS: mounted` … `SH: ready` → `sh$`、ls / echo / cat /
+  neofetch が応答** (`hw/tests/test_kernel_hw.sh`)。ハング解析用に
+  `top_socdbg_sdram` (TX アイドル 2 s で pc モニタが TX を奪う)。
+  はまり: import 行の末尾コメントを collect_imports.sh が拾わず
+  block_flash.tc が閉包から落ちた (型エラーとして発現)。
+  残: kern_demo (A/B preempt 可視化) の確認、sim での boot 完走確認
+  (iverilog で 10 分超)、ロード時間短縮 (BL616 の高ボーレート)
 - [ ] Phase 5 LCD + キーボード → スタンドアロン (電池運用の消費電流実測含む)
 - [ ] Phase 6 SD → コンパイラ → self-replicate
 - [ ] Phase 7 性能 / タッチ / HDMI

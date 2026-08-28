@@ -16,6 +16,17 @@ R_Init / P_Init / S_Init / D_CheckNetGame / HU_Init / ST_Init /
 I_InitGraphics) を完走、`DG_DrawFrame` から `/dev/fb` mode=0
 band-blit 経由で LCD に DOOM ロゴ + Doomguy を表示するまで到達。
 
+**最近の改善 (tn20k / K21 / K22)**:
+- 2026-08-28: **Tang Nano 20K + 自作 RV32IM コアで MTOS が sh まで起動**
+  (`docs/task/tang_nano_20k.md` Phase 0〜4)。新サブプロジェクト `hw/`
+  (yosys + nextpnr-himbaechel + apicula、`~/opt/oss-cad-suite`):
+  マルチサイクル RV32IM + Zicsr コア (riscv-tests 48/48)、virt 互換
+  SoC (UART / CLINT / exit @ virt と同アドレス)、自作 SDRAM
+  コントローラ (8 MB)、BSRAM ブート ROM + UART ローダ。kernel 側は
+  `kernel_tn20k.tc` + `platform/tn20k/`、`make -C kernel tn20k` /
+  `run-tn20k`。`make -C hw test` (~10 s) が sim 一式、実機は
+  `hw/tests/test_{blink,soc_hw,kernel_hw}.sh`。次: Phase 5 (GPIO +
+  SPI → ILI9488 + マトリクスキーボードでスタンドアロン)
 **最近の改善 (K21 / K22 / 2026-07-05〜08)**:
 - 2026-07-08 (夕): **リファクタ 6 連 (A〜D) 完走**
   (`docs/task/refactor_candidates.md`)。①S 式リーダ + classify_kind /
