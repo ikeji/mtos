@@ -407,11 +407,13 @@ hw/
   `platform/tn20k/block_sd.tc` (バイト交換だけ MMIO 化) で 4 KB 6.6 s、
   64 KB 62 s (~1 KB/s)。**残りのボトルネックは CPU** (pico2 150 MHz
   ~1 CPI で 49 KB/s → 27 MHz マルチサイクル ~5 CPI は ~28 倍遅い、計算
-  どおり)。fatfs の走査コストが支配的なので、SD 実用速度は Phase 7 の
-  コア高速化 (パイプライン + キャッシュ) 待ち。書き込み (空きクラスタ
-  探索) は分単位。残: 書き込み確認、コンパイラ pipeline (disk-extra
-  版 kernel) の実機実行、self-replicate。
-- [ ] Phase 7 性能 / タッチ / HDMI
+  どおり)。**書き込みも OK** (`echo > /sd/x.txt` 新規作成 173 s =
+  空きクラスタ探索、読み戻し一致)。SDRAM 前段に 8 KB ダイレクトマップ
+  ・ライトスルーキャッシュ (`rtl/sdram/sdram_cache.v`、Phase 7 前倒し)
+  を入れて 64 KB read 62 → 28.7 s、write 173 → 102 s、起動 15.8 →
+  13.5 s (flash 読み出しが大半)。残: コンパイラ pipeline (tn20k-extra
+  kernel) の実機実行、self-replicate。実用速度はさらにコア高速化が要る。
+- [~] Phase 7 性能 — 8 KB キャッシュ済 (上記)。次候補: 4 ワード行 + 連続バースト、regfile を RAM 化 (LUT 削減)、5 段パイプライン、クロック引き上げ (Fmax ~50 MHz なので 27 → 40.5 MHz は PLL だけで可能)。タッチ / HDMI は未着手
 
 ## 9. Phase 0 で得た実機の知見
 
