@@ -312,7 +312,15 @@ hw/
   test` (iverilog 2 本) PASS、`make -C hw bit` → LUT4 303、実機で
   `hw/tests/test_blink.sh` PASS (JTAG 書き込み → UART echo)。
   bitstream 実測 ~580 KB。得られた知見は §9
-- [ ] Phase 1 RV32I コア
+- [~] Phase 1 RV32IM コア — 2026-08-28: `rtl/cpu/rv32_core.v`
+  (RV32IM + Zicsr、マルチサイクル FSM、mul/div 逐次 32 cycle、
+  M-mode CSR、trap、timer irq) + `rtl/soc/soc.v` (virt 互換マップ:
+  UART 0x1000_0000 / CLINT 0x0200_0000 / exit 0x0010_0000 / RAM
+  0x8000_0000) + `ram32.v`。hand-encode の smoke (`tools/mkasm_smoke.py`)
+  が iverilog (`make -C hw run`) と **実機 BSRAM 32 KB** の両方で
+  "Hi" + exit 0x5555。LUT4 ~8000 (38%) / DFF ~2000 / Fmax 58 MHz。
+  残: hello2.tc raw bin (要 RISC-V gcc + Gen2)、riscv-tests、
+  LUT 削減 (regfile を RAM に、64-bit カウンタ縮小)
 - [ ] Phase 2 M + CSR + trap + CLINT
 - [ ] Phase 3 SDRAM + GPIO/SPI + ブート ROM (UART / flash)
 - [ ] Phase 4 kernel 移植 → UART で sh
@@ -337,9 +345,20 @@ hw/
   `tang_nano_20k_schematic_v1.3.pdf` を pypdf で grep するのが速い。
 - udev: `/etc/udev/rules.d/99-tangnano.rules` で 0403:6010 を 0666。
   ユーザは dialout 未所属でも動く。
-- nextpnr-himbaechel の `--freq 27` は gowin では効かず、timing 報告は
-  12 MHz 基準のまま (Fmax 自体は 276 MHz と報告されるので当面無害)。
-  正式なクロック制約の付け方は Phase 1 で調べる。
+- nextpnr-himbaechel は `--freq 27` でクロック制約が効く (top_soc で
+  "PASS at 27.00 MHz")。
+- **ボタン S1/S2 はアクティブ H** (idle で L、押すと H — 回路図では
+  `PIN88_MODE0_KEY1` / `PIN87_MODE1_KEY2`)。`~key[0]` をリセットに
+  入れた top_soc が永久リセットになり、「CPU が動かない」と 1 時間
+  迷った。SoC 内部を UART に吐くデバッグモニタ
+  (`boards/tang_nano_20k/top_socdbg.v`: pc / state / instr / addr /
+  UART 書き込み回数を 200 ms ごと) で CPU が走っていることを確認して
+  特定。LED が見えない遠隔作業ではこの手のモニタが必須。
+- yosys の Gowin BSRAM 推論: **32-bit 幅 + byte enable の 1 本のメモリ
+  は壊れる** (lane 1〜3 が 0、"Range select out of bounds" 警告)。8-bit
+  幅 ×4 本 (`rtl/soc/ram32.v`) なら init 込みで正しく動く
+  (`top_ramtest.v` で実機 hex dump 確認)。cells_sim.v の `SP` は
+  blackbox なのでゲートレベル sim では BSRAM を検証できない。
 - bitstream は SRAM (`make -C hw flash`、揮発) と SPI flash
   (`flash-rom`、電源投入で自動起動) の 2 経路とも動作確認済。
 

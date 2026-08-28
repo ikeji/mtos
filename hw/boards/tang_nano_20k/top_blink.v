@@ -4,7 +4,7 @@
 //     pressing S1 sends "tn20k\r\n".
 module top_blink (
     input  wire       clk,      // 27 MHz
-    input  wire [1:0] key,      // S1 / S2, active low
+    input  wire [1:0] key,      // S1 / S2, ACTIVE HIGH (pull-down on the board)
     output wire [5:0] led,      // active low
     input  wire       uart_rx,
     output wire       uart_tx
@@ -58,7 +58,7 @@ module top_blink (
             tx_valid <= 1'b0;
             if (rx_valid) begin fifo[wp] <= rx_data; wp <= wp + 1'b1; end
 
-            if (key[0] == 1'b0) begin
+            if (key[0] == 1'b1) begin
                 if (key_db != 20'hFFFFF) key_db <= key_db + 1'b1;
                 else if (!key_fired) begin key_fired <= 1'b1; bsend <= 1'b1; bidx <= 0; end
             end else begin key_db <= 0; key_fired <= 1'b0; end

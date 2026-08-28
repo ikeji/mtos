@@ -4,7 +4,7 @@
 module tb_top_blink;
     reg clk = 0; always #18.5 clk = ~clk;   // 27 MHz
     reg rx = 1; wire tx; wire [5:0] led;
-    top_blink dut(.clk(clk), .key(2'b11), .led(led), .uart_rx(rx), .uart_tx(tx));
+    top_blink dut(.clk(clk), .key(2'b00), .led(led), .uart_rx(rx), .uart_tx(tx));
     reg mrst = 1;
     wire [7:0] rd; wire rv;
     uart_rx #(.CLK_HZ(27_000_000), .BAUD(115_200)) mon(.clk(clk), .rst(mrst), .rx(tx), .data(rd), .valid(rv));

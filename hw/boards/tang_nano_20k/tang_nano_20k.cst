@@ -2,11 +2,12 @@
 IO_LOC "clk" 4;
 IO_PORT "clk" PULL_MODE=UP;
 
-// Buttons S1 / S2 (active low).
+// Buttons S1 / S2. They read LOW when idle and HIGH when pressed
+// (active high) — a design that gates reset on ~key[0] never starts.
 IO_LOC "key[0]" 88;
 IO_LOC "key[1]" 87;
-IO_PORT "key[0]" PULL_MODE=UP;
-IO_PORT "key[1]" PULL_MODE=UP;
+IO_PORT "key[0]" PULL_MODE=DOWN;
+IO_PORT "key[1]" PULL_MODE=DOWN;
 
 // On-board LEDs (active low).
 IO_LOC "led[0]" 15;
