@@ -38,7 +38,7 @@ test: $(BUILD)/tb_uart.vvp $(BUILD)/tb_top_blink.vvp $(BUILD)/tb_sdram.vvp $(BUI
 	@vvp -N $(BUILD)/tb_top_blink.vvp | tee $(BUILD)/tb_top_blink.log | grep -q '^PASS' || { cat $(BUILD)/tb_top_blink.log; exit 1; }
 	@echo "hw test: PASS"
 
-SOC_SRCS := rtl/soc/soc.v rtl/soc/ram32.v rtl/soc/gpio_sio.v rtl/soc/uart_tx.v rtl/soc/uart_rx.v rtl/cpu/rv32_core.v rtl/sdram/sdram_ctrl.v
+SOC_SRCS := rtl/soc/soc.v rtl/soc/ram32.v rtl/soc/gpio_sio.v rtl/soc/spi_master.v rtl/soc/uart_tx.v rtl/soc/uart_rx.v rtl/cpu/rv32_core.v rtl/sdram/sdram_ctrl.v
 
 $(BUILD)/tb_soc.vvp: sim/tb_soc.v $(SOC_SRCS) | $(BUILD)
 	iverilog -g2012 -o $@ $^

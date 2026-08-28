@@ -6,8 +6,9 @@
 #    arrives, take load frames on the UART:
 #      [len u32 LE][data len bytes][sum u32 LE]   sum = bytes mod 2^32
 #    → 'K' + jump to 0x8000_0000, or 'E' + wait for another frame.
-# 3. Otherwise try the SPI flash: bit-bang SPI (mode 0) on SIO GPIO
-#    13=CLK 15=CS 16=MISO 17=MOSI, READ (0x03) from FLASH_IMG_OFF:
+# 3. Otherwise try the SPI flash through the SoC's SPI master
+#    (0x10020000: +0 DATA, +4 STATUS busy, +8 CTRL cs), READ (0x03) from
+#    FLASH_IMG_OFF:
 #      "MTOS" [len u32 LE][data][sum u32 LE]
 #    → copy to 0x8000_0000, verify, print "flash: ok\n", jump. On a bad
 #    magic/sum print "flash: none\n" / "flash: bad\n" and fall back to
@@ -15,23 +16,18 @@
 # Host side: hw/tools/uart_load.py, hw/tools/flash_kernel.sh.
 #
 # Registers: s0 = UART base, s1 = dst pointer, s2 = remaining, s3 = sum,
-#            s6 = SIO base (0xD0000000).
+#            s6 = SPI master base (0x10020000).
     .equ FLASH_IMG_OFF, 0x100000
-    .equ SIO_IN,      0x04
-    .equ SIO_OUT_SET, 0x18
-    .equ SIO_OUT_CLR, 0x20
-    .equ SIO_OE_SET,  0x38
-    .equ F_CLK,  (1 << 13)
-    .equ F_CS,   (1 << 15)
-    .equ F_MISO, (1 << 16)
-    .equ F_MOSI, (1 << 17)
+    .equ SPI_DATA,   0
+    .equ SPI_STATUS, 4
+    .equ SPI_CTRL,   8
 
     .section .text
     .globl _start
 _start:
     li   sp, 0x1ff0                 # top of the 8 KB ROM/RAM block
     li   s0, 0x10000000
-    li   s6, 0xD0000000
+    li   s6, 0x10020000
     la   a0, banner
     call puts
 
@@ -80,16 +76,9 @@ go_kernel:
 flash_boot:
     addi sp, sp, -16
     sw   ra, 12(sp)
-    # GPIO setup: CS high, CLK/MOSI low, outputs enabled
-    li   t0, F_CS
-    sw   t0, SIO_OUT_SET(s6)
-    li   t0, F_CLK | F_MOSI
-    sw   t0, SIO_OUT_CLR(s6)
-    li   t0, F_CLK | F_CS | F_MOSI
-    sw   t0, SIO_OE_SET(s6)
     # READ command 0x03 + 24-bit address
-    li   t0, F_CS
-    sw   t0, SIO_OUT_CLR(s6)        # CS low
+    li   t0, 1
+    sw   t0, SPI_CTRL(s6)           # CS low
     li   a0, 0x03
     call spi_xfer
     li   a0, (FLASH_IMG_OFF >> 16) & 0xff
@@ -117,15 +106,13 @@ flash_boot:
     addi s2, s2, -1
     j    1b
 2:  call spi_get32
-    li   t0, F_CS
-    sw   t0, SIO_OUT_SET(s6)        # CS high
+    sw   zero, SPI_CTRL(s6)         # CS high
     bne  a0, s3, fl_bad
     la   a0, msg_ok
     call puts
     j    go_kernel
 fl_none:
-    li   t0, F_CS
-    sw   t0, SIO_OUT_SET(s6)
+    sw   zero, SPI_CTRL(s6)
     la   a0, msg_none
     call puts
     j    fl_ret
@@ -138,31 +125,12 @@ fl_ret:
     ret
 
 # spi_xfer: a0 = byte to send (MSB first), returns a0 = byte received.
-# SPI mode 0: MOSI set while CLK low, MISO sampled after the rising edge.
 spi_xfer:
-    li   t1, 8
-    li   t6, 0
-1:  andi t0, a0, 0x80
-    li   t5, F_MOSI
-    beqz t0, 2f
-    sw   t5, SIO_OUT_SET(s6)
-    j    3f
-2:  sw   t5, SIO_OUT_CLR(s6)
-3:  li   t5, F_CLK
-    sw   t5, SIO_OUT_SET(s6)        # rising edge
-    nop
-    nop
-    lw   t0, SIO_IN(s6)             # (2-stage synchroniser in gpio_sio → ≥2 clocks after the edge)
-    lw   t0, SIO_IN(s6)
-    sw   t5, SIO_OUT_CLR(s6)        # falling edge
-    srli t0, t0, 16
+    sw   a0, SPI_DATA(s6)
+1:  lw   t0, SPI_STATUS(s6)
     andi t0, t0, 1
-    slli t6, t6, 1
-    or   t6, t6, t0
-    slli a0, a0, 1
-    addi t1, t1, -1
-    bnez t1, 1b
-    mv   a0, t6
+    bnez t0, 1b
+    lw   a0, SPI_DATA(s6)
     ret
 
 spi_get32:                           # -> a0 = little-endian u32 from the flash stream

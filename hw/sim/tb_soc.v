@@ -10,7 +10,7 @@ module tb_soc;
     // Fast UART in sim (BAUD = CLK/10 → 10 clocks/bit) so long prints are cheap.
     soc #(.RAM_WORDS(2*1024*1024), .CLK_HZ(27_000_000), .BAUD(2_700_000)) dut (
         .clk(clk), .rst(rst), .uart_rx(1'b1), .uart_tx(uart_tx),
-        .sdram_clk(), .sdram_cke(), .sdram_cs_n(), .sdram_ras_n(), .sdram_cas_n(), .sdram_we_n(), .sdram_addr(), .sdram_ba(), .sdram_dqm(), .sdram_dq(), .gpio_out(), .gpio_oe(), .gpio_in(48'b0),
+        .sdram_clk(), .sdram_cke(), .sdram_cs_n(), .sdram_ras_n(), .sdram_cas_n(), .sdram_we_n(), .sdram_addr(), .sdram_ba(), .sdram_dqm(), .sdram_dq(), .gpio_out(), .gpio_oe(), .gpio_in(48'b0), .spi_sck(), .spi_cs_n(), .spi_mosi(), .spi_miso(1'b1),
         .exit_code(exit_code), .exit_valid(exit_valid), .dbg_pc(pc), .dbg_instr(), .dbg_state(), .dbg_addr(), .dbg_txcnt(), .dbg_txbusy());
     wire [7:0] ch; wire chv;
     uart_rx #(.CLK_HZ(27_000_000), .BAUD(2_700_000)) mon (.clk(clk), .rst(rst), .rx(uart_tx), .data(ch), .valid(chv));

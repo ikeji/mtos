@@ -8,11 +8,11 @@ module tb_boot;
     wire uart_tx; wire [31:0] exit_code; wire exit_valid; wire [31:0] pc;
     wire sclk, cke, cs_n, ras_n, cas_n, we_n; wire [10:0] sa; wire [1:0] ba; wire [3:0] dqm; wire [31:0] dq;
     localparam BAUD = 2_700_000;   // 10 clocks/bit in sim
-    wire [47:0] go, goe; wire fclk = goe[13] & go[13]; wire fcs = goe[15] ? go[15] : 1'b1; wire fmosi = goe[17] & go[17]; wire fmiso;
+    wire fclk, fcs, fmosi, fmiso;
     soc #(.USE_SDRAM(1), .CLK_HZ(27_000_000), .BAUD(BAUD), .RESET_PC(32'h0), .ROM_WORDS(2048), .BOOT_UART_WAIT(32'd30000)) dut (
         .clk(clk), .rst(rst), .uart_rx(rx), .uart_tx(uart_tx),
         .sdram_clk(sclk), .sdram_cke(cke), .sdram_cs_n(cs_n), .sdram_ras_n(ras_n), .sdram_cas_n(cas_n), .sdram_we_n(we_n),
-        .sdram_addr(sa), .sdram_ba(ba), .sdram_dqm(dqm), .sdram_dq(dq), .gpio_out(go), .gpio_oe(goe), .gpio_in({31'b0, fmiso, 16'b0}),
+        .sdram_addr(sa), .sdram_ba(ba), .sdram_dqm(dqm), .sdram_dq(dq), .gpio_out(), .gpio_oe(), .gpio_in(48'b0), .spi_sck(fclk), .spi_cs_n(fcs), .spi_mosi(fmosi), .spi_miso(fmiso),
         .exit_code(exit_code), .exit_valid(exit_valid), .dbg_pc(pc), .dbg_instr(), .dbg_state(), .dbg_addr(), .dbg_txcnt(), .dbg_txbusy());
     spiflash_model #(.SIZE(4*1024*1024)) fl (.clk(fclk), .cs_n(fcs), .mosi(fmosi), .miso(fmiso));
     sdram_model mdl (.clk(sclk), .cke(cke), .cs_n(cs_n), .ras_n(ras_n), .cas_n(cas_n), .we_n(we_n), .addr(sa), .ba(ba), .dqm(dqm), .dq(dq));
