@@ -515,21 +515,14 @@ fn build_image() -> void {
     var total_blocks: i32 = data_start + total_data_blocks;
     if total_blocks == data_start { total_blocks = data_start + 1; }
 
-    // tools/mkfs.py's `struct.pack("<32sIIII12x", ...)` packs 60
-    // bytes (32 + 4*4 + 12) per inode but the assignment site uses
-    // a 64-byte slice. Python bytearray slice-assignment with a
-    // shorter source SHRINKS the array by the difference, so the
-    // final image is `4 * num_real_inodes` bytes shorter than
-    // `total_blocks * BLOCK_SIZE`. We replicate the same trailing
-    // truncation so TC mkfs is byte-exact with the Python original.
-    var num_real_inodes: i32 = g_entry_count + 1;  // +1 for root
+    // Emit exactly total_blocks * BLOCK_SIZE bytes. (The retired
+    // tools/mkfs.py shrank the image by 4 * num_real_inodes bytes through
+    // a bytearray slice quirk, and the TC port replicated that for
+    // byte-exact parity. That truncation ate the data of whichever file
+    // landed in the last block — e.g. /wrap_close.txt in disk-extra.img,
+    // which silently broke the OS-side tcheck wrapper. docs/solved.md #48.)
     g_total_blocks = total_blocks;
-    g_out_size = total_blocks * BLOCK_SIZE - 4 * num_real_inodes;
-    // Allocate the full untruncated size so file data legitimately
-    // landing in the trailing 4*num_real_inodes bytes doesn't OOB.
-    // write_out's `while written < g_out_size` loop discards those
-    // trailing bytes, preserving byte-exact parity with mkfs.py's
-    // bytearray-shrink quirk.
+    g_out_size = total_blocks * BLOCK_SIZE;
     var alloc_size: i32 = total_blocks * BLOCK_SIZE;
     g_out = U8Array((alloc_size) as u32);
     var z: i32 = 0;

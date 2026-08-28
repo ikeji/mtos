@@ -230,6 +230,33 @@ fib.bc / global_str.bc を Gen1 bcrun と同一出力で実行。回帰は
 これで tcheck の実 worst case は bc2asm.tc (nc=1656) → bcrun.tc
 (nc=2387) に更新。vm_run の関数分解は不要だった。
 
+### 48. mkfs.tc の末尾切り落としで最後のファイルのデータが消える (2026-08-29)
+
+**現象**: tn20k 実機と qemu virt の両方で、OS 上の `tcheck < /tmp/1.wrap`
+(stdin ラッパ経路) が何も出力せず `sys_exit(6)` で終わる (ファイル引数
+モード `--tgth/--tgt/--out` は正常)。`cat /wrap_close.txt` が空。mtfs
+イメージを Python で読むと `wrap_close.txt` (size 2) のデータブロックが
+イメージ末尾より後ろにあった。
+
+**原因**: `kernel/tools-src/mkfs.tc` が退役済み `tools/mkfs.py` の
+bytearray スライス縮小の癖 (イメージが `4 × inode 数` バイト短くなる) を
+byte-exact 互換のためにわざと再現していた。spec の最後にステージされる
+小さいファイル (`/wrap_close.txt`) のデータが最終ブロックに載ると、その
+4×N バイトの切り落とし範囲に入って消える。block_flash / virtio は
+イメージ外の読み出しをエラーにせず (ゴミ / 0)、`wc` は 0 バイトを返す
+ので静かに壊れた。2026-07-08 の実機 self-replicate MATCH 時点では
+ファイル数/順序の違いで切り落とし範囲に実データが無かっただけ。
+
+**修正**: `g_out_size = total_blocks * BLOCK_SIZE` (切り落とし廃止)。
+mkfs.py はもう無いので互換性の意味は無い。disk.img は数百バイト大きく
+なるだけで kernel.bin の内容は host/device で同じ経路なので self-
+replicate の byte-exact 性には影響しない (ただし md5 は変わる)。
+
+**教訓**: 「ゴールデン互換のためのバグ再現」は元が消えた時点で外す。
+イメージ生成物は end-to-end (実際に最後のファイルを読む) テストが要る
+— `integration/test_phase7.sh` は `make full-test` でしか走らず、
+リファクタ後に回していなかった。
+
 ### 43. S 式リーダ一本化 + bcrun 連結 .bc の string table 衝突 — 完了 (2026-07-08)
 
 リファクタ A1+A2 (`docs/task/refactor_candidates.md`): sigscan / tcheck
