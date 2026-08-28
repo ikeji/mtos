@@ -5,7 +5,7 @@ to stdout for SECS seconds (default 5; 0 = exit right after 'K')."""
 import argparse, os, sys, termios, time, struct
 ap = argparse.ArgumentParser()
 ap.add_argument('-p', '--port', default='/dev/ttyUSB1')
-ap.add_argument('-b', '--baud', type=int, default=115200)
+ap.add_argument('-b', '--baud', type=int, default=921600)
 ap.add_argument('-t', '--tail', type=float, default=5.0)
 ap.add_argument('-i', '--interactive', action='store_true', help='after K, raw terminal (Ctrl-a x quits)')
 ap.add_argument('bin')

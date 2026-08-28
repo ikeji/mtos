@@ -14,11 +14,14 @@ module top_soc_sdram (
     output wire        O_sdram_clk, O_sdram_cke, O_sdram_cs_n, O_sdram_cas_n, O_sdram_ras_n, O_sdram_wen_n,
     output wire [10:0] O_sdram_addr, output wire [1:0] O_sdram_ba, output wire [3:0] O_sdram_dqm,
     inout  wire [31:0] IO_sdram_dq);
+`ifndef UART_BAUD
+`define UART_BAUD 115200
+`endif
     reg [8:0] por = 0; wire rst = ~por[8] | key[0];
     always @(posedge clk) if (!por[8]) por <= por + 1'b1;
     wire [31:0] exit_code; wire exit_valid;
     wire [47:0] go, goe; wire [47:0] gi;
-    soc #(.USE_SDRAM(1), .CLK_HZ(27_000_000), .BAUD(115_200), .RESET_PC(32'h0), .ROM_WORDS(2048), .ROM_INIT("build/bootrom.hex")) u_soc (
+    soc #(.USE_SDRAM(1), .CLK_HZ(27_000_000), .BAUD(`UART_BAUD), .RESET_PC(32'h0), .ROM_WORDS(2048), .ROM_INIT("build/bootrom.hex")) u_soc (
         .clk(clk), .rst(rst), .uart_rx(uart_rx), .uart_tx(uart_tx),
         .sdram_clk(O_sdram_clk), .sdram_cke(O_sdram_cke), .sdram_cs_n(O_sdram_cs_n), .sdram_ras_n(O_sdram_ras_n), .sdram_cas_n(O_sdram_cas_n), .sdram_we_n(O_sdram_wen_n),
         .sdram_addr(O_sdram_addr), .sdram_ba(O_sdram_ba), .sdram_dqm(O_sdram_dqm), .sdram_dq(IO_sdram_dq),

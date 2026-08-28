@@ -431,6 +431,10 @@ hw/
   幅 ×4 本 (`rtl/soc/ram32.v`) なら init 込みで正しく動く
   (`top_ramtest.v` で実機 hex dump 確認)。cells_sim.v の `SP` は
   blackbox なのでゲートレベル sim では BSRAM を検証できない。
+- **UART は 921600 bps がデフォルト** (`hw/Makefile` の `UART_BAUD`、
+  ブート ROM ローダと kernel コンソールの両方)。BL616 ブリッジで
+  問題なく通り、2.2 MB の kernel ロードが 191 s → ~25 s。top_blink /
+  top_soc (BSRAM 版) だけは 115200 固定。
 - bitstream は SRAM (`make -C hw flash`、揮発) と SPI flash
   (`flash-rom`、電源投入で自動起動) の 2 経路とも動作確認済。
 

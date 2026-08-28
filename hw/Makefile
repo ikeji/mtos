@@ -6,11 +6,15 @@
 #   make -C hw flash-rom   # program the SPI flash (persistent)
 #   make -C hw run BIN=x.bin   # run a raw bin on the SoC in iverilog (UART → stdout)
 #   make -C hw TOP=top_soc PROG=x.bin bit   # SoC bitstream with x.bin in BSRAM
+#   make -C hw TOP=top_soc_sdram UART_BAUD=115200 bit   # slower UART (default 921600)
 #
 # Toolchain: oss-cad-suite (~/opt/oss-cad-suite) — override with OSS_CAD.
 OSS_CAD ?= $(HOME)/opt/oss-cad-suite
 export PATH := $(OSS_CAD)/bin:$(PATH)
 
+# UART baud for the SoC tops (boot ROM loader + kernel console). 921600
+# loads a 2.2 MB kernel in ~25 s; use UART_BAUD=115200 for the old rate.
+UART_BAUD ?= 921600
 BOARD    := tang_nano_20k
 DEVICE   := GW2AR-LV18QN88C8/I7
 FAMILY   := GW2A-18C
@@ -111,7 +115,7 @@ $(BUILD)/prog.hex: $(PROG) | $(BUILD)
 	python3 tools/bin2hex.py $< $@
 
 $(BUILD)/$(TOP).json: boards/$(BOARD)/$(TOP).v $(RTL_SOC) $(RTL_CPU) $(BUILD)/prog.hex $(BUILD)/bootrom.hex | $(BUILD)
-	yosys -q -l $(BUILD)/$(TOP).yosys.log -p "read_verilog -sv $(filter %.v,$^); synth_gowin -top $(TOP) -json $@"
+	yosys -q -l $(BUILD)/$(TOP).yosys.log -p "read_verilog -sv $(if $(UART_BAUD),-DUART_BAUD=$(UART_BAUD)) $(filter %.v,$^); synth_gowin -top $(TOP) -json $@"
 
 $(BUILD)/$(TOP)_pnr.json: $(BUILD)/$(TOP).json $(CST)
 	nextpnr-himbaechel -q -l $(BUILD)/$(TOP).pnr.log --json $< --write $@ \
