@@ -11,7 +11,7 @@ module tb_boot;
     soc #(.USE_SDRAM(1), .CLK_HZ(27_000_000), .BAUD(BAUD), .RESET_PC(32'h0), .ROM_WORDS(2048)) dut (
         .clk(clk), .rst(rst), .uart_rx(rx), .uart_tx(uart_tx),
         .sdram_clk(sclk), .sdram_cke(cke), .sdram_cs_n(cs_n), .sdram_ras_n(ras_n), .sdram_cas_n(cas_n), .sdram_we_n(we_n),
-        .sdram_addr(sa), .sdram_ba(ba), .sdram_dqm(dqm), .sdram_dq(dq),
+        .sdram_addr(sa), .sdram_ba(ba), .sdram_dqm(dqm), .sdram_dq(dq), .gpio_out(), .gpio_oe(), .gpio_in(48'b0),
         .exit_code(exit_code), .exit_valid(exit_valid), .dbg_pc(pc), .dbg_instr(), .dbg_state(), .dbg_addr(), .dbg_txcnt(), .dbg_txbusy());
     sdram_model mdl (.clk(sclk), .cke(cke), .cs_n(cs_n), .ras_n(ras_n), .cas_n(cas_n), .we_n(we_n), .addr(sa), .ba(ba), .dqm(dqm), .dq(dq));
     wire [7:0] ch; wire chv;

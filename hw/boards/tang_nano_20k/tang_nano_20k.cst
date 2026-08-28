@@ -86,3 +86,44 @@ IO_LOC "IO_sdram_dq[28]" IOR18A;
 IO_LOC "IO_sdram_dq[29]" IOR18B;
 IO_LOC "IO_sdram_dq[30]" IOR44A;
 IO_LOC "IO_sdram_dq[31]" IOR44B;
+
+// ---- header GPIO for the LCD + matrix keyboard (top_soc_sdram) ----
+// kbd[i] = GP(i+1) for i<10, kbd[10] = GP12. All idle-high with pull-ups
+// (the pico2 driver relies on internal pull-ups; here it is a static attribute).
+IO_LOC "kbd[0]" 73;
+IO_LOC "kbd[1]" 74;
+IO_LOC "kbd[2]" 75;
+IO_LOC "kbd[3]" 77;
+IO_LOC "kbd[4]" 27;
+IO_LOC "kbd[5]" 28;
+IO_LOC "kbd[6]" 25;
+IO_LOC "kbd[7]" 26;
+IO_LOC "kbd[8]" 29;
+IO_LOC "kbd[9]" 30;
+IO_LOC "kbd[10]" 31;
+IO_PORT "kbd[0]" PULL_MODE=UP;
+IO_PORT "kbd[1]" PULL_MODE=UP;
+IO_PORT "kbd[2]" PULL_MODE=UP;
+IO_PORT "kbd[3]" PULL_MODE=UP;
+IO_PORT "kbd[4]" PULL_MODE=UP;
+IO_PORT "kbd[5]" PULL_MODE=UP;
+IO_PORT "kbd[6]" PULL_MODE=UP;
+IO_PORT "kbd[7]" PULL_MODE=UP;
+IO_PORT "kbd[8]" PULL_MODE=UP;
+IO_PORT "kbd[9]" PULL_MODE=UP;
+IO_PORT "kbd[10]" PULL_MODE=UP;
+// lcd[i] = GP(38+i): DC CS SCK MOSI MISO RST BL
+IO_LOC "lcd[0]" 76;
+IO_LOC "lcd[1]" 42;
+IO_LOC "lcd[2]" 41;
+IO_LOC "lcd[3]" 48;
+IO_LOC "lcd[4]" 49;
+IO_LOC "lcd[5]" 86;
+IO_LOC "lcd[6]" 72;
+IO_PORT "lcd[0]" PULL_MODE=NONE DRIVE=8;
+IO_PORT "lcd[1]" PULL_MODE=NONE DRIVE=8;
+IO_PORT "lcd[2]" PULL_MODE=NONE DRIVE=8;
+IO_PORT "lcd[3]" PULL_MODE=NONE DRIVE=8;
+IO_PORT "lcd[4]" PULL_MODE=UP;
+IO_PORT "lcd[5]" PULL_MODE=NONE DRIVE=8;
+IO_PORT "lcd[6]" PULL_MODE=NONE DRIVE=8;
