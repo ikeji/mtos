@@ -1,7 +1,7 @@
 #!/bin/bash
 # test_kernel_hw.sh — board test for the MTOS kernel on the tn20k SoC:
 # flash top_soc_sdram, load kernel/build/tn20k_kernel.bin through the boot
-# ROM (~25 s at 921600), wait for the sh prompt and drive a few
+# ROM (~3.3 min at 115200), wait for the sh prompt and drive a few
 # commands. Set KERNEL_BIN to test another image (e.g. tn20k_kernel_extra.bin).
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -17,7 +17,7 @@ import os, sys, termios, time, struct
 port, path = sys.argv[1], sys.argv[2]
 data = open(path, 'rb').read()
 fd = os.open(port, os.O_RDWR | os.O_NOCTTY | os.O_NONBLOCK)
-t = termios.tcgetattr(fd); t[0]=0; t[1]=0; t[2]=termios.CS8|termios.CREAD|termios.CLOCAL; t[3]=0; t[4]=t[5]=termios.B921600
+t = termios.tcgetattr(fd); t[0]=0; t[1]=0; t[2]=termios.CS8|termios.CREAD|termios.CLOCAL; t[3]=0; t[4]=t[5]=termios.B115200
 termios.tcsetattr(fd, termios.TCSANOW, t); termios.tcflush(fd, termios.TCIOFLUSH)
 def rd(timeout, until=None):
     buf=b''; end=time.time()+timeout

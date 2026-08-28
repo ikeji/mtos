@@ -11,7 +11,7 @@ module top_socdbg_sdram (
     reg [8:0] por = 0; wire rst = ~por[8] | key[0];
     always @(posedge clk) if (!por[8]) por <= por + 1'b1;
     wire [31:0] exit_code, pc, instr, addr; wire exit_valid; wire [2:0] st; wire soc_tx; wire [7:0] txcnt; wire txbusy;
-    soc #(.USE_SDRAM(1), .CLK_HZ(27_000_000), .BAUD(115_200), .RESET_PC(32'h0), .ROM_WORDS(2048), .ROM_INIT("build/bootrom.hex")) u_soc (
+    soc #(.USE_SDRAM(1), .CLK_HZ(27_000_000), .BAUD(921_600), .RESET_PC(32'h0), .ROM_WORDS(2048), .ROM_INIT("build/bootrom.hex")) u_soc (
         .clk(clk), .rst(rst), .uart_rx(uart_rx), .uart_tx(soc_tx),
         .sdram_clk(O_sdram_clk), .sdram_cke(O_sdram_cke), .sdram_cs_n(O_sdram_cs_n), .sdram_ras_n(O_sdram_ras_n), .sdram_cas_n(O_sdram_cas_n), .sdram_we_n(O_sdram_wen_n),
         .sdram_addr(O_sdram_addr), .sdram_ba(O_sdram_ba), .sdram_dqm(O_sdram_dqm), .sdram_dq(IO_sdram_dq), .gpio_out(), .gpio_oe(), .gpio_in(48'b0),
@@ -20,7 +20,7 @@ module top_socdbg_sdram (
     reg [25:0] idle = 0; wire hung = idle[25];
     always @(posedge clk) if (rst || txbusy) idle <= 0; else if (!hung) idle <= idle + 1'b1;
     reg [7:0] tx_data; reg tx_valid = 0; wire tx_busy; wire mon_tx;
-    uart_tx #(.CLK_HZ(27_000_000), .BAUD(115_200)) utx (.clk(clk), .rst(rst), .data(tx_data), .valid(tx_valid), .busy(tx_busy), .tx(mon_tx));
+    uart_tx #(.CLK_HZ(27_000_000), .BAUD(921_600)) utx (.clk(clk), .rst(rst), .data(tx_data), .valid(tx_valid), .busy(tx_busy), .tx(mon_tx));
     assign uart_tx = hung ? mon_tx : soc_tx;
     function [7:0] hexc(input [3:0] v); hexc = (v < 10) ? (8'h30 + v) : (8'h57 + v); endfunction
     reg [127:0] snap; reg [5:0] nib; reg [1:0] ph = 0; reg [22:0] gap = 0;

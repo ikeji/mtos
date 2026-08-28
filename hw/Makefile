@@ -4,6 +4,7 @@
 #   make -C hw bit         # synthesize + place + pack top_blink → build/top_blink.fs
 #   make -C hw flash       # program SRAM (volatile) via openFPGALoader
 #   make -C hw flash-rom   # program the SPI flash (persistent)
+#   tools/flash_kernel.sh kernel.bin   # kernel image into flash @0x100000 (stand-alone boot)
 #   make -C hw run BIN=x.bin   # run a raw bin on the SoC in iverilog (UART → stdout)
 #   make -C hw TOP=top_soc PROG=x.bin bit   # SoC bitstream with x.bin in BSRAM
 #   make -C hw TOP=top_soc_sdram UART_BAUD=115200 bit   # slower UART (default 921600)
@@ -14,7 +15,7 @@ export PATH := $(OSS_CAD)/bin:$(PATH)
 
 # UART baud for the SoC tops (boot ROM loader + kernel console). 921600
 # loads a 2.2 MB kernel in ~25 s; use UART_BAUD=115200 for the old rate.
-UART_BAUD ?= 921600
+UART_BAUD ?= 115200   # 921600 works for uart_load (kernel in 24 s) but the SoC's own TX garbles at that rate — under investigation
 BOARD    := tang_nano_20k
 DEVICE   := GW2AR-LV18QN88C8/I7
 FAMILY   := GW2A-18C
@@ -86,7 +87,7 @@ $(BUILD)/bootrom.bin: sw/bootrom/bootrom.S sw/bootrom/link.ld | $(BUILD)
 $(BUILD)/bootrom.hex: $(BUILD)/bootrom.bin
 	python3 tools/bin2hex.py $< $@
 
-$(BUILD)/tb_boot.vvp: sim/tb_boot.v sim/sdram_model.v $(SOC_SRCS) | $(BUILD)
+$(BUILD)/tb_boot.vvp: sim/tb_boot.v sim/sdram_model.v sim/spiflash_model.v $(SOC_SRCS) | $(BUILD)
 	iverilog -g2012 -o $@ $^
 
 # make boot BIN=x.bin — simulate reset → boot ROM → UART load → run
@@ -94,8 +95,10 @@ boot: $(BUILD)/tb_boot.vvp $(BUILD)/bootrom.hex $(BIN)
 	vvp -N $(BUILD)/tb_boot.vvp +rom=$(BUILD)/bootrom.hex +bin=$(BIN) +timeout=$(TIMEOUT)
 
 test-boot: $(BUILD)/tb_boot.vvp $(BUILD)/bootrom.hex $(BUILD)/smoke.bin
-	@vvp -N $(BUILD)/tb_boot.vvp +rom=$(BUILD)/bootrom.hex +bin=$(BUILD)/smoke.bin +timeout=4000000 2>&1 | grep -q '^\[tb\] PASS' || { echo "test-boot: FAIL"; exit 1; }
-	@echo "test-boot: PASS"
+	@vvp -N $(BUILD)/tb_boot.vvp +rom=$(BUILD)/bootrom.hex +bin=$(BUILD)/smoke.bin +timeout=4000000 2>&1 | grep -q '^\[tb\] PASS' || { echo "test-boot: uart FAIL"; exit 1; }
+	@python3 tools/mkflashimg.py $(BUILD)/smoke.bin $(BUILD)/smoke.flash.img
+	@vvp -N $(BUILD)/tb_boot.vvp +rom=$(BUILD)/bootrom.hex +flash=$(BUILD)/smoke.flash.img +timeout=4000000 2>&1 | grep -q '^\[tb\] PASS' || { echo "test-boot: flash FAIL"; exit 1; }
+	@echo "test-boot: PASS (uart + flash)"
 
 $(BUILD)/tb_gpio.vvp: sim/tb_gpio.v rtl/soc/gpio_sio.v | $(BUILD)
 	iverilog -g2012 -o $@ $^
@@ -122,7 +125,7 @@ $(BUILD)/$(TOP)_pnr.json: $(BUILD)/$(TOP).json $(CST)
 	    --device $(DEVICE) --vopt family=$(FAMILY) --vopt cst=$(CST) --freq 27
 
 $(BUILD)/$(TOP).fs: $(BUILD)/$(TOP)_pnr.json
-	gowin_pack -d $(FAMILY) -o $@ $<
+	gowin_pack -d $(FAMILY) --mspi_as_gpio -o $@ $<   # mspi_as_gpio: the boot ROM bit-bangs the config flash
 
 bit: $(BUILD)/$(TOP).fs
 

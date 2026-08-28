@@ -3,6 +3,7 @@
 // Memory map mirrors qemu virt so the MTOS kernel's virt platform code
 // (kernel/src/kernel.tc CLINT, platform_virt.tc UART) runs unchanged:
 //   0x0010_0000  exit/LED   (SiFive test: 0x5555 = pass, 0x3333|code<<16 = fail)
+//   0x0010_0004  BOOT_UART_WAIT (read-only; boot ROM's UART-vs-flash timeout)
 //   0x0200_0000  CLINT      (+0x4000 mtimecmp lo/hi, +0xBFF8 mtime lo/hi)
 //   0x1000_0000  UART       (+0 DR, +5 LSR: bit0 RX ready, bit5/6 TX empty)
 //   0xD000_0000  GPIO       (RP2350 SIO register layout, 48 pins; gpio_sio.v)
@@ -20,7 +21,8 @@ module soc #(
     parameter integer USE_SDRAM = 0,
     parameter integer ROM_WORDS = 2048,          // 8 KB boot ROM
     parameter         ROM_INIT  = "",
-    parameter [31:0]  RESET_PC  = 32'h8000_0000
+    parameter [31:0]  RESET_PC  = 32'h8000_0000,
+    parameter [31:0]  BOOT_UART_WAIT = 32'd27_000_000   // boot ROM: mtime ticks to wait for a UART frame before trying the SPI flash
 ) (
     input  wire        clk,
     input  wire        rst,
@@ -181,8 +183,8 @@ module soc #(
                     mem_rdata <= gpio_rdata;    // write side-effect happens in gpio_sio on this strobe
                     mem_ready <= 1'b1;
                 end else if (sel_exit) begin
-                    if (is_write) begin exit_code <= mem_wdata; exit_valid <= 1'b1; end
-                    mem_rdata <= 32'd0;
+                    if (is_write && mem_addr[3:0] == 4'd0) begin exit_code <= mem_wdata; exit_valid <= 1'b1; end
+                    mem_rdata <= (mem_addr[3:0] == 4'd4) ? BOOT_UART_WAIT : 32'd0;
                     mem_ready <= 1'b1;
                 end else begin
                     // unmapped: read as zero, writes ignored

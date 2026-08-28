@@ -11,6 +11,8 @@ module top_soc_sdram (
     input  wire       uart_rx, output wire uart_tx,
     inout  wire [10:0] kbd,      // GP1..GP10, GP12 (index 10 = GP12)
     inout  wire [6:0]  lcd,      // GP38..GP44
+    output wire        flash_clk, flash_cs, flash_mosi,   // config SPI flash (MSPI pins 59/60/61), GP13/GP15/GP17
+    input  wire        flash_miso,                        // MSPI MI pin 62 → GP16
     output wire        O_sdram_clk, O_sdram_cke, O_sdram_cs_n, O_sdram_cas_n, O_sdram_ras_n, O_sdram_wen_n,
     output wire [10:0] O_sdram_addr, output wire [1:0] O_sdram_ba, output wire [3:0] O_sdram_dqm,
     inout  wire [31:0] IO_sdram_dq);
@@ -38,7 +40,11 @@ module top_soc_sdram (
         end
     endgenerate
     assign kbd[10] = goe[12] ? go[12] : 1'bz;
-    assign gi = {3'b0, lcd, 25'b0, kbd[10], 1'b0, kbd[9:0], 1'b0};   // GP44..38, GP12, GP10..1
+    // SPI flash: plain outputs (idle: CS high via pull-up until the ROM drives it)
+    assign flash_clk  = goe[13] ? go[13] : 1'b0;
+    assign flash_cs   = goe[15] ? go[15] : 1'b1;
+    assign flash_mosi = goe[17] ? go[17] : 1'b0;
+    assign gi = {3'b0, lcd, 21'b0, flash_miso, 3'b0, kbd[10], 1'b0, kbd[9:0], 1'b0};   // GP44..38, GP16, GP12, GP10..1
     reg ok = 0; always @(posedge clk) if (rst) ok <= 0; else if (exit_valid && exit_code == 32'h5555) ok <= 1;
     assign led = ~{4'b0, ok, u_soc.sd_init_done};
 endmodule

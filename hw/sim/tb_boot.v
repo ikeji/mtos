@@ -8,16 +8,18 @@ module tb_boot;
     wire uart_tx; wire [31:0] exit_code; wire exit_valid; wire [31:0] pc;
     wire sclk, cke, cs_n, ras_n, cas_n, we_n; wire [10:0] sa; wire [1:0] ba; wire [3:0] dqm; wire [31:0] dq;
     localparam BAUD = 2_700_000;   // 10 clocks/bit in sim
-    soc #(.USE_SDRAM(1), .CLK_HZ(27_000_000), .BAUD(BAUD), .RESET_PC(32'h0), .ROM_WORDS(2048)) dut (
+    wire [47:0] go, goe; wire fclk = goe[13] & go[13]; wire fcs = goe[15] ? go[15] : 1'b1; wire fmosi = goe[17] & go[17]; wire fmiso;
+    soc #(.USE_SDRAM(1), .CLK_HZ(27_000_000), .BAUD(BAUD), .RESET_PC(32'h0), .ROM_WORDS(2048), .BOOT_UART_WAIT(32'd30000)) dut (
         .clk(clk), .rst(rst), .uart_rx(rx), .uart_tx(uart_tx),
         .sdram_clk(sclk), .sdram_cke(cke), .sdram_cs_n(cs_n), .sdram_ras_n(ras_n), .sdram_cas_n(cas_n), .sdram_we_n(we_n),
-        .sdram_addr(sa), .sdram_ba(ba), .sdram_dqm(dqm), .sdram_dq(dq), .gpio_out(), .gpio_oe(), .gpio_in(48'b0),
+        .sdram_addr(sa), .sdram_ba(ba), .sdram_dqm(dqm), .sdram_dq(dq), .gpio_out(go), .gpio_oe(goe), .gpio_in({31'b0, fmiso, 16'b0}),
         .exit_code(exit_code), .exit_valid(exit_valid), .dbg_pc(pc), .dbg_instr(), .dbg_state(), .dbg_addr(), .dbg_txcnt(), .dbg_txbusy());
+    spiflash_model #(.SIZE(4*1024*1024)) fl (.clk(fclk), .cs_n(fcs), .mosi(fmosi), .miso(fmiso));
     sdram_model mdl (.clk(sclk), .cke(cke), .cs_n(cs_n), .ras_n(ras_n), .cas_n(cas_n), .we_n(we_n), .addr(sa), .ba(ba), .dqm(dqm), .dq(dq));
     wire [7:0] ch; wire chv;
     uart_rx #(.CLK_HZ(27_000_000), .BAUD(BAUD)) mon (.clk(clk), .rst(rst), .rx(uart_tx), .data(ch), .valid(chv));
     always @(posedge clk) if (chv) $write("%c", ch);
-    reg [1023:0] romfile, binfile; integer timeout_cycles, cyc = 0, fd, n, i, len; reg [7:0] bt; reg [31:0] sum;
+    reg [1023:0] romfile, binfile, flashfile; integer use_flash; integer timeout_cycles, cyc = 0, fd, n, i, len; reg [7:0] bt; reg [31:0] sum;
     reg [7:0] img [0:1024*1024-1];
     localparam BIT_NS = 1_000_000_000 / BAUD;
     task send(input [7:0] b); integer k; begin
@@ -34,10 +36,20 @@ module tb_boot;
     end
     initial begin
         if (!$value$plusargs("rom=%s", romfile)) begin $display("need +rom="); $finish; end
-        if (!$value$plusargs("bin=%s", binfile)) begin $display("need +bin="); $finish; end
+        use_flash = $value$plusargs("flash=%s", flashfile);
+        if (!use_flash && !$value$plusargs("bin=%s", binfile)) begin $display("need +bin= or +flash="); $finish; end
         if (!$value$plusargs("timeout=%d", timeout_cycles)) timeout_cycles = 20_000_000;
         $readmemh({romfile, ".b0"}, dut.rom.ram0); $readmemh({romfile, ".b1"}, dut.rom.ram1);
         $readmemh({romfile, ".b2"}, dut.rom.ram2); $readmemh({romfile, ".b3"}, dut.rom.ram3);
+        if (use_flash) begin
+            // flash image (tools/mkflashimg.py output) at 0x100000; no UART traffic
+            fd = $fopen(flashfile, "rb"); len = 0;
+            while (!$feof(fd)) begin n = $fread(bt, fd); if (n > 0) begin fl.mem[24'h100000 + len] = bt; len = len + 1; end end
+            $fclose(fd);
+            $display("[tb] flash image %0d bytes at 0x100000, booting from flash", len);
+            repeat (4) @(posedge clk); rst = 0;
+            wait (0);
+        end
         fd = $fopen(binfile, "rb"); len = 0;
         while (!$feof(fd)) begin n = $fread(bt, fd); if (n > 0) begin img[len] = bt; len = len + 1; end end
         $fclose(fd);

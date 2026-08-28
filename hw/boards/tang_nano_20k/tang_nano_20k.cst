@@ -127,3 +127,13 @@ IO_PORT "lcd[3]" PULL_MODE=NONE DRIVE=8;
 IO_PORT "lcd[4]" PULL_MODE=UP;
 IO_PORT "lcd[5]" PULL_MODE=NONE DRIVE=8;
 IO_PORT "lcd[6]" PULL_MODE=NONE DRIVE=8;
+
+// ---- configuration SPI flash (MSPI pins of the GW2AR-18, apicula pinout: MCLK/MCS_N/MO/MI) ----
+IO_LOC "flash_clk" 59;
+IO_LOC "flash_cs" 60;
+IO_LOC "flash_mosi" 61;
+IO_LOC "flash_miso" 62;
+IO_PORT "flash_clk" PULL_MODE=NONE DRIVE=8;
+IO_PORT "flash_cs" PULL_MODE=UP DRIVE=8;
+IO_PORT "flash_mosi" PULL_MODE=NONE DRIVE=8;
+IO_PORT "flash_miso" PULL_MODE=UP;
