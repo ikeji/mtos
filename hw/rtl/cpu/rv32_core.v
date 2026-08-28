@@ -92,6 +92,10 @@ module rv32_core #(
     wire [31:0] alu_b = (opcode == OP_IMM) ? imm_i : rs2_val;
     wire        alu_sub = (opcode == OP_OP) && funct7[5];
     wire        alu_sra = funct7[5];          // valid for funct3 == 101 in both OP and OP_IMM
+    // Arithmetic shift computed on its own: inside the ?: below the
+    // $signed() would be lost (unsigned context) and >>> turn logical.
+    wire signed [31:0] rs1_signed = rs1_val;
+    wire [31:0] sra_out = rs1_signed >>> alu_b[4:0];
     reg  [31:0] alu_out;
     always @(*) begin
         case (funct3)
@@ -100,7 +104,7 @@ module rv32_core #(
             3'b010: alu_out = {31'b0, $signed(rs1_val) < $signed(alu_b)};
             3'b011: alu_out = {31'b0, rs1_val < alu_b};
             3'b100: alu_out = rs1_val ^ alu_b;
-            3'b101: alu_out = alu_sra ? ($signed(rs1_val) >>> alu_b[4:0]) : (rs1_val >> alu_b[4:0]);
+            3'b101: alu_out = alu_sra ? sra_out : (rs1_val >> alu_b[4:0]);
             3'b110: alu_out = rs1_val | alu_b;
             default: alu_out = rs1_val & alu_b;
         endcase

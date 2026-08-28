@@ -21,12 +21,12 @@ RTL_CPU  := $(wildcard rtl/cpu/*.v)
 CST      := boards/$(BOARD)/$(BOARD).cst
 
 .DELETE_ON_ERROR:
-.PHONY: all test test-soc run bit flash flash-rom clean
+.PHONY: all test test-soc test-riscv run bit flash flash-rom clean
 
 all: bit
 
 # ---- simulation -------------------------------------------------------
-test: $(BUILD)/tb_uart.vvp $(BUILD)/tb_top_blink.vvp test-soc
+test: $(BUILD)/tb_uart.vvp $(BUILD)/tb_top_blink.vvp test-soc test-riscv
 	@vvp -N $(BUILD)/tb_uart.vvp | tee $(BUILD)/tb_uart.log | grep -q '^PASS' || { cat $(BUILD)/tb_uart.log; exit 1; }
 	@vvp -N $(BUILD)/tb_top_blink.vvp | tee $(BUILD)/tb_top_blink.log | grep -q '^PASS' || { cat $(BUILD)/tb_top_blink.log; exit 1; }
 	@echo "hw test: PASS"
@@ -67,6 +67,10 @@ test-soc: $(BUILD)/tb_soc.vvp $(BUILD)/smoke.bin $(addprefix $(BUILD)/,$(addsuff
 	    grep -q '^\[tb\] PASS' $(BUILD)/$$t.log || { echo "test-soc: $$t FAIL"; tail -5 $(BUILD)/$$t.log; exit 1; }; \
 	    echo "test-soc: $$t PASS"; \
 	done
+
+# riscv-tests rv32ui/rv32um (skipped unless third_party/riscv-tests is cloned)
+test-riscv: $(BUILD)/tb_soc.vvp
+	@if [ -d third_party/riscv-tests/isa ]; then tests/run_riscv_tests.sh | tail -1; else echo "riscv-tests: SKIP (git clone --depth 1 https://github.com/riscv-software-src/riscv-tests.git hw/third_party/riscv-tests)"; fi
 
 $(BUILD)/tb_top_blink.vvp: sim/tb_top_blink.v boards/$(BOARD)/top_blink.v rtl/soc/uart_tx.v rtl/soc/uart_rx.v | $(BUILD)
 	iverilog -g2012 -o $@ $^
