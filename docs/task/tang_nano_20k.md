@@ -385,7 +385,18 @@ hw/
   block_flash.tc が閉包から落ちた (型エラーとして発現)。
   残: kern_demo (A/B preempt 可視化) の確認、sim での boot 完走確認
   (iverilog で 10 分超)、ロード時間短縮 (BL616 の高ボーレート)
-- [ ] Phase 5 LCD + キーボード → スタンドアロン (電池運用の消費電流実測含む)
+- [~] Phase 5 LCD + キーボード → スタンドアロン — 2026-08-28: **配線待ち**。
+  hw: `rtl/soc/gpio_sio.v` (RP2350 SIO レジスタ互換 48 pin GPIO、
+  0xD000_0000) を SoC に追加、`top_soc_sdram` でキーボード 11 本 +
+  LCD 7 本をヘッダに配線 (§4.4 の表)。kernel: `platform/tn20k/
+  {display_ili9488,keyboard_matrix}.tc` は pico2 版の複製 (LCD は
+  `g_lcd_use_pio=0` で bit-bang、`LCD_MTIME_PER_MS=27000`)、
+  `touch_stub.tc`、`make -C kernel tn20k-console-land` /
+  `run-tn20k-console-land`。LCD 未接続でも console-land kernel が
+  UART 上でブートすることを確認 (下記)。残: 実機で LCD 表示 +
+  キー入力の確認 (ユーザーが pico2 側の LCD / キーボード配線を
+  Tang Nano 20K のヘッダに付け替える必要あり)、SPI flash ブート、
+  電池運用の消費電流実測
 - [ ] Phase 6 SD → コンパイラ → self-replicate
 - [ ] Phase 7 性能 / タッチ / HDMI
 
