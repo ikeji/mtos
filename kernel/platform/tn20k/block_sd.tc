@@ -1,0 +1,294 @@
+// kernel/platform/tn20k/block_sd.tc — SD card block backend for the Tang Nano
+// 20K (hw/ SoC), on-board microSD slot in SPI mode.
+//
+// Derived from the pico2 bit-bang driver: same command / burst logic, but
+// the byte exchange goes through the SoC's SPI master 1 (rtl/soc/
+// spi_master.v at 0x1003_0000: +0 DATA, +4 STATUS busy, +8 CTRL = cs |
+// clkdiv<<8). The bit-bang version worked unchanged through the SIO-
+// compatible GPIO block but ran at a few KB/s on the 27 MHz multi-cycle
+// core; the hardware shifter does ~13.5 MHz SCK. Card init runs at
+// ~400 kHz (div 33) as the SD spec requires, then switches to full speed.
+// Keep the protocol parts in sync with the pico2 original.
+
+// Drain the kernel UART RX ring from inside SD busy-waits (K11, same as pico2).
+fn uart_rx_drain() -> void;
+
+// ----- MMIO -----
+const SD_SPI_DATA:   u32 = 0x10030000u32;
+const SD_SPI_STATUS: u32 = 0x10030004u32;
+const SD_SPI_CTRL:   u32 = 0x10030008u32;
+const SD_DIV_INIT:   u32 = 33u32;   // 27 MHz / (2*34) ≈ 397 kHz
+const SD_DIV_FAST:   u32 = 0u32;    // 13.5 MHz
+var g_sd_div: u32 = 33u32;
+// ----- module state -----
+var g_sd_sdhc:        i32 = 0;     // 1 = SDHC, 0 = SDSC
+var g_sd_inited:      i32 = 0;
+var g_sd_burst_open:  i32 = 0;     // CMD25 multi-block write in flight
+var g_sd_burst_next:  u32 = 0u32;  // next sector the open burst expects
+
+// ----- low level (SPI master 1) -----
+
+fn sd_ctrl(cs: u32) -> void { poke32(SD_SPI_CTRL, (g_sd_div << 8u32) | cs); return; }
+fn sd_cs_low()  -> void { sd_ctrl(1u32); return; }
+fn sd_cs_high() -> void { sd_ctrl(0u32); return; }
+
+// Exchange one byte MSB-first, SPI mode 0 (CPOL=0, CPHA=0).
+fn sd_spi_xfer(b: u8) -> u8 {
+    poke32(SD_SPI_DATA, b as u32);
+    while (peek32(SD_SPI_STATUS) & 1u32) != 0u32 { }
+    var rx: u32 = peek32(SD_SPI_DATA);
+    // Drain UART RX every SPI byte (K11 workaround, see pico2 driver).
+    uart_rx_drain();
+    return (rx & 0xFFu32) as u8;
+}
+
+fn sd_cs_high_clk() -> void { sd_cs_high(); sd_spi_xfer(0xFFu8); return; }
+
+// Send a 6-byte SD command frame, return R1.
+fn sd_cmd(cmd: i32, arg: u32, crc: u8) -> u8 {
+    sd_cs_low();
+    sd_spi_xfer(0xFFu8);
+    sd_spi_xfer((0x40 | cmd) as u8);
+    sd_spi_xfer((arg >> 24u32) as u8);
+    sd_spi_xfer((arg >> 16u32) as u8);
+    sd_spi_xfer((arg >>  8u32) as u8);
+    sd_spi_xfer( arg            as u8);
+    sd_spi_xfer(crc);
+    var r1: u8 = 0xFFu8;
+    var i: i32 = 0;
+    while i < 16 {
+        r1 = sd_spi_xfer(0xFFu8);
+        if (r1 as u32 & 0x80u32) == 0u32 { break; }
+        i = i + 1;
+    }
+    return r1;
+}
+
+fn sd_busy_spin(n: i32) -> void {
+    var i: i32 = 0;
+    while i < n { i = i + 1; }
+    return;
+}
+
+// ----- public API expected by fatfs.tc -----
+
+export fn fat_block_init() -> i32 {
+    if g_sd_inited == 1 { return 0; }
+    g_sd_burst_open = 0;
+
+    // 1-4. (pico2: GPIO/pad setup.) Here: SPI master at init speed, CS high.
+    g_sd_div = SD_DIV_INIT;
+    sd_cs_high();
+
+    // 5. 80 init clocks with CS=H.
+    sd_cs_high();
+    var ic: i32 = 0;
+    while ic < 10 { sd_spi_xfer(0xFFu8); ic = ic + 1; }
+
+    // 6. CMD0 → idle state.
+    var r1: u8 = 0xFFu8;
+    var attempt: i32 = 0;
+    while attempt < 5 {
+        r1 = sd_cmd(0, 0u32, 0x95u8);
+        sd_cs_high_clk();
+        if r1 == 0x01u8 { break; }
+        sd_busy_spin(2000);
+        attempt = attempt + 1;
+    }
+    if r1 != 0x01u8 { return -1; }
+
+    // 7. CMD8: SDHC voltage check.
+    sd_cs_low();
+    sd_spi_xfer(0xFFu8);
+    sd_spi_xfer(0x48u8);
+    sd_spi_xfer(0x00u8); sd_spi_xfer(0x00u8);
+    sd_spi_xfer(0x01u8); sd_spi_xfer(0xAAu8);
+    sd_spi_xfer(0x87u8);
+    var cmd8_r1: u8 = 0xFFu8;
+    var k: i32 = 0;
+    while k < 16 {
+        cmd8_r1 = sd_spi_xfer(0xFFu8);
+        if (cmd8_r1 as u32 & 0x80u32) == 0u32 { break; }
+        k = k + 1;
+    }
+    var e2: u8 = 0u8;
+    var e3: u8 = 0u8;
+    if cmd8_r1 != 0xFFu8 {
+        sd_spi_xfer(0xFFu8);
+        sd_spi_xfer(0xFFu8);
+        e2 = sd_spi_xfer(0xFFu8);
+        e3 = sd_spi_xfer(0xFFu8);
+    }
+    sd_cs_high_clk();
+    var v2: i32 = 0;
+    if cmd8_r1 == 0x01u8 {
+        if e2 == 0x01u8 {
+            if e3 == 0xAAu8 { v2 = 1; }
+        }
+    }
+
+    // 8. ACMD41 init loop.
+    var arg41: u32 = 0u32;
+    if v2 == 1 { arg41 = 0x40000000u32; }
+    var done: i32 = 0;
+    var iter: i32 = 0;
+    while iter < 1000 {
+        sd_cmd(55, 0u32, 0x65u8);
+        sd_cs_high_clk();
+        var r41: u8 = sd_cmd(41, arg41, 0x77u8);
+        sd_cs_high_clk();
+        if r41 == 0x00u8 { done = 1; break; }
+        sd_busy_spin(50000);
+        iter = iter + 1;
+    }
+    if done == 0 { return -2; }
+
+    // 8b. CMD59 disable CRC checking (some cards leave it on after CMD8).
+    sd_cmd(59, 0u32, 0x91u8);
+    sd_cs_high_clk();
+
+    // 9. CMD58: read OCR, detect SDHC.
+    g_sd_sdhc = 0;
+    if v2 == 1 {
+        sd_cs_low();
+        sd_spi_xfer(0xFFu8);
+        sd_spi_xfer(0x7Au8);
+        sd_spi_xfer(0u8); sd_spi_xfer(0u8); sd_spi_xfer(0u8); sd_spi_xfer(0u8);
+        sd_spi_xfer(0xFDu8);
+        var r58: u8 = 0xFFu8;
+        var m: i32 = 0;
+        while m < 16 {
+            r58 = sd_spi_xfer(0xFFu8);
+            if (r58 as u32 & 0x80u32) == 0u32 { break; }
+            m = m + 1;
+        }
+        var o0: u8 = sd_spi_xfer(0xFFu8);
+        sd_spi_xfer(0xFFu8); sd_spi_xfer(0xFFu8); sd_spi_xfer(0xFFu8);
+        sd_cs_high_clk();
+        if (o0 as u32 & 0x40u32) != 0u32 { g_sd_sdhc = 1; }
+    }
+
+    // Card is initialised: switch the shifter to full speed.
+    g_sd_div = SD_DIV_FAST;
+    sd_cs_high();
+    g_sd_inited = 1;
+    return 0;
+}
+
+// Send one 512-byte block inside an open CMD25 burst: 0xFC data
+// token, payload, dummy CRC, data response, then wait out card busy.
+fn sd_burst_block(buf: U8Array) -> i32 {
+    sd_spi_xfer(0xFCu8);
+    var i: i32 = 0;
+    while i < 512 {
+        sd_spi_xfer(get(buf, i));
+        i = i + 1;
+    }
+    sd_spi_xfer(0xFFu8);  // CRC dummy
+    sd_spi_xfer(0xFFu8);
+    var resp: u8 = 0xFFu8;
+    var rp: i32 = 0;
+    while rp < 8 {
+        resp = sd_spi_xfer(0xFFu8);
+        if resp != 0xFFu8 { break; }
+        rp = rp + 1;
+    }
+    if (resp as u32 & 0x1Fu32) != 0x05u32 { return -1; }
+    var w: i32 = 0;
+    while w < 1000000 {
+        var bb: u8 = sd_spi_xfer(0xFFu8);
+        if bb == 0xFFu8 { break; }
+        w = w + 1;
+    }
+    return 0;
+}
+
+// Close an open CMD25 burst: 0xFD stop token, 1 byte gap, busy wait,
+// release CS. No-op when no burst is open.
+fn sd_burst_close() -> void {
+    if g_sd_burst_open == 0 { return; }
+    sd_spi_xfer(0xFDu8);
+    sd_spi_xfer(0xFFu8);
+    var w: i32 = 0;
+    while w < 1000000 {
+        var bb: u8 = sd_spi_xfer(0xFFu8);
+        if bb == 0xFFu8 { break; }
+        w = w + 1;
+    }
+    sd_cs_high_clk();
+    g_sd_burst_open = 0;
+    return;
+}
+
+// CMD17 (READ_SINGLE_BLOCK).
+export fn fat_block_read(sector: u32, buf: U8Array) -> i32 {
+    if g_sd_inited == 0 { return -1; }
+    if g_sd_burst_open == 1 { sd_burst_close(); }
+    var arg: u32 = sector;
+    if g_sd_sdhc == 0 { arg = sector * 512u32; }
+
+    var r1: u8 = sd_cmd(17, arg, 0xFFu8);
+    if r1 != 0x00u8 { sd_cs_high_clk(); return -1; }
+
+    // Wait for data token 0xFE.
+    var tok: u8 = 0xFFu8;
+    var w: i32 = 0;
+    while w < 100000 {
+        tok = sd_spi_xfer(0xFFu8);
+        if tok != 0xFFu8 { break; }
+        w = w + 1;
+    }
+    if tok != 0xFEu8 { sd_cs_high_clk(); return -1; }
+
+    var i: i32 = 0;
+    while i < 512 {
+        set(buf, i, sd_spi_xfer(0xFFu8));
+        i = i + 1;
+    }
+    sd_spi_xfer(0xFFu8);  // CRC hi
+    sd_spi_xfer(0xFFu8);  // CRC lo
+    sd_cs_high_clk();
+    return 512;
+}
+
+// CMD25 (WRITE_MULTIPLE_BLOCK) with transparent bursting. CS stays
+// low after a write; a sequential follow-up sector extends the same
+// burst, so the card can pipeline its programming instead of paying
+// the full per-sector program latency that single-block CMD24 did.
+// fat_block_read and fat_block_sync close the burst; fatfs calls
+// fat_block_sync at the end of every write-y operation so on-disk
+// durability per syscall is unchanged.
+export fn fat_block_write(sector: u32, buf: U8Array) -> i32 {
+    if g_sd_inited == 0 { return -1; }
+
+    // Sequential continuation of an open burst → just append.
+    if g_sd_burst_open == 1 {
+        if sector == g_sd_burst_next {
+            if sd_burst_block(buf) != 0 { sd_burst_close(); return -1; }
+            g_sd_burst_next = sector + 1u32;
+            return 512;
+        }
+        sd_burst_close();
+    }
+
+    var arg: u32 = sector;
+    if g_sd_sdhc == 0 { arg = sector * 512u32; }
+
+    var r1: u8 = sd_cmd(25, arg, 0xFFu8);
+    if r1 != 0x00u8 { sd_cs_high_clk(); return -1; }
+    sd_spi_xfer(0xFFu8);  // 1 byte gap before the first data token
+
+    g_sd_burst_open = 1;
+    g_sd_burst_next = sector + 1u32;
+    if sd_burst_block(buf) != 0 { sd_burst_close(); return -1; }
+    return 512;
+}
+
+// Flush: close any open CMD25 burst so everything written so far is
+// committed on the card. fatfs calls this at the end of each write-y
+// entry point.
+export fn fat_block_sync() -> i32 {
+    if g_sd_inited == 0 { return 0; }
+    sd_burst_close();
+    return 0;
+}

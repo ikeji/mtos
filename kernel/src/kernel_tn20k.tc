@@ -9,11 +9,12 @@
 import "kernel_common.tc";
 import "../platform/virt/platform_virt.tc";
 // mtfs image embedded in the kernel (.incbin), XIP from SDRAM. FAT lives on
-// the on-board microSD, driven by the pico2 SPI bit-bang driver unchanged
-// (GP34..37 map to the slot in top_soc_sdram.v). NOTE: no trailing
+// the on-board microSD through the SoC's SPI master 1 (platform/tn20k/
+// block_sd.tc; the pico2 bit-bang driver also worked via the SIO-compatible
+// GPIO but at a few KB/s). NOTE: no trailing
 // comments on import lines — collect_imports.sh would not see them.
 import "../platform/pico2/block_flash.tc";
-import "../platform/pico2/block_sd.tc";
+import "../platform/tn20k/block_sd.tc";
 import "mtfs.tc";
 import "fatfs.tc";
 import "vfs.tc";

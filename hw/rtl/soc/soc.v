@@ -7,7 +7,8 @@
 //   0x0200_0000  CLINT      (+0x4000 mtimecmp lo/hi, +0xBFF8 mtime lo/hi)
 //   0x1000_0000  UART       (+0 DR, +5 LSR: bit0 RX ready, bit5/6 TX empty)
 //   0xD000_0000  GPIO       (RP2350 SIO register layout, 48 pins; gpio_sio.v)
-//   0x1002_0000  SPI master (boot flash: +0 DATA +4 STATUS +8 CTRL; spi_master.v)
+//   0x1002_0000  SPI master 0 (boot flash: +0 DATA +4 STATUS +8 CTRL; spi_master.v)
+//   0x1003_0000  SPI master 1 (microSD, same registers)
 //   0x8000_0000  RAM        (SDRAM 8 MB when USE_SDRAM, else BSRAM RAM_WORDS*4)
 //   0x0000_0000  boot ROM   (BSRAM ROM_WORDS*4, init from ROM_INIT; RESET_PC=0
 //                            boots from it, RESET_PC=0x8000_0000 bypasses it)
@@ -39,9 +40,11 @@ module soc #(
     output wire [47:0] gpio_out,
     output wire [47:0] gpio_oe,
     input  wire [47:0] gpio_in,
-    // SPI master (config flash)
+    // SPI master 0 (config flash) / 1 (microSD)
     output wire        spi_sck, spi_cs_n, spi_mosi,
     input  wire        spi_miso,
+    output wire        sd_sck, sd_cs_n, sd_mosi,
+    input  wire        sd_miso,
     output reg  [31:0] exit_code,     // last write to the exit device
     output reg         exit_valid,    // pulses on that write
     output wire [31:0] dbg_pc,
@@ -72,6 +75,7 @@ module soc #(
     wire sel_rom   = (mem_addr[31:16] == 16'h0000);
     wire sel_gpio  = (mem_addr[31:16] == 16'hD000);
     wire sel_spi   = (mem_addr[31:16] == 16'h1002);
+    wire sel_spi1  = (mem_addr[31:16] == 16'h1003);
     wire sel_uart  = (mem_addr[31:16] == 16'h1000);
     wire sel_clint = (mem_addr[31:16] == 16'h0200);
     wire sel_exit  = (mem_addr[31:16] == 16'h0010);
@@ -138,6 +142,10 @@ module soc #(
     wire        spi_strobe = mem_valid && sel_spi && !mem_ready && !pending && !sd_wait;
     spi_master spi (.clk(clk), .rst(rst), .sel(spi_strobe), .we(is_write), .addr(mem_addr[3:0]),
                     .wdata(mem_wdata), .rdata(spi_rdata), .sck(spi_sck), .cs_n(spi_cs_n), .mosi(spi_mosi), .miso(spi_miso));
+    wire [31:0] spi1_rdata;
+    wire        spi1_strobe = mem_valid && sel_spi1 && !mem_ready && !pending && !sd_wait;
+    spi_master spi1 (.clk(clk), .rst(rst), .sel(spi1_strobe), .we(is_write), .addr(mem_addr[3:0]),
+                     .wdata(mem_wdata), .rdata(spi1_rdata), .sck(sd_sck), .cs_n(sd_cs_n), .mosi(sd_mosi), .miso(sd_miso));
 
 
 
@@ -196,6 +204,9 @@ module soc #(
                     mem_ready <= 1'b1;
                 end else if (sel_spi) begin
                     mem_rdata <= spi_rdata;
+                    mem_ready <= 1'b1;
+                end else if (sel_spi1) begin
+                    mem_rdata <= spi1_rdata;
                     mem_ready <= 1'b1;
                 end else if (sel_exit) begin
                     if (is_write && mem_addr[3:0] == 4'd0) begin exit_code <= mem_wdata; exit_valid <= 1'b1; end

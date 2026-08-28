@@ -397,13 +397,20 @@ hw/
   キー入力の確認 (ユーザーが pico2 側の LCD / キーボード配線を
   Tang Nano 20K のヘッダに付け替える必要あり)、SPI flash ブート、
   電池運用の消費電流実測
-- [~] Phase 6 SD → コンパイラ → self-replicate — 2026-08-28: オンボード
-  microSD スロット (FPGA 直結、SPI モード: MISO/CS/SCK/MOSI = SDIO_D0/
-  D3/CLK/CMD = ピン 84/81/83/82) を SoC GPIO GP34〜37 に配線し、pico2 の
-  `block_sd.tc` を**無改造で** kernel_tn20k に import (SIO HI レジスタ
-  互換のおかげ)。実機ではまだ `SD: card init failed` — **microSD
-  カードが刺さっているか要確認** (刺さっていれば配線/タイミングの問題)。
-  残: カード動作確認 → `/sd` に FAT → コンパイラ pipeline → self-replicate
+- [~] Phase 6 SD → コンパイラ → self-replicate — 2026-08-29: **microSD
+  動作** (pico2 で使っていたカードを挿した状態)。オンボードスロット
+  (FPGA 直結、SPI モード: MISO/CS/SCK/MOSI = SDIO_D0/D3/CLK/CMD = ピン
+  84/81/83/82)。最初は pico2 の `block_sd.tc` を無改造 (SIO 互換 GPIO
+  経由 bit-bang) で `SD: card ready / FATFS: mounted`、600 ファイルの
+  `ls /sd` も通ったが 4 KB の wc に 17.7 s。`rtl/soc/spi_master.v` を
+  SD 用に 2 個目 (0x1003_0000、分周付き: init 400 kHz → 13.5 MHz) 追加し
+  `platform/tn20k/block_sd.tc` (バイト交換だけ MMIO 化) で 4 KB 6.6 s、
+  64 KB 62 s (~1 KB/s)。**残りのボトルネックは CPU** (pico2 150 MHz
+  ~1 CPI で 49 KB/s → 27 MHz マルチサイクル ~5 CPI は ~28 倍遅い、計算
+  どおり)。fatfs の走査コストが支配的なので、SD 実用速度は Phase 7 の
+  コア高速化 (パイプライン + キャッシュ) 待ち。書き込み (空きクラスタ
+  探索) は分単位。残: 書き込み確認、コンパイラ pipeline (disk-extra
+  版 kernel) の実機実行、self-replicate。
 - [ ] Phase 7 性能 / タッチ / HDMI
 
 ## 9. Phase 0 で得た実機の知見

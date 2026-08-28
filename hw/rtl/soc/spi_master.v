@@ -1,7 +1,8 @@
 // spi_master.v — tiny SPI master (mode 0, MSB first, SCK = clk/2).
 //   +0 DATA   write: start an 8-bit transfer with this byte; read: last received byte
 //   +4 STATUS bit0 = busy
-//   +8 CTRL   bit0 = CS asserted (1 → cs_n low)
+//   +8 CTRL   bit0 = CS asserted (1 → cs_n low); bits 15:8 = clock divider D,
+//             SCK = clk / (2*(D+1)) (D=0 → 13.5 MHz at 27 MHz; D=33 → ~400 kHz for SD init)
 // Used by the boot ROM to stream the kernel out of the SPI flash.
 module spi_master (
     input  wire        clk,
@@ -20,26 +21,31 @@ module spi_master (
     reg [7:0]  shift, rx;
     reg [3:0]  bit_cnt;     // bits remaining
     reg        phase;       // 0: SCK low (data set up), 1: SCK high (sample)
+    reg [7:0]  div, dcnt;
     always @(*) begin
         case (addr[3:2])
             2'd0: rdata = {24'b0, rx};
             2'd1: rdata = {31'b0, busy};
-            2'd2: rdata = {31'b0, ~cs_n};
+            2'd2: rdata = {16'b0, div, 7'b0, ~cs_n};
             default: rdata = 32'd0;
         endcase
     end
     always @(posedge clk) begin
         if (rst) begin
-            busy <= 0; sck <= 0; cs_n <= 1; mosi <= 0; shift <= 0; rx <= 0; bit_cnt <= 0; phase <= 0;
+            busy <= 0; sck <= 0; cs_n <= 1; mosi <= 0; shift <= 0; rx <= 0; bit_cnt <= 0; phase <= 0; div <= 0; dcnt <= 0;
         end else begin
-            if (sel && we && addr[3:2] == 2'd2) cs_n <= ~wdata[0];
+            if (sel && we && addr[3:2] == 2'd2) begin cs_n <= ~wdata[0]; div <= wdata[15:8]; end
             if (!busy) begin
                 if (sel && we && addr[3:2] == 2'd0) begin
-                    busy <= 1; shift <= wdata[7:0]; bit_cnt <= 8; phase <= 0; mosi <= wdata[7]; sck <= 0;
+                    busy <= 1; shift <= wdata[7:0]; bit_cnt <= 8; phase <= 0; mosi <= wdata[7]; sck <= 0; dcnt <= 0;
                 end
+            end else if (dcnt != div) begin
+                dcnt <= dcnt + 1'b1;
             end else if (!phase) begin
+                dcnt <= 0;
                 sck <= 1; phase <= 1;                       // rising edge: slave samples MOSI, we sample MISO next
             end else begin
+                dcnt <= 0;
                 rx <= {rx[6:0], miso};                      // sample on the high phase
                 sck <= 0; phase <= 0;
                 shift <= {shift[6:0], 1'b0};

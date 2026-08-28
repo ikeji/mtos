@@ -14,7 +14,7 @@ module top_socdbg_sdram (
     soc #(.USE_SDRAM(1), .CLK_HZ(27_000_000), .BAUD(921_600), .RESET_PC(32'h0), .ROM_WORDS(2048), .ROM_INIT("build/bootrom.hex")) u_soc (
         .clk(clk), .rst(rst), .uart_rx(uart_rx), .uart_tx(soc_tx),
         .sdram_clk(O_sdram_clk), .sdram_cke(O_sdram_cke), .sdram_cs_n(O_sdram_cs_n), .sdram_ras_n(O_sdram_ras_n), .sdram_cas_n(O_sdram_cas_n), .sdram_we_n(O_sdram_wen_n),
-        .sdram_addr(O_sdram_addr), .sdram_ba(O_sdram_ba), .sdram_dqm(O_sdram_dqm), .sdram_dq(IO_sdram_dq), .gpio_out(), .gpio_oe(), .gpio_in(48'b0), .spi_sck(), .spi_cs_n(), .spi_mosi(), .spi_miso(1'b1),
+        .sdram_addr(O_sdram_addr), .sdram_ba(O_sdram_ba), .sdram_dqm(O_sdram_dqm), .sdram_dq(IO_sdram_dq), .gpio_out(), .gpio_oe(), .gpio_in(48'b0), .spi_sck(), .spi_cs_n(), .spi_mosi(), .spi_miso(1'b1), .sd_sck(), .sd_cs_n(), .sd_mosi(), .sd_miso(1'b1),
         .exit_code(exit_code), .exit_valid(exit_valid), .dbg_pc(pc), .dbg_instr(instr), .dbg_state(st), .dbg_addr(addr), .dbg_txcnt(txcnt), .dbg_txbusy(txbusy));
     // idle detector: ~2 s (2^26 clocks) without SoC UART activity
     reg [25:0] idle = 0; wire hung = idle[25];

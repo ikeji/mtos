@@ -6,13 +6,14 @@
 // pin constants (docs/pico2_hardware.md → docs/task/tang_nano_20k.md §4.4):
 //   keyboard rows/cols GP1..GP10, GP12  → header pins 73 74 75 77 27 28 25 26 29 30 31
 //   ILI9488 DC/CS/SCK/MOSI/MISO/RST/BL = GP38..GP44 → header pins 76 42 41 48 49 86 72
-//   on-board microSD (SPI mode) MISO/CS/SCK/MOSI = GP34..GP37 → SDIO_D0/D3/CLK/CMD = pins 84 81 83 82
+//   on-board microSD (SPI mode) = SoC SPI master 1 (0x1003_0000) → SDIO_D0/D3/CLK/CMD = pins 84 81 83 82
 module top_soc_sdram (
     input  wire       clk, input wire [1:0] key, output wire [5:0] led,
     input  wire       uart_rx, output wire uart_tx,
     inout  wire [10:0] kbd,      // GP1..GP10, GP12 (index 10 = GP12)
     inout  wire [6:0]  lcd,      // GP38..GP44
-    inout  wire [3:0]  sd,       // GP34..GP37: MISO CS SCK MOSI (on-board microSD slot)
+    input  wire        sd_miso,   // on-board microSD slot (SPI mode) ← SoC SPI master 1
+    output wire        sd_cs, sd_sck, sd_mosi,
     output wire        flash_clk, flash_cs, flash_mosi,   // config SPI flash (MSPI pins 59/60/61) ← SoC SPI master
     input  wire        flash_miso,                        // MSPI MI pin 62
     output wire        O_sdram_clk, O_sdram_cke, O_sdram_cs_n, O_sdram_cas_n, O_sdram_ras_n, O_sdram_wen_n,
@@ -31,6 +32,7 @@ module top_soc_sdram (
         .sdram_addr(O_sdram_addr), .sdram_ba(O_sdram_ba), .sdram_dqm(O_sdram_dqm), .sdram_dq(IO_sdram_dq),
         .gpio_out(go), .gpio_oe(goe), .gpio_in(gi),
         .spi_sck(flash_clk), .spi_cs_n(flash_cs), .spi_mosi(flash_mosi), .spi_miso(flash_miso),
+        .sd_sck(sd_sck), .sd_cs_n(sd_cs), .sd_mosi(sd_mosi), .sd_miso(sd_miso),
         .exit_code(exit_code), .exit_valid(exit_valid), .dbg_pc(), .dbg_instr(), .dbg_state(), .dbg_addr(), .dbg_txcnt(), .dbg_txbusy());
     // tristate pads
     genvar i;
@@ -43,12 +45,7 @@ module top_soc_sdram (
         end
     endgenerate
     assign kbd[10] = goe[12] ? go[12] : 1'bz;
-    generate
-        for (i = 0; i < 4; i = i + 1) begin : g_sd
-            assign sd[i] = goe[34 + i] ? go[34 + i] : 1'bz;
-        end
-    endgenerate
-    assign gi = {3'b0, lcd, sd, 21'b0, kbd[10], 1'b0, kbd[9:0], 1'b0};   // GP44..38, GP37..34, GP12, GP10..1
+    assign gi = {3'b0, lcd, 25'b0, kbd[10], 1'b0, kbd[9:0], 1'b0};   // GP44..38, GP12, GP10..1
     reg ok = 0; always @(posedge clk) if (rst) ok <= 0; else if (exit_valid && exit_code == 32'h5555) ok <= 1;
     assign led = ~{4'b0, ok, u_soc.sd_init_done};
 endmodule
