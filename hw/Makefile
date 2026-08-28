@@ -21,18 +21,18 @@ RTL_CPU  := $(wildcard rtl/cpu/*.v) $(wildcard rtl/sdram/*.v)
 CST      := boards/$(BOARD)/$(BOARD).cst
 
 .DELETE_ON_ERROR:
-.PHONY: all test test-soc test-riscv run bit flash flash-rom clean
+.PHONY: all test test-soc test-boot test-riscv run boot bit flash flash-rom clean
 
 all: bit
 
 # ---- simulation -------------------------------------------------------
-test: $(BUILD)/tb_uart.vvp $(BUILD)/tb_top_blink.vvp $(BUILD)/tb_sdram.vvp test-soc test-riscv
+test: $(BUILD)/tb_uart.vvp $(BUILD)/tb_top_blink.vvp $(BUILD)/tb_sdram.vvp test-soc test-boot test-riscv
 	@vvp -N $(BUILD)/tb_sdram.vvp | tee $(BUILD)/tb_sdram.log | grep -q '^PASS' || { cat $(BUILD)/tb_sdram.log; exit 1; }
 	@vvp -N $(BUILD)/tb_uart.vvp | tee $(BUILD)/tb_uart.log | grep -q '^PASS' || { cat $(BUILD)/tb_uart.log; exit 1; }
 	@vvp -N $(BUILD)/tb_top_blink.vvp | tee $(BUILD)/tb_top_blink.log | grep -q '^PASS' || { cat $(BUILD)/tb_top_blink.log; exit 1; }
 	@echo "hw test: PASS"
 
-SOC_SRCS := rtl/soc/soc.v rtl/soc/ram32.v rtl/soc/uart_tx.v rtl/soc/uart_rx.v rtl/cpu/rv32_core.v
+SOC_SRCS := rtl/soc/soc.v rtl/soc/ram32.v rtl/soc/uart_tx.v rtl/soc/uart_rx.v rtl/cpu/rv32_core.v rtl/sdram/sdram_ctrl.v
 
 $(BUILD)/tb_soc.vvp: sim/tb_soc.v $(SOC_SRCS) | $(BUILD)
 	iverilog -g2012 -o $@ $^
@@ -73,6 +73,25 @@ test-soc: $(BUILD)/tb_soc.vvp $(BUILD)/smoke.bin $(addprefix $(BUILD)/,$(addsuff
 test-riscv: $(BUILD)/tb_soc.vvp
 	@if [ -d third_party/riscv-tests/isa ]; then tests/run_riscv_tests.sh | tail -1; else echo "riscv-tests: SKIP (git clone --depth 1 https://github.com/riscv-software-src/riscv-tests.git hw/third_party/riscv-tests)"; fi
 
+# ---- boot ROM (gcc assembler) ----
+RISCV_GCC ?= riscv64-unknown-elf-gcc
+$(BUILD)/bootrom.bin: sw/bootrom/bootrom.S sw/bootrom/link.ld | $(BUILD)
+	$(RISCV_GCC) -march=rv32i_zicsr_zifencei -mabi=ilp32 -nostdlib -nostartfiles -T sw/bootrom/link.ld -o $(BUILD)/bootrom.elf $<
+	riscv64-unknown-elf-objcopy -O binary $(BUILD)/bootrom.elf $@
+$(BUILD)/bootrom.hex: $(BUILD)/bootrom.bin
+	python3 tools/bin2hex.py $< $@
+
+$(BUILD)/tb_boot.vvp: sim/tb_boot.v sim/sdram_model.v $(SOC_SRCS) | $(BUILD)
+	iverilog -g2012 -o $@ $^
+
+# make boot BIN=x.bin — simulate reset → boot ROM → UART load → run
+boot: $(BUILD)/tb_boot.vvp $(BUILD)/bootrom.hex $(BIN)
+	vvp -N $(BUILD)/tb_boot.vvp +rom=$(BUILD)/bootrom.hex +bin=$(BIN) +timeout=$(TIMEOUT)
+
+test-boot: $(BUILD)/tb_boot.vvp $(BUILD)/bootrom.hex $(BUILD)/smoke.bin
+	@vvp -N $(BUILD)/tb_boot.vvp +rom=$(BUILD)/bootrom.hex +bin=$(BUILD)/smoke.bin +timeout=4000000 2>&1 | grep -q '^\[tb\] PASS' || { echo "test-boot: FAIL"; exit 1; }
+	@echo "test-boot: PASS"
+
 $(BUILD)/tb_sdram.vvp: sim/tb_sdram.v sim/sdram_model.v rtl/sdram/sdram_ctrl.v | $(BUILD)
 	iverilog -g2012 -o $@ $^
 
@@ -87,7 +106,7 @@ PROG ?= $(BUILD)/smoke.bin
 $(BUILD)/prog.hex: $(PROG) | $(BUILD)
 	python3 tools/bin2hex.py $< $@
 
-$(BUILD)/$(TOP).json: boards/$(BOARD)/$(TOP).v $(RTL_SOC) $(RTL_CPU) $(BUILD)/prog.hex | $(BUILD)
+$(BUILD)/$(TOP).json: boards/$(BOARD)/$(TOP).v $(RTL_SOC) $(RTL_CPU) $(BUILD)/prog.hex $(BUILD)/bootrom.hex | $(BUILD)
 	yosys -q -l $(BUILD)/$(TOP).yosys.log -p "read_verilog -sv $(filter %.v,$^); synth_gowin -top $(TOP) -json $@"
 
 $(BUILD)/$(TOP)_pnr.json: $(BUILD)/$(TOP).json $(CST)

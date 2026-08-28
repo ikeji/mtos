@@ -331,15 +331,22 @@ hw/
   ma_data は core が仕様どおり trap するので skip)、test_timer.tc が
   sim と実機で TIMER_OK。発見したバグ: `cond ? $signed(x) >>> n : y`
   は unsigned 文脈で論理シフトになる (sra/srai が riscv-tests で発覚)
-- [~] Phase 3 SDRAM + GPIO/SPI + ブート ROM (UART / flash) —
-  2026-08-28: 自作 `rtl/sdram/sdram_ctrl.v` (単一ワード ACT→R/W→
-  明示 PRECHARGE、CL=2、7.8 µs リフレッシュ、27 MHz 同相クロック) +
-  `sim/sdram_model.v`。**実機 `top_memtest` で全 2M ワード (8 MB)
-  書き→読みがエラー 0** (1 パス ~1.7 s、複数パス連続)。A10 自動
-  プリチャージだけだと行が切り替わらず 1024 ワードしか正しくなかった
-  ので明示 PRECHARGE に変更。NESTang は GPL-3 だったので不採用
-  (§4.6 訂正)。残: SoC 統合、ブート ROM + UART ローダ、GPIO/SPI、
-  flash ブート
+- [~] Phase 3 SDRAM + GPIO/SPI + ブート ROM — 2026-08-28: **SDRAM +
+  UART ブート完了**。自作 `rtl/sdram/sdram_ctrl.v` (単一ワード ACT→
+  R/W→明示 PRECHARGE、CL=2、7.8 µs リフレッシュ、27 MHz 同相) +
+  `sim/sdram_model.v`、実機 `top_memtest` で 8 MB 全域エラー 0。
+  A10 自動プリチャージだけでは行が切り替わらず (1024 ワードのみ
+  正常) 明示 PRECHARGE で解決。soc.v に `USE_SDRAM` / ブート ROM
+  (BSRAM 8 KB @ 0x0、`RESET_PC=0`) を追加、`hw/sw/bootrom/bootrom.S`
+  (gcc as) が `[len][data][sum32]` を UART で受けて SDRAM へ、
+  `hw/tools/uart_load.py` がホスト側。**実機 `top_soc_sdram` で
+  リセット → ROM → hello2.bin 25 KB を 2.3 s でロード → SDRAM 上で
+  "Hello, World"** (`hw/tests/test_soc_hw.sh`)。sim は `make -C hw boot
+  BIN=…` / `test-boot`。NESTang は GPL-3 だったので不採用 (§4.6)。
+  注意: ROM は受信バイトを無条件に長さヘッダとして読むので、ロード前に
+  UART へ余計なバイトを送らない (uart_probe.py の "ping" で 1 回
+  はまった)。残: GPIO / SPI master (Phase 5 で LCD と一緒に)、SPI
+  flash ブート (Phase 5 の後)
 - [ ] Phase 4 kernel 移植 → UART で sh
 - [ ] Phase 5 LCD + キーボード → スタンドアロン (電池運用の消費電流実測含む)
 - [ ] Phase 6 SD → コンパイラ → self-replicate

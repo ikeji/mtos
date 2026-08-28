@@ -10,7 +10,8 @@ module tb_soc;
     // Fast UART in sim (BAUD = CLK/10 → 10 clocks/bit) so long prints are cheap.
     soc #(.RAM_WORDS(2*1024*1024), .CLK_HZ(27_000_000), .BAUD(2_700_000)) dut (
         .clk(clk), .rst(rst), .uart_rx(1'b1), .uart_tx(uart_tx),
-        .exit_code(exit_code), .exit_valid(exit_valid), .dbg_pc(pc));
+        .sdram_clk(), .sdram_cke(), .sdram_cs_n(), .sdram_ras_n(), .sdram_cas_n(), .sdram_we_n(), .sdram_addr(), .sdram_ba(), .sdram_dqm(), .sdram_dq(),
+        .exit_code(exit_code), .exit_valid(exit_valid), .dbg_pc(pc), .dbg_instr(), .dbg_state(), .dbg_addr(), .dbg_txcnt(), .dbg_txbusy());
     wire [7:0] ch; wire chv;
     uart_rx #(.CLK_HZ(27_000_000), .BAUD(2_700_000)) mon (.clk(clk), .rst(rst), .rx(uart_tx), .data(ch), .valid(chv));
     always @(posedge clk) if (chv) $write("%c", ch);
@@ -51,10 +52,10 @@ module tb_soc;
     initial begin
         if (!$value$plusargs("hex=%s", hexfile)) begin $display("need +hex="); $finish; end
         if (!$value$plusargs("timeout=%d", timeout_cycles)) timeout_cycles = 2_000_000;
-        $readmemh({hexfile, ".b0"}, dut.ram.ram0);
-        $readmemh({hexfile, ".b1"}, dut.ram.ram1);
-        $readmemh({hexfile, ".b2"}, dut.ram.ram2);
-        $readmemh({hexfile, ".b3"}, dut.ram.ram3);
+        $readmemh({hexfile, ".b0"}, dut.g_bsram.ram.ram0);
+        $readmemh({hexfile, ".b1"}, dut.g_bsram.ram.ram1);
+        $readmemh({hexfile, ".b2"}, dut.g_bsram.ram.ram2);
+        $readmemh({hexfile, ".b3"}, dut.g_bsram.ram.ram3);
         repeat (4) @(posedge clk); rst = 0;
     end
 endmodule

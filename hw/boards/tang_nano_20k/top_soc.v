@@ -15,7 +15,8 @@ module top_soc (
     reg  [5:0]  led_r = 6'b111110;
     soc #(.RAM_WORDS(8192), .CLK_HZ(27_000_000), .BAUD(115_200), .RAM_INIT("build/prog.hex")) u_soc (
         .clk(clk), .rst(rst), .uart_rx(uart_rx), .uart_tx(uart_tx),
-        .exit_code(exit_code), .exit_valid(exit_valid), .dbg_pc(pc));
+        .sdram_clk(), .sdram_cke(), .sdram_cs_n(), .sdram_ras_n(), .sdram_cas_n(), .sdram_we_n(), .sdram_addr(), .sdram_ba(), .sdram_dqm(), .sdram_dq(),
+        .exit_code(exit_code), .exit_valid(exit_valid), .dbg_pc(pc), .dbg_instr(), .dbg_state(), .dbg_addr(), .dbg_txcnt(), .dbg_txbusy());
     always @(posedge clk) if (exit_valid) led_r <= (exit_code == 32'h5555) ? 6'b000000 : ~exit_code[21:16];
     assign led = led_r;
 endmodule

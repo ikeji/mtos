@@ -8,6 +8,7 @@ module top_socdbg (
     wire [31:0] exit_code, pc, instr, addr; wire exit_valid; wire [2:0] st; wire soc_tx; wire [7:0] txcnt; wire txbusy;
     soc #(.RAM_WORDS(8192), .CLK_HZ(27_000_000), .BAUD(115_200), .RAM_INIT("build/prog.hex")) u_soc (
         .clk(clk), .rst(rst), .uart_rx(uart_rx), .uart_tx(soc_tx),
+        .sdram_clk(), .sdram_cke(), .sdram_cs_n(), .sdram_ras_n(), .sdram_cas_n(), .sdram_we_n(), .sdram_addr(), .sdram_ba(), .sdram_dqm(), .sdram_dq(),
         .exit_code(exit_code), .exit_valid(exit_valid), .dbg_pc(pc), .dbg_instr(instr), .dbg_state(st), .dbg_addr(addr),
         .dbg_txcnt(txcnt), .dbg_txbusy(txbusy));
     reg seen_exit = 0; always @(posedge clk) if (exit_valid) seen_exit <= 1;
