@@ -24,8 +24,13 @@ CST      := boards/$(BOARD)/$(BOARD).cst
 all: bit
 
 # ---- simulation -------------------------------------------------------
-test: $(BUILD)/tb_uart.vvp
-	@vvp -N $< | tee $(BUILD)/tb_uart.log | grep -q '^PASS' && echo "hw test: PASS" || { cat $(BUILD)/tb_uart.log; exit 1; }
+test: $(BUILD)/tb_uart.vvp $(BUILD)/tb_top_blink.vvp
+	@vvp -N $(BUILD)/tb_uart.vvp | tee $(BUILD)/tb_uart.log | grep -q '^PASS' || { cat $(BUILD)/tb_uart.log; exit 1; }
+	@vvp -N $(BUILD)/tb_top_blink.vvp | tee $(BUILD)/tb_top_blink.log | grep -q '^PASS' || { cat $(BUILD)/tb_top_blink.log; exit 1; }
+	@echo "hw test: PASS"
+
+$(BUILD)/tb_top_blink.vvp: sim/tb_top_blink.v boards/$(BOARD)/top_blink.v rtl/soc/uart_tx.v rtl/soc/uart_rx.v | $(BUILD)
+	iverilog -g2012 -o $@ $^
 
 $(BUILD)/tb_uart.vvp: sim/tb_uart.v rtl/soc/uart_tx.v rtl/soc/uart_rx.v | $(BUILD)
 	iverilog -g2012 -o $@ $^

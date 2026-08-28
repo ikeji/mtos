@@ -1,7 +1,8 @@
 #!/bin/bash
 # test_blink.sh — flash top_blink into SRAM and verify the UART echo.
 # Needs the board on USB (BL616 bridge → /dev/ttyUSB1 is the UART,
-# /dev/ttyUSB0 is JTAG). Override with UART_PORT.
+# /dev/ttyUSB0 is JTAG — writing to it returns FTDI MPSSE "bad command"
+# replies 0xFA+byte, which look like an echo). Override with UART_PORT.
 set -euo pipefail
 HW_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 export PATH="${OSS_CAD:-$HOME/opt/oss-cad-suite}/bin:$PATH"
@@ -16,9 +17,9 @@ exec 3<>"$UART_PORT"
 # drain
 timeout 0.3 cat <&3 >/dev/null || true
 printf 'hello tn20k\n' >&3
-got="$(timeout 1 head -c 12 <&3 || true)"
+got="$(timeout 1 head -c 12 <&3 || true)"   # $() strips the trailing newline
 exec 3>&-
-if [ "$got" = $'hello tn20k\n' ]; then
+if [ "$got" = "hello tn20k" ]; then
     echo "test_blink: PASS (uart echo ok)"
 else
     echo "test_blink: FAIL got=$(printf '%q' "$got")"; exit 1

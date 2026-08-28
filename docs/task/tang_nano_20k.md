@@ -305,7 +305,13 @@ hw/
 
 ## 8. 進捗
 
-- [~] Phase 0 足場 — 2026-08-28: oss-cad-suite 20260827 を ~/opt に導入 (yosys 0.68 / nextpnr-himbaechel 0.11 / apicula)、`hw/` 雛形 + uart_tx/rx + top_blink (LED + UART echo) を合成 → .fs 生成 OK、`make -C hw test` (iverilog UART loopback) PASS。残: 実機書き込み (`hw/tests/test_blink.sh`)
+- [x] Phase 0 足場 — 2026-08-28 完了。oss-cad-suite 20260827 を
+  ~/opt に導入 (yosys 0.68 / nextpnr-himbaechel 0.11 / apicula /
+  openFPGALoader / iverilog / verilator、sudo 不要)、`hw/` 雛形 +
+  uart_tx/rx + top_blink (LED + UART echo + S1 banner)。`make -C hw
+  test` (iverilog 2 本) PASS、`make -C hw bit` → LUT4 303、実機で
+  `hw/tests/test_blink.sh` PASS (JTAG 書き込み → UART echo)。
+  bitstream 実測 ~580 KB。得られた知見は §9
 - [ ] Phase 1 RV32I コア
 - [ ] Phase 2 M + CSR + trap + CLINT
 - [ ] Phase 3 SDRAM + GPIO/SPI + ブート ROM (UART / flash)
@@ -313,6 +319,29 @@ hw/
 - [ ] Phase 5 LCD + キーボード → スタンドアロン (電池運用の消費電流実測含む)
 - [ ] Phase 6 SD → コンパイラ → self-replicate
 - [ ] Phase 7 性能 / タッチ / HDMI
+
+## 9. Phase 0 で得た実機の知見
+
+- **USB は FT2232 互換 (0403:6010、product "USB Debugger")。ttyUSB0 =
+  JTAG (MPSSE)、ttyUSB1 = FPGA UART**。ttyUSB0 に書くと FTDI の
+  MPSSE "bad command" 応答 `0xFA + 送ったバイト` が返ってきて echo に
+  見えるので騙されないこと。
+- **初回接続時に BL616 の UART ブリッジが無反応** だった (JTAG は
+  動き、FPGA 設計も LED で動作確認済なのに ttyUSB1 が全ボーレートで
+  沈黙)。USB の物理抜き差しで復活し、以後は openFPGALoader 直後でも
+  UART が生きている。sysfs の `authorized` トグルや usb driver の
+  unbind/bind ではデバイスがハングして復旧できなかった (物理抜き差し
+  必須)。
+- FPGA UART ピンは回路図 (v1.3) の `PIN69_SYS_TX` / `PIN70_SYS_RX` で
+  確定 (apicula の例と一致)。ピン/回路図の確認は Sipeed の
+  `tang_nano_20k_schematic_v1.3.pdf` を pypdf で grep するのが速い。
+- udev: `/etc/udev/rules.d/99-tangnano.rules` で 0403:6010 を 0666。
+  ユーザは dialout 未所属でも動く。
+- nextpnr-himbaechel の `--freq 27` は gowin では効かず、timing 報告は
+  12 MHz 基準のまま (Fmax 自体は 276 MHz と報告されるので当面無害)。
+  正式なクロック制約の付け方は Phase 1 で調べる。
+- bitstream は SRAM (`make -C hw flash`、揮発) と SPI flash
+  (`flash-rom`、電源投入で自動起動) の 2 経路とも動作確認済。
 
 ## 関連
 
