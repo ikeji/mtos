@@ -43,8 +43,6 @@ module soc #(
         .mem_wdata(mem_wdata), .mem_wstrb(mem_wstrb), .mem_rdata(mem_rdata),
         .timer_irq(timer_irq), .mtime(mtime), .dbg_pc(dbg_pc), .dbg_instr(dbg_instr), .dbg_state(dbg_state));
     assign dbg_addr = mem_addr;
-    reg [7:0] txcnt; always @(posedge clk) if (rst) txcnt <= 0; else if (tx_valid) txcnt <= txcnt + 1'b1;
-    assign dbg_txcnt = txcnt; assign dbg_txbusy = tx_busy;
 
     // ---- address decode ----
     wire sel_ram   = (mem_addr[31:28] == 4'h8);
@@ -74,6 +72,8 @@ module soc #(
         else if (rx_valid) begin rxf[rx_wp] <= rx_data; rx_wp <= rx_wp + 1'b1; end
     end
     wire [7:0] uart_lsr = {1'b0, ~tx_busy, ~tx_busy, 4'b0, ~rx_empty};
+    reg [7:0] txcnt; always @(posedge clk) if (rst) txcnt <= 0; else if (tx_valid) txcnt <= txcnt + 1'b1;
+    assign dbg_txcnt = txcnt; assign dbg_txbusy = tx_busy;   // for top_socdbg
 
     // ---- bus response ----
     reg pending;       // a transaction has been accepted and is completing this cycle
