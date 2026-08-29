@@ -421,6 +421,16 @@ hw/
   再現) を発見・修正。残: self-replicate (kernel + コンパイラ 8 本を
   実機で再生成し byte-exact) — pico2 で ~55 min だったので、この CPU
   では数時間規模。コア高速化が先。
+- [ ] Phase 7.5 flash XIP (将来必須): SDRAM 8 MB のうち extra kernel が
+  4.6 MB を占めるので、いずれ kernel .text/.rodata + mtfs イメージを
+  flash 上で直接実行する pico2 方式に移す。必要なもの: (1) XIP
+  コントローラ (バス → Quad I/O continuous read、flash は JEDEC 0x0B =
+  XTX、XT25F64B 系なら quad 可) + キャッシュを 4〜8 ワード行バースト
+  fill に、(2) レイアウトを pico2 方式 (text/rodata/mtfs は flash の
+  0x2000_0000 窓、.data を crt0 で SDRAM へ、gp は SDRAM)、(3) loader の
+  XIP 経路はそのまま。効果: 起動 ≒ kernel 1.1 s、SDRAM が丸ごと arena
+  に。代償: 20 MHz SPI なので大きいコードは実行 ~2 倍遅くなる見込み →
+  パイプライン化と同時期に。先に DMA コピー (起動 9 → ~2 s) で凌ぐ。
 - [~] Phase 7 性能 — 8 KB キャッシュ + **rPLL で 40.5 MHz (既定、`hw/rtl/soc/pll_40m5.v`、Fmax 46 MHz、PnR ~20 min)**: SD 64 KB read 28.7 → 18.4 s。次候補: 4 ワード行 + 連続バースト、regfile を RAM 化 (LUT 削減)、5 段パイプライン。タッチ / HDMI は未着手
 
 ## 9. Phase 0 で得た実機の知見
