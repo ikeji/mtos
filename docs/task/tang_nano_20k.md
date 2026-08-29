@@ -431,6 +431,15 @@ hw/
   XIP 経路はそのまま。効果: 起動 ≒ kernel 1.1 s、SDRAM が丸ごと arena
   に。代償: 20 MHz SPI なので大きいコードは実行 ~2 倍遅くなる見込み →
   パイプライン化と同時期に。先に DMA コピー (起動 9 → ~2 s) で凌ぐ。
+- [x] 起動時間 (2026-08-29): 9.15 s → **2.85 s**。内訳を kputs_t で
+  計測したら bootrom 8.0 s (CPU が 1 バイトずつ flash → SDRAM に運ぶ
+  ~100 clk/byte + crt0 の RAM ゼロ埋め 0.8 s) / kernel 1.1 s だった。
+  `rtl/soc/flash_dma.v` (SPI→SDRAM ワード DMA + バイト和、完了時に
+  キャッシュ無効化) と `sdram_ctrl` init 直後のハードゼロ埋め (UART
+  待ち 0.67 s の裏で完了) で bootrom は 1.7 s (= UART 待ち 0.67 +
+  DMA 0.9 s ≒ 20 MHz single SPI の限界)。残り: UART 待ち短縮、quad
+  SPI (DMA 4×)、kernel 1.1 s はコア速度 (pico2 61 ms の 18 倍 = クロック
+  3.7× × CPI ~5×)。
 - [~] Phase 7 性能 — 8 KB キャッシュ + **rPLL で 40.5 MHz (既定、`hw/rtl/soc/pll_40m5.v`、Fmax 46 MHz、PnR ~20 min)**: SD 64 KB read 28.7 → 18.4 s。次候補: 4 ワード行 + 連続バースト、regfile を RAM 化 (LUT 削減)、5 段パイプライン。タッチ / HDMI は未着手
 
 ## 9. Phase 0 で得た実機の知見
