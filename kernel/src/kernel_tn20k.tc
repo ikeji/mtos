@@ -238,7 +238,7 @@ export fn kputs_t(s: StringLiteral) -> void {
 }
 
 fn main() -> i32 {
-    kputs("KERN: starting\n");
+    kputs_t("KERN: starting\n");
 
     if block_init() != 0 {
         kputs("BLOCK: no mtfs image\n");
@@ -251,7 +251,7 @@ fn main() -> i32 {
         kputs("MTFS: mount failed\n");
         return 1;
     }
-    kputs("MTFS: mounted\n");
+    kputs_t("MTFS: mounted\n");
 
     if fat_block_init() == 0 {
         kputs("SD: card ready\n");
@@ -290,7 +290,7 @@ fn main() -> i32 {
         delete(seed_nm);
     }
 
-    kputs("KERN: init tasks loaded, starting scheduler\n");
+    kputs_t("KERN: init tasks loaded, starting scheduler\n");
     rearm_timer();
     var mie: u32 = csr_read_mie();
     csr_write_mie(mie | 0x80u32);
