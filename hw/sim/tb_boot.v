@@ -9,7 +9,7 @@ module tb_boot;
     wire sclk, cke, cs_n, ras_n, cas_n, we_n; wire [10:0] sa; wire [1:0] ba; wire [3:0] dqm; wire [31:0] dq;
     localparam BAUD = 2_700_000;   // 10 clocks/bit in sim
     wire fclk, fcs, fmosi, fmiso;
-    soc #(.USE_SDRAM(1), .CLK_HZ(27_000_000), .BAUD(BAUD), .RESET_PC(32'h0), .ROM_WORDS(2048), .BOOT_UART_WAIT(32'd30000)) dut (
+    soc #(.USE_SDRAM(1), .CLK_HZ(27_000_000), .BAUD(BAUD), .RESET_PC(32'h0), .ROM_WORDS(2048), .BOOT_UART_WAIT(32'd30000), .SDRAM_ZERO_WORDS(64)) dut (
         .clk(clk), .rst(rst), .uart_rx(rx), .uart_tx(uart_tx),
         .sdram_clk(sclk), .sdram_cke(cke), .sdram_cs_n(cs_n), .sdram_ras_n(ras_n), .sdram_cas_n(cas_n), .sdram_we_n(we_n),
         .sdram_addr(sa), .sdram_ba(ba), .sdram_dqm(dqm), .sdram_dq(dq), .gpio_out(), .gpio_oe(), .gpio_in(48'b0), .spi_sck(fclk), .spi_cs_n(fcs), .spi_mosi(fmosi), .spi_miso(fmiso), .sd_sck(), .sd_cs_n(), .sd_mosi(), .sd_miso(1'b1),

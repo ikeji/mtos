@@ -7,7 +7,7 @@
 //   0x0200_0000  CLINT      (+0x4000 mtimecmp lo/hi, +0xBFF8 mtime lo/hi)
 //   0x1000_0000  UART       (+0 DR, +5 LSR: bit0 RX ready, bit5/6 TX empty)
 //   0xD000_0000  GPIO       (RP2350 SIO register layout, 48 pins; gpio_sio.v)
-//   0x1002_0000  SPI master 0 (boot flash: +0 DATA +4 STATUS +8 CTRL; spi_master.v)
+//   0x1002_0000  flash SPI + DMA (boot flash: +0 DATA +4 STATUS +8 CTRL, +10.. DMA; flash_dma.v)
 //   0x1003_0000  SPI master 1 (microSD, same registers)
 //   0x8000_0000  RAM        (SDRAM 8 MB when USE_SDRAM, else BSRAM RAM_WORDS*4)
 //   0x0000_0000  boot ROM   (BSRAM ROM_WORDS*4, init from ROM_INIT; RESET_PC=0
@@ -22,6 +22,7 @@ module soc #(
     parameter         RAM_INIT  = "",            // $readmemh base name (BSRAM mode)
     parameter integer USE_SDRAM = 0,
     parameter integer USE_CACHE = 1,             // sdram_cache in front of the SDRAM
+    parameter integer SDRAM_ZERO_WORDS = 2*1024*1024, // words zero-filled by the SDRAM controller after init (sim: shrink)
     parameter integer ROM_WORDS = 2048,          // 8 KB boot ROM
     parameter         ROM_INIT  = "",
     parameter [31:0]  RESET_PC  = 32'h8000_0000,
@@ -89,6 +90,10 @@ module soc #(
         .clk(clk), .addr(mem_addr[ROM_AW+1:2]), .wdata(mem_wdata),
         .we(mem_wstrb & {4{mem_valid && sel_rom}}), .rdata(rom_q));
 
+    // flash DMA → SDRAM port (declared here: used inside the RAM generate below)
+    wire        dma_valid, dma_ready, dma_active, dma_done; wire [31:0] dma_addr, dma_wdata;
+    wire        cache_flushing;
+
     // ---- main RAM: SDRAM or BSRAM (synchronous, 1-cycle; see ram32.v) ----
     wire [31:0] ram_q;
     wire        sd_ready, sd_init_done;
@@ -98,16 +103,26 @@ module soc #(
         wire c_valid, c_ready; wire [20:0] c_addr; wire [31:0] c_wdata, c_rdata; wire [3:0] c_wstrb;
         if (USE_CACHE) begin : g_cache
             sdram_cache #(.LINES(2048)) cache (
-                .clk(clk), .rst(rst), .valid(sd_valid), .ready(sd_ready),
+                .clk(clk), .rst(rst), .inval(dma_done), .flushing(cache_flushing),
+                .valid(sd_valid), .ready(sd_ready),
                 .addr(mem_addr[22:2]), .wdata(mem_wdata), .wstrb(mem_wstrb), .rdata(ram_q),
                 .m_valid(c_valid), .m_ready(c_ready), .m_addr(c_addr), .m_wdata(c_wdata), .m_wstrb(c_wstrb), .m_rdata(c_rdata));
         end else begin : g_nocache
             assign c_valid = sd_valid; assign sd_ready = c_ready; assign c_addr = mem_addr[22:2];
             assign c_wdata = mem_wdata; assign c_wstrb = mem_wstrb; assign ram_q = c_rdata;
+            assign cache_flushing = 1'b0;
         end
-        sdram_ctrl #(.CLK_HZ(CLK_HZ)) sd (
-            .clk(clk), .rst(rst), .valid(c_valid), .ready(c_ready),
-            .addr(c_addr), .wdata(c_wdata), .wstrb(c_wstrb), .rdata(c_rdata), .init_done(sd_init_done),
+        // arbiter: the DMA owns the SDRAM port while active (the CPU runs from the boot ROM then)
+        wire        a_valid = dma_active ? dma_valid : c_valid;
+        wire [20:0] a_addr  = dma_active ? dma_addr[22:2] : c_addr;
+        wire [31:0] a_wdata = dma_active ? dma_wdata : c_wdata;
+        wire [3:0]  a_wstrb = dma_active ? 4'hF : c_wstrb;
+        wire        a_ready;
+        assign c_ready   = a_ready & ~dma_active;
+        assign dma_ready = a_ready &  dma_active;
+        sdram_ctrl #(.CLK_HZ(CLK_HZ), .ZERO_WORDS(SDRAM_ZERO_WORDS)) sd (
+            .clk(clk), .rst(rst), .valid(a_valid), .ready(a_ready),
+            .addr(a_addr), .wdata(a_wdata), .wstrb(a_wstrb), .rdata(c_rdata), .init_done(sd_init_done),
             .sdram_clk(sdram_clk), .sdram_cke(sdram_cke), .sdram_cs_n(sdram_cs_n), .sdram_ras_n(sdram_ras_n),
             .sdram_cas_n(sdram_cas_n), .sdram_we_n(sdram_we_n), .sdram_addr(sdram_addr), .sdram_ba(sdram_ba),
             .sdram_dqm(sdram_dqm), .sdram_dq(sdram_dq));
@@ -116,7 +131,7 @@ module soc #(
         ram32 #(.WORDS(RAM_WORDS), .INIT(RAM_INIT)) ram (
             .clk(clk), .addr(mem_addr[AW+1:2]), .wdata(mem_wdata),
             .we(mem_wstrb & {4{mem_valid && sel_ram}}), .rdata(ram_q));
-        assign sd_ready = 1'b0; assign sd_init_done = 1'b1;
+        assign sd_ready = 1'b0; assign sd_init_done = 1'b1; assign dma_ready = 1'b0; assign cache_flushing = 1'b0;
         assign sdram_clk = 1'b0; assign sdram_cke = 1'b0; assign sdram_cs_n = 1'b1; assign sdram_ras_n = 1'b1;
         assign sdram_cas_n = 1'b1; assign sdram_we_n = 1'b1; assign sdram_addr = 11'b0; assign sdram_ba = 2'b0; assign sdram_dqm = 4'hF;
     end endgenerate
@@ -149,11 +164,15 @@ module soc #(
     gpio_sio gpio (.clk(clk), .rst(rst), .sel(gpio_strobe), .we(is_write), .addr(mem_addr[7:0]),
                    .wdata(mem_wdata), .rdata(gpio_rdata), .gpio_out(gpio_out), .gpio_oe(gpio_oe), .gpio_in(gpio_in));
 
-    // ---- SPI master ----
+    // ---- flash SPI + DMA (writes straight into the SDRAM, bypassing the cache;
+    //      the cache is invalidated when a DMA completes) ----
     wire [31:0] spi_rdata;
     wire        spi_strobe = mem_valid && sel_spi && !mem_ready && !pending && !sd_wait;
-    spi_master spi (.clk(clk), .rst(rst), .sel(spi_strobe), .we(is_write), .addr(mem_addr[3:0]),
-                    .wdata(mem_wdata), .rdata(spi_rdata), .sck(spi_sck), .cs_n(spi_cs_n), .mosi(spi_mosi), .miso(spi_miso));
+    flash_dma spi (.clk(clk), .rst(rst), .sel(spi_strobe), .we(is_write), .addr(mem_addr[5:0]),
+                   .wdata(mem_wdata), .rdata(spi_rdata),
+                   .m_valid(dma_valid), .m_ready(dma_ready), .m_addr(dma_addr), .m_wdata(dma_wdata),
+                   .dma_active(dma_active), .done(dma_done), .ext_busy(cache_flushing),
+                   .sck(spi_sck), .cs_n(spi_cs_n), .mosi(spi_mosi), .miso(spi_miso));
     wire [31:0] spi1_rdata;
     wire        spi1_strobe = mem_valid && sel_spi1 && !mem_ready && !pending && !sd_wait;
     spi_master spi1 (.clk(clk), .rst(rst), .sel(spi1_strobe), .we(is_write), .addr(mem_addr[3:0]),

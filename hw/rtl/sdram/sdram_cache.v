@@ -10,6 +10,8 @@ module sdram_cache #(
 ) (
     input  wire        clk,
     input  wire        rst,
+    input  wire        inval,      // pulse: invalidate everything (after a DMA into the SDRAM)
+    output wire        flushing,
     // CPU side
     input  wire        valid,
     output reg         ready,
@@ -43,6 +45,7 @@ module sdram_cache #(
     wire [TW-1:0] tag_lat = a_lat[20:IW];
     wire          hit     = tag_q[TW] && (tag_q[TW-1:0] == tag_lat);
     wire          is_wr   = (ws_lat != 4'b0);
+    assign flushing = (state == S_FLUSH);
 
     // tag / data array ports (synchronous read; write in LOOKUP/MEMR)
     reg          we_line;              // write whole line (fill)
@@ -81,7 +84,8 @@ module sdram_cache #(
                 if (fidx == LINES - 1) state <= S_IDLE;
             end
             S_IDLE: begin
-                if (valid && !ready) begin
+                if (inval) begin fidx <= 0; state <= S_FLUSH; end
+                else if (valid && !ready) begin
                     a_lat <= addr; wd_lat <= wdata; ws_lat <= wstrb;
                     state <= S_LOOKUP;                 // tag_q / q* valid next cycle
                 end

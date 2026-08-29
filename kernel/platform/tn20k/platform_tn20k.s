@@ -12,15 +12,9 @@
 _start:
     la   gp, __global_pointer$
     li   sp, 0x80800000
-    # Zero everything above the loaded image (.bss + free RAM) up to the
-    # RAM top. qemu hands us zeroed RAM and pico2's crt0 clears its SRAM;
-    # the SoC's SDRAM is garbage at power-up and the kernel relies on
-    # zero-initialised .bss. ~2M words x ~8 clocks = ~0.6 s at 27 MHz.
-    la   t0, _trap_frame          # first .bss label (crt0_tn20k_data.s)
-    li   t1, 0x80800000
-1:  sw   zero, 0(t0)
-    addi t0, t0, 4
-    bltu t0, t1, 1b
+    # .bss / free RAM zeroing: done in hardware by the SDRAM controller
+    # right after its init (hw/rtl/sdram/sdram_ctrl.v ZERO_WORDS), before
+    # the boot ROM can touch the SDRAM, so nothing to do here.
     la   a0, __arena
     li   a1, 0x807F0000           # arena end = RAM top - 64 KB stack
     sub  a1, a1, a0

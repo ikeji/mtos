@@ -11,7 +11,8 @@
 // Bus: valid/ready handshake like the CPU port. `ready` pulses for one
 // clock when the access completes (read data valid on that clock).
 module sdram_ctrl #(
-    parameter integer CLK_HZ = 27_000_000
+    parameter integer CLK_HZ = 27_000_000,
+    parameter integer ZERO_WORDS = 2*1024*1024   // zero-fill this many words after init (RAM comes up as garbage; the kernel expects zeroed .bss / fresh memory)
 ) (
     input  wire        clk,
     input  wire        rst,
@@ -72,6 +73,8 @@ module sdram_ctrl #(
     localparam S_WAIT      = 4'd7;
     localparam S_REF       = 4'd8;
     localparam S_PRE       = 4'd9;
+    localparam S_ZERO      = 4'd10;   // post-init zero fill: issue writes of 0 to every word
+    reg [20:0] zaddr; reg zero_fill;
 
     reg [3:0]  state;
     reg [15:0] cnt;          // generic wait counter
@@ -87,7 +90,7 @@ module sdram_ctrl #(
     always @(posedge clk) begin
         if (rst) begin
             state <= S_INIT_WAIT; cnt <= 0; init_refs <= 0; ref_timer <= 0; ref_due <= 0;
-            cmd <= CMD_NOP; sdram_addr <= 0; sdram_ba <= 0; sdram_dqm <= 4'hF;
+            cmd <= CMD_NOP; sdram_addr <= 0; sdram_ba <= 0; sdram_dqm <= 4'hF; zaddr <= 0; zero_fill <= 0;
             dq_oe <= 0; dq_out <= 0; ready <= 0; rdata <= 0; init_done <= 0; is_write <= 0;
             a_lat <= 0; wd_lat <= 0; ws_lat <= 0;
         end else begin
@@ -117,11 +120,20 @@ module sdram_ctrl #(
             S_INIT_MRS: begin
                 // mode: burst length 1, sequential, CAS latency 2, standard write
                 cmd <= CMD_MRS; sdram_ba <= 2'b00; sdram_addr <= 11'b000_0010_0000;
-                cnt <= 0; state <= S_WAIT; init_done <= 1'b1;
+                cnt <= 0; state <= S_WAIT; zero_fill <= (ZERO_WORDS != 0); zaddr <= 0;
             end
             S_IDLE: begin
                 sdram_dqm <= 4'hF;
-                if (ref_due) begin
+                if (zero_fill) begin
+                    // internal write of 0 to zaddr (same path as a user write)
+                    a_lat <= zaddr; wd_lat <= 32'd0; ws_lat <= 4'hF; is_write <= 1'b1;
+                    cmd <= CMD_ACT; sdram_ba <= zaddr[20:19]; sdram_addr <= zaddr[18:8];
+                    cnt <= 0; state <= S_ACT;
+                    if (zaddr == ZERO_WORDS - 1) begin zero_fill <= 1'b0; end
+                    zaddr <= zaddr + 1'b1;
+                end else if (!init_done) begin
+                    init_done <= 1'b1;
+                end else if (ref_due) begin
                     ref_due <= 1'b0; cmd <= CMD_REF; cnt <= 0; state <= S_REF;
                 end else if (valid && !ready) begin
                     a_lat <= addr; wd_lat <= wdata; ws_lat <= wstrb; is_write <= (wstrb != 4'b0);
@@ -161,7 +173,7 @@ module sdram_ctrl #(
                 if (cnt == T_RFC) state <= S_IDLE; else cnt <= cnt + 1'b1;
             end
             S_PRE: begin
-                if (cnt == T_RP - 1) begin ready <= 1'b1; state <= S_IDLE; end else cnt <= cnt + 1'b1;
+                if (cnt == T_RP - 1) begin ready <= ~(zero_fill | ~init_done); state <= S_IDLE; end else cnt <= cnt + 1'b1;
             end
             S_WAIT: begin
                 if (cnt == T_MRD) state <= S_IDLE; else cnt <= cnt + 1'b1;

@@ -6,8 +6,9 @@
 #    arrives, take load frames on the UART:
 #      [len u32 LE][data len bytes][sum u32 LE]   sum = bytes mod 2^32
 #    → 'K' + jump to 0x8000_0000, or 'E' + wait for another frame.
-# 3. Otherwise try the SPI flash through the SoC's SPI master
-#    (0x10020000: +0 DATA, +4 STATUS busy, +8 CTRL cs), READ (0x03) from
+# 3. Otherwise try the SPI flash through the SoC's flash controller
+#    (0x10020000: +0 DATA, +4 STATUS busy, +8 CTRL cs for byte transfers;
+#    +10 DMA_SRC +14 DMA_DST +18 DMA_LEN +1C DMA_CTRL +20 DMA_SUM), image at
 #    FLASH_IMG_OFF:
 #      "MTOS" [len u32 LE][data][sum u32 LE]
 #    → copy to 0x8000_0000, verify, print "flash: ok\n", jump. On a bad
@@ -21,6 +22,11 @@
     .equ SPI_DATA,   0
     .equ SPI_STATUS, 4
     .equ SPI_CTRL,   8
+    .equ DMA_SRC,    0x10
+    .equ DMA_DST,    0x14
+    .equ DMA_LEN,    0x18
+    .equ DMA_CTRL,   0x1C
+    .equ DMA_SUM,    0x20
 
     .section .text
     .globl _start
@@ -95,17 +101,35 @@ flash_boot:
     mv   s2, a0
     li   t0, 0x00700000             # sanity: image must fit below the 7 MB mark
     bgeu s2, t0, fl_none
-    li   s1, 0x80000000
-    li   s3, 0
-1:  beqz s2, 2f
-    li   a0, 0xff
+    sw   zero, SPI_CTRL(s6)         # close the header read (CS high)
+    # DMA: flash[FLASH_IMG_OFF+8 .. +8+len) → 0x80000000, hardware byte sum
+    li   t0, FLASH_IMG_OFF + 8
+    sw   t0, DMA_SRC(s6)
+    li   t0, 0x80000000
+    sw   t0, DMA_DST(s6)
+    sw   s2, DMA_LEN(s6)
+    li   t0, 1
+    sw   t0, DMA_CTRL(s6)
+1:  lw   t0, DMA_CTRL(s6)
+    andi t0, t0, 1
+    bnez t0, 1b
+    lw   s3, DMA_SUM(s6)
+    # expected sum: 4 bytes right after the data
+    li   t0, 1
+    sw   t0, SPI_CTRL(s6)           # CS low
+    li   a0, 0x03
     call spi_xfer
-    sb   a0, 0(s1)
-    add  s3, s3, a0
-    addi s1, s1, 1
-    addi s2, s2, -1
-    j    1b
-2:  call spi_get32
+    li   s7, FLASH_IMG_OFF + 8
+    add  s7, s7, s2                 # s7 = offset of the sum (t0 is clobbered by spi_xfer)
+    srli a0, s7, 16
+    andi a0, a0, 0xff
+    call spi_xfer
+    srli a0, s7, 8
+    andi a0, a0, 0xff
+    call spi_xfer
+    andi a0, s7, 0xff
+    call spi_xfer
+    call spi_get32
     sw   zero, SPI_CTRL(s6)         # CS high
     bne  a0, s3, fl_bad
     la   a0, msg_ok
