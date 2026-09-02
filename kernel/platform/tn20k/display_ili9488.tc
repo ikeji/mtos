@@ -66,6 +66,7 @@ const LCD_SPI_STATUS: u32 = 0x10040004u32;   // bit0 = cannot accept, bit1 = ful
 const LCD_SPI_CTRL:   u32 = 0x10040008u32;
 const LCD_SPI_PIX:    u32 = 0x1004000Cu32;   // write RGB565 → 3 bytes on the wire
 const LCD_SPI_FILL:   u32 = 0x10040010u32;   // repeat the last PIX this many more times
+const LCD_SPI_GAP:    u32 = 0x10040014u32;   // idle clocks between fill pixels
 
 var g_pio_lcd_inited: i32 = 0;
 // DC line state (-1 = unknown) and one-shot init flag — these lived in
@@ -79,6 +80,7 @@ var g_lcd_use_pio:    i32 = 1;
 fn pio_lcd_init() -> void {
     if g_pio_lcd_inited != 0 { return; }
     poke32(LCD_SPI_CTRL, 0u32);   // div=0 → SCK = clk/2 (20 MHz)
+    poke32(LCD_SPI_GAP, 64u32);   // inter-pixel gap for HW FILL (panel + long wires)
     g_pio_lcd_inited = 1;
     return;
 }
@@ -314,13 +316,12 @@ fn lcd_fill(x: i32, y: i32, w: i32, h: i32, col: i32) -> void {
         return;
     }
 
-    // Fast path: prime DC to data once, then push one RGB565 pixel per
-    // PIX write (the HW shifter expands each to 3 bytes). We deliberately
-    // do NOT use the hardware FILL register here: streaming pixels
-    // back-to-back with no gap drops most of them on this panel + the
-    // long jumper wiring (the CASET/PASET window is fine — verified with
-    // the slow per-byte path). One PIX poke per pixel leaves a small
-    // inter-pixel gap (the poll) which the panel needs. ~0.2 s full screen.
+    // Fast path: prime DC once, then one PIX (latches the pattern) + a
+    // hardware FILL for the rest. The FILL leaves LCD_SPI_GAP idle clocks
+    // between pixels (set in pio_lcd_init) so this panel over the long
+    // jumper wiring doesn't drop pixels — a zero-gap stream only painted
+    // ~30 columns. The CASET/PASET window itself is correct (verified
+    // against the slow per-byte path).
     lcd_dat(rb);  // primes DC = data; sends pixel 0's R byte
     var stat: u32 = LCD_SPI_STATUS;
     var data: u32 = LCD_SPI_DATA;
@@ -328,12 +329,12 @@ fn lcd_fill(x: i32, y: i32, w: i32, h: i32, col: i32) -> void {
     poke32(data, (gb & 0xFF) as u32);
     while (peek32(stat) & 1u32) != 0u32 { }
     poke32(data, (bb & 0xFF) as u32);
-    var i: i32 = 1;
-    var pixreg: u32 = LCD_SPI_PIX;
-    while i < count {
-        while (peek32(stat) & 1u32) != 0u32 { }
-        poke32(pixreg, (col & 0xFFFF) as u32);
-        i = i + 1;
+    if count > 1 {
+        pio_spi_pix(col);
+        if count > 2 {
+            while (peek32(stat) & 1u32) != 0u32 { }
+            poke32(LCD_SPI_FILL, (count - 2) as u32);
+        }
     }
     pio_spi_wait_idle();
     return;

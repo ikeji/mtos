@@ -27,6 +27,7 @@ module tb_lcd_spi;
         wait_idle;
         wr(5'h0C, {16'b0, 5'b10110, 6'b010101, 5'b00111});  // PIX RGB565
         wait_idle;
+        wr(5'h14, 32'd8);                  // small gap between fill pixels
         wr(5'h0C, 16'hF800); wait_idle;    // red
         wr(5'h10, 32'd2);                  // fill: 2 more red pixels
         wait_idle;

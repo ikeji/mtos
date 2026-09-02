@@ -7,6 +7,8 @@
 //   +0xC PIX    write: RGB565 pixel → three bytes on the wire
 //               (R<<3 | G<<2 | B<<3 per the ILI9488's 18-bit format)
 //   +0x10 FILL  write: send this many MORE copies of the last PIX value
+//   +0x14 GAP   idle clocks inserted between fill pixels (panel + long-wire
+//              recovery; streaming with no gap drops pixels on this panel)
 // The busy bit covers everything including an active fill.
 module lcd_spi (
     input  wire        clk,
@@ -20,6 +22,7 @@ module lcd_spi (
     output reg         mosi
 );
     reg [7:0]  div, dcnt;
+    reg [15:0] gap, gcnt;   // inter-pixel idle for FILL
     reg        busy;         // shifter running
     reg [7:0]  shift;
     reg [3:0]  bit_cnt;
@@ -33,6 +36,7 @@ module lcd_spi (
         case (addr[4:2])
             3'h1: rdata = {30'b0, ~idle, busy | (pend != 2'd0) | (fill_cnt != 32'd0)};
             3'h2: rdata = {16'b0, div, 8'b0};
+            3'h5: rdata = {16'b0, gap};
             default: rdata = 32'd0;
         endcase
     end
@@ -43,7 +47,7 @@ module lcd_spi (
 
     always @(posedge clk) begin
         if (rst) begin
-            div <= 0; dcnt <= 0; busy <= 0; shift <= 0; bit_cnt <= 0; phase <= 0;
+            div <= 0; dcnt <= 0; gap <= 0; gcnt <= 0; busy <= 0; shift <= 0; bit_cnt <= 0; phase <= 0;
             pend <= 0; pr <= 0; pg <= 0; pb <= 0; fill_cnt <= 0; sck <= 0; mosi <= 0; rdata <= 0;
         end else begin
             if (sel && we) begin
@@ -58,6 +62,7 @@ module lcd_spi (
                         start_byte({wdata[15:11], 3'b0});
                     end
                     3'h4: fill_cnt <= wdata;
+                    3'h5: gap <= wdata[15:0];
                     default: ;
                 endcase
             end
@@ -71,8 +76,11 @@ module lcd_spi (
                     if (bit_cnt == 1) busy <= 0;
                 end
             end else if (pend == 2'd2) begin pend <= 2'd1; start_byte(pg); end
-            else if (pend == 2'd1) begin pend <= 2'd0; start_byte(pb); end
-            else if (fill_cnt != 32'd0) begin fill_cnt <= fill_cnt - 1'b1; pend <= 2'd2; start_byte(pr); end
+            else if (pend == 2'd1) begin pend <= 2'd0; start_byte(pb); gcnt <= gap; end
+            else if (fill_cnt != 32'd0) begin
+                if (gcnt != 16'd0) gcnt <= gcnt - 1'b1;       // inter-pixel recovery gap
+                else begin fill_cnt <= fill_cnt - 1'b1; pend <= 2'd2; start_byte(pr); end
+            end
         end
     end
 endmodule
