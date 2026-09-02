@@ -123,7 +123,7 @@ $(BUILD)/$(TOP).json: boards/$(BOARD)/$(TOP).v $(RTL_SOC) $(RTL_CPU) $(BUILD)/pr
 
 $(BUILD)/$(TOP)_pnr.json: $(BUILD)/$(TOP).json $(CST)
 	nextpnr-himbaechel -q -l $(BUILD)/$(TOP).pnr.log --json $< --write $@ \
-	    --device $(DEVICE) --vopt family=$(FAMILY) --vopt cst=$(CST) --freq $(shell echo $$(( $(SYS_CLK_HZ) / 1000000 )))
+	    --device $(DEVICE) --vopt family=$(FAMILY) --vopt cst=$(CST) --freq $(if $(PNR_FREQ),$(PNR_FREQ),$(shell echo $$(( $(SYS_CLK_HZ) / 1000000 ))))
 
 $(BUILD)/$(TOP).fs: $(BUILD)/$(TOP)_pnr.json
 	gowin_pack -d $(FAMILY) --mspi_as_gpio -o $@ $<   # mspi_as_gpio: the boot ROM bit-bangs the config flash

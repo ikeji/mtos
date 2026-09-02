@@ -9,6 +9,7 @@
 //   0xD000_0000  GPIO       (RP2350 SIO register layout, 48 pins; gpio_sio.v)
 //   0x1002_0000  flash SPI + DMA (boot flash: +0 DATA +4 STATUS +8 CTRL, +10.. DMA; flash_dma.v)
 //   0x1003_0000  SPI master 1 (microSD, same registers)
+//   0x1004_0000  SPI master 2 (ILI9488 SCK/MOSI — write-only, DC/CS stay on GPIO)
 //   0x8000_0000  RAM        (SDRAM 8 MB when USE_SDRAM, else BSRAM RAM_WORDS*4)
 //   0x0000_0000  boot ROM   (BSRAM ROM_WORDS*4, init from ROM_INIT; RESET_PC=0
 //                            boots from it, RESET_PC=0x8000_0000 bypasses it)
@@ -47,6 +48,7 @@ module soc #(
     input  wire        spi_miso,
     output wire        sd_sck, sd_cs_n, sd_mosi,
     input  wire        sd_miso,
+    output wire        lcd_sck, lcd_mosi,
     output reg  [31:0] exit_code,     // last write to the exit device
     output reg         exit_valid,    // pulses on that write
     output wire [31:0] dbg_pc,
@@ -78,6 +80,7 @@ module soc #(
     wire sel_gpio  = (mem_addr[31:16] == 16'hD000);
     wire sel_spi   = (mem_addr[31:16] == 16'h1002);
     wire sel_spi1  = (mem_addr[31:16] == 16'h1003);
+    wire sel_spi2  = (mem_addr[31:16] == 16'h1004);
     wire sel_uart  = (mem_addr[31:16] == 16'h1000);
     wire sel_clint = (mem_addr[31:16] == 16'h0200);
     wire sel_exit  = (mem_addr[31:16] == 16'h0010);
@@ -177,6 +180,10 @@ module soc #(
     wire        spi1_strobe = mem_valid && sel_spi1 && !mem_ready && !pending && !sd_wait;
     spi_master spi1 (.clk(clk), .rst(rst), .sel(spi1_strobe), .we(is_write), .addr(mem_addr[3:0]),
                      .wdata(mem_wdata), .rdata(spi1_rdata), .sck(sd_sck), .cs_n(sd_cs_n), .mosi(sd_mosi), .miso(sd_miso));
+    wire [31:0] spi2_rdata;
+    wire        spi2_strobe = mem_valid && sel_spi2 && !mem_ready && !pending && !sd_wait;
+    spi_master spi2 (.clk(clk), .rst(rst), .sel(spi2_strobe), .we(is_write), .addr(mem_addr[3:0]),
+                     .wdata(mem_wdata), .rdata(spi2_rdata), .sck(lcd_sck), .cs_n(), .mosi(lcd_mosi), .miso(1'b1));
 
 
 
@@ -238,6 +245,9 @@ module soc #(
                     mem_ready <= 1'b1;
                 end else if (sel_spi1) begin
                     mem_rdata <= spi1_rdata;
+                    mem_ready <= 1'b1;
+                end else if (sel_spi2) begin
+                    mem_rdata <= spi2_rdata;
                     mem_ready <= 1'b1;
                 end else if (sel_exit) begin
                     if (is_write && mem_addr[3:0] == 4'd0) begin exit_code <= mem_wdata; exit_valid <= 1'b1; end

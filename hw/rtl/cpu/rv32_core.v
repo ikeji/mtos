@@ -196,6 +196,7 @@ module rv32_core #(
     // Multiply / divide unit (sequential, 32 iterations)
     // ---------------------------------------------------------------
     reg  [5:0]  md_cnt;
+    reg         md_prep;     // 1 = first S_MULDIV cycle: turn raw operands into absolutes
     reg         md_busy;
     reg  [63:0] md_acc;      // product accumulator / {remainder, quotient}
     reg  [31:0] md_a, md_b;  // |operands|
@@ -207,8 +208,11 @@ module rv32_core #(
                               (funct3 == 3'b100) || (funct3 == 3'b110);
     wire        a_neg = md_signed_a & rs1_val[31];
     wire        b_neg = md_signed_b & rs2_val[31];
-    wire [31:0] a_abs = a_neg ? (~rs1_val + 32'd1) : rs1_val;
-    wire [31:0] b_abs = b_neg ? (~rs2_val + 32'd1) : rs2_val;
+    // The absolute values are computed in a dedicated first S_MULDIV
+    // cycle (md_prep) from the latched raw operands — doing it
+    // combinationally from the register file was the critical path.
+    reg  [31:0] md_ra, md_rb;
+    reg         md_a_neg, md_b_neg;
 
     // Restoring division step on {rem, quo} = md_acc, divisor md_b.
     wire [32:0] div_sub = {md_acc[62:31]} - {1'b0, md_b};   // (rem << 1 | next bit) - divisor
@@ -272,7 +276,7 @@ module rv32_core #(
             mstatus_mie <= 1'b0; mstatus_mpie <= 1'b0; mie_mtie <= 1'b0;
             mtvec <= 0; mscratch <= 0; mepc <= 0; mcause <= 0; mtval <= 0;
             cycle_cnt <= 0; instret_cnt <= 0;
-            md_cnt <= 0; md_busy <= 1'b0; md_acc <= 0; md_a <= 0; md_b <= 0; md_neg_out <= 0; md_neg_rem <= 0;
+            md_cnt <= 0; md_prep <= 0; md_busy <= 1'b0; md_acc <= 0; md_a <= 0; md_b <= 0; md_neg_out <= 0; md_neg_rem <= 0; md_ra <= 0; md_rb <= 0; md_a_neg <= 0; md_b_neg <= 0;
             trap_cause <= 0; trap_tval <= 0; trap_epc <= 0;
             for (i = 0; i < 32; i = i + 1) regs[i] <= 32'd0;
         end else begin
@@ -338,8 +342,9 @@ module rv32_core #(
                     OP_IMM: begin write_rd(rd, alu_out); pc <= pc_plus4; state <= S_FETCH; end
                     OP_OP: begin
                         if (is_muldiv) begin
-                            md_a <= a_abs; md_b <= b_abs;
-                            md_acc <= md_is_div ? {32'd0, a_abs} : 64'd0;
+                            md_ra <= rs1_val; md_rb <= rs2_val;
+                            md_a_neg <= a_neg; md_b_neg <= b_neg;
+                            md_prep <= 1'b1;
                             md_cnt <= 6'd0;
                             // Sign of the result. Division by zero is special-cased
                             // below (quotient all-ones, remainder = dividend).
@@ -395,7 +400,12 @@ module rv32_core #(
             end
             // ---------------------------------------------------------
             S_MULDIV: begin
-                if (md_cnt == 6'd32) begin
+                if (md_prep) begin
+                    md_prep <= 1'b0;
+                    md_a <= md_a_neg ? (~md_ra + 32'd1) : md_ra;
+                    md_b <= md_b_neg ? (~md_rb + 32'd1) : md_rb;
+                    md_acc <= md_is_div ? {32'd0, (md_a_neg ? (~md_ra + 32'd1) : md_ra)} : 64'd0;
+                end else if (md_cnt == 6'd32) begin
                     if (md_is_div && md_b == 32'd0) begin
                         // div/divu by zero → all ones; rem/remu → dividend
                         write_rd(rd, funct3[1] ? rs1_val : 32'hFFFF_FFFF);
