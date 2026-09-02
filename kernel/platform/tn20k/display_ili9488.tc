@@ -357,8 +357,10 @@ fn lcd_blit(x: i32, y: i32, w: i32, h: i32, pix: u32) -> void {
         }
         return;
     }
-    // Prime DC via the first pixel's R byte, then one PIX write per pixel
-    // (hardware does the RGB565 → 3-byte expansion).
+    // Run-length blit: coalesce consecutive identical RGB565 pixels into
+    // one PIX (latch) + hardware FILL. Font glyphs are mostly long runs
+    // of fg / bg, so this turns ~128 per-pixel pokes into a handful of
+    // FILL bursts. Prime DC to data via the first pixel's R byte.
     var c0: i32 = (peek8(pix) as i32) | ((peek8(pix + 1u32) as i32) << 8);
     lcd_dat(((c0 >> 11) & 0x1F) << 3);
     var stat: u32 = LCD_SPI_STATUS;
@@ -366,14 +368,26 @@ fn lcd_blit(x: i32, y: i32, w: i32, h: i32, pix: u32) -> void {
     poke32(LCD_SPI_DATA, ((((c0 >> 5) & 0x3F) << 2) & 0xFF) as u32);
     while (peek32(stat) & 1u32) != 0u32 { }
     poke32(LCD_SPI_DATA, (((c0 & 0x1F) << 3) & 0xFF) as u32);
+    // Pixel 0 already sent. Walk pixels 1..count-1, grouping runs.
     var i: i32 = 1;
-    var pixreg: u32 = LCD_SPI_PIX;
     while i < count {
         var o: u32 = pix + ((i * 2) as u32);
         var c: i32 = (peek8(o) as i32) | ((peek8(o + 1u32) as i32) << 8);
+        // Measure the run of pixels equal to c starting at i.
+        var run: i32 = 1;
+        var j: i32 = i + 1;
+        while j < count {
+            var oj: u32 = pix + ((j * 2) as u32);
+            var cj: i32 = (peek8(oj) as i32) | ((peek8(oj + 1u32) as i32) << 8);
+            if cj != c { j = count; } else { run = run + 1; j = j + 1; }
+        }
         while (peek32(stat) & 1u32) != 0u32 { }
-        poke32(pixreg, (c & 0xFFFF) as u32);
-        i = i + 1;
+        poke32(LCD_SPI_PIX, (c & 0xFFFF) as u32);   // first pixel of the run
+        if run > 1 {
+            while (peek32(stat) & 1u32) != 0u32 { }
+            poke32(LCD_SPI_FILL, (run - 1) as u32);   // the rest via HW
+        }
+        i = i + run;
     }
     pio_spi_wait_idle();
     return;
