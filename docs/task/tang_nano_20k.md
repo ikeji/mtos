@@ -440,6 +440,19 @@ hw/
   DMA 0.9 s ≒ 20 MHz single SPI の限界)。残り: UART 待ち短縮、quad
   SPI (DMA 4×)、kernel 1.1 s はコア速度 (pico2 61 ms の 18 倍 = クロック
   3.7× × CPI ~5×)。
+- [x] LCD 描画 (2026-09-02): ユーザー報告「1 フレーム 5 分」。原因は
+  SCK/MOSI の CPU bit-bang (1 ビット 3〜4 MMIO × ~5 CPI)。対策を 3 段で:
+  (1) LCD SCK/MOSI を SoC の SPI マスタに (bit-bang → HW シフタ)、
+  (2) `rtl/soc/lcd_spi.v` に RGB565→3 バイト展開 (PIX レジスタ) と
+  ハードウェア FILL (同色 N 画素を CPU 無介入で連射) を実装、ドライバの
+  lcd_fill / lcd_blit / lcd_pixel をそれに接続。結果: **全画面 blit
+  (mode 0、153600 画素) が SPI 律速で ~0.2 s** (5 分 → 0.2 s、~1500×)、
+  全画面 fill は HW FILL で瞬時。console の chrome 描画で LCD ドライバが
+  使う時間は 22 s → 1.2 s。残る chrome の遅さ (~7 s) は console タスク
+  側の描画計算 (グラデーション塗り・グリフのビットマップ展開ループ) が
+  40.5 MHz ~5 CPI の CPU に律速される分で、LCD 転送ではなくコア速度。
+  副産物: mul/div の絶対値化を専用サイクルに分離してクリティカルパス
+  短縮 (`rv32_core.v` md_prep)。sim は `tb_lcd_spi`。
 - [~] Phase 7 性能 — 8 KB キャッシュ + **rPLL で 40.5 MHz (既定、`hw/rtl/soc/pll_40m5.v`、Fmax 46 MHz、PnR ~20 min)**: SD 64 KB read 28.7 → 18.4 s。次候補: 4 ワード行 + 連続バースト、regfile を RAM 化 (LUT 削減)、5 段パイプライン。タッチ / HDMI は未着手
 
 ## 9. Phase 0 で得た実機の知見

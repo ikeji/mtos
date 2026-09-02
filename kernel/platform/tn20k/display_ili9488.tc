@@ -374,32 +374,7 @@ fn lcd_blit(x: i32, y: i32, w: i32, h: i32, pix: u32) -> void {
 }
 
 // /dev/fb backend: render one framed blit.
-var g_fb_calls: i32 = 0;
-var g_fb_bytes: i32 = 0;
-var g_fb_ticks: u32 = 0u32;
-fn println(v: i32) -> void;   // runtime print + newline (TEMP instrumentation)
-
 export fn fb_backend_write(buf_addr: u32, n: i32) -> void {
-    var t0: u32 = read_mtime();
-    fb_backend_write_inner(buf_addr, n);
-    g_fb_ticks = g_fb_ticks + (read_mtime() - t0);
-    g_fb_calls = g_fb_calls + 1;
-    g_fb_bytes = g_fb_bytes + n;
-    if g_fb_calls <= 10 || (g_fb_calls & 15) == 0 {
-        // TEMP instrumentation: calls / bytes / accumulated ms
-        kputs("[fb calls=");
-        println(g_fb_calls);
-        kputs(" n=");
-        println(n);
-        kputs(" bytes=");
-        println(g_fb_bytes);
-        kputs(" ms=");
-        println((g_fb_ticks / 40500u32) as i32);
-    }
-    return;
-}
-
-fn fb_backend_write_inner(buf_addr: u32, n: i32) -> void {
 
     if g_lcd_inited == 0 {
         kputs_t("LCD: lcd_init begin\r\n");
