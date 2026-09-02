@@ -9,7 +9,7 @@
 //   0xD000_0000  GPIO       (RP2350 SIO register layout, 48 pins; gpio_sio.v)
 //   0x1002_0000  flash SPI + DMA (boot flash: +0 DATA +4 STATUS +8 CTRL, +10.. DMA; flash_dma.v)
 //   0x1003_0000  SPI master 1 (microSD, same registers)
-//   0x1004_0000  SPI master 2 (ILI9488 SCK/MOSI — write-only, DC/CS stay on GPIO)
+//   0x1004_0000  LCD SPI (ILI9488 SCK/MOSI: byte + RGB565 pixel + hardware fill; lcd_spi.v)
 //   0x8000_0000  RAM        (SDRAM 8 MB when USE_SDRAM, else BSRAM RAM_WORDS*4)
 //   0x0000_0000  boot ROM   (BSRAM ROM_WORDS*4, init from ROM_INIT; RESET_PC=0
 //                            boots from it, RESET_PC=0x8000_0000 bypasses it)
@@ -182,8 +182,8 @@ module soc #(
                      .wdata(mem_wdata), .rdata(spi1_rdata), .sck(sd_sck), .cs_n(sd_cs_n), .mosi(sd_mosi), .miso(sd_miso));
     wire [31:0] spi2_rdata;
     wire        spi2_strobe = mem_valid && sel_spi2 && !mem_ready && !pending && !sd_wait;
-    spi_master spi2 (.clk(clk), .rst(rst), .sel(spi2_strobe), .we(is_write), .addr(mem_addr[3:0]),
-                     .wdata(mem_wdata), .rdata(spi2_rdata), .sck(lcd_sck), .cs_n(), .mosi(lcd_mosi), .miso(1'b1));
+    lcd_spi spi2 (.clk(clk), .rst(rst), .sel(spi2_strobe), .we(is_write), .addr(mem_addr[4:0]),
+                  .wdata(mem_wdata), .rdata(spi2_rdata), .sck(lcd_sck), .mosi(lcd_mosi));
 
 
 
