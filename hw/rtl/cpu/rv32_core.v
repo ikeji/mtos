@@ -45,6 +45,50 @@ module rv32_core #(
     assign dbg_state = state;
     reg [31:0] regs [0:31];
 
+    // ---------------------------------------------------------------
+    // Instruction cache (direct-mapped, 1024 lines = 4 KB). Makes S_FETCH
+    // a ~1-2 cycle hit instead of a 3-cycle SDRAM-cache handshake, and
+    // keeps instruction traffic off the shared data path. Coherent
+    // WITHOUT fence.i: every CPU store invalidates the matching line, so
+    // code written to RAM (the task loader, phase-7 /tmp/hw) is refetched
+    // fresh. Flushed at reset. See docs/task/tang_nano_20k.md Phase 7.
+    // ---------------------------------------------------------------
+    localparam integer IC_LINES = 1024;
+    reg [31:0] ic_data [0:IC_LINES-1];
+    reg [19:0] ic_tag  [0:IC_LINES-1];
+    reg        ic_val  [0:IC_LINES-1];
+    reg [31:0] ic_data_q; reg [19:0] ic_tag_q; reg ic_val_q; reg [31:0] ic_raddr_q;
+    reg        ic_flushing; reg [9:0] ic_flush_idx;
+    wire [9:0] ic_ridx = pc[11:2];
+    wire       ic_hit  = ic_val_q && (ic_tag_q == pc[31:12]) && (ic_raddr_q == pc) && !ic_flushing;
+    // write side: reset-flush > store-invalidate > fill.
+    wire       ic_fill = (state == S_FETCH) && mem_valid && mem_ready;   // fetch-miss capture cycle
+    wire       ic_store_inv = (state == S_MEM) && (mem_wstrb != 4'b0) && mem_ready;
+    wire [9:0] ic_widx = ic_flushing ? ic_flush_idx : (ic_store_inv ? mem_addr[11:2] : pc[11:2]);
+    wire       ic_wr_v = ic_flushing || ic_store_inv || ic_fill;
+    wire       ic_wval = ic_fill && !ic_store_inv && !ic_flushing;   // 1 = fill, 0 = flush/inval
+
+    always @(posedge clk) begin
+        if (ic_wr_v) ic_val[ic_widx] <= ic_wval;
+        ic_val_q <= ic_val[ic_ridx];
+    end
+    always @(posedge clk) begin
+        if (ic_fill && !ic_store_inv && !ic_flushing) ic_tag[pc[11:2]] <= pc[31:12];
+        ic_tag_q <= ic_tag[ic_ridx];
+    end
+    always @(posedge clk) begin
+        if (ic_fill && !ic_store_inv && !ic_flushing) ic_data[pc[11:2]] <= mem_rdata;
+        ic_data_q <= ic_data[ic_ridx];
+    end
+    always @(posedge clk) begin
+        ic_raddr_q <= pc;
+        if (rst) begin ic_flushing <= 1'b1; ic_flush_idx <= 10'd0; end
+        else if (ic_flushing) begin
+            ic_flush_idx <= ic_flush_idx + 10'd1;
+            if (ic_flush_idx == 10'd1023) ic_flushing <= 1'b0;
+        end
+    end
+
     // CSRs
     reg        mstatus_mie, mstatus_mpie;
     reg        mie_mtie;
@@ -291,10 +335,19 @@ module rv32_core #(
                     end else if (pc[1:0] != 2'b00) begin
                         trap_cause <= 32'd0; trap_tval <= pc; trap_epc <= pc;
                         state <= S_TRAP;
+                    end else if (ic_raddr_q != pc || ic_flushing) begin
+                        // I$ read not yet aligned to pc (just entered / flushing):
+                        // wait one cycle for the registered read to catch up.
+                    end else if (ic_hit) begin
+                        instr <= ic_data_q;
+                        state <= S_EXEC;
                     end else begin
+                        // I$ miss: fetch from memory via the shared port.
                         mem_valid <= 1'b1; mem_addr <= pc; mem_wstrb <= 4'b0;
                     end
                 end else if (mem_ready) begin
+                    // ic_fill (wire) is high this cycle → the I$ arrays capture
+                    // mem_rdata / pc into the line synchronously.
                     mem_valid <= 1'b0;
                     instr <= mem_rdata;
                     state <= S_EXEC;
