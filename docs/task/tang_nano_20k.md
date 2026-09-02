@@ -453,7 +453,20 @@ hw/
   40.5 MHz ~5 CPI の CPU に律速される分で、LCD 転送ではなくコア速度。
   副産物: mul/div の絶対値化を専用サイクルに分離してクリティカルパス
   短縮 (`rv32_core.v` md_prep)。sim は `tb_lcd_spi`。
-- [~] Phase 7 性能 — 8 KB キャッシュ + **rPLL で 40.5 MHz (既定、`hw/rtl/soc/pll_40m5.v`、Fmax 46 MHz、PnR ~20 min)**: SD 64 KB read 28.7 → 18.4 s。次候補: 4 ワード行 + 連続バースト、regfile を RAM 化 (LUT 削減)、5 段パイプライン。タッチ / HDMI は未着手
+- [~] Phase 7 性能 — **命令キャッシュ (I\$) で ~1.9x** (2026-09-03):
+  `rv32_core.v` に直接マップ 1024 line (4 KB) の I\$ を追加。S_FETCH の
+  3 サイクル SDRAM ハンドシェイクを I\$ ヒットの ~2 サイクルにし、命令
+  トラフィックをデータ経路から分離。**このOSは fence.i を出さず RAM に
+  命令を書いて実行する (loader / phase7 の /tmp/hw) ので、素の I\$ は
+  壊れる**。対策として **CPU の各ストアが該当 I\$ 行を無効化する snoop
+  コヒーレンシ** を実装 (fence.i 不要)。riscv-tests 48/48 + hello2 +
+  test_timer + boot が sim PASS、実機で kernel 起動 + echo/cat/ls/
+  neofetch (= タスク spawn = loader) 正常、**phase7 pipeline が
+  Hello, World! 完走**でコヒーレンシ確認。実測: kernel 起動
+  1.1→0.48 s (2.3x)、pipeline 304→161 s (asm_pass2 212→117)、chrome
+  8.3→6.0 s、neofetch 36→23 s。Fmax 42.7 MHz (40.5 で動作)。次: 1
+  サイクルフェッチ (next-pc プリフェッチ) か本格パイプライン、D\$ 化。
+- [ ] Phase 7 (旧メモ) — 8 KB キャッシュ + **rPLL で 40.5 MHz (既定、`hw/rtl/soc/pll_40m5.v`、Fmax 46 MHz、PnR ~20 min)**: SD 64 KB read 28.7 → 18.4 s。次候補: 4 ワード行 + 連続バースト、regfile を RAM 化 (LUT 削減)、5 段パイプライン。タッチ / HDMI は未着手
 
 ## 9. Phase 0 で得た実機の知見
 

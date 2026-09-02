@@ -28,8 +28,9 @@ band-blit 経由で LCD に DOOM ロゴ + Doomguy を表示するまで到達。
   `hw/tests/test_{blink,soc_hw,kernel_hw}.sh`。**SPI flash ブート済**
   (`hw/tools/flash_kernel.sh` + `make -C hw flash-rom` で電源投入のみで
   `sh$`、14 s)。microSD (HW SPI) で `/sd` 読み書き OK、**コンパイラ
-  pipeline を実機で完走 (hw.tc → Hello, World!、304 s)**、8 KB キャッシュ
-  + 40.5 MHz。副産物: mkfs.tc の末尾切り落としバグ修正 (solved.md
+  pipeline を実機で完走 (hw.tc → Hello, World!)**、8 KB データキャッシュ
+  + 40.5 MHz + **命令キャッシュ (ストア無効化コヒーレンシ、fence.i 不要)
+  で ~1.9x (pipeline 304→161 s、起動 kernel 部 1.1→0.48 s)**。副産物: mkfs.tc の末尾切り落としバグ修正 (solved.md
   #48)。GPIO (SIO 互換) + LCD/キーボードドライバ移植済で配線待ち。
   次: 配線 → LCD console、コア高速化 → self-replicate
 **最近の改善 (K21 / K22 / 2026-07-05〜08)**:
