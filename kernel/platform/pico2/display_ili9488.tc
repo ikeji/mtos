@@ -490,6 +490,71 @@ fn lcd_blit(x: i32, y: i32, w: i32, h: i32, pix: u32) -> void {
     return;
 }
 
+// mode 4: 1-bpp glyph. Payload = [fg u16][bg u16][bitmap], bitmap is
+// bpr bytes per row (MSB = leftmost pixel), h rows. The kernel expands
+// to pixels — the console used to build an RGB565 frame per pixel in
+// userland (a put_u16 call + a y*gw multiply each), which was ~8x
+// slower per pixel than doing the same expansion here. We just copy
+// bpr*16 font bytes over the pipe and expand them on this side.
+fn lcd_glyph(x: i32, y: i32, gw: i32, h: i32, fg: i32, bg: i32, bmp: u32, bpr: i32) -> void {
+    if gw <= 0 || h <= 0 { return; }
+    lcd_window(x, y, x + gw - 1, y + h - 1);
+    // Precompute both colours' 3 ILI9488 byte channels.
+    var fr: i32 = ((fg >> 11) & 0x1F) << 3;
+    var fgc: i32 = ((fg >> 5) & 0x3F) << 2;
+    var fb2: i32 = (fg & 0x1F) << 3;
+    var br: i32 = ((bg >> 11) & 0x1F) << 3;
+    var bgc: i32 = ((bg >> 5) & 0x3F) << 2;
+    var bb2: i32 = (bg & 0x1F) << 3;
+    if g_lcd_use_pio == 0 {
+        var ry0: i32 = 0;
+        while ry0 < h {
+            var bits0: i32 = 0; var k0: i32 = 0;
+            while k0 < bpr { bits0 = (bits0 << 8) | (peek8(bmp + ((ry0 * bpr + k0) as u32)) as i32); k0 = k0 + 1; }
+            var cx0: i32 = 0;
+            while cx0 < gw {
+                if (bits0 & (1 << (gw - 1 - cx0))) != 0 { lcd_dat(fr); lcd_dat(fgc); lcd_dat(fb2); }
+                else { lcd_dat(br); lcd_dat(bgc); lcd_dat(bb2); }
+                cx0 = cx0 + 1;
+            }
+            ry0 = ry0 + 1;
+        }
+        return;
+    }
+    var fstat: u32 = PIO2_BASE + PIO_FSTAT;
+    var txf0:  u32 = PIO2_BASE + PIO_TXF0;
+    var txfull: u32 = FSTAT_TXFULL_SM0;
+    var primed: i32 = 0;
+    var ry: i32 = 0;
+    while ry < h {
+        var bits: i32 = 0; var k: i32 = 0;
+        while k < bpr { bits = (bits << 8) | (peek8(bmp + ((ry * bpr + k) as u32)) as i32); k = k + 1; }
+        var cx: i32 = 0;
+        while cx < gw {
+            var cr: i32 = br; var cg: i32 = bgc; var cb: i32 = bb2;
+            if (bits & (1 << (gw - 1 - cx))) != 0 { cr = fr; cg = fgc; cb = fb2; }
+            if primed == 0 {
+                lcd_dat(cr);   // primes DC to data, pushes R for pixel 0
+                while (peek32(fstat) & txfull) != 0u32 { }
+                poke32(txf0, ((cg & 0xFF) << 24) as u32);
+                while (peek32(fstat) & txfull) != 0u32 { }
+                poke32(txf0, ((cb & 0xFF) << 24) as u32);
+                primed = 1;
+            } else {
+                while (peek32(fstat) & txfull) != 0u32 { }
+                poke32(txf0, ((cr & 0xFF) << 24) as u32);
+                while (peek32(fstat) & txfull) != 0u32 { }
+                poke32(txf0, ((cg & 0xFF) << 24) as u32);
+                while (peek32(fstat) & txfull) != 0u32 { }
+                poke32(txf0, ((cb & 0xFF) << 24) as u32);
+            }
+            cx = cx + 1;
+        }
+        ry = ry + 1;
+    }
+    return;
+}
+
 // /dev/fb backend: render one framed blit.
 export fn fb_backend_write(buf_addr: u32, n: i32) -> void {
     if g_lcd_inited == 0 {
@@ -522,6 +587,12 @@ export fn fb_backend_write(buf_addr: u32, n: i32) -> void {
         if n >= 12 {
             lcd_cmd(0x36);
             lcd_dat(fb_rd16(buf_addr + 10u32) & 0xFF);
+        }
+    } else if mode == 4 {
+        // 1-bpp glyph: [fg u16][bg u16][bitmap]. w=gw, h=h, bpr=(gw+7)/8.
+        if n >= 14 {
+            lcd_glyph(x, y, w, h, fb_rd16(buf_addr + 10u32),
+                      fb_rd16(buf_addr + 12u32), buf_addr + 14u32, (w + 7) / 8);
         }
     }
     return;

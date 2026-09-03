@@ -179,9 +179,12 @@ fn fbyte(off: i32) -> i32 {
 }
 
 // Store a little-endian u16 at byte offset `pos`.
+fn poke8(addr: u32, v: u8) -> void;   // runtime primitive (no bounds check)
+
 fn put_u16(b: U8Array, pos: i32, v: i32) -> void {
-    set(b, pos,     (v & 0xFF) as u8);
-    set(b, pos + 1, ((v >> 8) & 0xFF) as u8);
+    var d: u32 = (b as u32) + 4u32 + (pos as u32);   // U8Array data = header(4) + bytes
+    poke8(d,        (v & 0xFF) as u8);
+    poke8(d + 1u32, ((v >> 8) & 0xFF) as u8);
     return;
 }
 
@@ -249,25 +252,25 @@ fn blit_glyph_color(fb: i32, frame: U8Array, px: i32, py: i32,
                     gw: i32, goff: i32, bpr: i32,
                     fg: i32, bg: i32) -> void {
     if g_render_frozen != 0 { return; }
+    // mode 4: hand the kernel the 1-bpp font glyph + fg/bg and let it
+    // expand to pixels. The old RGB565 build looped per pixel in userland
+    // (a put_u16 call + a y*gw multiply each), ~8x slower than the kernel
+    // doing the same expansion. Here we just copy bpr*16 font bytes.
     put_u16(frame, 0, px);
     put_u16(frame, 2, py);
     put_u16(frame, 4, gw);
     put_u16(frame, 6, 16);
-    put_u16(frame, 8, 0);
-    var y: i32 = 0;
-    while y < 16 {
-        var bits: i32 = fbyte(goff + y * bpr);
-        if bpr == 2 { bits = (bits << 8) | fbyte(goff + y * 2 + 1); }
-        var x: i32 = 0;
-        while x < gw {
-            var p: i32 = bg;
-            if (bits & (1 << (gw - 1 - x))) != 0 { p = fg; }
-            put_u16(frame, 10 + (y * gw + x) * 2, p);
-            x = x + 1;
-        }
-        y = y + 1;
+    put_u16(frame, 8, 4);
+    put_u16(frame, 10, fg);
+    put_u16(frame, 12, bg);
+    var d: u32 = (frame as u32) + 4u32 + 14u32;
+    var nb: i32 = bpr * 16;
+    var i: i32 = 0;
+    while i < nb {
+        poke8(d + (i as u32), fbyte(goff + i) as u8);
+        i = i + 1;
     }
-    sys_write(fb, frame, 10 + gw * 16 * 2);
+    sys_write(fb, frame, 14 + nb);
     return;
 }
 

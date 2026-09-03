@@ -360,10 +360,12 @@ fn lcd_blit(x: i32, y: i32, w: i32, h: i32, pix: u32) -> void {
         }
         return;
     }
-    // Run-length blit: coalesce consecutive identical RGB565 pixels into
-    // one PIX (latch) + hardware FILL. Font glyphs are mostly long runs
-    // of fg / bg, so this turns ~128 per-pixel pokes into a handful of
-    // FILL bursts. Prime DC to data via the first pixel's R byte.
+    // Plain one-PIX-per-pixel blit (HW expands RGB565 -> 3 bytes). The
+    // earlier run-length + hardware-FILL variant was BOTH slower (a small
+    // FILL per fg/bg run, each with poll + gap overhead, and glyph text is
+    // mostly 1-pixel runs) AND relied on the FILL register that mis-renders
+    // on this panel. A straight PIX loop is the same reliable path lcd_fill
+    // uses. Prime DC via the first pixel's R byte.
     var c0: i32 = (peek8(pix) as i32) | ((peek8(pix + 1u32) as i32) << 8);
     lcd_dat(((c0 >> 11) & 0x1F) << 3);
     var stat: u32 = LCD_SPI_STATUS;
@@ -371,26 +373,72 @@ fn lcd_blit(x: i32, y: i32, w: i32, h: i32, pix: u32) -> void {
     poke32(LCD_SPI_DATA, ((((c0 >> 5) & 0x3F) << 2) & 0xFF) as u32);
     while (peek32(stat) & 1u32) != 0u32 { }
     poke32(LCD_SPI_DATA, (((c0 & 0x1F) << 3) & 0xFF) as u32);
-    // Pixel 0 already sent. Walk pixels 1..count-1, grouping runs.
     var i: i32 = 1;
     while i < count {
         var o: u32 = pix + ((i * 2) as u32);
         var c: i32 = (peek8(o) as i32) | ((peek8(o + 1u32) as i32) << 8);
-        // Measure the run of pixels equal to c starting at i.
-        var run: i32 = 1;
-        var j: i32 = i + 1;
-        while j < count {
-            var oj: u32 = pix + ((j * 2) as u32);
-            var cj: i32 = (peek8(oj) as i32) | ((peek8(oj + 1u32) as i32) << 8);
-            if cj != c { j = count; } else { run = run + 1; j = j + 1; }
-        }
         while (peek32(stat) & 1u32) != 0u32 { }
-        poke32(LCD_SPI_PIX, (c & 0xFFFF) as u32);   // first pixel of the run
-        if run > 1 {
-            while (peek32(stat) & 1u32) != 0u32 { }
-            poke32(LCD_SPI_FILL, (run - 1) as u32);   // the rest via HW
+        poke32(LCD_SPI_PIX, (c & 0xFFFF) as u32);
+        i = i + 1;
+    }
+    pio_spi_wait_idle();
+    return;
+}
+
+// mode 4: 1-bpp glyph. Payload = [fg u16][bg u16][bitmap], bitmap is
+// bpr bytes per row (MSB = leftmost pixel), h rows. The kernel expands
+// to PIX pokes — moving the per-pixel work off the un-optimized userland
+// compiler (console's RGB565 frame build was ~8x slower per pixel than
+// this because every pixel was a put_u16 function call + a y*gw multiply).
+fn lcd_glyph(x: i32, y: i32, gw: i32, h: i32, fg: i32, bg: i32, bmp: u32, bpr: i32) -> void {
+    if gw <= 0 || h <= 0 { return; }
+    lcd_window(x, y, x + gw - 1, y + h - 1);
+    if g_lcd_use_pio == 0 {
+        var ry: i32 = 0;
+        while ry < h {
+            var b0: u32 = bmp + ((ry * bpr) as u32);
+            var bits0: i32 = 0;
+            var k0: i32 = 0;
+            while k0 < bpr { bits0 = (bits0 << 8) | (peek8(b0 + (k0 as u32)) as i32); k0 = k0 + 1; }
+            var cx0: i32 = 0;
+            while cx0 < gw {
+                var c0: i32 = bg;
+                if (bits0 & (1 << (gw - 1 - cx0))) != 0 { c0 = fg; }
+                lcd_pixel(c0);
+                cx0 = cx0 + 1;
+            }
+            ry = ry + 1;
         }
-        i = i + run;
+        return;
+    }
+    var stat: u32 = LCD_SPI_STATUS;
+    var pixreg: u32 = LCD_SPI_PIX;
+    var primed: i32 = 0;
+    var ry1: i32 = 0;
+    while ry1 < h {
+        var brow: u32 = bmp + ((ry1 * bpr) as u32);
+        var bits: i32 = 0;
+        var k: i32 = 0;
+        while k < bpr { bits = (bits << 8) | (peek8(brow + (k as u32)) as i32); k = k + 1; }
+        var cx: i32 = 0;
+        while cx < gw {
+            var c: i32 = bg;
+            if (bits & (1 << (gw - 1 - cx))) != 0 { c = fg; }
+            if primed == 0 {
+                // first pixel primes DC = data via lcd_dat's R byte path
+                lcd_dat(((c >> 11) & 0x1F) << 3);
+                while (peek32(stat) & 1u32) != 0u32 { }
+                poke32(LCD_SPI_DATA, ((((c >> 5) & 0x3F) << 2) & 0xFF) as u32);
+                while (peek32(stat) & 1u32) != 0u32 { }
+                poke32(LCD_SPI_DATA, (((c & 0x1F) << 3) & 0xFF) as u32);
+                primed = 1;
+            } else {
+                while (peek32(stat) & 1u32) != 0u32 { }
+                poke32(pixreg, (c & 0xFFFF) as u32);
+            }
+            cx = cx + 1;
+        }
+        ry1 = ry1 + 1;
     }
     pio_spi_wait_idle();
     return;
@@ -421,6 +469,14 @@ export fn fb_backend_write(buf_addr: u32, n: i32) -> void {
             var line: i32 = fb_rd16(buf_addr + 10u32);
             lcd_dat((line >> 8) & 0xFF);
             lcd_dat(line & 0xFF);
+        }
+    } else if mode == 4 {
+        // 1-bpp glyph: [fg u16][bg u16][bitmap]. gw=w, h=h, bpr=(gw+7)/8.
+        if n >= 14 {
+            var gfg: i32 = fb_rd16(buf_addr + 10u32);
+            var gbg: i32 = fb_rd16(buf_addr + 12u32);
+            var gbpr: i32 = (w + 7) / 8;
+            lcd_glyph(x, y, w, h, gfg, gbg, buf_addr + 14u32, gbpr);
         }
     } else if mode == 3 {
         // Set MADCTL (memory access control: rotation / mirroring).
