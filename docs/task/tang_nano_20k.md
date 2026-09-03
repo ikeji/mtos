@@ -466,6 +466,20 @@ hw/
   1.1→0.48 s (2.3x)、pipeline 304→161 s (asm_pass2 212→117)、chrome
   8.3→6.0 s、neofetch 36→23 s。Fmax 42.7 MHz (40.5 で動作)。次: 1
   サイクルフェッチ (next-pc プリフェッチ) か本格パイプライン、D\$ 化。
+- [x] **next-PC プリフェッチで fetch 2→1 サイクル (実機 1.5x)** (2026-09-03):
+  S_FETCH は I\$ ヒットでも 2 サイクル (ic_raddr_q を pc に揃える +
+  ヒット判定) だったのを、S_EXEC/S_MEM/S_MULDIV 中に逐次次アドレス
+  (pc+4) の I\$ 読みを先行させて 1 サイクル化。単純命令 3→2 サイクル。
+  分岐/ジャンプ/トラップは pc+4 予測外れで従来の 2 サイクル fetch に
+  フォールバック (正しさ不変)。実装は `fetch_addr = S_FETCH ? pc : pc+4`
+  を ic_ridx/ic_raddr_q に使うだけ (組合せ段は小 mux のみ)。検証:
+  riscv-tests 48/48 + boot sim PASS、実機 neofetch 正常描画、boot
+  「first prompt」22.4→15.1 s = **1.49x**、Fmax 46.5 MHz (低下なし)。
+  **全画面 fill は SPI 帯域 (20MHz × 3byte × 153600px = 0.18s = 5.5fps)
+  が絶対上限**なので CPU 高速化では fill fps は 5.5 が天井、10fps 全画面は
+  パラレル 8080 接続が必要。CPU バウンド (compile / 起動 / テキスト描画)
+  には 1.5x が効く。次: 本格 2 段パイプライン (forwarding)、fast mul/div
+  (現 37 サイクル)、分岐予測を fetch_addr に。
 - [x] LCD グリフ描画の高速化 + **律速のプロファイリング** (2026-09-03):
   console の glyph 描画は userland で 128px の RGB565 フレームを組み立てて
   いた (1px ごとに put_u16 関数呼び出し + y*gw 乗算)。3 段で改善:
