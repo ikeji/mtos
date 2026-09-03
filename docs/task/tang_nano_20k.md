@@ -466,6 +466,26 @@ hw/
   1.1→0.48 s (2.3x)、pipeline 304→161 s (asm_pass2 212→117)、chrome
   8.3→6.0 s、neofetch 36→23 s。Fmax 42.7 MHz (40.5 で動作)。次: 1
   サイクルフェッチ (next-pc プリフェッチ) か本格パイプライン、D\$ 化。
+- [x] LCD グリフ描画の高速化 + **律速のプロファイリング** (2026-09-03):
+  console の glyph 描画は userland で 128px の RGB565 フレームを組み立てて
+  いた (1px ごとに put_u16 関数呼び出し + y*gw 乗算)。3 段で改善:
+  ①**mode 4** — console はフォントの 1bpp グリフ (16〜32 byte) をそのまま
+  送り kernel が展開 (per-pixel の userland ループ消滅、209→46ms/char)。
+  ②**HW グリフブリッタ** — `lcd_spi.v` に GFG/GBG/GLYPH レジスタを追加、
+  1 byte 書くと HW が 8px を fg/bg 選択で描く (kernel の poke を gw*h →
+  bpr*h に、動作実績のある PIX 3byte パス + GAP を再利用して HW FILL の
+  ドロップ回避)。tb_lcd_spi に GLYPH テスト、hw test PASS、実機で
+  neofetch 正常描画 (gap=256 で画素ドロップなし)。
+  ③**隔離ベンチで律速を確定** (重要): console 起動時に固定処理を 200 回
+  回して us を実測 — **空の sys_write = 16ms/回、syscall なしのメモリ
+  コピー 32 回 = 10ms/回**。1 メモリ操作 13000 clock は物理的にあり得ず、
+  **律速は LCD 描画でも per-pixel 展開でもなく、多サイクル CPU + SDRAM
+  ストール + 最適化なし TC codegen (スタック spill 多用) で 1 命令 ~50-
+  100 clock かかること + sh/neofetch との時分割**と判明。mode 4 / HW
+  グリフはどちらも neofetch の wall-clock をほぼ動かさなかった (描画は
+  全体のごく一部)。**結論: これ以上は CPU 性能 (本格パイプライン、
+  regfile/stack を BSRAM に、D\$ 強化) が唯一の大きなレバー**。kern_uptime_us
+  は ÷40 で正しく μs を返す (単位ミスではない) ことも確認済。
 - [ ] Phase 7 (旧メモ) — 8 KB キャッシュ + **rPLL で 40.5 MHz (既定、`hw/rtl/soc/pll_40m5.v`、Fmax 46 MHz、PnR ~20 min)**: SD 64 KB read 28.7 → 18.4 s。次候補: 4 ワード行 + 連続バースト、regfile を RAM 化 (LUT 削減)、5 段パイプライン。タッチ / HDMI は未着手
 
 ## 9. Phase 0 で得た実機の知見
