@@ -504,6 +504,18 @@ hw/
   初めて 250ms カーソル点滅) して **neofetch 38→~20s (2x)、userland のみ・
   synth 不要**。次段候補: glyph を行単位で 1 sys_write にバッチ (~13s の
   per-glyph syscall 削減、さらに ~1.5x 見込み)。
+- [x] **glyph 行バッチ描画 (mode 5) (neofetch ~20→~13s、1.5x)** (2026-09-03):
+  コンテンツ文字は全て白/黒固定なので同一行の連続セルを 1 sys_write に
+  まとめる mode 5 を追加。従来は 1 glyph=1 sys_write (~458 回)、per-glyph
+  syscall が ~13s。console の blit_glyph が g_batch に [gw][bitmap] を追記
+  (非連続セル/buffer 満杯で flush、fb 直接描画前にも flush)、kernel
+  (tn20k+pico2) の mode 5 が [fg][bg][count]+各 [gw][bitmap] を左から
+  lcd_glyph。行あたり 1 write に (neofetch ~458→~20 write)。実機
+  ~20→~13-14s。**累積: neofetch 38→~13s (~2.9x、adaptive poll + 行バッチ、
+  どちらも userland/kernel のみで synth 不要)**。残りは kernel の
+  PIX-per-pixel ピクセル描画 ~5s + neofetch 計算 ~1s。次段候補: CPU
+  パイプライン継続、ピクセル描画の HW 化 (glyph は小さく panel burst
+  制限に掛かりにくいので strip HW FILL の知見で再挑戦の余地)。
 - [x] LCD グリフ描画の高速化 + **律速のプロファイリング** (2026-09-03):
   console の glyph 描画は userland で 128px の RGB565 フレームを組み立てて
   いた (1px ごとに put_u16 関数呼び出し + y*gw 乗算)。3 段で改善:
