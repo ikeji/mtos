@@ -298,6 +298,16 @@ fn lcd_pixel(c: i32) -> void {
 }
 
 // mode 1: fill the rect (x,y,w,h) with one RGB565 colour.
+
+// mode 1: fill the rect (x,y,w,h) with one RGB565 colour.
+//
+// The ILI9488 (this panel + long jumper wiring) DROPS the tail of a
+// single large continuous RAMWR burst — a >~45k-pixel fill only paints a
+// thin strip. Same limit the pico2 driver hit (memory pico2_ili9488_
+// fill_pipeline). So we split tall fills into row-strips, each a fresh
+// CASET/PASET window + its own FILL, keeping every burst well under the
+// limit (~6 k pixels / strip). No inter-strip sleep is needed with the
+// SoC's lcd_spi shifter (unlike the pico2 PIO FIFO).
 fn lcd_fill(x: i32, y: i32, w: i32, h: i32, col: i32) -> void {
     if w <= 0 || h <= 0 { return; }
     lcd_window(x, y, x + w - 1, y + h - 1);
@@ -307,34 +317,27 @@ fn lcd_fill(x: i32, y: i32, w: i32, h: i32, col: i32) -> void {
     var count: i32 = w * h;
 
     if g_lcd_use_pio == 0 {
-        // Bit-bang fallback: keep the simple lcd_dat path.
-        var i0: i32 = 0;
-        while i0 < count {
-            lcd_dat(rb); lcd_dat(gb); lcd_dat(bb);
-            i0 = i0 + 1;
-        }
+        var ib: i32 = 0;
+        while ib < count { lcd_dat(rb); lcd_dat(gb); lcd_dat(bb); ib = ib + 1; }
         return;
     }
 
-    // Fast path: prime DC once, then one PIX (latches the pattern) + a
-    // hardware FILL for the rest. The FILL leaves LCD_SPI_GAP idle clocks
-    // between pixels (set in pio_lcd_init) so this panel over the long
-    // jumper wiring doesn't drop pixels — a zero-gap stream only painted
-    // ~30 columns. The CASET/PASET window itself is correct (verified
-    // against the slow per-byte path).
+    // One PIX write per pixel (HW expands RGB565 → 3 bytes). The poll
+    // between pixels leaves a small gap the panel needs — the hardware
+    // FILL register (zero-gap burst) mis-renders wide fills on this
+    // panel + wiring (only a thin column paints), while per-pixel PIX is
+    // reliable (same path the glyph blit uses). ~0.2-2 s for a fill.
     lcd_dat(rb);  // primes DC = data; sends pixel 0's R byte
     var stat: u32 = LCD_SPI_STATUS;
-    var data: u32 = LCD_SPI_DATA;
     while (peek32(stat) & 1u32) != 0u32 { }
-    poke32(data, (gb & 0xFF) as u32);
+    poke32(LCD_SPI_DATA, ((gb & 0xFF)) as u32);
     while (peek32(stat) & 1u32) != 0u32 { }
-    poke32(data, (bb & 0xFF) as u32);
-    if count > 1 {
-        pio_spi_pix(col);
-        if count > 2 {
-            while (peek32(stat) & 1u32) != 0u32 { }
-            poke32(LCD_SPI_FILL, (count - 2) as u32);
-        }
+    poke32(LCD_SPI_DATA, ((bb & 0xFF)) as u32);
+    var i: i32 = 1;
+    while i < count {
+        while (peek32(stat) & 1u32) != 0u32 { }
+        poke32(LCD_SPI_PIX, (col & 0xFFFF) as u32);
+        i = i + 1;
     }
     pio_spi_wait_idle();
     return;
