@@ -419,27 +419,41 @@ fn lcd_glyph(x: i32, y: i32, gw: i32, h: i32, fg: i32, bg: i32, bmp: u32, bpr: i
         }
         return;
     }
-    // HW glyph streamer: hand the expanded fg/bg to the shifter, then push
-    // one bitmap byte per 8 pixels. The Verilog paints the pixels via the
-    // same 3-byte PIX path (with the GAP recovery PIX-per-pixel relied on),
-    // so the CPU only issues bpr*h pokes instead of gw*h.
-    poke32(LCD_SPI_GAP, LCD_GLYPH_GAP);
-    poke32(LCD_SPI_GFG, (fg & 0xFFFF) as u32);
-    poke32(LCD_SPI_GBG, (bg & 0xFFFF) as u32);
-    // lcd_window ended with RAMWR (a command, DC=cmd); glyph pixels are data.
-    if g_lcd_dc_is_data != 1 {
-        pio_spi_wait_idle();
-        lcd_gpio(LCD_DC_MASK, 1);
-        g_lcd_dc_is_data = 1;
-    }
+    // PIX-per-pixel: the CPU's ~140 us between pokes gives this panel +
+    // long jumper enough recovery that no pixels drop. The HW GLYPH
+    // streamer (lcd_spi GFG/GBG/GLYPH) was tried but streams pixels too
+    // tightly even with the GAP register — the panel drops pixels and the
+    // ILI9488 auto-increment shifts the rest, crushing the glyphs. It also
+    // gave no wall-clock win (the bottleneck is the CPU, not this path —
+    // see docs/task/tang_nano_20k.md profiling), so we keep PIX-per-pixel.
     var stat: u32 = LCD_SPI_STATUS;
-    var greg: u32 = LCD_SPI_GLYPH;
-    var nb: i32 = bpr * h;
-    var i: i32 = 0;
-    while i < nb {
-        while (peek32(stat) & 1u32) != 0u32 { }
-        poke32(greg, peek8(bmp + (i as u32)) as u32);
-        i = i + 1;
+    var pixreg: u32 = LCD_SPI_PIX;
+    var primed: i32 = 0;
+    var ry1: i32 = 0;
+    while ry1 < h {
+        var brow: u32 = bmp + ((ry1 * bpr) as u32);
+        var bits: i32 = 0;
+        var k: i32 = 0;
+        while k < bpr { bits = (bits << 8) | (peek8(brow + (k as u32)) as i32); k = k + 1; }
+        var cx: i32 = 0;
+        while cx < gw {
+            var c: i32 = bg;
+            if (bits & (1 << (gw - 1 - cx))) != 0 { c = fg; }
+            if primed == 0 {
+                // first pixel primes DC = data via lcd_dat's R byte path
+                lcd_dat(((c >> 11) & 0x1F) << 3);
+                while (peek32(stat) & 1u32) != 0u32 { }
+                poke32(LCD_SPI_DATA, ((((c >> 5) & 0x3F) << 2) & 0xFF) as u32);
+                while (peek32(stat) & 1u32) != 0u32 { }
+                poke32(LCD_SPI_DATA, (((c & 0x1F) << 3) & 0xFF) as u32);
+                primed = 1;
+            } else {
+                while (peek32(stat) & 1u32) != 0u32 { }
+                poke32(pixreg, (c & 0xFFFF) as u32);
+            }
+            cx = cx + 1;
+        }
+        ry1 = ry1 + 1;
     }
     pio_spi_wait_idle();
     return;
