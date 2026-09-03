@@ -66,7 +66,15 @@ const LCD_SPI_STATUS: u32 = 0x10040004u32;   // bit0 = cannot accept, bit1 = ful
 const LCD_SPI_CTRL:   u32 = 0x10040008u32;
 const LCD_SPI_PIX:    u32 = 0x1004000Cu32;   // write RGB565 → 3 bytes on the wire
 const LCD_SPI_FILL:   u32 = 0x10040010u32;   // repeat the last PIX this many more times
-const LCD_SPI_GAP:    u32 = 0x10040014u32;   // idle clocks between fill pixels
+const LCD_SPI_GAP:    u32 = 0x10040014u32;   // idle clocks between fill/glyph pixels
+const LCD_SPI_GFG:    u32 = 0x10040018u32;   // glyph foreground RGB565 (expanded in HW)
+const LCD_SPI_GBG:    u32 = 0x1004001Cu32;   // glyph background RGB565 (expanded in HW)
+const LCD_SPI_GLYPH:  u32 = 0x10040020u32;   // byte → 8 pixels MSB-first (fg/bg per bit)
+// Recovery clocks between glyph pixels. PIX-per-pixel worked because the
+// slow CPU left ~140 us between pokes; the HW glyph streamer paces itself
+// with this gap instead. 256 clk @ 40.5 MHz ≈ 6.3 us/pixel — tune here if
+// the panel drops pixels (runtime GAP register, no re-synth needed).
+const LCD_GLYPH_GAP:  u32 = 256u32;
 
 var g_pio_lcd_inited: i32 = 0;
 // DC line state (-1 = unknown) and one-shot init flag — these lived in
@@ -411,34 +419,27 @@ fn lcd_glyph(x: i32, y: i32, gw: i32, h: i32, fg: i32, bg: i32, bmp: u32, bpr: i
         }
         return;
     }
+    // HW glyph streamer: hand the expanded fg/bg to the shifter, then push
+    // one bitmap byte per 8 pixels. The Verilog paints the pixels via the
+    // same 3-byte PIX path (with the GAP recovery PIX-per-pixel relied on),
+    // so the CPU only issues bpr*h pokes instead of gw*h.
+    poke32(LCD_SPI_GAP, LCD_GLYPH_GAP);
+    poke32(LCD_SPI_GFG, (fg & 0xFFFF) as u32);
+    poke32(LCD_SPI_GBG, (bg & 0xFFFF) as u32);
+    // lcd_window ended with RAMWR (a command, DC=cmd); glyph pixels are data.
+    if g_lcd_dc_is_data != 1 {
+        pio_spi_wait_idle();
+        lcd_gpio(LCD_DC_MASK, 1);
+        g_lcd_dc_is_data = 1;
+    }
     var stat: u32 = LCD_SPI_STATUS;
-    var pixreg: u32 = LCD_SPI_PIX;
-    var primed: i32 = 0;
-    var ry1: i32 = 0;
-    while ry1 < h {
-        var brow: u32 = bmp + ((ry1 * bpr) as u32);
-        var bits: i32 = 0;
-        var k: i32 = 0;
-        while k < bpr { bits = (bits << 8) | (peek8(brow + (k as u32)) as i32); k = k + 1; }
-        var cx: i32 = 0;
-        while cx < gw {
-            var c: i32 = bg;
-            if (bits & (1 << (gw - 1 - cx))) != 0 { c = fg; }
-            if primed == 0 {
-                // first pixel primes DC = data via lcd_dat's R byte path
-                lcd_dat(((c >> 11) & 0x1F) << 3);
-                while (peek32(stat) & 1u32) != 0u32 { }
-                poke32(LCD_SPI_DATA, ((((c >> 5) & 0x3F) << 2) & 0xFF) as u32);
-                while (peek32(stat) & 1u32) != 0u32 { }
-                poke32(LCD_SPI_DATA, (((c & 0x1F) << 3) & 0xFF) as u32);
-                primed = 1;
-            } else {
-                while (peek32(stat) & 1u32) != 0u32 { }
-                poke32(pixreg, (c & 0xFFFF) as u32);
-            }
-            cx = cx + 1;
-        }
-        ry1 = ry1 + 1;
+    var greg: u32 = LCD_SPI_GLYPH;
+    var nb: i32 = bpr * h;
+    var i: i32 = 0;
+    while i < nb {
+        while (peek32(stat) & 1u32) != 0u32 { }
+        poke32(greg, peek8(bmp + (i as u32)) as u32);
+        i = i + 1;
     }
     pio_spi_wait_idle();
     return;

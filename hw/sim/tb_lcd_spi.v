@@ -2,7 +2,7 @@
 `timescale 1ns/1ps
 module tb_lcd_spi;
     reg clk = 0; always #12.3 clk = ~clk;   // ~40.5 MHz
-    reg rst = 1; reg sel = 0, we = 0; reg [4:0] addr; reg [31:0] wdata; wire [31:0] rdata;
+    reg rst = 1; reg sel = 0, we = 0; reg [5:0] addr; reg [31:0] wdata; wire [31:0] rdata;
     wire sck, mosi;
     lcd_spi dut (.clk(clk), .rst(rst), .sel(sel), .we(we), .addr(addr), .wdata(wdata), .rdata(rdata), .sck(sck), .mosi(mosi));
     // capture bytes off the wire (mode 0: sample on rising sck)
@@ -11,9 +11,9 @@ module tb_lcd_spi;
         sh = {sh[6:0], mosi}; nb = nb + 1;
         if (nb == 8) begin cap[ncap] = sh; ncap = ncap + 1; nb = 0; end
     end
-    task wr(input [4:0] a, input [31:0] d); begin @(posedge clk); addr <= a; wdata <= d; sel <= 1; we <= 1; @(posedge clk); sel <= 0; we <= 0; end endtask
+    task wr(input [5:0] a, input [31:0] d); begin @(posedge clk); addr <= a; wdata <= d; sel <= 1; we <= 1; @(posedge clk); sel <= 0; we <= 0; end endtask
     task wait_idle; begin
-        addr = 5'h4; sel = 1; we = 0; #1;
+        addr = 6'h4; sel = 1; we = 0; #1;
         while (rdata[1]) begin @(posedge clk); #1; end
         sel = 0;
     end endtask
@@ -38,6 +38,23 @@ module tb_lcd_spi;
         chk(7, 8'hF8); chk(8, 8'h00); chk(9, 8'h00);
         chk(10, 8'hF8); chk(11, 8'h00); chk(12, 8'h00);
         if (ncap != 13) begin errors = errors + 1; $display("ncap=%0d want 13", ncap); end
+        // --- GLYPH: fg=red(F800) bg=blue(001F), byte 0xA5 = 1010_0101 ---
+        // 8 pixels MSB-first: fg bg fg bg bg fg bg fg → each 3 bytes.
+        ncap = 0; nb = 0;
+        wr(6'h18, 32'hF800);      // GFG = red
+        wr(6'h1C, 32'h001F);      // GBG = blue
+        wr(6'h20, 32'hA5);        // GLYPH byte
+        wait_idle;
+        // red = F8 00 00, blue = 00 00 F8
+        chk(0, 8'hF8);  chk(1, 8'h00);  chk(2, 8'h00);   // bit7=1 fg
+        chk(3, 8'h00);  chk(4, 8'h00);  chk(5, 8'hF8);   // bit6=0 bg
+        chk(6, 8'hF8);  chk(7, 8'h00);  chk(8, 8'h00);   // bit5=1 fg
+        chk(9, 8'h00);  chk(10,8'h00);  chk(11,8'hF8);   // bit4=0 bg
+        chk(12,8'h00);  chk(13,8'h00);  chk(14,8'hF8);   // bit3=0 bg
+        chk(15,8'hF8);  chk(16,8'h00);  chk(17,8'h00);   // bit2=1 fg
+        chk(18,8'h00);  chk(19,8'h00);  chk(20,8'hF8);   // bit1=0 bg
+        chk(21,8'hF8);  chk(22,8'h00);  chk(23,8'h00);   // bit0=1 fg
+        if (ncap != 24) begin errors = errors + 1; $display("glyph ncap=%0d want 24", ncap); end
         if (errors == 0) $display("PASS lcd_spi"); else $display("FAIL errors=%0d", errors);
         $finish;
     end
