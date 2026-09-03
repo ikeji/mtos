@@ -182,7 +182,7 @@ module soc #(
                      .wdata(mem_wdata), .rdata(spi1_rdata), .sck(sd_sck), .cs_n(sd_cs_n), .mosi(sd_mosi), .miso(sd_miso));
     wire [31:0] spi2_rdata;
     wire        spi2_strobe = mem_valid && sel_spi2 && !mem_ready && !pending && !sd_wait;
-    lcd_spi spi2 (.clk(clk), .rst(rst), .sel(spi2_strobe), .we(is_write), .addr(mem_addr[5:0]),
+    lcd_spi spi2 (.clk(clk), .rst(rst), .sel(spi2_strobe), .we(is_write), .addr(mem_addr[4:0]),
                   .wdata(mem_wdata), .rdata(spi2_rdata), .sck(lcd_sck), .mosi(lcd_mosi));
 
 

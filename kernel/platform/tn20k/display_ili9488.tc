@@ -66,15 +66,7 @@ const LCD_SPI_STATUS: u32 = 0x10040004u32;   // bit0 = cannot accept, bit1 = ful
 const LCD_SPI_CTRL:   u32 = 0x10040008u32;
 const LCD_SPI_PIX:    u32 = 0x1004000Cu32;   // write RGB565 → 3 bytes on the wire
 const LCD_SPI_FILL:   u32 = 0x10040010u32;   // repeat the last PIX this many more times
-const LCD_SPI_GAP:    u32 = 0x10040014u32;   // idle clocks between fill/glyph pixels
-const LCD_SPI_GFG:    u32 = 0x10040018u32;   // glyph foreground RGB565 (expanded in HW)
-const LCD_SPI_GBG:    u32 = 0x1004001Cu32;   // glyph background RGB565 (expanded in HW)
-const LCD_SPI_GLYPH:  u32 = 0x10040020u32;   // byte → 8 pixels MSB-first (fg/bg per bit)
-// Recovery clocks between glyph pixels. PIX-per-pixel worked because the
-// slow CPU left ~140 us between pokes; the HW glyph streamer paces itself
-// with this gap instead. 256 clk @ 40.5 MHz ≈ 6.3 us/pixel — tune here if
-// the panel drops pixels (runtime GAP register, no re-synth needed).
-const LCD_GLYPH_GAP:  u32 = 256u32;
+const LCD_SPI_GAP:    u32 = 0x10040014u32;   // idle clocks between fill pixels
 
 var g_pio_lcd_inited: i32 = 0;
 // DC line state (-1 = unknown) and one-shot init flag — these lived in
@@ -420,12 +412,12 @@ fn lcd_glyph(x: i32, y: i32, gw: i32, h: i32, fg: i32, bg: i32, bmp: u32, bpr: i
         return;
     }
     // PIX-per-pixel: the CPU's ~140 us between pokes gives this panel +
-    // long jumper enough recovery that no pixels drop. The HW GLYPH
-    // streamer (lcd_spi GFG/GBG/GLYPH) was tried but streams pixels too
-    // tightly even with the GAP register — the panel drops pixels and the
-    // ILI9488 auto-increment shifts the rest, crushing the glyphs. It also
+    // long jumper enough recovery that no pixels drop. A hardware glyph
+    // streamer (one poke per 8 pixels) was tried but streamed pixels too
+    // tightly even with the GAP register — the panel dropped pixels and the
+    // ILI9488 auto-increment shifted the rest, crushing the glyphs. It also
     // gave no wall-clock win (the bottleneck is the CPU, not this path —
-    // see docs/task/tang_nano_20k.md profiling), so we keep PIX-per-pixel.
+    // see docs/task/tang_nano_20k.md profiling), so it was dropped.
     var stat: u32 = LCD_SPI_STATUS;
     var pixreg: u32 = LCD_SPI_PIX;
     var primed: i32 = 0;
