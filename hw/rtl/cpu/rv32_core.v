@@ -59,7 +59,15 @@ module rv32_core #(
     reg        ic_val  [0:IC_LINES-1];
     reg [31:0] ic_data_q; reg [19:0] ic_tag_q; reg ic_val_q; reg [31:0] ic_raddr_q;
     reg        ic_flushing; reg [9:0] ic_flush_idx;
-    wire [9:0] ic_ridx = pc[11:2];
+    // Next-PC prefetch: while finishing the current instruction (S_EXEC /
+    // S_MEM / S_MULDIV) read the I$ line for the *sequential* next address
+    // (pc+4) so the following S_FETCH sees a hit in ONE cycle instead of
+    // two (no "wait for ic_raddr_q to catch up" bubble). Prediction is
+    // pc+4 only; a taken branch/jump/trap mispredicts and S_FETCH falls
+    // back to the 2-cycle re-fetch (ic_raddr_q != pc) — a perf hint, never
+    // a correctness issue. In S_FETCH we hold the read on pc itself.
+    wire [31:0] fetch_addr = (state == S_FETCH) ? pc : (pc + 32'd4);
+    wire [9:0] ic_ridx = fetch_addr[11:2];
     wire       ic_hit  = ic_val_q && (ic_tag_q == pc[31:12]) && (ic_raddr_q == pc) && !ic_flushing;
     // write side: reset-flush > store-invalidate > fill.
     wire       ic_fill = (state == S_FETCH) && mem_valid && mem_ready;   // fetch-miss capture cycle
@@ -81,7 +89,7 @@ module rv32_core #(
         ic_data_q <= ic_data[ic_ridx];
     end
     always @(posedge clk) begin
-        ic_raddr_q <= pc;
+        ic_raddr_q <= fetch_addr;
         if (rst) begin ic_flushing <= 1'b1; ic_flush_idx <= 10'd0; end
         else if (ic_flushing) begin
             ic_flush_idx <= ic_flush_idx + 10'd1;
