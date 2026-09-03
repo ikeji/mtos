@@ -67,6 +67,16 @@ const LCD_SPI_CTRL:   u32 = 0x10040008u32;
 const LCD_SPI_PIX:    u32 = 0x1004000Cu32;   // write RGB565 → 3 bytes on the wire
 const LCD_SPI_FILL:   u32 = 0x10040010u32;   // repeat the last PIX this many more times
 const LCD_SPI_GAP:    u32 = 0x10040014u32;   // idle clocks between fill pixels
+// HW-FILL strip size: a single RAMWR burst over ~45k px only paints a thin
+// strip on this panel, so lcd_fill cuts fills into strips this big.
+const FILL_STRIP_PX:  i32 = 6000;
+// Inter-pixel recovery clocks the HW FILL streamer inserts. Strips stay
+// well under the ~45k burst limit, so no gap is needed within a strip.
+const LCD_FILL_GAP:   u32 = 0u32;
+// mtime ticks to wait per filled pixel (deterministic drain). Each pixel
+// is 3 SPI bytes at SCK = clk/2 = 48 clk; mtime runs at the clk rate, so
+// 48 ticks + margin. Full screen (153600 px) ≈ 153600*56 ≈ 0.21 s ≈ 4.7 fps.
+const FILL_PX_TICKS:  u32 = 52u32;
 
 var g_pio_lcd_inited: i32 = 0;
 // DC line state (-1 = unknown) and one-shot init flag — these lived in
@@ -322,24 +332,46 @@ fn lcd_fill(x: i32, y: i32, w: i32, h: i32, col: i32) -> void {
         return;
     }
 
-    // One PIX write per pixel (HW expands RGB565 → 3 bytes). The poll
-    // between pixels leaves a small gap the panel needs — the hardware
-    // FILL register (zero-gap burst) mis-renders wide fills on this
-    // panel + wiring (only a thin column paints), while per-pixel PIX is
-    // reliable (same path the glyph blit uses). ~0.2-2 s for a fill.
-    lcd_dat(rb);  // primes DC = data; sends pixel 0's R byte
+    // Hardware FILL, split into row-strips. A single continuous RAMWR
+    // burst over ~45k pixels only paints a thin strip on this panel (see
+    // header note); so we cut the fill into strips of <= FILL_STRIP_PX
+    // pixels, each a fresh CASET/PASET window + one HW FILL that streams
+    // the strip autonomously. The CPU issues ~2 pokes per strip instead of
+    // one per pixel, so a full-screen fill is SPI-bound (~0.18 s) rather
+    // than dominated by the un-inlined per-pixel peek32/poke32 loop (~2 s).
     var stat: u32 = LCD_SPI_STATUS;
-    while (peek32(stat) & 1u32) != 0u32 { }
-    poke32(LCD_SPI_DATA, ((gb & 0xFF)) as u32);
-    while (peek32(stat) & 1u32) != 0u32 { }
-    poke32(LCD_SPI_DATA, ((bb & 0xFF)) as u32);
-    var i: i32 = 1;
-    while i < count {
+    poke32(LCD_SPI_GAP, LCD_FILL_GAP);
+    var strip_rows: i32 = FILL_STRIP_PX / w;
+    if strip_rows < 1 { strip_rows = 1; }
+    var yy: i32 = 0;
+    while yy < h {
+        var sh: i32 = h - yy;
+        if sh > strip_rows { sh = strip_rows; }
+        lcd_window(x, y + yy, x + w - 1, y + yy + sh - 1);
+        // RAMWR left DC = cmd; the strip's pixels are data.
+        if g_lcd_dc_is_data != 1 {
+            pio_spi_wait_idle();
+            lcd_gpio(LCD_DC_MASK, 1);
+            g_lcd_dc_is_data = 1;
+        }
+        var scount: i32 = w * sh;
         while (peek32(stat) & 1u32) != 0u32 { }
-        poke32(LCD_SPI_PIX, (col & 0xFFFF) as u32);
-        i = i + 1;
+        poke32(LCD_SPI_PIX, (col & 0xFFFF) as u32);   // pixel 0 latches pr/pg/pb
+        var tstart: u32 = read_mtime();
+        if scount > 1 {
+            poke32(LCD_SPI_FILL, (scount - 1) as u32);
+        }
+        // Deterministic drain. The lcd_spi "idle" status bit proved
+        // unreliable on hardware (it can read idle while a FILL is still
+        // streaming), which let back-to-back multi-colour fills collide —
+        // a dropped PIX write makes the FILL repeat the previous colour.
+        // So we busy-wait the strip's known streaming time via mtime
+        // instead: each pixel is 3 SPI bytes (48 clk @ clk/2) + LCD_FILL_GAP
+        // recovery clocks; FILL_PX_TICKS bakes in a safety margin.
+        var need: u32 = (scount as u32) * FILL_PX_TICKS;
+        while (read_mtime() - tstart) < need { }
+        yy = yy + sh;
     }
-    pio_spi_wait_idle();
     return;
 }
 
