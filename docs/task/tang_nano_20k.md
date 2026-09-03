@@ -474,8 +474,12 @@ hw/
   ②**HW グリフブリッタ** — `lcd_spi.v` に GFG/GBG/GLYPH レジスタを追加、
   1 byte 書くと HW が 8px を fg/bg 選択で描く (kernel の poke を gw*h →
   bpr*h に、動作実績のある PIX 3byte パス + GAP を再利用して HW FILL の
-  ドロップ回避)。tb_lcd_spi に GLYPH テスト、hw test PASS、実機で
-  neofetch 正常描画 (gap=256 で画素ドロップなし)。
+  ドロップ回避のつもりだった)。tb_lcd_spi に GLYPH テスト、hw test PASS。
+  **が実機では gap=256 でも画素を落とし、ILI9488 のアドレス自動
+  インクリメントで後続がずれてグリフが横に潰れ読めなくなった** (HW FILL
+  と同じ現象)。CPU が ~140us の間隔を空ける mode-4 PIX-per-pixel は落ちない。
+  HW GLYPH は wall-clock も改善しない (下記③) ので撤去し mode-4 に固定
+  (commit 2b0d5c6、lcd_spi の GFG/GBG/GLYPH レジスタは未使用で bitstream に残置)。
   ③**隔離ベンチで律速を確定** (重要): console 起動時に固定処理を 200 回
   回して us を実測 — **空の sys_write = 16ms/回、syscall なしのメモリ
   コピー 32 回 = 10ms/回**。1 メモリ操作 13000 clock は物理的にあり得ず、
