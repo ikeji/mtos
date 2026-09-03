@@ -1221,9 +1221,17 @@ fn main(argv: StringArray) -> i32 {
     // before sh output shows up on screen.
     var running: i32 = 1;
     var first_render: i32 = 1;
+    // Adaptive poll pacing. sh output (e.g. neofetch) arrives in bursts
+    // with sub-second compute gaps between them; a flat 250 ms idle sleep
+    // slept through those gaps and roughly doubled the time to render a
+    // screenful. So we poll fast right after activity to catch the next
+    // burst, and only fall back to the 250 ms cursor-blink cadence once
+    // the pipe has been quiet for POLL_FAST_MAX polls (~1.5 s).
+    var g_idle_polls: i32 = 0;
     while running == 1 {
         var r: i32 = do_read_nb(pr, buf_data, 64);
         if r > 0 {
+            g_idle_polls = 0;
             erase_cursor(fb, frame);
             var i: i32 = 0;
             while i < r {
@@ -1254,15 +1262,23 @@ fn main(argv: StringArray) -> i32 {
             // Writer closed → EOF, time to wind down.
             running = 0;
         } else if r == (0 - 2) {
-            // No data right now — toggle cursor, refresh the clock,
-            // and sleep until the next blink.
-            if g_cur_on != 0 {
-                erase_cursor(fb, frame);
+            g_idle_polls = g_idle_polls + 1;
+            if g_idle_polls < 500 {
+                // Recently active: more burst output is likely on its way.
+                // Poll quickly with no cursor/clock work so we render it
+                // promptly instead of sleeping 250 ms through the gap.
+                do_nanosleep(3);
             } else {
-                draw_cursor(fb, frame);
+                // Quiet for a while — behave as an idle prompt: blink the
+                // cursor and refresh the clock at ~2 Hz.
+                if g_cur_on != 0 {
+                    erase_cursor(fb, frame);
+                } else {
+                    draw_cursor(fb, frame);
+                }
+                draw_clock(fb, frame);
+                do_nanosleep(250);
             }
-            draw_clock(fb, frame);
-            do_nanosleep(250);
         } else {
             // Any other negative is a hard error.
             running = 0;
