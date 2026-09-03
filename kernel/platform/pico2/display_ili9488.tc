@@ -594,6 +594,26 @@ export fn fb_backend_write(buf_addr: u32, n: i32) -> void {
             lcd_glyph(x, y, w, h, fb_rd16(buf_addr + 10u32),
                       fb_rd16(buf_addr + 12u32), buf_addr + 14u32, (w + 7) / 8);
         }
+    } else if mode == 5 {
+        // Batched glyph run on one row: [fg u16][bg u16][count u16] then per
+        // glyph [gw u8][bitmap: (gw/8)*h bytes]. Draws count glyphs left to
+        // right from x, advancing by each glyph's width.
+        if n >= 16 {
+            var bfg: i32 = fb_rd16(buf_addr + 10u32);
+            var bbg: i32 = fb_rd16(buf_addr + 12u32);
+            var bcount: i32 = fb_rd16(buf_addr + 14u32);
+            var bx: i32 = x;
+            var boff: u32 = buf_addr + 16u32;
+            var bi: i32 = 0;
+            while bi < bcount {
+                var bgw: i32 = peek8(boff) as i32;
+                var bbpr: i32 = (bgw + 7) / 8;
+                lcd_glyph(bx, y, bgw, h, bfg, bbg, boff + 1u32, bbpr);
+                bx = bx + bgw;
+                boff = boff + 1u32 + ((bbpr * h) as u32);
+                bi = bi + 1;
+            }
+        }
     }
     return;
 }

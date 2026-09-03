@@ -517,6 +517,27 @@ export fn fb_backend_write(buf_addr: u32, n: i32) -> void {
             var gbpr: i32 = (w + 7) / 8;
             lcd_glyph(x, y, w, h, gfg, gbg, buf_addr + 14u32, gbpr);
         }
+    } else if mode == 5 {
+        // Batched glyph run on one row: [fg u16][bg u16][count u16] then per
+        // glyph [gw u8][bitmap: (gw/8)*h bytes]. Draws count glyphs left to
+        // right from x, advancing by each glyph's width. Lets the console
+        // paint a whole row in one fb write instead of one per glyph.
+        if n >= 16 {
+            var bfg: i32 = fb_rd16(buf_addr + 10u32);
+            var bbg: i32 = fb_rd16(buf_addr + 12u32);
+            var bcount: i32 = fb_rd16(buf_addr + 14u32);
+            var bx: i32 = x;
+            var boff: u32 = buf_addr + 16u32;
+            var bi: i32 = 0;
+            while bi < bcount {
+                var bgw: i32 = peek8(boff) as i32;
+                var bbpr: i32 = (bgw + 7) / 8;
+                lcd_glyph(bx, y, bgw, h, bfg, bbg, boff + 1u32, bbpr);
+                bx = bx + bgw;
+                boff = boff + 1u32 + ((bbpr * h) as u32);
+                bi = bi + 1;
+            }
+        }
     } else if mode == 3 {
         // Set MADCTL (memory access control: rotation / mirroring).
         // The low 8 bits of buf+10 select the ILI9488 MADCTL value.
