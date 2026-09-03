@@ -495,6 +495,15 @@ hw/
   16.3→5.3s、chrome+neofetch 黒背景で正しく描画。**SPI 下限 5.5fps には
   panel の ~6k バースト制限で未達、~4fps が clean な上限。10fps 全画面は
   パラレル 8080 接続が必須** (SPI + 18bpp では帯域も 5.5fps が天井)。
+- [x] **neofetch のプロファイル + idle poll 適応化 (38→~20s、2x)** (2026-09-03):
+  LCD neofetch ~38s の内訳を実測で分解: neofetch 計算 ~1s (UART 版 0.99s)、
+  **idle の 250ms sleep ~19s (50%)**、per-glyph の console+syscall ~13s、
+  kernel ピクセル描画 ~5s (lcd_glyph no-op で 38→33s)。sh 出力はサブ秒の
+  計算ギャップを挟むバーストなので、一律 250ms sleep がギャップを寝過ごして
+  いた。console の idle poll を適応化 (直近活動中は 3ms poll、1.5s 静かで
+  初めて 250ms カーソル点滅) して **neofetch 38→~20s (2x)、userland のみ・
+  synth 不要**。次段候補: glyph を行単位で 1 sys_write にバッチ (~13s の
+  per-glyph syscall 削減、さらに ~1.5x 見込み)。
 - [x] LCD グリフ描画の高速化 + **律速のプロファイリング** (2026-09-03):
   console の glyph 描画は userland で 128px の RGB565 フレームを組み立てて
   いた (1px ごとに put_u16 関数呼び出し + y*gw 乗算)。3 段で改善:
