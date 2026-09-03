@@ -480,6 +480,21 @@ hw/
   パラレル 8080 接続が必要。CPU バウンド (compile / 起動 / テキスト描画)
   には 1.5x が効く。次: 本格 2 段パイプライン (forwarding)、fast mul/div
   (現 37 サイクル)、分岐予測を fetch_addr に。
+- [x] **fill を HW FILL + 行ストリップ化 (0.46→~4fps、9x)** (2026-09-03):
+  fill は PIX-per-pixel の kernel ループで、TC が peek32/poke32 を inline
+  しないため per-pixel ~14us (関数呼び出し) と重く、非競合でも全画面
+  2.19s = **0.46fps** だった (SPI 転送自体は 1.2us/px で律速ではない —
+  MMIO 完了は 2 サイクルと速く、TC の関数呼び出しが重い)。lcd_spi の
+  HW FILL レジスタ (1 poke で HW が自律ストリーム) を **6000 画素/strip**
+  に分割して使用 (単一連続 RAMWR >~6k 画素はこの panel が細い帯しか塗らず
+  GRAM が透ける、pico2 と同じ制限 — 12000/24000 でドロップ確認)。CPU は
+  ~2 poke/strip しか発行しないので SPI 律速に近づく。lcd_spi の idle
+  ステータスビットは実機で不確実 (ストリーム中に idle を返し連続多色
+  fill が衝突・色化け) なので drain は mtime で strip 所要時間を確定的に
+  busy-wait。実測: 全画面 2.19s→~0.25s (**~4fps**)、boot「after fb_fill」
+  16.3→5.3s、chrome+neofetch 黒背景で正しく描画。**SPI 下限 5.5fps には
+  panel の ~6k バースト制限で未達、~4fps が clean な上限。10fps 全画面は
+  パラレル 8080 接続が必須** (SPI + 18bpp では帯域も 5.5fps が天井)。
 - [x] LCD グリフ描画の高速化 + **律速のプロファイリング** (2026-09-03):
   console の glyph 描画は userland で 128px の RGB565 フレームを組み立てて
   いた (1px ごとに put_u16 関数呼び出し + y*gw 乗算)。3 段で改善:
