@@ -16,7 +16,10 @@ _start:
     # right after its init (hw/rtl/sdram/sdram_ctrl.v ZERO_WORDS), before
     # the boot ROM can touch the SDRAM, so nothing to do here.
     la   a0, __arena
-    li   a1, 0x807F0000           # arena end = RAM top - 64 KB stack
+    # arena end = RAM top - 64 KB stack - 300 KB VRAM. The VRAM framebuffer
+    # (480x320x2 = 0x4B000) sits at 0x807A5000..0x807F0000, below the stack;
+    # the vram_lcd refresh engine streams it to the LCD. See display_ili9488.tc.
+    li   a1, 0x807A5000
     sub  a1, a1, a0
     call __runtime_init__u32__i32
     la   t0, _trap_frame
