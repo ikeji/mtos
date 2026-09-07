@@ -137,7 +137,7 @@ fn rtc_set_secs(secs: u32) -> i32 {
 }
 
 // Hex output helpers (used to dump sector 0 during bring-up)
-fn kputchar(c: u8) -> void {
+export fn kputchar(c: u8) -> void {
     var b: U8Array = U8Array(1);
     set(b, 0, c);
     sys_write(1, b, 1);

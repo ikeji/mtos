@@ -14,6 +14,18 @@
 // SIO timer (kernel_pico2.tc) — used for the power-on delays.
 fn read_mtime() -> u32;
 fn kputs_t(s: StringLiteral) -> void;
+fn kputchar(c: u8) -> void;
+fn kputhex(v: u32) -> void {
+    var i: i32 = 28;
+    while i >= 0 {
+        var nib: i32 = ((v >> (i as u32)) & 0xFu32) as i32;
+        var ch: i32 = nib + 48;
+        if nib > 9 { ch = nib + 87; }
+        kputchar(ch as u8);
+        i = i - 4;
+    }
+    return;
+}
 
 // ===== RP2350 register addresses =====
 const LCD_IO_BANK0:    u32 = 0x40028000u32;
@@ -497,17 +509,17 @@ fn lcd_glyph(x: i32, y: i32, gw: i32, h: i32, fg: i32, bg: i32, bmp: u32, bpr: i
 // refresh engine. Validates the vram_lcd datapath end-to-end (CPU writes
 // SDRAM, engine streams it to the panel) before the console is ported.
 fn vram_test_and_enable() -> void {
+    // DIAG: vertical colour bars (by x). If the engine + MADCTL orientation
+    // are right they show as VERTICAL bars; a transpose makes them horizontal.
     var y: i32 = 0;
     while y < 320 {
         var rowb: u32 = VRAM_BASE + ((y * 480 * 2) as u32);
         var x: i32 = 0;
+        // left half red, right half blue: an unambiguous spatial map test.
         while x < 480 {
-            var c0: i32 = 0xFFFF;
-            if x < 120 { c0 = 0xF800; } else if x < 240 { c0 = 0x07E0; } else if x < 360 { c0 = 0x001F; }
-            var c1: i32 = 0xFFFF;
-            var x1: i32 = x + 1;
-            if x1 < 120 { c1 = 0xF800; } else if x1 < 240 { c1 = 0x07E0; } else if x1 < 360 { c1 = 0x001F; }
-            poke32(rowb + ((x * 2) as u32), (((c1 & 0xFFFF) << 16) | (c0 & 0xFFFF)) as u32);
+            var c: i32 = 0xF800;
+            if x >= 240 { c = 0x001F; }
+            poke32(rowb + ((x * 2) as u32), (((c & 0xFFFF) << 16) | (c & 0xFFFF)) as u32);
             x = x + 2;
         }
         y = y + 1;
@@ -520,7 +532,10 @@ fn vram_test_and_enable() -> void {
     poke32(VRAM_LCD_DIV, 0u32);
     poke32(VRAM_LCD_CTRL, 1u32);
     g_vram_active = 1;
-    kputs_t("VRAM: engine enabled (test bars)\r\n");
+    lcd_delay_ms(50);
+    kputs_t("VRAM: base=0x"); kputhex(peek32(VRAM_LCD_BASE));
+    kputs_t(" reads=0x"); kputhex(peek32(VRAM_LCD_DIV));
+    kputs_t("\r\n");
     return;
 }
 

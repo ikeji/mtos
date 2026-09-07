@@ -56,6 +56,7 @@ module vram_lcd #(
     reg        enable;
     reg [20:0] base;
     reg [7:0]  div;
+    reg [31:0] dbg_reads;   // DEBUG: count SDRAM words fetched
     assign owner = enable;
 
     // ---- byte shifter (SPI mode 0, MSB first) ----
@@ -113,6 +114,8 @@ module vram_lcd #(
 
     always @(*) begin
         case (addr[3:2])
+            2'd1:    rdata = {11'b0, base};       // DEBUG: base readback
+            2'd2:    rdata = dbg_reads;           // DEBUG: words fetched
             2'd3:    rdata = {31'b0, (state != S_IDLE)};
             default: rdata = 32'd0;
         endcase
@@ -120,7 +123,7 @@ module vram_lcd #(
 
     always @(posedge clk) begin
         if (rst) begin
-            enable <= 0; base <= 0; div <= 0;
+            enable <= 0; base <= 21'h1E9400; div <= 0; dbg_reads <= 0;   // DEBUG: hardcode VRAM base
             busy <= 0; shift <= 0; bit_cnt <= 0; phase <= 0; dcnt <= 0;
             start_req <= 0; start_byte <= 0; start_dc <= 0;
             sck <= 0; mosi <= 0; dc <= 0;
@@ -181,6 +184,7 @@ module vram_lcd #(
                             pix_word <= m_rdata;
                             have_word <= 1'b1;
                             m_addr <= m_addr + 21'd1;
+                            dbg_reads <= dbg_reads + 32'd1;
                         end
                     end else if (!busy && !start_req) begin
                         start_req <= 1; start_byte <= pix_byte; start_dc <= 1'b1;
