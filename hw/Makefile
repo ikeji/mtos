@@ -32,15 +32,16 @@ CST      := boards/$(BOARD)/$(BOARD).cst
 all: bit
 
 # ---- simulation -------------------------------------------------------
-test: $(BUILD)/tb_uart.vvp $(BUILD)/tb_top_blink.vvp $(BUILD)/tb_sdram.vvp $(BUILD)/tb_gpio.vvp $(BUILD)/tb_lcd_spi.vvp test-soc test-boot test-riscv
+test: $(BUILD)/tb_uart.vvp $(BUILD)/tb_top_blink.vvp $(BUILD)/tb_sdram.vvp $(BUILD)/tb_gpio.vvp $(BUILD)/tb_lcd_spi.vvp $(BUILD)/tb_vram_lcd.vvp test-soc test-boot test-riscv
 	@vvp -N $(BUILD)/tb_gpio.vvp | tee $(BUILD)/tb_gpio.log | grep -q '^PASS' || { cat $(BUILD)/tb_gpio.log; exit 1; }
 	@vvp -N $(BUILD)/tb_lcd_spi.vvp | tee $(BUILD)/tb_lcd_spi.log | grep -q '^PASS' || { cat $(BUILD)/tb_lcd_spi.log; exit 1; }
+	@vvp -N $(BUILD)/tb_vram_lcd.vvp | tee $(BUILD)/tb_vram_lcd.log | grep -q '^PASS' || { cat $(BUILD)/tb_vram_lcd.log; exit 1; }
 	@vvp -N $(BUILD)/tb_sdram.vvp | tee $(BUILD)/tb_sdram.log | grep -q '^PASS' || { cat $(BUILD)/tb_sdram.log; exit 1; }
 	@vvp -N $(BUILD)/tb_uart.vvp | tee $(BUILD)/tb_uart.log | grep -q '^PASS' || { cat $(BUILD)/tb_uart.log; exit 1; }
 	@vvp -N $(BUILD)/tb_top_blink.vvp | tee $(BUILD)/tb_top_blink.log | grep -q '^PASS' || { cat $(BUILD)/tb_top_blink.log; exit 1; }
 	@echo "hw test: PASS"
 
-SOC_SRCS := rtl/soc/soc.v rtl/soc/ram32.v rtl/soc/gpio_sio.v rtl/soc/spi_master.v rtl/soc/flash_dma.v rtl/soc/lcd_spi.v rtl/soc/uart_tx.v rtl/soc/uart_rx.v rtl/cpu/rv32_core.v rtl/sdram/sdram_ctrl.v rtl/sdram/sdram_cache.v
+SOC_SRCS := rtl/soc/soc.v rtl/soc/ram32.v rtl/soc/gpio_sio.v rtl/soc/spi_master.v rtl/soc/flash_dma.v rtl/soc/lcd_spi.v rtl/soc/vram_lcd.v rtl/soc/uart_tx.v rtl/soc/uart_rx.v rtl/cpu/rv32_core.v rtl/sdram/sdram_ctrl.v rtl/sdram/sdram_cache.v
 
 $(BUILD)/tb_soc.vvp: sim/tb_soc.v $(SOC_SRCS) | $(BUILD)
 	iverilog -g2012 -o $@ $^
@@ -106,6 +107,9 @@ $(BUILD)/tb_gpio.vvp: sim/tb_gpio.v rtl/soc/gpio_sio.v | $(BUILD)
 	iverilog -g2012 -o $@ $^
 
 $(BUILD)/tb_lcd_spi.vvp: sim/tb_lcd_spi.v rtl/soc/lcd_spi.v | $(BUILD)
+	iverilog -g2012 -o $@ $^
+
+$(BUILD)/tb_vram_lcd.vvp: sim/tb_vram_lcd.v rtl/soc/vram_lcd.v | $(BUILD)
 	iverilog -g2012 -o $@ $^
 
 $(BUILD)/tb_sdram.vvp: sim/tb_sdram.v sim/sdram_model.v rtl/sdram/sdram_ctrl.v | $(BUILD)

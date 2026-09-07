@@ -49,6 +49,8 @@ module soc #(
     output wire        sd_sck, sd_cs_n, sd_mosi,
     input  wire        sd_miso,
     output wire        lcd_sck, lcd_mosi,
+    output wire        lcd_owner,     // 1 = vram_lcd drives the LCD (pin mux at top)
+    output wire        lcd_dc,        // vram_lcd DC (used when lcd_owner)
     output reg  [31:0] exit_code,     // last write to the exit device
     output reg         exit_valid,    // pulses on that write
     output wire [31:0] dbg_pc,
@@ -81,6 +83,7 @@ module soc #(
     wire sel_spi   = (mem_addr[31:16] == 16'h1002);
     wire sel_spi1  = (mem_addr[31:16] == 16'h1003);
     wire sel_spi2  = (mem_addr[31:16] == 16'h1004);
+    wire sel_vram  = (mem_addr[31:16] == 16'h1005);   // vram_lcd refresh engine
     wire sel_uart  = (mem_addr[31:16] == 16'h1000);
     wire sel_clint = (mem_addr[31:16] == 16'h0200);
     wire sel_exit  = (mem_addr[31:16] == 16'h0010);
@@ -101,6 +104,10 @@ module soc #(
     wire [31:0] ram_q;
     wire        sd_ready, sd_init_done;
     wire        sd_valid;   // held while the access is in flight (refresh may delay acceptance)
+    // vram_lcd SDRAM read master (declared here so the arbiter below can see it)
+    wire        vram_m_valid; wire [20:0] vram_m_addr;
+    wire        vram_m_ready;          // driven by the SDRAM arbiter
+    wire [31:0] sdram_rdata;           // raw SDRAM read data (from the arbiter)
     generate if (USE_SDRAM) begin : g_sdram
         // 8 KB direct-mapped write-through cache in front of the SDRAM (USE_CACHE=0 bypasses it)
         wire c_valid, c_ready; wire [20:0] c_addr; wire [31:0] c_wdata, c_rdata; wire [3:0] c_wstrb;
@@ -115,14 +122,36 @@ module soc #(
             assign c_wdata = mem_wdata; assign c_wstrb = mem_wstrb; assign ram_q = c_rdata;
             assign cache_flushing = 1'b0;
         end
-        // arbiter: the DMA owns the SDRAM port while active (the CPU runs from the boot ROM then)
-        wire        a_valid = dma_active ? dma_valid : c_valid;
-        wire [20:0] a_addr  = dma_active ? dma_addr[22:2] : c_addr;
-        wire [31:0] a_wdata = dma_active ? dma_wdata : c_wdata;
-        wire [3:0]  a_wstrb = dma_active ? 4'hF : c_wstrb;
+        // 3-way arbiter, priority DMA > CPU cache > vram refresh. A grant is
+        // locked for one valid..ready transaction so the SDRAM controller
+        // never sees the request switch mid-access. vram (display) is lowest
+        // priority and only reads (wstrb=0); the CPU preempts it between
+        // transactions so a cache-miss burst is never blocked by refresh.
         wire        a_ready;
-        assign c_ready   = a_ready & ~dma_active;
-        assign dma_ready = a_ready &  dma_active;
+        localparam OWN_NONE=2'd0, OWN_DMA=2'd1, OWN_CPU=2'd2, OWN_VRAM=2'd3;
+        reg  [1:0]  own;
+        wire        a_valid = (own==OWN_DMA)  ? dma_valid
+                            : (own==OWN_CPU)  ? c_valid
+                            : (own==OWN_VRAM) ? vram_m_valid : 1'b0;
+        wire [20:0] a_addr  = (own==OWN_DMA)  ? dma_addr[22:2]
+                            : (own==OWN_VRAM) ? vram_m_addr : c_addr;
+        wire [31:0] a_wdata = (own==OWN_DMA)  ? dma_wdata : c_wdata;
+        wire [3:0]  a_wstrb = (own==OWN_DMA)  ? 4'hF
+                            : (own==OWN_CPU)  ? c_wstrb : 4'h0;
+        wire        inflight = a_valid & ~a_ready;   // an SDRAM access is mid-transaction
+        always @(posedge clk) begin
+            if (rst) own <= OWN_NONE;
+            else if (!inflight) begin   // free to (re)arbitrate between transactions
+                if      (dma_active)   own <= OWN_DMA;
+                else if (c_valid)      own <= OWN_CPU;
+                else if (vram_m_valid) own <= OWN_VRAM;
+                else                   own <= OWN_NONE;
+            end
+        end
+        assign c_ready       = a_ready & (own==OWN_CPU);
+        assign dma_ready     = a_ready & (own==OWN_DMA);
+        assign vram_m_ready  = a_ready & (own==OWN_VRAM);
+        assign sdram_rdata   = c_rdata;
         sdram_ctrl #(.CLK_HZ(CLK_HZ), .ZERO_WORDS(SDRAM_ZERO_WORDS)) sd (
             .clk(clk), .rst(rst), .valid(a_valid), .ready(a_ready),
             .addr(a_addr), .wdata(a_wdata), .wstrb(a_wstrb), .rdata(c_rdata), .init_done(sd_init_done),
@@ -135,6 +164,7 @@ module soc #(
             .clk(clk), .addr(mem_addr[AW+1:2]), .wdata(mem_wdata),
             .we(mem_wstrb & {4{mem_valid && sel_ram}}), .rdata(ram_q));
         assign sd_ready = 1'b0; assign sd_init_done = 1'b1; assign dma_ready = 1'b0; assign cache_flushing = 1'b0;
+        assign vram_m_ready = 1'b0; assign sdram_rdata = 32'd0;   // no vram refresh in BSRAM builds
         assign sdram_clk = 1'b0; assign sdram_cke = 1'b0; assign sdram_cs_n = 1'b1; assign sdram_ras_n = 1'b1;
         assign sdram_cas_n = 1'b1; assign sdram_we_n = 1'b1; assign sdram_addr = 11'b0; assign sdram_ba = 2'b0; assign sdram_dqm = 4'hF;
     end endgenerate
@@ -182,8 +212,27 @@ module soc #(
                      .wdata(mem_wdata), .rdata(spi1_rdata), .sck(sd_sck), .cs_n(sd_cs_n), .mosi(sd_mosi), .miso(sd_miso));
     wire [31:0] spi2_rdata;
     wire        spi2_strobe = mem_valid && sel_spi2 && !mem_ready && !pending && !sd_wait;
+    wire        spi2_sck_w, spi2_mosi_w;
     lcd_spi spi2 (.clk(clk), .rst(rst), .sel(spi2_strobe), .we(is_write), .addr(mem_addr[4:0]),
-                  .wdata(mem_wdata), .rdata(spi2_rdata), .sck(lcd_sck), .mosi(lcd_mosi));
+                  .wdata(mem_wdata), .rdata(spi2_rdata), .sck(spi2_sck_w), .mosi(spi2_mosi_w));
+
+    // vram_lcd: hardware LCD refresh engine (streams a SDRAM framebuffer to
+    // the panel). Its SDRAM read master (vram_m_*) plugs into the arbiter
+    // in the SDRAM generate block below. When lcd_owner it drives the LCD.
+    wire [31:0] vram_rdata;
+    wire        vram_strobe = mem_valid && sel_vram && !mem_ready && !pending && !sd_wait;
+    wire        vram_m_busy;
+    wire        vram_sck_w, vram_mosi_w, vram_dc_w, vram_owner_w;
+    vram_lcd u_vram (
+        .clk(clk), .rst(rst), .sel(vram_strobe), .we(is_write), .addr(mem_addr[3:0]),
+        .wdata(mem_wdata), .rdata(vram_rdata),
+        .m_valid(vram_m_valid), .m_ready(vram_m_ready), .m_addr(vram_m_addr), .m_rdata(sdram_rdata),
+        .mem_busy(vram_m_busy), .owner(vram_owner_w),
+        .sck(vram_sck_w), .mosi(vram_mosi_w), .dc(vram_dc_w));
+    assign lcd_sck   = vram_owner_w ? vram_sck_w  : spi2_sck_w;
+    assign lcd_mosi  = vram_owner_w ? vram_mosi_w : spi2_mosi_w;
+    assign lcd_owner = vram_owner_w;
+    assign lcd_dc    = vram_dc_w;
 
 
 
@@ -248,6 +297,9 @@ module soc #(
                     mem_ready <= 1'b1;
                 end else if (sel_spi2) begin
                     mem_rdata <= spi2_rdata;
+                    mem_ready <= 1'b1;
+                end else if (sel_vram) begin
+                    mem_rdata <= vram_rdata;
                     mem_ready <= 1'b1;
                 end else if (sel_exit) begin
                     if (is_write && mem_addr[3:0] == 4'd0) begin exit_code <= mem_wdata; exit_valid <= 1'b1; end

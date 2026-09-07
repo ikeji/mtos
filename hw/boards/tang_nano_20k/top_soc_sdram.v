@@ -40,7 +40,7 @@ module top_soc_sdram (
     always @(posedge clk) if (!por[8]) por <= por + 1'b1;
     wire [31:0] exit_code; wire exit_valid;
     wire [47:0] go, goe; wire [47:0] gi;
-    wire lcd_sck_w, lcd_mosi_w;
+    wire lcd_sck_w, lcd_mosi_w, lcd_owner_w, lcd_dc_w;
     soc #(.USE_SDRAM(1), .USE_CACHE(`USE_CACHE), .CLK_HZ(`SYS_CLK_HZ), .BAUD(`UART_BAUD), .RESET_PC(32'h0), .ROM_WORDS(2048), .ROM_INIT("build/bootrom.hex")) u_soc (
         .clk(clk), .rst(rst), .uart_rx(uart_rx), .uart_tx(uart_tx),
         .sdram_clk(O_sdram_clk), .sdram_cke(O_sdram_cke), .sdram_cs_n(O_sdram_cs_n), .sdram_ras_n(O_sdram_ras_n), .sdram_cas_n(O_sdram_cas_n), .sdram_we_n(O_sdram_wen_n),
@@ -48,7 +48,7 @@ module top_soc_sdram (
         .gpio_out(go), .gpio_oe(goe), .gpio_in(gi),
         .spi_sck(flash_clk), .spi_cs_n(flash_cs), .spi_mosi(flash_mosi), .spi_miso(flash_miso),
         .sd_sck(sd_sck), .sd_cs_n(sd_cs), .sd_mosi(sd_mosi), .sd_miso(sd_miso),
-        .lcd_sck(lcd_sck_w), .lcd_mosi(lcd_mosi_w),
+        .lcd_sck(lcd_sck_w), .lcd_mosi(lcd_mosi_w), .lcd_owner(lcd_owner_w), .lcd_dc(lcd_dc_w),
         .exit_code(exit_code), .exit_valid(exit_valid), .dbg_pc(), .dbg_instr(), .dbg_state(), .dbg_addr(), .dbg_txcnt(), .dbg_txbusy());
     // tristate pads
     genvar i;
@@ -57,14 +57,18 @@ module top_soc_sdram (
             assign kbd[i] = goe[i + 1] ? go[i + 1] : 1'bz;
         end
         for (i = 0; i < 7; i = i + 1) begin : g_lcd
-            if (i == 2 || i == 3) begin : g_spi_pin
-                // SCK (GP40) / MOSI (GP41) come from SPI master 2, not the GPIO block
+            if (i == 0 || i == 2 || i == 3) begin : g_spi_pin
+                // GP38 DC (muxed below), GP40 SCK / GP41 MOSI come from the
+                // SPI/vram engine, not the GPIO block
             end else begin : g_gpio_pin
                 assign lcd[i] = goe[38 + i] ? go[38 + i] : 1'bz;
             end
         end
     endgenerate
     assign kbd[10] = goe[12] ? go[12] : 1'bz;
+    // DC (GP38): the vram refresh engine drives it while it owns the LCD,
+    // otherwise it's the SIO/GPIO output as before.
+    assign lcd[0] = lcd_owner_w ? lcd_dc_w : (goe[38] ? go[38] : 1'bz);
     assign lcd[2] = lcd_sck_w;
     assign lcd[3] = lcd_mosi_w;
     assign gi = {3'b0, lcd, 25'b0, kbd[10], 1'b0, kbd[9:0], 1'b0};   // GP44..38, GP12, GP10..1
