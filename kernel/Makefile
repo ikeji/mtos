@@ -329,6 +329,7 @@ $(BUILD_DIR)/pico2_kernel_console_land.uf2: $(KERNEL_COMPILE_DEPS) $(BUILD_DIR)/
 tn20k:              $(BUILD_DIR)/tn20k_kernel.bin
 tn20k-extra:        $(BUILD_DIR)/tn20k_kernel_extra.bin
 tn20k-console-land: $(BUILD_DIR)/tn20k_kernel_console_land.bin
+tn20k-console:      $(BUILD_DIR)/tn20k_kernel_console.bin
 
 define TN20K_KERNEL_RECIPE
 	@echo "Building kernel: tn20k (disk=$(TN20K_DISK))" >&2
@@ -359,6 +360,11 @@ $(BUILD_DIR)/tn20k_kernel_extra.bin: $(KERNEL_COMPILE_DEPS) $(BUILD_DIR)/disk-ex
 
 $(BUILD_DIR)/tn20k_kernel_console_land.bin: TN20K_DISK := $(BUILD_DIR)/disk-console-land.img
 $(BUILD_DIR)/tn20k_kernel_console_land.bin: $(KERNEL_COMPILE_DEPS) $(BUILD_DIR)/disk-console-land.img \
+    $(ROOT)/userland/scripts/bin2s_incbin.sh | $(BUILD_DIR)
+	$(TN20K_KERNEL_RECIPE)
+
+$(BUILD_DIR)/tn20k_kernel_console.bin: TN20K_DISK := $(BUILD_DIR)/disk-console.img
+$(BUILD_DIR)/tn20k_kernel_console.bin: $(KERNEL_COMPILE_DEPS) $(BUILD_DIR)/disk-console.img \
     $(ROOT)/userland/scripts/bin2s_incbin.sh | $(BUILD_DIR)
 	$(TN20K_KERNEL_RECIPE)
 
