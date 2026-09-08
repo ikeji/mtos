@@ -112,10 +112,22 @@ RAMWR コマンド + CPU との SDRAM アービトレーション (計測は neo
 負荷下)。18bpp を SCK 20MHz で流す SPI 帯域が本質的上限で ~5fps が天井。
 超えるにはパラレル 8080 が必要 (使用モジュールにパラレルピン無し)。
 
+### スクロール高速化 (2026-09-08、完了)
+
+当初 VRAM モードのスクロールは grid 全再描画 (~840 グリフ blit) で **~10s**
+かかり、neofetch 後のプロンプト表示が遅かった。VRAM は素の SDRAM なので
+**pixel memmove** に置換 (`vram_scroll_up`): content 領域を CH px ぶん上に
+`copy32` (昇順 word コピー asm、上方向スクロールで安全) で移動 + 最下行を
+`vram_fill` でクリア。g_grid と shadow g_grid_prev を同一シフトするので直後の
+redraw は no-op。**~10s → ~10ms**。起動時プロンプトまで ~40s → ~28s に短縮
+(残りはグリフ blit による neofetch 描画 ~9s)。スクロール中に 1-2 フレームの
+tear が出るが連続リフレッシュの非 vsync による一時的なもの。
+
 ### 残課題
 
+- neofetch 描画 ~9s の律速はグリフ blit (vram_blit_glyph、行 asm 化済だが
+  依然 CPU が全画素書き込み)。dirty 行だけ描く等の最適化余地
 - chrome 描画 3.5s の残りは bevel の縦 1px 線 (poke16 パス) + fill の行分割
   オーバーヘッド。気になれば `fill32` を縦線にも効くよう拡張
-- dirty 領域最適化 (現状はスクロールで grid 全再描画)
 - 真のスタンドアロン起動には vram kernel を SPI flash へ書く必要
   (`hw/tools/flash_kernel.sh` は UART/reset ロード)
