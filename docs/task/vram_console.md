@@ -162,8 +162,10 @@ load_zen_font で jpfont zenkaku 部を word 整列 SDRAM バッファにコピ�
 スクロールも内側だけ。**この jpfont は PC-98 フォントで罫線は 12区 (ku=12) にある** (JIS 標準の 8区は
 空)。角は PC-98 の丸角。最下段はメニューバー (反転表示 File/Edit/View/Help) +
 右下に時計 (CLINT mtime からの uptime HH:MM:SS、tn20k に RTC 無し)。
-**注意: poke8 (バイト書き込み) は SDRAM に届かない** (キャッシュ経由の sub-word
-write が反映されない) → SDRAM 書き込みは poke32 (word) を使う。
+~~poke8 (バイト書き込み) が SDRAM に届かない~~ → **修正済 (commit a84e5d6)**:
+sdram_cache.v を sub-word write の read-modify-write 化 (SDRAM へ常に full word)。
+DQM マスク write が実機で silent drop していた (sim は通過)。今は byte write も
+SDRAM に届く。
 
 **残**: HW スクロール (base-row レジスタ)、fg/bg カラー属性の活用 (16色パレット
 実装済、console が白黒固定なだけ)。
