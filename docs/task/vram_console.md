@@ -104,6 +104,14 @@ neofetch が Win95 chrome 付きでクリアに描画 (~5-6s、旧 /dev/fb ~13s 
 test 8/8 PASS。注: LCD console の sh は stdin=/dev/kbd なので UART からは
 操作不可 (マトリクスキーボード配線待ち)。
 
+**実測リフレッシュ FPS = ~4.8fps** (2026-09-08)。エンジンの `dbg_reads`
+リードバック (0x10050008、SDRAM から読んだワード数) を 1 秒間サンプルし
+374525 words/s、1 フレーム = 480*320/2 = 76800 words なので 4.88fps。理論
+上限 ~5.5fps に対しての差は SDRAM リードストール + strip ごとの CASET/PASET/
+RAMWR コマンド + CPU との SDRAM アービトレーション (計測は neofetch 描画中の
+負荷下)。18bpp を SCK 20MHz で流す SPI 帯域が本質的上限で ~5fps が天井。
+超えるにはパラレル 8080 が必要 (使用モジュールにパラレルピン無し)。
+
 ### 残課題
 
 - chrome 描画 3.5s の残りは bevel の縦 1px 線 (poke16 パス) + fill の行分割
