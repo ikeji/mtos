@@ -964,7 +964,19 @@ var g_cur_on: i32 = 0;
 const CUR_H:    i32 = 4;
 
 fn draw_cursor(fb: i32, frame: U8Array) -> void {
-    if g_text_mode != 0 { return; }       // text engine has no pixel cursor (v1)
+    if g_text_mode != 0 {
+        if g_cur_enabled == 0 { return; }     // DECTCEM ESC[?25l
+        // Inverse (black-on-white) block at the cursor cell. Blank cells
+        // read back as 0, so render a space glyph so the block is solid.
+        var idx: i32 = g_trow * TCOLS + g_tcol;
+        var cur: i32 = get(g_cells, idx);
+        var ch:  i32 = cur & 0xFF;
+        if ch == 0 { ch = 32; }
+        var inv: i32 = ch | (0 << 8) | (15 << 12);   // fg black, bg white
+        poke32(TEXT_BASE + ((idx * 4) as u32), inv as u32);
+        g_cur_row = g_trow;  g_cur_col = g_tcol;  g_cur_on = 1;
+        return;
+    }
     if g_cur_enabled == 0 { return; }     // DECTCEM ESC[?25l
     if g_row < 0 || g_row >= ROWS { return; }
     if g_col < 0 || g_col >= COLS { return; }
@@ -978,6 +990,13 @@ fn draw_cursor(fb: i32, frame: U8Array) -> void {
 
 fn erase_cursor(fb: i32, frame: U8Array) -> void {
     if g_cur_on == 0 { return; }
+    if g_text_mode != 0 {
+        // Restore the real cell (undo the inverse block).
+        var idx: i32 = g_cur_row * TCOLS + g_cur_col;
+        poke32(TEXT_BASE + ((idx * 4) as u32), get(g_cells, idx) as u32);
+        g_cur_on = 0;
+        return;
+    }
     if g_cur_row < 0 || g_cur_row >= ROWS { return; }
     if g_cur_col < 0 || g_cur_col >= COLS { return; }
     fb_fill(fb, frame, g_content_x + g_cur_col * CW,
