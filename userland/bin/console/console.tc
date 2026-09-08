@@ -441,36 +441,105 @@ fn text_draw_cp(cp: i32) -> void {
     return;
 }
 
-// Draw the box-drawing window frame (full-width JIS keisen glyphs, each 2
-// cells). Top ┌─┐, sides │, bottom └─┘, with a hankaku title over the top.
-fn text_zen_abs(row: i32, col: i32, cp: i32) -> void {
-    var kt: i32 = u2k_lookup(cp);
-    if kt == 0 { return; }
-    var gi: i32 = ((kt >> 8) - 1) * 94 + ((kt & 0xFF) - 1);
+// PC-98 box-drawing (keisen) glyph indices, ku=12 in this font. The corners
+// are the authentic rounded PC-98 shapes. Each is a full-width (2-cell) glyph.
+const K_H:  i32 = 1037;   // ─
+const K_V:  i32 = 1039;   // │
+const K_TL: i32 = 1049;   // ┌ (rounded)
+const K_TR: i32 = 1053;   // ┐ (rounded)
+const K_BL: i32 = 1057;   // └ (rounded)
+const K_BR: i32 = 1061;   // ┘ (rounded)
+
+// Place a full-width keisen glyph (by gi) at an absolute panel position.
+fn text_keisen(row: i32, col: i32, gi: i32) -> void {
     text_cell_abs(row, col,     (15 << 8) | (1 << 16) | (0 << 17) | ((gi & 0x3FFF) << 18));
     text_cell_abs(row, col + 1, (15 << 8) | (1 << 16) | (1 << 17) | ((gi & 0x3FFF) << 18));
     return;
 }
 
+// A single reverse-video (black on white) menu-bar cell.
+fn text_menu_ch(col: i32, ch: i32) -> void {
+    text_cell_abs(TROWS - 1, col, (ch & 0xFF) | (0 << 8) | (15 << 12));
+    return;
+}
+
+// Uptime seconds from the CLINT mtime (tn20k has no wall-clock RTC). 64-bit
+// mtime / ticks-per-second via bit-by-bit long division.
+const MTIME_LO_A: u32 = 0x0200BFF8u32;
+const MTIME_HI_A: u32 = 0x0200BFFCu32;
+const TICKS_SEC:  u32 = 40500000u32;
+fn peek32(addr: u32) -> u32;   // runtime primitive
+fn uptime_sec() -> u32 {
+    var lo: u32 = peek32(MTIME_LO_A);
+    var hi: u32 = peek32(MTIME_HI_A);
+    var q: u32 = 0u32;
+    var rem: u32 = 0u32;
+    var i: i32 = 63;
+    while i >= 0 {
+        var bit: u32 = 0u32;
+        if i >= 32 { bit = (hi >> ((i - 32) as u32)) & 1u32; }
+        else { bit = (lo >> (i as u32)) & 1u32; }
+        rem = (rem << 1u32) | bit;
+        q = q << 1u32;
+        if rem >= TICKS_SEC { rem = rem - TICKS_SEC; q = q | 1u32; }
+        i = i - 1;
+    }
+    return q;
+}
+
+// Redraw the HH:MM:SS clock at the right of the menu bar (reverse video).
+var g_last_up: u32 = 0xFFFFFFFFu32;
+fn text_draw_clock_t() -> void {
+    var s: u32 = uptime_sec();
+    if s == g_last_up { return; }
+    g_last_up = s;
+    var hh: i32 = ((s / 3600u32) % 24u32) as i32;
+    var mm: i32 = ((s / 60u32) % 60u32) as i32;
+    var ss: i32 = (s % 60u32) as i32;
+    var col: i32 = TCOLS - 9;   // "HH:MM:SS " -> 9 cells from the right
+    text_menu_ch(col,     ('0' as i32) + hh / 10);
+    text_menu_ch(col + 1, ('0' as i32) + hh % 10);
+    text_menu_ch(col + 2, ':' as i32);
+    text_menu_ch(col + 3, ('0' as i32) + mm / 10);
+    text_menu_ch(col + 4, ('0' as i32) + mm % 10);
+    text_menu_ch(col + 5, ':' as i32);
+    text_menu_ch(col + 6, ('0' as i32) + ss / 10);
+    text_menu_ch(col + 7, ('0' as i32) + ss % 10);
+    return;
+}
+
+// Bottom-row menu bar: full-width reverse video, menu labels on the left, the
+// clock on the right (drawn by text_draw_clock_t).
+fn text_draw_menubar() -> void {
+    var c: i32 = 0;
+    while c < TCOLS { text_menu_ch(c, ' ' as i32); c = c + 1; }
+    var menu: StringLiteral = " File  Edit  View  Help ";
+    var t: i32 = 0;
+    while t < len(menu) {
+        text_menu_ch(1 + t, get(menu, t) as i32);
+        t = t + 1;
+    }
+    g_last_up = 0xFFFFFFFFu32;   // force the clock to paint on the next tick
+    text_draw_clock_t();
+    return;
+}
+
+// Draw the PC-98-style window: rounded-corner keisen frame (top + sides), a
+// title on the top border, and a menu bar with a clock on the bottom row.
 fn text_draw_frame() -> void {
     if g_zen_ok == 0 { return; }   // keisen glyphs live in the zenkaku font
-    // top border: ┌ ─×28 ┐
-    text_zen_abs(0, 0, 0x250C);
+    // top border: ┌ ─×N ┐
+    text_keisen(0, 0, K_TL);
     var c: i32 = 2;
-    while c <= TCOLS - 4 { text_zen_abs(0, c, 0x2500); c = c + 2; }
-    text_zen_abs(0, TCOLS - 2, 0x2510);
-    // sides: │ at cols 0 and TCOLS-2, rows 1..TROWS-2
+    while c <= TCOLS - 4 { text_keisen(0, c, K_H); c = c + 2; }
+    text_keisen(0, TCOLS - 2, K_TR);
+    // sides: │ down both edges of the content rows
     var r: i32 = 1;
     while r <= TROWS - 2 {
-        text_zen_abs(r, 0, 0x2502);
-        text_zen_abs(r, TCOLS - 2, 0x2502);
+        text_keisen(r, 0, K_V);
+        text_keisen(r, TCOLS - 2, K_V);
         r = r + 1;
     }
-    // bottom border: └ ─×28 ┘
-    text_zen_abs(TROWS - 1, 0, 0x2514);
-    c = 2;
-    while c <= TCOLS - 4 { text_zen_abs(TROWS - 1, c, 0x2500); c = c + 2; }
-    text_zen_abs(TROWS - 1, TCOLS - 2, 0x2518);
     // title over the top border (hankaku, white on black)
     var title: StringLiteral = " MTOS Console ";
     var t: i32 = 0;
@@ -478,53 +547,8 @@ fn text_draw_frame() -> void {
         text_cell_abs(0, 4 + t, (get(title, t) as i32 & 0xFF) | (15 << 8) | (0 << 12));
         t = t + 1;
     }
-    return;
-}
-
-// One row (16 px, MSB = leftmost) of a box-drawing glyph. Horizontal strokes
-// run along rows 7-8, vertical strokes along cols 7-8 (mask 0x0180).
-fn keisen_row(r: i32, hl: i32, hr: i32, vu: i32, vd: i32) -> i32 {
-    if r == 7 || r == 8 {
-        var w: i32 = 0;
-        if hl != 0 { w = w | 0xFF80; }             // left  cols 0..8
-        if hr != 0 { w = w | 0x01FF; }             // right cols 7..15
-        if vu != 0 || vd != 0 { w = w | 0x0180; }  // the center stub
-        return w;
-    }
-    if r < 7 && vu != 0 { return 0x0180; }
-    if r > 8 && vd != 0 { return 0x0180; }
-    return 0;
-}
-
-// Write one box-drawing glyph into the SDRAM zenkaku buffer at `dst + gi*32`.
-// Byte layout per row: left 8 px = low byte, right 8 px = next byte. We store
-// two rows per 32-bit word (word-aligned poke32 — sub-word writes don't reach
-// SDRAM cleanly through the cache).
-fn inject_glyph(dst: u32, gi: i32, hl: i32, hr: i32, vu: i32, vd: i32) -> void {
-    var r: i32 = 0;
-    while r < 16 {
-        var w0: i32 = keisen_row(r,     hl, hr, vu, vd);
-        var w1: i32 = keisen_row(r + 1, hl, hr, vu, vd);
-        var word: u32 = (((w0 >> 8) & 0xFF) as u32)
-                      | (((w0 & 0xFF) as u32) << 8u32)
-                      | (((w1 >> 8) & 0xFF) as u32) << 16u32
-                      | (((w1 & 0xFF) as u32) << 24u32);
-        poke32(dst + ((gi * 32 + r * 2) as u32), word);
-        r = r + 2;
-    }
-    return;
-}
-
-// The source font lacks the JIS keisen (row 8) glyphs, so synthesise the six
-// we use for the window frame directly into the SDRAM buffer. gi matches the
-// kuten the u2k table returns: ─658 │659 ┌660 ┐661 ┘662 └663.
-fn inject_keisen(dst: u32) -> void {
-    inject_glyph(dst, 658, 1, 1, 0, 0);   // ─ left+right
-    inject_glyph(dst, 659, 0, 0, 1, 1);   // │ up+down
-    inject_glyph(dst, 660, 0, 1, 0, 1);   // ┌ right+down
-    inject_glyph(dst, 661, 1, 0, 0, 1);   // ┐ left+down
-    inject_glyph(dst, 662, 1, 0, 1, 0);   // ┘ left+up
-    inject_glyph(dst, 663, 0, 1, 1, 0);   // └ right+up
+    // bottom row: menu bar + clock (replaces the bottom border)
+    text_draw_menubar();
     return;
 }
 
@@ -545,7 +569,6 @@ fn load_zen_font() -> void {
         poke32(dst + (i as u32), b0 | (b1 << 8u32) | (b2 << 16u32) | (b3 << 24u32));
         i = i + 4;
     }
-    inject_keisen(dst);
     poke32(TEXT_ZBASE, (dst - 0x80000000u32) >> 2u32);
     g_zen_ok = 1;
     return;
@@ -892,6 +915,7 @@ var g_last_hh:    i32 = 0 - 1;
 var g_last_mm:    i32 = 0 - 1;
 
 fn draw_clock(fb: i32, frame: U8Array) -> void {
+    if g_text_mode != 0 { text_draw_clock_t(); return; }   // menu-bar clock
     if g_have_chrome == 0 { return; }
     // ~1 Hz poll. draw_clock fires at the 250 ms blink rate plus on
     // every byte batch from sh; without this gate the RTC would be
