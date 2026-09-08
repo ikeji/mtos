@@ -128,14 +128,18 @@ fn poke32(addr: u32, v: u32) -> void;      // runtime primitive
 // over MMIO — no glyph expansion, no pixels, no SDRAM. Scroll is a cell-array
 // shift. Hankaku only (font ROM has no zenkaku); non-ASCII shows '?'.
 var g_text_mode: i32 = 0;
-const TEXT_BASE: u32 = 0x10060000u32;      // cell i at TEXT_BASE + i*4 (low 16 bits)
-const TEXT_CTRL: u32 = 0x10062000u32;      // word index 2048: enable (bit0)
-const TEXT_DIV:  u32 = 0x10062004u32;      // word index 2049: SCK divider
+const TEXT_BASE:  u32 = 0x10060000u32;     // cell i at TEXT_BASE + i*4 (32-bit)
+const TEXT_CTRL:  u32 = 0x10062000u32;     // word index 2048: enable (bit0)
+const TEXT_DIV:   u32 = 0x10062004u32;     // word index 2049: SCK divider
+const TEXT_ZBASE: u32 = 0x10062008u32;     // word index 2050: zenkaku font SDRAM word base
 const TCOLS: i32 = 60;
 const TROWS: i32 = 20;
+const ZEN_SZ: i32 = 282752;                // 94*94*32 = zenkaku font bytes (OFF_U2K-OFF_ZEN)
 var g_cells: I32Array = 0 as I32Array;     // shadow of the cell grid (for scroll)
 var g_trow:  i32 = 0;
 var g_tcol:  i32 = 0;
+var g_zen_ok: i32 = 0;                     // 1 = zenkaku font loaded into SDRAM
+fn peek8(addr: u32) -> u8;                 // runtime primitive
 fn vram_fill(x: i32, y: i32, w: i32, h: i32, col: i32) -> void;   // defined below
 var g_grid:      I32Array = 0 as I32Array;   // codepoint grid, sw mode only
 // g_grid_prev shadows what we last painted to /dev/fb. redraw() only
@@ -376,20 +380,76 @@ fn text_newline() -> void {
     return;
 }
 
+fn u2k_lookup(cp: i32) -> i32;   // defined below; maps codepoint -> JIS kuten
+
+// Write a zenkaku half-cell: the engine fetches the 16x16 glyph row from the
+// SDRAM font (loaded by load_zen_font) using `gi` (0-based glyph index) and
+// renders the left or right 8 px per `zright`.
+fn text_putcell_zen(row: i32, col: i32, gi: i32, zright: i32,
+                    fg: i32, bg: i32) -> void {
+    var idx: i32 = row * TCOLS + col;
+    var v:   i32 = ((fg & 0xF) << 8) | ((bg & 0xF) << 12)
+                 | (1 << 16) | ((zright & 1) << 17) | ((gi & 0x3FFF) << 18);
+    set(g_cells, idx, v);
+    poke32(TEXT_BASE + ((idx * 4) as u32), v as u32);
+    return;
+}
+
 fn text_draw_cp(cp: i32) -> void {
     if cp == 10 { text_newline(); return; }
     if cp == 13 { g_tcol = 0; return; }
     if cp == 8  { if g_tcol > 0 { g_tcol = g_tcol - 1; } return; }
     if cp < 32 { return; }
-    var ch: i32 = cp;
-    if cp >= 256 { ch = 63; }              // '?' — font ROM is hankaku only
-    text_putcell(g_trow, g_tcol, ch, 15, 0);   // white on black
+    if cp >= 256 {
+        // zenkaku: look up the JIS kuten, convert to a 0-based glyph index,
+        // and paint two half-cells (16 px wide). Falls back to '?' if the
+        // font isn't loaded or the codepoint isn't in the table.
+        var kt: i32 = 0;
+        if g_zen_ok != 0 { kt = u2k_lookup(cp); }
+        if kt != 0 {
+            var gi: i32 = ((kt >> 8) - 1) * 94 + ((kt & 0xFF) - 1);
+            if g_tcol + 1 >= TCOLS { text_newline(); }
+            text_putcell_zen(g_trow, g_tcol,     gi, 0, 15, 0);
+            text_putcell_zen(g_trow, g_tcol + 1, gi, 1, 15, 0);
+            g_tcol = g_tcol + 2;
+            if g_tcol >= TCOLS { text_newline(); }
+            return;
+        }
+        text_putcell(g_trow, g_tcol, 63, 15, 0);   // '?'
+        g_tcol = g_tcol + 1;
+        if g_tcol >= TCOLS { text_newline(); }
+        return;
+    }
+    text_putcell(g_trow, g_tcol, cp, 15, 0);   // white on black
     g_tcol = g_tcol + 1;
     if g_tcol >= TCOLS { text_newline(); }
     return;
 }
 
-// Clear the grid to blanks, hand the panel to the engine (SCK = clk/2).
+// Copy the zenkaku font (jpfont OFF_ZEN..OFF_U2K) into a word-aligned SDRAM
+// buffer the engine can read, and point ZBASE at it. Byte-read + word-write so
+// the .incbin source needn't be word-aligned; dst is aligned. ~0.35 s once.
+fn load_zen_font() -> void {
+    var buf: U8Array = U8Array((ZEN_SZ + 8) as u32);
+    if (buf as u32) == 0u32 { return; }
+    var dst: u32 = (((buf as u32) + 4u32) + 3u32) & 0xFFFFFFFCu32;   // round up to word
+    var src: u32 = g_font_addr + (OFF_ZEN as u32);
+    var i: i32 = 0;
+    while i < ZEN_SZ {
+        var b0: u32 = peek8(src + (i as u32)) as u32;
+        var b1: u32 = peek8(src + (i as u32) + 1u32) as u32;
+        var b2: u32 = peek8(src + (i as u32) + 2u32) as u32;
+        var b3: u32 = peek8(src + (i as u32) + 3u32) as u32;
+        poke32(dst + (i as u32), b0 | (b1 << 8u32) | (b2 << 16u32) | (b3 << 24u32));
+        i = i + 4;
+    }
+    poke32(TEXT_ZBASE, (dst - 0x80000000u32) >> 2u32);
+    g_zen_ok = 1;
+    return;
+}
+
+// Clear the grid to blanks, load the zenkaku font, hand the panel to the
+// engine (SCK = clk/2).
 fn text_init() -> void {
     g_cells = I32Array((TCOLS * TROWS) as u32);
     var i: i32 = 0;
@@ -400,6 +460,7 @@ fn text_init() -> void {
     }
     g_trow = 0;
     g_tcol = 0;
+    load_zen_font();
     poke32(TEXT_DIV, 0u32);
     poke32(TEXT_CTRL, 1u32);
     return;

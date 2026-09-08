@@ -8,3 +8,4 @@
 # Edit `kernel/fs-spec/etc/login` and rebuild to change this file.
 
 neofetch
+echo 日本語表示 OK

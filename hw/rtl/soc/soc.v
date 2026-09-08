@@ -105,9 +105,16 @@ module soc #(
     wire [31:0] ram_q;
     wire        sd_ready, sd_init_done;
     wire        sd_valid;   // held while the access is in flight (refresh may delay acceptance)
-    // vram_lcd SDRAM read master (declared here so the arbiter below can see it)
+    // display-engine SDRAM read masters (declared here so the arbiter below can
+    // see them). vram_lcd (pixel) and text_lcd (zenkaku glyph rows) are mutually
+    // exclusive — console enables one or the other — so they share one arbiter
+    // slot (OWN_VRAM), text taking priority if both ever asserted.
     wire        vram_m_valid; wire [20:0] vram_m_addr;
     wire        vram_m_ready;          // driven by the SDRAM arbiter
+    wire        text_m_valid; wire [20:0] text_m_addr;
+    wire        text_m_ready;          // driven by the SDRAM arbiter
+    wire        disp_m_valid = vram_m_valid | text_m_valid;
+    wire [20:0] disp_m_addr  = text_m_valid ? text_m_addr : vram_m_addr;
     wire [31:0] sdram_rdata;           // raw SDRAM read data (from the arbiter)
     generate if (USE_SDRAM) begin : g_sdram
         // 8 KB direct-mapped write-through cache in front of the SDRAM (USE_CACHE=0 bypasses it)
@@ -133,9 +140,9 @@ module soc #(
         reg  [1:0]  own;
         wire        a_valid = (own==OWN_DMA)  ? dma_valid
                             : (own==OWN_CPU)  ? c_valid
-                            : (own==OWN_VRAM) ? vram_m_valid : 1'b0;
+                            : (own==OWN_VRAM) ? disp_m_valid : 1'b0;
         wire [20:0] a_addr  = (own==OWN_DMA)  ? dma_addr[22:2]
-                            : (own==OWN_VRAM) ? vram_m_addr : c_addr;
+                            : (own==OWN_VRAM) ? disp_m_addr : c_addr;
         wire [31:0] a_wdata = (own==OWN_DMA)  ? dma_wdata : c_wdata;
         wire [3:0]  a_wstrb = (own==OWN_DMA)  ? 4'hF
                             : (own==OWN_CPU)  ? c_wstrb : 4'h0;
@@ -145,13 +152,15 @@ module soc #(
             else if (!inflight) begin   // free to (re)arbitrate between transactions
                 if      (dma_active)   own <= OWN_DMA;
                 else if (c_valid)      own <= OWN_CPU;
-                else if (vram_m_valid) own <= OWN_VRAM;
+                else if (disp_m_valid) own <= OWN_VRAM;
                 else                   own <= OWN_NONE;
             end
         end
         assign c_ready       = a_ready & (own==OWN_CPU);
         assign dma_ready     = a_ready & (own==OWN_DMA);
-        assign vram_m_ready  = a_ready & (own==OWN_VRAM);
+        // split the shared display grant: text wins if both assert (exclusive)
+        assign text_m_ready  = a_ready & (own==OWN_VRAM) &  text_m_valid;
+        assign vram_m_ready  = a_ready & (own==OWN_VRAM) & ~text_m_valid;
         assign sdram_rdata   = c_rdata;
         sdram_ctrl #(.CLK_HZ(CLK_HZ), .ZERO_WORDS(SDRAM_ZERO_WORDS)) sd (
             .clk(clk), .rst(rst), .valid(a_valid), .ready(a_ready),
@@ -165,7 +174,7 @@ module soc #(
             .clk(clk), .addr(mem_addr[AW+1:2]), .wdata(mem_wdata),
             .we(mem_wstrb & {4{mem_valid && sel_ram}}), .rdata(ram_q));
         assign sd_ready = 1'b0; assign sd_init_done = 1'b1; assign dma_ready = 1'b0; assign cache_flushing = 1'b0;
-        assign vram_m_ready = 1'b0; assign sdram_rdata = 32'd0;   // no vram refresh in BSRAM builds
+        assign vram_m_ready = 1'b0; assign text_m_ready = 1'b0; assign sdram_rdata = 32'd0;   // no display refresh in BSRAM builds
         assign sdram_clk = 1'b0; assign sdram_cke = 1'b0; assign sdram_cs_n = 1'b1; assign sdram_ras_n = 1'b1;
         assign sdram_cas_n = 1'b1; assign sdram_we_n = 1'b1; assign sdram_addr = 11'b0; assign sdram_ba = 2'b0; assign sdram_dqm = 4'hF;
     end endgenerate
@@ -239,7 +248,9 @@ module soc #(
     wire        text_sck_w, text_mosi_w, text_dc_w, text_owner_w;
     text_lcd #(.FONT_INIT(1), .FONT_HEX("rtl/soc/font_hankaku.hex")) u_text (
         .clk(clk), .rst(rst), .sel(text_strobe), .we(is_write), .addr(mem_addr[13:0]),
-        .wdata(mem_wdata), .rdata(text_rdata), .owner(text_owner_w),
+        .wdata(mem_wdata), .rdata(text_rdata),
+        .m_valid(text_m_valid), .m_ready(text_m_ready), .m_addr(text_m_addr), .m_rdata(sdram_rdata),
+        .owner(text_owner_w),
         .sck(text_sck_w), .mosi(text_mosi_w), .dc(text_dc_w));
 
     assign lcd_sck   = text_owner_w ? text_sck_w  : (vram_owner_w ? vram_sck_w  : spi2_sck_w);
