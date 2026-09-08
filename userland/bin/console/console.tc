@@ -716,10 +716,52 @@ fn redraw(fb: i32, frame: U8Array) -> void {
     return;
 }
 
+fn copy32(dst: u32, src: u32, count: i32) -> void;   // runtime asm primitive
+
+// VRAM fast scroll: the framebuffer is plain SDRAM, so shift the content
+// area up one text row (CH px) with a pixel memmove and clear the new
+// bottom band — no per-cell re-blit. g_grid AND its shadow g_grid_prev are
+// shifted identically so a following redraw() sees no drift and touches
+// nothing. ~10 ms vs the ~10 s a full-grid re-blit costs on this CPU.
+fn vram_scroll_up() -> void {
+    var rows_px: i32 = (ROWS - 1) * CH;         // pixel rows that move up
+    var wcount:  i32 = (COLS * CW) / 2;         // words per row (2 px/word)
+    var py: i32 = 0;
+    while py < rows_px {
+        var dst_y: i32 = g_content_y + py;
+        var src_y: i32 = dst_y + CH;
+        var dst: u32 = VRAM_BASE_LO + ((((dst_y * VRAM_W) + g_content_x) * 2) as u32);
+        var src: u32 = VRAM_BASE_LO + ((((src_y * VRAM_W) + g_content_x) * 2) as u32);
+        copy32(dst, src, wcount);
+        py = py + 1;
+    }
+    // clear the freed bottom text row to the content background
+    vram_fill(g_content_x, g_content_y + rows_px, COLS * CW, CH, COLOR_CONTENT);
+    // shift the logical grid + its shadow so redraw() stays in sync
+    var r: i32 = 0;
+    while r < ROWS - 1 {
+        var c: i32 = 0;
+        while c < COLS {
+            set(g_grid,      r * COLS + c, get(g_grid,      (r + 1) * COLS + c));
+            set(g_grid_prev, r * COLS + c, get(g_grid_prev, (r + 1) * COLS + c));
+            c = c + 1;
+        }
+        r = r + 1;
+    }
+    var bc: i32 = 0;
+    while bc < COLS {
+        set(g_grid,      (ROWS - 1) * COLS + bc, 0);
+        set(g_grid_prev, (ROWS - 1) * COLS + bc, 0);
+        bc = bc + 1;
+    }
+    return;
+}
+
 // Software scroll: shift the codepoint grid up one row, blank the new
 // bottom row, and re-blit the whole screen. Used in landscape, where
 // the hardware vertical scroll cannot move text.
 fn sw_scroll(fb: i32, frame: U8Array) -> void {
+    if g_vram_mode != 0 { vram_scroll_up(); return; }
     var r: i32 = 0;
     while r < ROWS - 1 {
         var c: i32 = 0;

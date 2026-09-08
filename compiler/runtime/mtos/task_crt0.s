@@ -258,6 +258,21 @@ fill32__u32__u32__i32:
     bnez a2, 1b
 2:  ret
 
+# copy32(dst, src, count): copy `count` 32-bit words src->dst, ascending.
+# Safe for an upward scroll (dst below src by whole rows: each source word
+# is read before the copy reaches it). Tight asm — the tn20k VRAM console
+# scrolls by memmoving the framebuffer up instead of re-blitting every cell.
+    .globl copy32__u32__u32__i32
+copy32__u32__u32__i32:
+    ble  a2, zero, 2f
+1:  lw   t0, 0(a1)
+    sw   t0, 0(a0)
+    addi a0, a0, 4
+    addi a1, a1, 4
+    addi a2, a2, -1
+    bnez a2, 1b
+2:  ret
+
 # blit_glyph_row(addr, bits, gw, fg16, bg16): expand one 1-bpp glyph row
 # to `gw` consecutive RGB565 pixels at `addr` (MSB = leftmost), fg where
 # the bit is set, bg otherwise. Tight asm — one call per glyph row instead
