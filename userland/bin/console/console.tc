@@ -134,12 +134,20 @@ const TEXT_DIV:   u32 = 0x10062004u32;     // word index 2049: SCK divider
 const TEXT_ZBASE: u32 = 0x10062008u32;     // word index 2050: zenkaku font SDRAM word base
 const TCOLS: i32 = 60;
 const TROWS: i32 = 20;
+// A box-drawing window frame occupies the border cells; sh output renders in
+// the inner content region. The frame uses full-width (2-cell) JIS keisen
+// glyphs, so the content starts at col 2 (past the left │) and row 1.
+const TCONT_X0:   i32 = 2;
+const TCONT_Y0:   i32 = 1;
+const TCONT_COLS: i32 = 56;                // 60 - 2*(│ width in cells)
+const TCONT_ROWS: i32 = 18;                // 20 - top - bottom
 const ZEN_SZ: i32 = 282752;                // 94*94*32 = zenkaku font bytes (OFF_U2K-OFF_ZEN)
 var g_cells: I32Array = 0 as I32Array;     // shadow of the cell grid (for scroll)
-var g_trow:  i32 = 0;
-var g_tcol:  i32 = 0;
+var g_trow:  i32 = 0;                       // content-relative cursor row (0..TCONT_ROWS-1)
+var g_tcol:  i32 = 0;                       // content-relative cursor col (0..TCONT_COLS-1)
 var g_zen_ok: i32 = 0;                     // 1 = zenkaku font loaded into SDRAM
 fn peek8(addr: u32) -> u8;                 // runtime primitive
+fn poke8(addr: u32, v: u8) -> void;        // runtime primitive
 fn vram_fill(x: i32, y: i32, w: i32, h: i32, col: i32) -> void;   // defined below
 var g_grid:      I32Array = 0 as I32Array;   // codepoint grid, sw mode only
 // g_grid_prev shadows what we last painted to /dev/fb. redraw() only
@@ -333,36 +341,58 @@ fn vram_blit_glyph(px: i32, py: i32, gw: i32, goff: i32, bpr: i32,
 }
 
 // ===== TEXT mode: hw text_lcd character generator (tn20k `console -t`) =====
-// A cell = char[7:0] | fg[11:8] | bg[15:12]. Write low 16 bits to
-// TEXT_BASE + index*4; the engine expands the glyph itself.
-fn text_putcell(row: i32, col: i32, ch: i32, fg: i32, bg: i32) -> void {
+// A cell = char[7:0] | fg[11:8] | bg[15:12]. The engine expands the glyph.
+// Content coords (row/col) are relative to the framed window's inner area.
+
+fn u2k_lookup(cp: i32) -> i32;   // defined below; maps codepoint -> JIS kuten
+
+// Write one cell at an absolute panel position (used for the window frame).
+fn text_cell_abs(row: i32, col: i32, v: i32) -> void {
     var idx: i32 = row * TCOLS + col;
-    var v:   i32 = (ch & 0xFF) | ((fg & 0xF) << 8) | ((bg & 0xF) << 12);
     set(g_cells, idx, v);
     poke32(TEXT_BASE + ((idx * 4) as u32), v as u32);
     return;
 }
 
-// Shift the cell grid up one row, blank the bottom, and rewrite every cell
-// (the engine's cell RAM is write-only from the CPU, so we keep g_cells as a
-// shadow). 1200 MMIO stores ~= a few hundred us, vs the ~10 s a pixel scroll
-// costs — text scroll is effectively free.
+// Hankaku cell at a content-relative position (offset past the frame).
+fn text_putcell(row: i32, col: i32, ch: i32, fg: i32, bg: i32) -> void {
+    text_cell_abs(TCONT_Y0 + row, TCONT_X0 + col,
+                  (ch & 0xFF) | ((fg & 0xF) << 8) | ((bg & 0xF) << 12));
+    return;
+}
+
+// Zenkaku half-cell at a content-relative position. The engine fetches the
+// 16x16 glyph row from the SDRAM font using `gi` and renders the left/right
+// 8 px per `zright`.
+fn text_putcell_zen(row: i32, col: i32, gi: i32, zright: i32,
+                    fg: i32, bg: i32) -> void {
+    text_cell_abs(TCONT_Y0 + row, TCONT_X0 + col,
+                  ((fg & 0xF) << 8) | ((bg & 0xF) << 12)
+                  | (1 << 16) | ((zright & 1) << 17) | ((gi & 0x3FFF) << 18));
+    return;
+}
+
+// Shift only the inner content region up one row, blank the new bottom row.
+// The frame cells are outside the region, so they stay put. g_cells is our
+// shadow of the engine's write-only cell RAM. ~1000 MMIO stores, effectively
+// free vs the ~10 s a pixel-framebuffer scroll costs.
 fn text_scroll() -> void {
     var r: i32 = 0;
-    while r < TROWS - 1 {
+    while r < TCONT_ROWS - 1 {
         var c: i32 = 0;
-        while c < TCOLS {
-            var v: i32 = get(g_cells, (r + 1) * TCOLS + c);
-            var idx: i32 = r * TCOLS + c;
-            set(g_cells, idx, v);
-            poke32(TEXT_BASE + ((idx * 4) as u32), v as u32);
+        while c < TCONT_COLS {
+            var src: i32 = (TCONT_Y0 + r + 1) * TCOLS + (TCONT_X0 + c);
+            var dst: i32 = (TCONT_Y0 + r)     * TCOLS + (TCONT_X0 + c);
+            var v: i32 = get(g_cells, src);
+            set(g_cells, dst, v);
+            poke32(TEXT_BASE + ((dst * 4) as u32), v as u32);
             c = c + 1;
         }
         r = r + 1;
     }
     var bc: i32 = 0;
-    while bc < TCOLS {
-        var bidx: i32 = (TROWS - 1) * TCOLS + bc;
+    while bc < TCONT_COLS {
+        var bidx: i32 = (TCONT_Y0 + TCONT_ROWS - 1) * TCOLS + (TCONT_X0 + bc);
         set(g_cells, bidx, 0);
         poke32(TEXT_BASE + ((bidx * 4) as u32), 0u32);
         bc = bc + 1;
@@ -373,25 +403,10 @@ fn text_scroll() -> void {
 fn text_newline() -> void {
     g_tcol = 0;
     g_trow = g_trow + 1;
-    if g_trow >= TROWS {
-        g_trow = TROWS - 1;
+    if g_trow >= TCONT_ROWS {
+        g_trow = TCONT_ROWS - 1;
         text_scroll();
     }
-    return;
-}
-
-fn u2k_lookup(cp: i32) -> i32;   // defined below; maps codepoint -> JIS kuten
-
-// Write a zenkaku half-cell: the engine fetches the 16x16 glyph row from the
-// SDRAM font (loaded by load_zen_font) using `gi` (0-based glyph index) and
-// renders the left or right 8 px per `zright`.
-fn text_putcell_zen(row: i32, col: i32, gi: i32, zright: i32,
-                    fg: i32, bg: i32) -> void {
-    var idx: i32 = row * TCOLS + col;
-    var v:   i32 = ((fg & 0xF) << 8) | ((bg & 0xF) << 12)
-                 | (1 << 16) | ((zright & 1) << 17) | ((gi & 0x3FFF) << 18);
-    set(g_cells, idx, v);
-    poke32(TEXT_BASE + ((idx * 4) as u32), v as u32);
     return;
 }
 
@@ -408,21 +423,108 @@ fn text_draw_cp(cp: i32) -> void {
         if g_zen_ok != 0 { kt = u2k_lookup(cp); }
         if kt != 0 {
             var gi: i32 = ((kt >> 8) - 1) * 94 + ((kt & 0xFF) - 1);
-            if g_tcol + 1 >= TCOLS { text_newline(); }
+            if g_tcol + 1 >= TCONT_COLS { text_newline(); }
             text_putcell_zen(g_trow, g_tcol,     gi, 0, 15, 0);
             text_putcell_zen(g_trow, g_tcol + 1, gi, 1, 15, 0);
             g_tcol = g_tcol + 2;
-            if g_tcol >= TCOLS { text_newline(); }
+            if g_tcol >= TCONT_COLS { text_newline(); }
             return;
         }
         text_putcell(g_trow, g_tcol, 63, 15, 0);   // '?'
         g_tcol = g_tcol + 1;
-        if g_tcol >= TCOLS { text_newline(); }
+        if g_tcol >= TCONT_COLS { text_newline(); }
         return;
     }
     text_putcell(g_trow, g_tcol, cp, 15, 0);   // white on black
     g_tcol = g_tcol + 1;
-    if g_tcol >= TCOLS { text_newline(); }
+    if g_tcol >= TCONT_COLS { text_newline(); }
+    return;
+}
+
+// Draw the box-drawing window frame (full-width JIS keisen glyphs, each 2
+// cells). Top ┌─┐, sides │, bottom └─┘, with a hankaku title over the top.
+fn text_zen_abs(row: i32, col: i32, cp: i32) -> void {
+    var kt: i32 = u2k_lookup(cp);
+    if kt == 0 { return; }
+    var gi: i32 = ((kt >> 8) - 1) * 94 + ((kt & 0xFF) - 1);
+    text_cell_abs(row, col,     (15 << 8) | (1 << 16) | (0 << 17) | ((gi & 0x3FFF) << 18));
+    text_cell_abs(row, col + 1, (15 << 8) | (1 << 16) | (1 << 17) | ((gi & 0x3FFF) << 18));
+    return;
+}
+
+fn text_draw_frame() -> void {
+    if g_zen_ok == 0 { return; }   // keisen glyphs live in the zenkaku font
+    // top border: ┌ ─×28 ┐
+    text_zen_abs(0, 0, 0x250C);
+    var c: i32 = 2;
+    while c <= TCOLS - 4 { text_zen_abs(0, c, 0x2500); c = c + 2; }
+    text_zen_abs(0, TCOLS - 2, 0x2510);
+    // sides: │ at cols 0 and TCOLS-2, rows 1..TROWS-2
+    var r: i32 = 1;
+    while r <= TROWS - 2 {
+        text_zen_abs(r, 0, 0x2502);
+        text_zen_abs(r, TCOLS - 2, 0x2502);
+        r = r + 1;
+    }
+    // bottom border: └ ─×28 ┘
+    text_zen_abs(TROWS - 1, 0, 0x2514);
+    c = 2;
+    while c <= TCOLS - 4 { text_zen_abs(TROWS - 1, c, 0x2500); c = c + 2; }
+    text_zen_abs(TROWS - 1, TCOLS - 2, 0x2518);
+    // title over the top border (hankaku, white on black)
+    var title: StringLiteral = " MTOS Console ";
+    var t: i32 = 0;
+    while t < len(title) {
+        text_cell_abs(0, 4 + t, (get(title, t) as i32 & 0xFF) | (15 << 8) | (0 << 12));
+        t = t + 1;
+    }
+    return;
+}
+
+// One row (16 px, MSB = leftmost) of a box-drawing glyph. Horizontal strokes
+// run along rows 7-8, vertical strokes along cols 7-8 (mask 0x0180).
+fn keisen_row(r: i32, hl: i32, hr: i32, vu: i32, vd: i32) -> i32 {
+    if r == 7 || r == 8 {
+        var w: i32 = 0;
+        if hl != 0 { w = w | 0xFF80; }             // left  cols 0..8
+        if hr != 0 { w = w | 0x01FF; }             // right cols 7..15
+        if vu != 0 || vd != 0 { w = w | 0x0180; }  // the center stub
+        return w;
+    }
+    if r < 7 && vu != 0 { return 0x0180; }
+    if r > 8 && vd != 0 { return 0x0180; }
+    return 0;
+}
+
+// Write one box-drawing glyph into the SDRAM zenkaku buffer at `dst + gi*32`.
+// Byte layout per row: left 8 px = low byte, right 8 px = next byte. We store
+// two rows per 32-bit word (word-aligned poke32 — sub-word writes don't reach
+// SDRAM cleanly through the cache).
+fn inject_glyph(dst: u32, gi: i32, hl: i32, hr: i32, vu: i32, vd: i32) -> void {
+    var r: i32 = 0;
+    while r < 16 {
+        var w0: i32 = keisen_row(r,     hl, hr, vu, vd);
+        var w1: i32 = keisen_row(r + 1, hl, hr, vu, vd);
+        var word: u32 = (((w0 >> 8) & 0xFF) as u32)
+                      | (((w0 & 0xFF) as u32) << 8u32)
+                      | (((w1 >> 8) & 0xFF) as u32) << 16u32
+                      | (((w1 & 0xFF) as u32) << 24u32);
+        poke32(dst + ((gi * 32 + r * 2) as u32), word);
+        r = r + 2;
+    }
+    return;
+}
+
+// The source font lacks the JIS keisen (row 8) glyphs, so synthesise the six
+// we use for the window frame directly into the SDRAM buffer. gi matches the
+// kuten the u2k table returns: ─658 │659 ┌660 ┐661 ┘662 └663.
+fn inject_keisen(dst: u32) -> void {
+    inject_glyph(dst, 658, 1, 1, 0, 0);   // ─ left+right
+    inject_glyph(dst, 659, 0, 0, 1, 1);   // │ up+down
+    inject_glyph(dst, 660, 0, 1, 0, 1);   // ┌ right+down
+    inject_glyph(dst, 661, 1, 0, 0, 1);   // ┐ left+down
+    inject_glyph(dst, 662, 1, 0, 1, 0);   // ┘ left+up
+    inject_glyph(dst, 663, 0, 1, 1, 0);   // └ right+up
     return;
 }
 
@@ -443,6 +545,7 @@ fn load_zen_font() -> void {
         poke32(dst + (i as u32), b0 | (b1 << 8u32) | (b2 << 16u32) | (b3 << 24u32));
         i = i + 4;
     }
+    inject_keisen(dst);
     poke32(TEXT_ZBASE, (dst - 0x80000000u32) >> 2u32);
     g_zen_ok = 1;
     return;
@@ -461,6 +564,7 @@ fn text_init() -> void {
     g_trow = 0;
     g_tcol = 0;
     load_zen_font();
+    text_draw_frame();     // box-drawing window (needs the zenkaku font loaded)
     poke32(TEXT_DIV, 0u32);
     poke32(TEXT_CTRL, 1u32);
     return;
@@ -1029,7 +1133,7 @@ fn draw_cursor(fb: i32, frame: U8Array) -> void {
         if g_cur_enabled == 0 { return; }     // DECTCEM ESC[?25l
         // Inverse (black-on-white) block at the cursor cell. Blank cells
         // read back as 0, so render a space glyph so the block is solid.
-        var idx: i32 = g_trow * TCOLS + g_tcol;
+        var idx: i32 = (TCONT_Y0 + g_trow) * TCOLS + (TCONT_X0 + g_tcol);
         var cur: i32 = get(g_cells, idx);
         var ch:  i32 = cur & 0xFF;
         if ch == 0 { ch = 32; }
@@ -1053,7 +1157,7 @@ fn erase_cursor(fb: i32, frame: U8Array) -> void {
     if g_cur_on == 0 { return; }
     if g_text_mode != 0 {
         // Restore the real cell (undo the inverse block).
-        var idx: i32 = g_cur_row * TCOLS + g_cur_col;
+        var idx: i32 = (TCONT_Y0 + g_cur_row) * TCOLS + (TCONT_X0 + g_cur_col);
         poke32(TEXT_BASE + ((idx * 4) as u32), get(g_cells, idx) as u32);
         g_cur_on = 0;
         return;
