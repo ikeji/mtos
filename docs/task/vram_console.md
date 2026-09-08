@@ -157,6 +157,13 @@ load_zen_font で jpfont zenkaku 部を word 整列 SDRAM バッファにコピ�
 設定、u2k_lookup で glyph index、arena 32KB→384KB。実機で「日本語表示 OK」を
 漢字描画。SDRAM 帯域は fps に影響なし (SPI 律速、上の分析どおり)。
 
+**ウィンドウ枠 (罫線、commit 2f4c755)**: box-drawing で ┌─ MTOS Console ─┐ +
+左右 │ + 下枠。content は枠内にオフセット (TCONT_X0=2,Y0=1,COLS=56,ROWS=18)、
+スクロールも内側だけ。**この jpfont は keisen (JIS 8区) グリフが空**なので、
+罫線 6 個 (─│┌┐┘└) をプログラム生成して SDRAM バッファに注入 (inject_keisen)。
+**注意: poke8 (バイト書き込み) は SDRAM に届かない** (キャッシュ経由の sub-word
+write が反映されない) → SDRAM 書き込みは poke32 (word) を使う。
+
 **残**: HW スクロール (base-row レジスタ)、fg/bg カラー属性の活用 (16色パレット
 実装済、console が白黒固定なだけ)。
 
