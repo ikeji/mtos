@@ -32,10 +32,11 @@ CST      := boards/$(BOARD)/$(BOARD).cst
 all: bit
 
 # ---- simulation -------------------------------------------------------
-test: $(BUILD)/tb_uart.vvp $(BUILD)/tb_top_blink.vvp $(BUILD)/tb_sdram.vvp $(BUILD)/tb_gpio.vvp $(BUILD)/tb_lcd_spi.vvp $(BUILD)/tb_vram_lcd.vvp test-soc test-boot test-riscv
+test: $(BUILD)/tb_uart.vvp $(BUILD)/tb_top_blink.vvp $(BUILD)/tb_sdram.vvp $(BUILD)/tb_gpio.vvp $(BUILD)/tb_lcd_spi.vvp $(BUILD)/tb_vram_lcd.vvp $(BUILD)/tb_text_lcd.vvp test-soc test-boot test-riscv
 	@vvp -N $(BUILD)/tb_gpio.vvp | tee $(BUILD)/tb_gpio.log | grep -q '^PASS' || { cat $(BUILD)/tb_gpio.log; exit 1; }
 	@vvp -N $(BUILD)/tb_lcd_spi.vvp | tee $(BUILD)/tb_lcd_spi.log | grep -q '^PASS' || { cat $(BUILD)/tb_lcd_spi.log; exit 1; }
 	@vvp -N $(BUILD)/tb_vram_lcd.vvp | tee $(BUILD)/tb_vram_lcd.log | grep -q '^PASS' || { cat $(BUILD)/tb_vram_lcd.log; exit 1; }
+	@vvp -N $(BUILD)/tb_text_lcd.vvp | tee $(BUILD)/tb_text_lcd.log | grep -q '^PASS' || { cat $(BUILD)/tb_text_lcd.log; exit 1; }
 	@vvp -N $(BUILD)/tb_sdram.vvp | tee $(BUILD)/tb_sdram.log | grep -q '^PASS' || { cat $(BUILD)/tb_sdram.log; exit 1; }
 	@vvp -N $(BUILD)/tb_uart.vvp | tee $(BUILD)/tb_uart.log | grep -q '^PASS' || { cat $(BUILD)/tb_uart.log; exit 1; }
 	@vvp -N $(BUILD)/tb_top_blink.vvp | tee $(BUILD)/tb_top_blink.log | grep -q '^PASS' || { cat $(BUILD)/tb_top_blink.log; exit 1; }
@@ -110,6 +111,9 @@ $(BUILD)/tb_lcd_spi.vvp: sim/tb_lcd_spi.v rtl/soc/lcd_spi.v | $(BUILD)
 	iverilog -g2012 -o $@ $^
 
 $(BUILD)/tb_vram_lcd.vvp: sim/tb_vram_lcd.v rtl/soc/vram_lcd.v | $(BUILD)
+	iverilog -g2012 -o $@ $^
+
+$(BUILD)/tb_text_lcd.vvp: sim/tb_text_lcd.v rtl/soc/text_lcd.v | $(BUILD)
 	iverilog -g2012 -o $@ $^
 
 $(BUILD)/tb_sdram.vvp: sim/tb_sdram.v sim/sdram_model.v rtl/sdram/sdram_ctrl.v | $(BUILD)
