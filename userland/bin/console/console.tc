@@ -121,6 +121,21 @@ const VRAM_CTRL:    u32 = 0x10050000u32;   // engine enable (bit0)
 const VRAM_DIVREG:  u32 = 0x10050008u32;   // engine SCK divider
 fn poke16(addr: u32, v: u16) -> void;      // runtime primitive
 fn poke32(addr: u32, v: u32) -> void;      // runtime primitive
+
+// TEXT mode (tn20k `console -t`): the hw text_lcd character-generator engine
+// (hw/rtl/soc/text_lcd.v) rasters a 60x20 cell grid to the panel, expanding
+// an on-chip hankaku font itself. The console just writes cells (char + fg/bg)
+// over MMIO — no glyph expansion, no pixels, no SDRAM. Scroll is a cell-array
+// shift. Hankaku only (font ROM has no zenkaku); non-ASCII shows '?'.
+var g_text_mode: i32 = 0;
+const TEXT_BASE: u32 = 0x10060000u32;      // cell i at TEXT_BASE + i*4 (low 16 bits)
+const TEXT_CTRL: u32 = 0x10062000u32;      // word index 2048: enable (bit0)
+const TEXT_DIV:  u32 = 0x10062004u32;      // word index 2049: SCK divider
+const TCOLS: i32 = 60;
+const TROWS: i32 = 20;
+var g_cells: I32Array = 0 as I32Array;     // shadow of the cell grid (for scroll)
+var g_trow:  i32 = 0;
+var g_tcol:  i32 = 0;
 fn vram_fill(x: i32, y: i32, w: i32, h: i32, col: i32) -> void;   // defined below
 var g_grid:      I32Array = 0 as I32Array;   // codepoint grid, sw mode only
 // g_grid_prev shadows what we last painted to /dev/fb. redraw() only
@@ -310,6 +325,83 @@ fn vram_blit_glyph(px: i32, py: i32, gw: i32, goff: i32, bpr: i32,
         blit_glyph_row(a, bits, gw, fg16, bg16);
         ry = ry + 1;
     }
+    return;
+}
+
+// ===== TEXT mode: hw text_lcd character generator (tn20k `console -t`) =====
+// A cell = char[7:0] | fg[11:8] | bg[15:12]. Write low 16 bits to
+// TEXT_BASE + index*4; the engine expands the glyph itself.
+fn text_putcell(row: i32, col: i32, ch: i32, fg: i32, bg: i32) -> void {
+    var idx: i32 = row * TCOLS + col;
+    var v:   i32 = (ch & 0xFF) | ((fg & 0xF) << 8) | ((bg & 0xF) << 12);
+    set(g_cells, idx, v);
+    poke32(TEXT_BASE + ((idx * 4) as u32), v as u32);
+    return;
+}
+
+// Shift the cell grid up one row, blank the bottom, and rewrite every cell
+// (the engine's cell RAM is write-only from the CPU, so we keep g_cells as a
+// shadow). 1200 MMIO stores ~= a few hundred us, vs the ~10 s a pixel scroll
+// costs — text scroll is effectively free.
+fn text_scroll() -> void {
+    var r: i32 = 0;
+    while r < TROWS - 1 {
+        var c: i32 = 0;
+        while c < TCOLS {
+            var v: i32 = get(g_cells, (r + 1) * TCOLS + c);
+            var idx: i32 = r * TCOLS + c;
+            set(g_cells, idx, v);
+            poke32(TEXT_BASE + ((idx * 4) as u32), v as u32);
+            c = c + 1;
+        }
+        r = r + 1;
+    }
+    var bc: i32 = 0;
+    while bc < TCOLS {
+        var bidx: i32 = (TROWS - 1) * TCOLS + bc;
+        set(g_cells, bidx, 0);
+        poke32(TEXT_BASE + ((bidx * 4) as u32), 0u32);
+        bc = bc + 1;
+    }
+    return;
+}
+
+fn text_newline() -> void {
+    g_tcol = 0;
+    g_trow = g_trow + 1;
+    if g_trow >= TROWS {
+        g_trow = TROWS - 1;
+        text_scroll();
+    }
+    return;
+}
+
+fn text_draw_cp(cp: i32) -> void {
+    if cp == 10 { text_newline(); return; }
+    if cp == 13 { g_tcol = 0; return; }
+    if cp == 8  { if g_tcol > 0 { g_tcol = g_tcol - 1; } return; }
+    if cp < 32 { return; }
+    var ch: i32 = cp;
+    if cp >= 256 { ch = 63; }              // '?' — font ROM is hankaku only
+    text_putcell(g_trow, g_tcol, ch, 15, 0);   // white on black
+    g_tcol = g_tcol + 1;
+    if g_tcol >= TCOLS { text_newline(); }
+    return;
+}
+
+// Clear the grid to blanks, hand the panel to the engine (SCK = clk/2).
+fn text_init() -> void {
+    g_cells = I32Array((TCOLS * TROWS) as u32);
+    var i: i32 = 0;
+    while i < TCOLS * TROWS {
+        set(g_cells, i, 0);
+        poke32(TEXT_BASE + ((i * 4) as u32), 0u32);
+        i = i + 1;
+    }
+    g_trow = 0;
+    g_tcol = 0;
+    poke32(TEXT_DIV, 0u32);
+    poke32(TEXT_CTRL, 1u32);
     return;
 }
 
@@ -811,6 +903,7 @@ fn newline() -> void {
 
 // Render one decoded Unicode codepoint.
 fn draw_cp(fb: i32, frame: U8Array, cp: i32) -> void {
+    if g_text_mode != 0 { text_draw_cp(cp); return; }
     if cp == 10 {
         newline();
     } else if cp == 13 {
@@ -871,6 +964,7 @@ var g_cur_on: i32 = 0;
 const CUR_H:    i32 = 4;
 
 fn draw_cursor(fb: i32, frame: U8Array) -> void {
+    if g_text_mode != 0 { return; }       // text engine has no pixel cursor (v1)
     if g_cur_enabled == 0 { return; }     // DECTCEM ESC[?25l
     if g_row < 0 || g_row >= ROWS { return; }
     if g_col < 0 || g_col >= COLS { return; }
@@ -1246,6 +1340,9 @@ fn main(argv: StringArray) -> i32 {
             } else if len(a) == 2 && get(a, 0) == ('-' as u8)
                 && get(a, 1) == ('v' as u8) {
                 g_vram_mode = 1;                 // tn20k VRAM refresh engine
+            } else if len(a) == 2 && get(a, 0) == ('-' as u8)
+                && get(a, 1) == ('t' as u8) {
+                g_text_mode = 1;  land = 1;      // tn20k text_lcd char-gen engine
             } else {
                 if path_idx < 0 { path_idx = ai; }
                 positional_n = positional_n + 1;
@@ -1265,7 +1362,8 @@ fn main(argv: StringArray) -> i32 {
                 var ak: String = get(argv, ki);
                 var is_l: i32 = 0;
                 if len(ak) == 2 && get(ak, 0) == ('-' as u8)
-                    && (get(ak, 1) == ('l' as u8) || get(ak, 1) == ('v' as u8)) {
+                    && (get(ak, 1) == ('l' as u8) || get(ak, 1) == ('v' as u8)
+                        || get(ak, 1) == ('t' as u8)) {
                     is_l = 1;
                 }
                 if is_l == 0 {
@@ -1298,6 +1396,12 @@ fn main(argv: StringArray) -> i32 {
         COLS = SCREEN_W / CW;
         ROWS = SCREEN_H / CH;
         eputs_t("CONSOLE: portrait, hardware scroll\n");
+    }
+    // Text mode reuses the landscape MADCTL (0xE8) but owns the panel via the
+    // hw text_lcd engine — no chrome, no pixel grid.
+    if g_text_mode != 0 {
+        g_have_chrome = 0;
+        eputs_t("CONSOLE: text mode (hw char-gen)\n");
     }
     FB_H = SCREEN_H;
     if g_sw_scroll != 0 {
@@ -1385,15 +1489,25 @@ fn main(argv: StringArray) -> i32 {
         eputs_t("CONSOLE: VRAM engine enabled\n");
     }
 
+    // Text mode: the fb_madctl above ran the kernel's ILI9488 bring-up +
+    // landscape MADCTL. Now clear the cell grid and hand the panel to the hw
+    // text_lcd char-gen engine — every character is a cell write from here.
+    if g_text_mode != 0 {
+        text_init();
+        eputs_t("CONSOLE: text engine enabled\n");
+    }
+
     // Paint the desktop. Landscape gets the Win95 chrome (desktop +
     // window + title + taskbar + Start button) and the content area
     // is sized to fit inside the window. Portrait clears the whole
-    // panel to black.
+    // panel to black. Text mode paints nothing here — the engine owns it.
     eputs_t("CONSOLE: before fb_fill (triggers lcd_init on first write)\n");
-    if g_have_chrome != 0 {
-        draw_chrome(fb, frame);
-    } else {
-        fb_fill(fb, frame, 0, 0, SCREEN_W, SCREEN_H, COLOR_CONTENT);
+    if g_text_mode == 0 {
+        if g_have_chrome != 0 {
+            draw_chrome(fb, frame);
+        } else {
+            fb_fill(fb, frame, 0, 0, SCREEN_W, SCREEN_H, COLOR_CONTENT);
+        }
     }
     eputs_t("CONSOLE: after fb_fill\n");
     // Initial cursor — sh will write the first prompt straight after

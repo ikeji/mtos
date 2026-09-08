@@ -84,6 +84,7 @@ module soc #(
     wire sel_spi1  = (mem_addr[31:16] == 16'h1003);
     wire sel_spi2  = (mem_addr[31:16] == 16'h1004);
     wire sel_vram  = (mem_addr[31:16] == 16'h1005);   // vram_lcd refresh engine
+    wire sel_text  = (mem_addr[31:16] == 16'h1006);   // text_lcd character-gen engine
     wire sel_uart  = (mem_addr[31:16] == 16'h1000);
     wire sel_clint = (mem_addr[31:16] == 16'h0200);
     wire sel_exit  = (mem_addr[31:16] == 16'h0010);
@@ -229,10 +230,22 @@ module soc #(
         .m_valid(vram_m_valid), .m_ready(vram_m_ready), .m_addr(vram_m_addr), .m_rdata(sdram_rdata),
         .mem_busy(vram_m_busy), .owner(vram_owner_w),
         .sck(vram_sck_w), .mosi(vram_mosi_w), .dc(vram_dc_w));
-    assign lcd_sck   = vram_owner_w ? vram_sck_w  : spi2_sck_w;
-    assign lcd_mosi  = vram_owner_w ? vram_mosi_w : spi2_mosi_w;
-    assign lcd_owner = vram_owner_w;
-    assign lcd_dc    = vram_dc_w;
+    // text_lcd: hardware text-mode (character generator) LCD engine. Cells +
+    // font live in on-chip BSRAM, so no SDRAM master — it just drives the LCD
+    // when enabled. Console picks text OR vram, never both, so the pin mux
+    // chains text > vram > spi2 (CPU).
+    wire [31:0] text_rdata;
+    wire        text_strobe = mem_valid && sel_text && !mem_ready && !pending && !sd_wait;
+    wire        text_sck_w, text_mosi_w, text_dc_w, text_owner_w;
+    text_lcd #(.FONT_INIT(1), .FONT_HEX("rtl/soc/font_hankaku.hex")) u_text (
+        .clk(clk), .rst(rst), .sel(text_strobe), .we(is_write), .addr(mem_addr[13:0]),
+        .wdata(mem_wdata), .rdata(text_rdata), .owner(text_owner_w),
+        .sck(text_sck_w), .mosi(text_mosi_w), .dc(text_dc_w));
+
+    assign lcd_sck   = text_owner_w ? text_sck_w  : (vram_owner_w ? vram_sck_w  : spi2_sck_w);
+    assign lcd_mosi  = text_owner_w ? text_mosi_w : (vram_owner_w ? vram_mosi_w : spi2_mosi_w);
+    assign lcd_owner = text_owner_w | vram_owner_w;
+    assign lcd_dc    = text_owner_w ? text_dc_w   : vram_dc_w;
 
 
 
@@ -300,6 +313,9 @@ module soc #(
                     mem_ready <= 1'b1;
                 end else if (sel_vram) begin
                     mem_rdata <= vram_rdata;
+                    mem_ready <= 1'b1;
+                end else if (sel_text) begin
+                    mem_rdata <= text_rdata;
                     mem_ready <= 1'b1;
                 end else if (sel_exit) begin
                     if (is_write && mem_addr[3:0] == 4'd0) begin exit_code <= mem_wdata; exit_valid <= 1'b1; end
