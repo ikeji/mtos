@@ -145,7 +145,20 @@ hankaku 部を font_hankaku.hex に落として $readmemh。zenkaku 非対応 ('
 **トレードオフ**: 任意位置ピクセル描画不可 → Win95 chrome は作れない
 (ユーザー了承済)。全角は font ROM 非搭載。
 
-**残**: HW スクロール (base-row レジスタ)、fg/bg カラー属性の活用、カーソル。
+**カーソル** (commit f4c5eb4): SW 点滅ブロック。draw_cursor/erase_cursor が
+text 分岐、現在セルを反転 (黒地に白) して MMIO 書き込み、shadow g_cells から復元。
+
+**全角 zenkaku** (commit 318b5ff): ~276KB で BSRAM に入らないので SDRAM に置き、
+text_lcd の SDRAM read master が glyph 行を fetch。セルを 32bit 化
+({char,fg,bg,zen,zright,kuten[13:0]})、全角 1 文字 = 隣接 2 セル (左半+右半、
+同じ kuten)。zaddr = zbase + (kuten<<3) + (grow>>1)、grow 偶奇で word 内バイト
+位置を選ぶ (乗算レス)。soc は vram と OWN_VRAM スロット共有 (排他)。console は
+load_zen_font で jpfont zenkaku 部を word 整列 SDRAM バッファにコピー + ZBASE
+設定、u2k_lookup で glyph index、arena 32KB→384KB。実機で「日本語表示 OK」を
+漢字描画。SDRAM 帯域は fps に影響なし (SPI 律速、上の分析どおり)。
+
+**残**: HW スクロール (base-row レジスタ)、fg/bg カラー属性の活用 (16色パレット
+実装済、console が白黒固定なだけ)。
 
 ### 残課題 (ピクセル vram モード)
 
