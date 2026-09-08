@@ -123,10 +123,35 @@ redraw は no-op。**~10s → ~10ms**。起動時プロンプトまで ~40s → 
 (残りはグリフ blit による neofetch 描画 ~9s)。スクロール中に 1-2 フレームの
 tear が出るが連続リフレッシュの非 vsync による一時的なもの。
 
-### 残課題
+## テキスト VRAM (hw キャラクタジェネレータ、2026-09-08 実機完了)
+
+ピクセル VRAM の次段: 文字セルのグリッドを HW がフォント展開する VGA
+テキストモード方式。`console -t` + `hw/rtl/soc/text_lcd.v` で実機完動
+(commit e4d3779 エンジン、fc34e0d 統合)。
+
+**設計**: 60×20=1200 セル (各 `{char, fg, bg}` 16bit) + hankaku フォント
+(256×16=4KB) を **BSRAM に内蔵** (SDRAM 不要)。エンジンはラスタ行ごとに
+`font[{char, glyph_row}]` を引いて 1 画素ずつ fg/bg を展開し ILI9488 に連続
+ストリーム。乗算ゼロ (row_base は +COLS 加算、font_addr は連結で char*16+row)
+なので gowin_pack DSP handler crash を回避。MMIO 0x1006_0000: セル書き込み
+(word index 0..1199) + CTRL/DIV。SoC の LCD ピン mux は text>vram>spi2。
+
+**効果 (実測)**: CPU は 1 文字 = セル 1 個 (poke32) を書くだけ。グリフ展開も
+画素書き込みも SDRAM も無し。neofetch がピクセル完全な鮮明さで描画され、
+first sh 4.1s (ピクセル vram の ~8s より速い)。スクロールは shadow g_cells を
+shift して全セル再書き込み (1200 poke32 ~= 数百 us)。フォントは jpfont.dat の
+hankaku 部を font_hankaku.hex に落として $readmemh。zenkaku 非対応 ('?' 表示)。
+
+**トレードオフ**: 任意位置ピクセル描画不可 → Win95 chrome は作れない
+(ユーザー了承済)。全角は font ROM 非搭載。
+
+**残**: HW スクロール (base-row レジスタ)、fg/bg カラー属性の活用、カーソル。
+
+### 残課題 (ピクセル vram モード)
 
 - neofetch 描画 ~9s の律速はグリフ blit (vram_blit_glyph、行 asm 化済だが
-  依然 CPU が全画素書き込み)。dirty 行だけ描く等の最適化余地
+  依然 CPU が全画素書き込み)。dirty 行だけ描く等の最適化余地。
+  → テキスト VRAM モードでこれは解決 (上記)
 - chrome 描画 3.5s の残りは bevel の縦 1px 線 (poke16 パス) + fill の行分割
   オーバーヘッド。気になれば `fill32` を縦線にも効くよう拡張
 - 真のスタンドアロン起動には vram kernel を SPI flash へ書く必要
