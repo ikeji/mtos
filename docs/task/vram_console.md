@@ -65,3 +65,49 @@ RAMWR) する。
 RGB565 行優先: VRAM[y*WIDTH + x] (2 byte)。console と engine が同じ配置で
 合意。landscape は lcd_init が MADCTL 0xE8 を設定済なので engine は 480x320
 として CASET 0..479 / PASET 0..319 で書く。
+
+## 結果 (2026-09-08、実機完了)
+
+**`/bin/console -v` オプションで実装完了・実機検証済** (commit f7c38a4)。
+pico2 を壊さないため VRAM 化は kernel 側ではなく console の `-v` オプションに:
+
+- console.tc: `g_vram_mode`、`vram_fill` / `vram_blit_glyph`。fb_fill /
+  blit_glyph{,_color} / fb_scroll が `g_vram_mode` で分岐。起動時に VRAM を
+  クリア + `poke32(0x10050000, 1)` でエンジン enable。VRAM_BASE = 0x807A5000
+  (crt0 が arena 末尾を 0x807A5000 に下げて 300KB 予約)
+- ビルド分離: `kern_console_vram.conf` (`console -l -v`) + `disk-console-vram.img`
+  + `tn20k-console-vram` ターゲット。pico2-console-land / tn20k-console-land は
+  `-l` のみの `disk-console-land.img` を使い続ける (pico2 に VRAM エンジンは
+  無く 0x807A5000 も RAM 非バックなので `-v` は厳禁)
+- kernel display_ili9488.tc: bring-up 用の VRAM テスト hack を撤去し
+  fb_backend_write を通常 /dev/fb パスに復元。エンジンは console が駆動
+
+### 律速は poke16 ではなく asm 化で解決
+
+当初 vram_fill を TC の poke16 ループで書いたら**全画面クリアが ~20s** かかった
+(多サイクルコアで poke16 1 回 ~130µs 相当 = 関数呼び出し + スタックスピル
+オーバーヘッド)。`task_crt0.s` に **タイトな asm プリミティブ**を足して解決:
+- `fill32(addr, val, count)` — sw ループ。2 画素/word パックで全画面クリア
+  **20s → 643ms (~30x)**
+- `blit_glyph_row(addr, bits, gw, fg16, bg16)` — 1 グリフ行の fg/bg 展開を
+  1 呼び出しで (gw 回の poke16 TC 呼び出しを排除)。chrome 描画 4.6s → 3.5s
+
+教訓: このコアでは「メモリ書き込みが遅い」のではなく **TC codegen の per-op
+オーバーヘッドが遅い**。ホットな画素ループは asm 化が唯一効くレバー
+([[tn20k_bottleneck_is_cpu]] の追試)。
+
+### 実機動作
+
+neofetch が Win95 chrome 付きでクリアに描画 (~5-6s、旧 /dev/fb ~13s の ~2x)。
+エンジンが背景で連続リフレッシュするので描画中の tearing はあるが CPU は SPI
+非介入。スクロールも動作 (boot neofetch が 1 行スクロールして表示)。kernel
+test 8/8 PASS。注: LCD console の sh は stdin=/dev/kbd なので UART からは
+操作不可 (マトリクスキーボード配線待ち)。
+
+### 残課題
+
+- chrome 描画 3.5s の残りは bevel の縦 1px 線 (poke16 パス) + fill の行分割
+  オーバーヘッド。気になれば `fill32` を縦線にも効くよう拡張
+- dirty 領域最適化 (現状はスクロールで grid 全再描画)
+- 真のスタンドアロン起動には vram kernel を SPI flash へ書く必要
+  (`hw/tools/flash_kernel.sh` は UART/reset ロード)
