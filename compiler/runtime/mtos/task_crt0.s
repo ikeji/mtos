@@ -244,3 +244,38 @@ poke16__u32__u16:
 poke32__u32__u32:
     sw   a1, 0(a0)
     ret
+
+# fill32(addr, val, count): store `val` to `count` consecutive 32-bit
+# words starting at `addr`. A tight asm loop — avoids the per-word TC
+# call/stack-spill overhead that makes a poke16 pixel loop crawl on the
+# multi-cycle core (used by the tn20k VRAM console clear/fill path).
+    .globl fill32__u32__u32__i32
+fill32__u32__u32__i32:
+    bge  zero, a2, 2f              # count <= 0: nothing to do (blez not in asm)
+1:  sw   a1, 0(a0)
+    addi a0, a0, 4
+    addi a2, a2, -1
+    bnez a2, 1b
+2:  ret
+
+# blit_glyph_row(addr, bits, gw, fg16, bg16): expand one 1-bpp glyph row
+# to `gw` consecutive RGB565 pixels at `addr` (MSB = leftmost), fg where
+# the bit is set, bg otherwise. Tight asm — one call per glyph row instead
+# of gw TC poke16 calls (the tn20k VRAM console glyph path).
+# a0=addr a1=bits a2=gw a3=fg16 a4=bg16
+    .globl blit_glyph_row__u32__i32__i32__u16__u16
+blit_glyph_row__u32__i32__i32__u16__u16:
+    ble  a2, zero, 4f
+    addi t1, a2, -1
+    li   t2, 1
+    sll  t2, t2, t1               # t2 = mask = 1 << (gw-1)
+1:  and  t3, a1, t2
+    beqz t3, 2f
+    sh   a3, 0(a0)                # bit set -> fg
+    j    3f
+2:  sh   a4, 0(a0)                # clear  -> bg
+3:  addi a0, a0, 2
+    srli t2, t2, 1
+    addi a2, a2, -1
+    bnez a2, 1b
+4:  ret

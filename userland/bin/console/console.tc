@@ -107,6 +107,21 @@ var g_cur_row: i32 = 0;
 var FB_H:      i32 = 480;
 var g_scroll:  i32 = 0;
 var g_sw_scroll: i32 = 0;          // 1 = software scroll (landscape)
+
+// VRAM mode (tn20k `console -v`): render pixels straight into the SDRAM
+// framebuffer that the hw vram_lcd refresh engine streams to the panel,
+// instead of poking the LCD over /dev/fb. No syscalls, no CPU-driven SPI —
+// the engine paints the screen in the background. pico2 has no such engine,
+// so it never passes -v and keeps the /dev/fb path. Physical addresses are
+// fine: MTOS has no MMU. Layout: VRAM[y*480+x] RGB565, matching the engine.
+var g_vram_mode: i32 = 0;
+const VRAM_BASE_LO: u32 = 0x807A5000u32;   // VRAM byte address (reserved by crt0)
+const VRAM_W:       i32 = 480;
+const VRAM_CTRL:    u32 = 0x10050000u32;   // engine enable (bit0)
+const VRAM_DIVREG:  u32 = 0x10050008u32;   // engine SCK divider
+fn poke16(addr: u32, v: u16) -> void;      // runtime primitive
+fn poke32(addr: u32, v: u32) -> void;      // runtime primitive
+fn vram_fill(x: i32, y: i32, w: i32, h: i32, col: i32) -> void;   // defined below
 var g_grid:      I32Array = 0 as I32Array;   // codepoint grid, sw mode only
 // g_grid_prev shadows what we last painted to /dev/fb. redraw() only
 // re-blits a cell where g_grid != g_grid_prev — typical sh output has
@@ -207,6 +222,7 @@ fn put_u16(b: U8Array, pos: i32, v: i32) -> void {
 // Emit a mode-2 blit: set the hardware vertical-scroll start line
 // (ILI9488 VSCRSADD) to `line`.
 fn fb_scroll(fb: i32, frame: U8Array, line: i32) -> void {
+    if g_vram_mode != 0 { return; }   // no /dev/fb writes once the engine owns the LCD
     flush_batch(fb);   // paint queued glyphs before the scroll moves them
     if g_render_frozen != 0 { return; }
     put_u16(frame, 0,  0);
@@ -224,8 +240,9 @@ fn fb_scroll(fb: i32, frame: U8Array, line: i32) -> void {
 // foreground task can own /dev/fb without us painting over it.
 fn fb_fill(fb: i32, frame: U8Array, x: i32, y: i32,
            w: i32, h: i32, col: i32) -> void {
-    flush_batch(fb);   // paint queued glyphs before filling over them
     if g_render_frozen != 0 { return; }
+    if g_vram_mode != 0 { vram_fill(x, y, w, h, col); return; }
+    flush_batch(fb);   // paint queued glyphs before filling over them
     put_u16(frame, 0,  x);
     put_u16(frame, 2,  y);
     put_u16(frame, 4,  w);
@@ -233,6 +250,66 @@ fn fb_fill(fb: i32, frame: U8Array, x: i32, y: i32,
     put_u16(frame, 8,  1);
     put_u16(frame, 10, col);
     sys_write(fb, frame, 12);
+    return;
+}
+
+// ===== VRAM direct rendering (tn20k `console -v`) =====
+// Write pixels straight into the SDRAM framebuffer at VRAM_BASE_LO; the
+// hardware refresh engine streams it to the panel. No syscalls, no SPI.
+
+// Fill rect (x,y,w,h) with RGB565 col.
+fn fill32(addr: u32, val: u32, count: i32) -> void;   // runtime asm primitive
+
+fn vram_fill(x: i32, y: i32, w: i32, h: i32, col: i32) -> void {
+    var c16: u16 = (col & 0xFFFF) as u16;
+    // Pack two identical RGB565 pixels into one 32-bit word so fill32
+    // paints two pixels per store. VRAM is row-major and strips are
+    // contiguous, so a full-width rect (x==0, w==VRAM_W) is one flat
+    // fill; otherwise fill row by row. A tight asm sw-loop is ~10x the
+    // poke16 TC loop on the multi-cycle core.
+    var packed: u32 = (((c16 as u32) << 16u32) | (c16 as u32));
+    if x == 0 && w == VRAM_W {
+        var base: u32 = VRAM_BASE_LO + (((y * VRAM_W) * 2) as u32);
+        fill32(base, packed, (w * h) / 2);
+        return;
+    }
+    var yy: i32 = 0;
+    while yy < h {
+        var a: u32 = VRAM_BASE_LO + ((((y + yy) * VRAM_W + x) * 2) as u32);
+        if (a & 3u32) == 0u32 && (w & 1) == 0 {
+            fill32(a, packed, w / 2);
+        } else {
+            var xx: i32 = 0;
+            while xx < w {
+                poke16(a, c16);
+                a = a + 2u32;
+                xx = xx + 1;
+            }
+        }
+        yy = yy + 1;
+    }
+    return;
+}
+
+// Expand a 1-bpp font glyph (bpr bytes/row, 16 rows, MSB = leftmost) into
+// VRAM at pixel (px,py), fg on bg.
+fn blit_glyph_row(addr: u32, bits: i32, gw: i32, fg: u16, bg: u16) -> void;
+
+fn vram_blit_glyph(px: i32, py: i32, gw: i32, goff: i32, bpr: i32,
+                   fg: i32, bg: i32) -> void {
+    var fg16: u16 = (fg & 0xFFFF) as u16;
+    var bg16: u16 = (bg & 0xFFFF) as u16;
+    var ry: i32 = 0;
+    while ry < 16 {
+        var bits: i32 = 0;
+        var k: i32 = 0;
+        while k < bpr { bits = (bits << 8) | fbyte(goff + ry * bpr + k); k = k + 1; }
+        var a: u32 = VRAM_BASE_LO + ((((py + ry) * VRAM_W + px) * 2) as u32);
+        // one tight asm call expands the whole row (fg/bg per bit) — far
+        // cheaper than gw poke16 TC calls on the multi-cycle core.
+        blit_glyph_row(a, bits, gw, fg16, bg16);
+        ry = ry + 1;
+    }
     return;
 }
 
@@ -270,6 +347,7 @@ fn blit_glyph_color(fb: i32, frame: U8Array, px: i32, py: i32,
                     gw: i32, goff: i32, bpr: i32,
                     fg: i32, bg: i32) -> void {
     if g_render_frozen != 0 { return; }
+    if g_vram_mode != 0 { vram_blit_glyph(px, py, gw, goff, bpr, fg, bg); return; }
     // mode 4: hand the kernel the 1-bpp font glyph + fg/bg and let it
     // expand to pixels. The old RGB565 build looped per pixel in userland
     // (a put_u16 call + a y*gw multiply each), ~8x slower than the kernel
@@ -317,6 +395,10 @@ fn blit_glyph(fb: i32, frame: U8Array, col: i32, row: i32,
     if g_render_frozen != 0 { return; }
     var px: i32 = g_content_x + col * CW;
     var py: i32 = phys_y(row);
+    if g_vram_mode != 0 {
+        vram_blit_glyph(px, py, gw, goff, bpr, FG, COLOR_CONTENT);
+        return;
+    }
     var nb: i32 = bpr * 16;
     if g_bn > 0 && (py != g_by || px != g_bxn || g_bp + 1 + nb > BATCH_CAP) {
         flush_batch(fb);
@@ -1119,6 +1201,9 @@ fn main(argv: StringArray) -> i32 {
             if len(a) == 2 && get(a, 0) == ('-' as u8)
                 && get(a, 1) == ('l' as u8) {
                 land = 1;
+            } else if len(a) == 2 && get(a, 0) == ('-' as u8)
+                && get(a, 1) == ('v' as u8) {
+                g_vram_mode = 1;                 // tn20k VRAM refresh engine
             } else {
                 if path_idx < 0 { path_idx = ai; }
                 positional_n = positional_n + 1;
@@ -1136,8 +1221,12 @@ fn main(argv: StringArray) -> i32 {
             var ki: i32 = path_idx;
             while ki < argc {
                 var ak: String = get(argv, ki);
-                if !(len(ak) == 2 && get(ak, 0) == ('-' as u8)
-                     && get(ak, 1) == ('l' as u8)) {
+                var is_l: i32 = 0;
+                if len(ak) == 2 && get(ak, 0) == ('-' as u8)
+                    && (get(ak, 1) == ('l' as u8) || get(ak, 1) == ('v' as u8)) {
+                    is_l = 1;
+                }
+                if is_l == 0 {
                     set(child_argv, ci, ak);
                     ci = ci + 1;
                 }
@@ -1242,6 +1331,17 @@ fn main(argv: StringArray) -> i32 {
     // axes, i.e. text reads with the board's USB-C side at the top.
     // Use 0x28 to flip the picture 180° on this board.
     if g_sw_scroll != 0 { fb_madctl(fb, frame, 0xE8); }
+
+    // VRAM mode: the /dev/fb writes above already ran the kernel's ILI9488
+    // bring-up + MADCTL. Now clear VRAM and hand the panel to the hardware
+    // refresh engine — from here every fb_fill / glyph goes straight to VRAM
+    // (no syscalls, no CPU-driven SPI) and the engine streams it in the bg.
+    if g_vram_mode != 0 {
+        vram_fill(0, 0, SCREEN_W, SCREEN_H, COLOR_CONTENT);
+        poke32(VRAM_DIVREG, 0u32);
+        poke32(VRAM_CTRL, 1u32);
+        eputs_t("CONSOLE: VRAM engine enabled\n");
+    }
 
     // Paint the desktop. Landscape gets the Win95 chrome (desktop +
     // window + title + taskbar + Start button) and the content area

@@ -242,8 +242,11 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
         -device "loader,addr=0x80000000,cpu-num=0" 2>/dev/null | tr -d '\0')
     elapsed=$(( $(time_ms) - t0 ))
     ci_ready=$(echo "$ci_out" | grep -c "CONSOLE: ready")
-    # console paints each glyph as one mode-0 RGB565 pixel blit.
-    ci_fb=$(echo "$ci_out" | grep -c "FB: mode=0")
+    # console renders glyphs to /dev/fb: mode-0 = one RGB565 pixel blit
+    # (legacy), mode-4 = a 1-bpp glyph the kernel expands, mode-5 = a
+    # coalesced same-row glyph batch (one write per run). Accept any of
+    # them — the point is that text reached /dev/fb, not the exact path.
+    ci_fb=$(echo "$ci_out" | grep -cE "FB: mode=(0|4|5)")
     ci_exit=$(echo "$ci_out" | grep -c "CONSOLE: exit")
     ci_done=$(echo "$ci_out" | grep -c "all tasks done")
     # The PC-98 font is .incbin'd into the console binary; console

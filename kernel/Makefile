@@ -102,6 +102,8 @@ DISK_STATIC_DEPS := $(ROOT)/integration/inputs/phase7_hello.tc \
         virt pico2 pico2-extra pico2-demo pico2-console pico2-console-land \
         disks disk-extra \
         run run-extra run-pico2 run-pico2-extra run-pico2-console run-pico2-console-land \
+        tn20k tn20k-extra tn20k-console tn20k-console-land tn20k-console-vram \
+        run-tn20k run-tn20k-extra run-tn20k-console-land run-tn20k-console-vram \
         flash
 
 # Default: virt + pico2 両方 build
@@ -116,27 +118,35 @@ $(BUILD_DIR)/disk.img:              DISK_KERN_CONF := $(wildcard $(ROOT)/kernel/
 $(BUILD_DIR)/disk-demo.img:         DISK_KERN_CONF := $(ROOT)/kernel/tests/fixtures/kern_demo.conf
 $(BUILD_DIR)/disk-console.img:      DISK_KERN_CONF := $(ROOT)/kernel/tests/fixtures/kern_console.conf
 $(BUILD_DIR)/disk-console-land.img: DISK_KERN_CONF := $(ROOT)/kernel/tests/fixtures/kern_console_land.conf
+# disk-console-vram: tn20k standalone — landscape + hardware VRAM refresh
+# engine (console -l -v). Never used on pico2 (no VRAM engine there).
+$(BUILD_DIR)/disk-console-vram.img: DISK_KERN_CONF := $(ROOT)/kernel/tests/fixtures/kern_console_vram.conf
 
 # Per-target deps for DISK_KERN_CONF files
 $(BUILD_DIR)/disk-demo.img:         $(ROOT)/kernel/tests/fixtures/kern_demo.conf
 $(BUILD_DIR)/disk-console.img:      $(ROOT)/kernel/tests/fixtures/kern_console.conf
 $(BUILD_DIR)/disk-console-land.img: $(ROOT)/kernel/tests/fixtures/kern_console_land.conf
+$(BUILD_DIR)/disk-console-vram.img: $(ROOT)/kernel/tests/fixtures/kern_console_vram.conf
 
 # /etc/login: only console disks ship the neofetch banner. Plain and
 # demo disks omit it because nested-console rendering of neofetch
 # would push the test_os landscape test past its budget.
 $(BUILD_DIR)/disk-console.img:      DISK_LOGIN := $(ROOT)/kernel/fs-spec/etc/login
 $(BUILD_DIR)/disk-console-land.img: DISK_LOGIN := $(ROOT)/kernel/fs-spec/etc/login
+$(BUILD_DIR)/disk-console-vram.img: DISK_LOGIN := $(ROOT)/kernel/fs-spec/etc/login
 $(BUILD_DIR)/disk-console.img:      $(ROOT)/kernel/fs-spec/etc/login
 $(BUILD_DIR)/disk-console-land.img: $(ROOT)/kernel/fs-spec/etc/login
+$(BUILD_DIR)/disk-console-vram.img: $(ROOT)/kernel/fs-spec/etc/login
 
 # /etc/term.conf: COLS/ROWS for full-screen apps (sl, eventually vi).
 # Only console disks ship it; the plain disk leaves it absent so sl on
 # the UART terminal falls back to its 80x24 compile-time default.
 $(BUILD_DIR)/disk-console.img:      DISK_TERM_CONF := $(ROOT)/kernel/fs-spec/etc/term_portrait.conf
 $(BUILD_DIR)/disk-console-land.img: DISK_TERM_CONF := $(ROOT)/kernel/fs-spec/etc/term_landscape.conf
+$(BUILD_DIR)/disk-console-vram.img: DISK_TERM_CONF := $(ROOT)/kernel/fs-spec/etc/term_landscape.conf
 $(BUILD_DIR)/disk-console.img:      $(ROOT)/kernel/fs-spec/etc/term_portrait.conf
 $(BUILD_DIR)/disk-console-land.img: $(ROOT)/kernel/fs-spec/etc/term_landscape.conf
+$(BUILD_DIR)/disk-console-vram.img: $(ROOT)/kernel/fs-spec/etc/term_landscape.conf
 
 # Pre-encode prelude (Step 5 of pre-encode, docs/task/asm_pre_encode.md)
 define PRELUDE_PRE_ENCODE
@@ -157,8 +167,8 @@ endef
 # 動的部分 (task bins / prelude / kern.conf) のみ Makefile 側で処理。
 DEFAULT_SPEC := $(ROOT)/kernel/fs-spec/default.spec
 
-# Common recipe for the 4 standard disks (different DISK_KERN_CONF only)
-$(BUILD_DIR)/disk.img $(BUILD_DIR)/disk-demo.img $(BUILD_DIR)/disk-console.img $(BUILD_DIR)/disk-console-land.img: \
+# Common recipe for the standard disks (different DISK_KERN_CONF only)
+$(BUILD_DIR)/disk.img $(BUILD_DIR)/disk-demo.img $(BUILD_DIR)/disk-console.img $(BUILD_DIR)/disk-console-land.img $(BUILD_DIR)/disk-console-vram.img: \
     $(GUEST_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) \
     $(GEN2_DIR)/asm_pass1 $(GEN2_DIR)/asm_pass2 $(GEN2_DIR)/asm_pass3 \
     $(DEFAULT_SPEC) $(ROOT)/kernel/scripts/stage-fs.sh \
@@ -329,6 +339,7 @@ $(BUILD_DIR)/pico2_kernel_console_land.uf2: $(KERNEL_COMPILE_DEPS) $(BUILD_DIR)/
 tn20k:              $(BUILD_DIR)/tn20k_kernel.bin
 tn20k-extra:        $(BUILD_DIR)/tn20k_kernel_extra.bin
 tn20k-console-land: $(BUILD_DIR)/tn20k_kernel_console_land.bin
+tn20k-console-vram: $(BUILD_DIR)/tn20k_kernel_console_vram.bin
 tn20k-console:      $(BUILD_DIR)/tn20k_kernel_console.bin
 
 define TN20K_KERNEL_RECIPE
@@ -368,6 +379,12 @@ $(BUILD_DIR)/tn20k_kernel_console.bin: $(KERNEL_COMPILE_DEPS) $(BUILD_DIR)/disk-
     $(ROOT)/userland/scripts/bin2s_incbin.sh | $(BUILD_DIR)
 	$(TN20K_KERNEL_RECIPE)
 
+# tn20k standalone: landscape + hardware VRAM refresh engine (console -l -v).
+$(BUILD_DIR)/tn20k_kernel_console_vram.bin: TN20K_DISK := $(BUILD_DIR)/disk-console-vram.img
+$(BUILD_DIR)/tn20k_kernel_console_vram.bin: $(KERNEL_COMPILE_DEPS) $(BUILD_DIR)/disk-console-vram.img \
+    $(ROOT)/userland/scripts/bin2s_incbin.sh | $(BUILD_DIR)
+	$(TN20K_KERNEL_RECIPE)
+
 # run-tn20k: flash the SoC bitstream (hw/), load the kernel through the
 # boot ROM and open an interactive UART terminal (Ctrl-a x to quit).
 run-tn20k: tn20k
@@ -376,6 +393,9 @@ run-tn20k: tn20k
 run-tn20k-console-land: tn20k-console-land
 	$(MAKE) -C $(ROOT)/hw TOP=top_soc_sdram flash
 	sleep 0.5 && python3 $(ROOT)/hw/tools/uart_load.py -i $(BUILD_DIR)/tn20k_kernel_console_land.bin
+run-tn20k-console-vram: tn20k-console-vram
+	$(MAKE) -C $(ROOT)/hw TOP=top_soc_sdram flash
+	sleep 0.5 && python3 $(ROOT)/hw/tools/uart_load.py -i $(BUILD_DIR)/tn20k_kernel_console_vram.bin
 run-tn20k-extra: tn20k-extra
 	$(MAKE) -C $(ROOT)/hw TOP=top_soc_sdram flash
 	sleep 0.5 && python3 $(ROOT)/hw/tools/uart_load.py -i $(BUILD_DIR)/tn20k_kernel_extra.bin
