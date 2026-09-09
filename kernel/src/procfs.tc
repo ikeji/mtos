@@ -281,7 +281,15 @@ fn synth_soc() -> u32 {
     if id == 0u32 {
         pos = append_str(buf, pos, "n/a", cap);
     } else {
-        pos = append_hex(buf, pos, id & 0x0FFFFFFFu32, cap);
+        // Exactly 7 nibbles, zero-padded — append_hex would drop the leading
+        // zero of a hash like 0abc123 and stop matching `git log --oneline`.
+        var sh: i32 = 24;
+        while sh >= 0 {
+            var dig: i32 = ((id >> (sh as u32)) & 15u32) as i32;
+            if dig < 10 { pos = append_byte(buf, pos, (dig + 48) as u8, cap); }
+            else { pos = append_byte(buf, pos, (dig - 10 + 97) as u8, cap); }
+            sh = sh - 4;
+        }
         if (id & 0x80000000u32) != 0u32 {
             pos = append_str(buf, pos, "+dirty", cap);
         }
