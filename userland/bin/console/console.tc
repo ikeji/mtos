@@ -135,11 +135,11 @@ const TEXT_ZBASE: u32 = 0x10062008u32;     // word index 2050: zenkaku font SDRA
 const TCOLS: i32 = 60;
 const TROWS: i32 = 20;
 // A box-drawing window frame occupies the border cells; sh output renders in
-// the inner content region. The frame uses full-width (2-cell) JIS keisen
-// glyphs, so the content starts at col 2 (past the left │) and row 1.
-const TCONT_X0:   i32 = 2;
+// the inner content region. The frame uses half-width keisen (see K_V below),
+// so each side border is one cell and the content starts at col 1, row 1.
+const TCONT_X0:   i32 = 1;
 const TCONT_Y0:   i32 = 1;
-const TCONT_COLS: i32 = 56;                // 60 - 2*(│ width in cells)
+const TCONT_COLS: i32 = 58;                // 60 - 2*(│ width in cells)
 const TCONT_ROWS: i32 = 18;                // 20 - top - bottom
 var g_cells: I32Array = 0 as I32Array;     // shadow of the cell grid (for scroll)
 var g_trow:  i32 = 0;                       // content-relative cursor row (0..TCONT_ROWS-1)
@@ -439,19 +439,19 @@ fn text_draw_cp(cp: i32) -> void {
     return;
 }
 
-// PC-98 box-drawing (keisen) glyph indices, ku=12 in this font. The corners
-// are the authentic rounded PC-98 shapes. Each is a full-width (2-cell) glyph.
-const K_H:  i32 = 1037;   // ─
-const K_V:  i32 = 1039;   // │
-const K_TL: i32 = 1049;   // ┌ (rounded)
-const K_TR: i32 = 1053;   // ┐ (rounded)
-const K_BL: i32 = 1057;   // └ (rounded)
-const K_BR: i32 = 1061;   // ┘ (rounded)
+// Box-drawing (keisen) characters from the *hankaku* half of this PC-98 font.
+// The zenkaku keisen (ku=12) join at a sharp 90°; only the hankaku set has the
+// rounded corners, so the frame is drawn from these. Being half-width they are
+// also one cell each and need no zenkaku font in SDRAM.
+const K_H:  i32 = 0x95;   // ─
+const K_V:  i32 = 0x96;   // │
+const K_TL: i32 = 0x9C;   // ┌ (rounded)
+const K_TR: i32 = 0x9D;   // ┐ (rounded)
+// └ 0x9E and ┘ 0x9F exist too, but the bottom row is the menu bar, not a border.
 
-// Place a full-width keisen glyph (by gi) at an absolute panel position.
-fn text_keisen(row: i32, col: i32, gi: i32) -> void {
-    text_cell_abs(row, col,     (15 << 8) | (1 << 16) | (0 << 17) | ((gi & 0x3FFF) << 18));
-    text_cell_abs(row, col + 1, (15 << 8) | (1 << 16) | (1 << 17) | ((gi & 0x3FFF) << 18));
+// Place a keisen character (white on black) at an absolute panel position.
+fn text_keisen(row: i32, col: i32, ch: i32) -> void {
+    text_cell_abs(row, col, (ch & 0xFF) | (15 << 8) | (0 << 12));
     return;
 }
 
@@ -525,17 +525,16 @@ fn text_draw_menubar() -> void {
 // Draw the PC-98-style window: rounded-corner keisen frame (top + sides), a
 // title on the top border, and a menu bar with a clock on the bottom row.
 fn text_draw_frame() -> void {
-    if g_zen_ok == 0 { return; }   // keisen glyphs live in the zenkaku font
     // top border: ┌ ─×N ┐
     text_keisen(0, 0, K_TL);
-    var c: i32 = 2;
-    while c <= TCOLS - 4 { text_keisen(0, c, K_H); c = c + 2; }
-    text_keisen(0, TCOLS - 2, K_TR);
+    var c: i32 = 1;
+    while c <= TCOLS - 2 { text_keisen(0, c, K_H); c = c + 1; }
+    text_keisen(0, TCOLS - 1, K_TR);
     // sides: │ down both edges of the content rows
     var r: i32 = 1;
     while r <= TROWS - 2 {
         text_keisen(r, 0, K_V);
-        text_keisen(r, TCOLS - 2, K_V);
+        text_keisen(r, TCOLS - 1, K_V);
         r = r + 1;
     }
     // title over the top border (hankaku, white on black)
@@ -580,7 +579,7 @@ fn text_init() -> void {
     g_trow = 0;
     g_tcol = 0;
     load_zen_font();
-    text_draw_frame();     // box-drawing window (needs the zenkaku font loaded)
+    text_draw_frame();     // box-drawing window (hankaku keisen; no zenkaku needed)
     poke32(TEXT_DIV, 0u32);
     poke32(TEXT_CTRL, 1u32);
     return;
