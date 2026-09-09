@@ -6,6 +6,63 @@
 
 import "../../lib/libtc/libtc.tc";
 
+// ===== buffered output =====
+// libtc's puts() is one sys_write per call, and this splash makes ~100 of them.
+// That is cheap on a fast core but not on the tn20k RV32IM at 40.5 MHz, where a
+// syscall round trip costs ~16 ms — the writes alone ran to seconds, and the
+// console on the other end of the pipe paid a matching read per write. So build
+// the whole banner in memory and hand it over in one go. The pipe holds 4 KB
+// (kernel/src/vfs.tc) and takes partial writes, so one flush is enough.
+const OB_CAP: i32 = 2048;
+var g_ob:   U8Array = 0 as U8Array;
+var g_ob_n: i32 = 0;
+
+fn ob_flush() -> void {
+    if g_ob_n > 0 {
+        sys_write(1, g_ob, g_ob_n);
+        g_ob_n = 0;
+    }
+    return;
+}
+
+fn ob_byte(c: u8) -> void {
+    if g_ob as u32 == 0u32 { g_ob = U8Array(OB_CAP as u32); }
+    if g_ob_n >= OB_CAP { ob_flush(); }
+    set(g_ob, g_ob_n, c);
+    g_ob_n = g_ob_n + 1;
+    return;
+}
+
+fn ob_puts(s: StringLiteral) -> void {
+    var n: i32 = len(s);
+    var i: i32 = 0;
+    while i < n {
+        ob_byte(get(s, i));
+        i = i + 1;
+    }
+    return;
+}
+
+fn ob_print(v: i32) -> void {
+    var x: i32 = v;
+    if x == (0 - 2147483647) - 1 { ob_puts("-2147483648"); return; }
+    if x < 0 { ob_byte('-' as u8); x = 0 - x; }
+    if x == 0 { ob_byte('0' as u8); return; }
+    var d: U8Array = U8Array(12u32);
+    var n: i32 = 0;
+    while x > 0 {
+        set(d, n, ('0' as i32 + x % 10) as u8);
+        n = n + 1;
+        x = x / 10;
+    }
+    while n > 0 {
+        n = n - 1;
+        ob_byte(get(d, n));
+    }
+    delete(d);
+    return;
+}
+
 
 // Count task slots by state. Reads /proc/tasks lines; each line starts
 // with "N state ...". We classify tokens after the first space.
@@ -115,51 +172,47 @@ fn read_meminfo() -> MemInfo {
 // Print v as "X.Y KB" — one decimal digit, rounded. v is bytes.
 fn print_kb(v: i32) -> void {
     var tenths: i32 = (v * 10 + 512) / 1024;   // round to one decimal
-    print(tenths / 10);
-    puts(".");
-    print(tenths % 10);
-    puts(" KB");
+    ob_print(tenths / 10);
+    ob_puts(".");
+    ob_print(tenths % 10);
+    ob_puts(" KB");
     return;
 }
 
 // Print v KiB as "X.Y MB" or "X.Y GB" depending on magnitude. Used
 // for fatfs sizes that don't fit cleanly in KB.
 fn print_kib_human(v: i32) -> void {
-    if v < 0 { puts("?"); return; }
+    if v < 0 { ob_puts("?"); return; }
     if v < 1024 {
-        print(v);
-        puts(" KB");
+        ob_print(v);
+        ob_puts(" KB");
         return;
     }
     var mib_tenths: i32 = (v * 10 + 512) / 1024;
     if mib_tenths < 10240 {
-        print(mib_tenths / 10);
-        puts(".");
-        print(mib_tenths % 10);
-        puts(" MB");
+        ob_print(mib_tenths / 10);
+        ob_puts(".");
+        ob_print(mib_tenths % 10);
+        ob_puts(" MB");
         return;
     }
     var gib_tenths: i32 = (mib_tenths + 512) / 1024;
-    print(gib_tenths / 10);
-    puts(".");
-    print(gib_tenths % 10);
-    puts(" GB");
+    ob_print(gib_tenths / 10);
+    ob_puts(".");
+    ob_print(gib_tenths % 10);
+    ob_puts(" GB");
     return;
 }
 
-// Emit `count` bytes starting at buf[off] to stdout. The caller is
-// expected to size `count` against `len(buf)`; we keep the temp
-// allocation small to avoid pressuring the task arena.
+// Emit `count` bytes starting at buf[off]. The caller is expected to size
+// `count` against `len(buf)`.
 fn write_bytes(buf: U8Array, off: i32, count: i32) -> void {
     if count <= 0 { return; }
-    var out: U8Array = U8Array(count as u32);
     var i: i32 = 0;
     while i < count {
-        set(out, i, get(buf, off + i));
+        ob_byte(get(buf, off + i));
         i = i + 1;
     }
-    sys_write(1, out, count);
-    delete(out);
     return;
 }
 
@@ -185,7 +238,7 @@ fn print_version_field(buf: U8Array, n: i32, prefix: StringLiteral) -> void {
         while i < n && get(buf, i) != 10u8 { i = i + 1; }
         if i < n { i = i + 1; }
     }
-    puts("?");
+    ob_puts("?");
     return;
 }
 
@@ -197,7 +250,7 @@ fn print_version_field(buf: U8Array, n: i32, prefix: StringLiteral) -> void {
 fn print_build_line() -> void {
     var fd: i32 = do_openat(0, "/etc/version", 0);
     if fd < 0 {
-        puts("  build : (unknown)\n");
+        ob_puts("  build : (unknown)\n");
         return;
     }
     var buf: U8Array = U8Array(128);
@@ -205,14 +258,14 @@ fn print_build_line() -> void {
     do_close(fd);
     if n <= 0 {
         delete(buf);
-        puts("  build : (unknown)\n");
+        ob_puts("  build : (unknown)\n");
         return;
     }
-    puts("  build : ");
+    ob_puts("  build : ");
     print_version_field(buf, n, "build=");
-    puts(" (");
+    ob_puts(" (");
     print_version_field(buf, n, "date=");
-    puts(")\n");
+    ob_puts(")\n");
     delete(buf);
     return;
 }
@@ -229,10 +282,10 @@ fn print_proc_field(path: StringLiteral, key: StringLiteral, label: StringLitera
     var n: i32 = sys_read(fd, buf, 128);
     do_close(fd);
     if n <= 0 { delete(buf); return; }
-    puts("                ");
-    puts(label);
+    ob_puts("                ");
+    ob_puts(label);
     print_version_field(buf, n, key);
-    puts("\n");
+    ob_puts("\n");
     delete(buf);
     return;
 }
@@ -249,12 +302,12 @@ fn print_soc_line() -> void {
     var n: i32 = sys_read(fd, buf, 128);
     do_close(fd);
     if n <= 0 { delete(buf); return; }
-    puts("                ");
-    puts("  soc   : ");
+    ob_puts("                ");
+    ob_puts("  soc   : ");
     print_version_field(buf, n, "soc: ");
-    puts(" (");
+    ob_puts(" (");
     print_version_field(buf, n, "build: ");
-    puts(")\n");
+    ob_puts(")\n");
     delete(buf);
     return;
 }
@@ -279,7 +332,7 @@ fn print_diskinfo() -> void {
         if i < n { i = i + 1; }
         // Recognise the FS by the first whitespace-delimited token.
         if match_prefix(buf, line_start, line_end, "mtfs ") > 0 {
-            puts("                  mtfs  : ");
+            ob_puts("                  mtfs  : ");
             var fc: i32 = 0 - 1; var tot: i32 = 0 - 1;
             // walk tokens
             var k: i32 = line_start;
@@ -291,9 +344,9 @@ fn print_diskinfo() -> void {
                 while k < line_end && get(buf, k) != ' ' as u8 { k = k + 1; }
                 while k < line_end && get(buf, k) == ' ' as u8 { k = k + 1; }
             }
-            print(fc); puts(" files, "); print_kib_human(tot / 1024); puts("\n");
+            ob_print(fc); ob_puts(" files, "); print_kib_human(tot / 1024); ob_puts("\n");
         } else if match_prefix(buf, line_start, line_end, "tmpfs ") > 0 {
-            puts("                  tmpfs : ");
+            ob_puts("                  tmpfs : ");
             var used_b: i32 = 0; var fc: i32 = 0; var max_f: i32 = 0;
             var k: i32 = line_start;
             while k < line_end {
@@ -312,10 +365,10 @@ fn print_diskinfo() -> void {
                 while k < line_end && get(buf, k) != ' ' as u8 { k = k + 1; }
                 while k < line_end && get(buf, k) == ' ' as u8 { k = k + 1; }
             }
-            print(fc); puts("/"); print(max_f); puts(" files, ");
-            print(used_b); puts(" B\n");
+            ob_print(fc); ob_puts("/"); ob_print(max_f); ob_puts(" files, ");
+            ob_print(used_b); ob_puts(" B\n");
         } else if match_prefix(buf, line_start, line_end, "fatfs ") > 0 {
-            puts("                  fatfs : ");
+            ob_puts("                  fatfs : ");
             var tot_kib: i32 = 0 - 1; var free_kib: i32 = 0 - 1;
             var k: i32 = line_start;
             while k < line_end {
@@ -328,9 +381,9 @@ fn print_diskinfo() -> void {
             }
             print_kib_human(tot_kib);
             if free_kib >= 0 {
-                puts(" total, "); print_kib_human(free_kib); puts(" free");
+                ob_puts(" total, "); print_kib_human(free_kib); ob_puts(" free");
             }
-            puts("\n");
+            ob_puts("\n");
         }
     }
     delete(buf);
@@ -341,40 +394,41 @@ fn main() -> i32 {
     var stats: TaskStats = read_task_stats();
     var mem:   MemInfo   = read_meminfo();
 
-    puts("      ___      \n");
-    puts("     |___|     ");
-    puts("  riscv-os\n");
-    puts("    __|_|__    ");
-    puts("  ------------\n");
-    puts("   /__|__|__\\   ");
-    puts("  kernel: TinyC-riscv\n");
-    puts("  /___|___|__\\  ");
-    puts("  arch  : RV32IM\n");
-    puts(" /____|_____|_\\ ");
-    puts("  tasks : ");
-    print(ready(stats));
-    puts(" ready / ");
-    print(total(stats));
-    puts(" total\n");
+    ob_puts("      ___      \n");
+    ob_puts("     |___|     ");
+    ob_puts("  riscv-os\n");
+    ob_puts("    __|_|__    ");
+    ob_puts("  ------------\n");
+    ob_puts("   /__|__|__\\   ");
+    ob_puts("  kernel: TinyC-riscv\n");
+    ob_puts("  /___|___|__\\  ");
+    ob_puts("  arch  : RV32IM\n");
+    ob_puts(" /____|_____|_\\ ");
+    ob_puts("  tasks : ");
+    ob_print(ready(stats));
+    ob_puts(" ready / ");
+    ob_print(total(stats));
+    ob_puts(" total\n");
     print_soc_line();
     print_proc_field("/proc/kernel", "build: ", "  kbuild: ");
-    puts("                ");
+    ob_puts("                ");
     print_build_line();
-    puts("                ");
-    puts("  done  : ");
-    print(done(stats));
-    puts("\n");
-    puts("                ");
-    puts("  wait  : ");
-    print(waiting(stats));
-    puts("\n");
-    puts("                ");
-    puts("  mem   : ");
+    ob_puts("                ");
+    ob_puts("  done  : ");
+    ob_print(done(stats));
+    ob_puts("\n");
+    ob_puts("                ");
+    ob_puts("  wait  : ");
+    ob_print(waiting(stats));
+    ob_puts("\n");
+    ob_puts("                ");
+    ob_puts("  mem   : ");
     print_kb(used(mem));
-    puts(" used / ");
+    ob_puts(" used / ");
     print_kb(peak(mem));
-    puts(" peak\n");
+    ob_puts(" peak\n");
     print_diskinfo();
+    ob_flush();          // the whole splash leaves in one write
     delete(stats);
     delete(mem);
     return 0;

@@ -487,6 +487,8 @@ fn text_menu_item(col: i32, label: StringLiteral) -> void {
 const MTIME_LO_A: u32 = 0x0200BFF8u32;
 const MTIME_HI_A: u32 = 0x0200BFFCu32;
 const TICKS_SEC:  u32 = 40500000u32;
+// How long the render loop keeps fast-polling after the pipe goes quiet: 300 ms.
+const FAST_POLL_TICKS: u32 = 12150000u32;   // 0.3 × TICKS_SEC
 fn peek32(addr: u32) -> u32;   // runtime primitive
 fn uptime_sec() -> u32 {
     var lo: u32 = peek32(MTIME_LO_A);
@@ -1768,12 +1770,22 @@ fn main(argv: StringArray) -> i32 {
     // slept through those gaps and roughly doubled the time to render a
     // screenful. So we poll fast right after activity to catch the next
     // burst, and only fall back to the 250 ms cursor-blink cadence once
-    // the pipe has been quiet for POLL_FAST_MAX polls (~1.5 s).
+    // the pipe has been quiet for a short while.
+    //
+    // That window is a *duration*, but counting polls only approximates one if
+    // a poll costs what you assumed. Each iteration is a syscall round trip,
+    // ~16 ms on the tn20k core rather than the ~3 ms slept — so 500 polls meant
+    // 10 s with no clock updates, not the 1.5 s intended. In text mode we can
+    // read the CLINT directly (no syscall), so time the window properly there;
+    // elsewhere the count stands, having been calibrated on that platform.
     var g_idle_polls: i32 = 0;
+    var quiet:    i32 = 0;      // 1 once the pipe has gone quiet
+    var quiet_t0: u32 = 0u32;   // mtime when it did
     while running == 1 {
         var r: i32 = do_read_nb(pr, buf_data, 64);
         if r > 0 {
             g_idle_polls = 0;
+            quiet = 0;
             erase_cursor(fb, frame);
             var i: i32 = 0;
             while i < r {
@@ -1805,8 +1817,15 @@ fn main(argv: StringArray) -> i32 {
             // Writer closed → EOF, time to wind down.
             running = 0;
         } else if r == (0 - 2) {
-            g_idle_polls = g_idle_polls + 1;
-            if g_idle_polls < 500 {
+            var fast: i32 = 0;
+            if g_text_mode != 0 {
+                if quiet == 0 { quiet = 1; quiet_t0 = peek32(MTIME_LO_A); }
+                if (peek32(MTIME_LO_A) - quiet_t0) < FAST_POLL_TICKS { fast = 1; }
+            } else {
+                g_idle_polls = g_idle_polls + 1;
+                if g_idle_polls < 500 { fast = 1; }
+            }
+            if fast == 1 {
                 // Recently active: more burst output is likely on its way.
                 // Poll quickly with no cursor/clock work so we render it
                 // promptly instead of sleeping 250 ms through the gap.
