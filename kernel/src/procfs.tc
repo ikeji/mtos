@@ -252,6 +252,65 @@ fn synth_cpuinfo() -> u32 {
     return buf as u32;
 }
 
+// Append a NUL-terminated C string living at `addr` (a linked-in .string, not
+// a TC String — hence the byte loop).
+fn append_cstr(buf: U8Array, pos: i32, addr: u32, cap: i32) -> i32 {
+    var i: i32 = 0;
+    while pos < cap {
+        var c: u8 = peek8(addr + (i as u32));
+        if c == 0u8 { return pos; }
+        set(buf, pos, c);
+        pos = pos + 1;
+        i = i + 1;
+    }
+    return pos;
+}
+
+// /proc/soc — which SoC/gateware this kernel is running on. On tn20k `build`
+// is the git hash the bitstream was synthesized from, so a stale FPGA image is
+// visible without reflashing to check.
+fn synth_soc() -> u32 {
+    var cap: i32 = 128;
+    var buf: U8Array = U8Array(cap as u32);
+    var pos: i32 = 0;
+    pos = append_str(buf, pos, "soc: ", cap);
+    pos = append_str(buf, pos, kern_soc_name(), cap);
+    pos = append_byte(buf, pos, 10u8, cap);
+    var id: u32 = kern_soc_id();
+    pos = append_str(buf, pos, "build: ", cap);
+    if id == 0u32 {
+        pos = append_str(buf, pos, "n/a", cap);
+    } else {
+        pos = append_hex(buf, pos, id & 0x0FFFFFFFu32, cap);
+        if (id & 0x80000000u32) != 0u32 {
+            pos = append_str(buf, pos, "+dirty", cap);
+        }
+    }
+    pos = append_byte(buf, pos, 10u8, cap);
+    poke32(buf as u32, pos as u32);
+    return buf as u32;
+}
+
+// /proc/kernel — which kernel binary is running. See kernel/scripts/gen_build_id.sh.
+fn synth_kernel() -> u32 {
+    var cap: i32 = 128;
+    var buf: U8Array = U8Array(cap as u32);
+    var pos: i32 = 0;
+    pos = append_str(buf, pos, "kernel: mtos\n", cap);
+    pos = append_str(buf, pos, "build: ", cap);
+    var addr: u32 = kern_kernel_build_addr();
+    if addr == 0u32 {
+        // Platform links no stamp (pico2) — the mtfs is inside the kernel image
+        // there, so /etc/version identifies this binary.
+        pos = append_str(buf, pos, "see /etc/version", cap);
+    } else {
+        pos = append_cstr(buf, pos, addr, cap);
+    }
+    pos = append_byte(buf, pos, 10u8, cap);
+    poke32(buf as u32, pos as u32);
+    return buf as u32;
+}
+
 fn synth_uptime() -> u32 {
     var cap: i32 = 64;
     var buf: U8Array = U8Array(cap as u32);
@@ -291,6 +350,10 @@ export fn procfs_open(path_addr: u32, plen: i32) -> i32 {
         buf_hdr = synth_uptime();
     } else if path_is(path_addr, plen, "/proc/diskinfo") {
         buf_hdr = synth_diskinfo();
+    } else if path_is(path_addr, plen, "/proc/soc") {
+        buf_hdr = synth_soc();
+    } else if path_is(path_addr, plen, "/proc/kernel") {
+        buf_hdr = synth_kernel();
     } else {
         return -1;
     }
@@ -371,5 +434,7 @@ export fn procfs_readdir(buf_addr: u32, buf_size: i32) -> i32 {
     pos = readdir_append(buf_addr, buf_size, pos, "cpuinfo");
     pos = readdir_append(buf_addr, buf_size, pos, "uptime");
     pos = readdir_append(buf_addr, buf_size, pos, "diskinfo");
+    pos = readdir_append(buf_addr, buf_size, pos, "soc");
+    pos = readdir_append(buf_addr, buf_size, pos, "kernel");
     return pos;
 }

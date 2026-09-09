@@ -277,13 +277,28 @@ $(BUILD_DIR)/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(
 disks:      $(BUILD_DIR)/disk.img $(BUILD_DIR)/disk-demo.img $(BUILD_DIR)/disk-console.img $(BUILD_DIR)/disk-console-land.img
 disk-extra: $(BUILD_DIR)/disk-extra.img
 
+# ===== kernel build stamp (linked in; reported by /proc/kernel) =====
+# FORCE runs the generator every time, but it only rewrites kbuild.s when the
+# stamp actually changes, so a no-op make does not relink the kernel.
+#
+# Deliberately linked into virt and tn20k only, NOT pico2: the pico2
+# self-replicate orchestrator (integration/pico2_self_replicate.sh) rebuilds the
+# kernel on-device from a fixed list of asm_pass1 inputs, so adding one would
+# break byte-exactness until the K20 fixtures are regenerated to match. pico2
+# loses nothing — it embeds the mtfs (and thus /etc/version) inside the kernel
+# image, so the disk stamp already identifies the kernel binary there.
+.PHONY: FORCE
+FORCE:
+$(BUILD_DIR)/kbuild.s: FORCE | $(BUILD_DIR)
+	@$(ROOT)/kernel/scripts/gen_build_id.sh $@
+
 # ===== virt kernel =====
 virt: $(BUILD_DIR)/virt_kernel.bin
 
-$(BUILD_DIR)/virt_kernel.bin: $(KERNEL_COMPILE_DEPS) | $(BUILD_DIR)
+$(BUILD_DIR)/virt_kernel.bin: $(KERNEL_COMPILE_DEPS) $(BUILD_DIR)/kbuild.s | $(BUILD_DIR)
 	@echo "Building kernel: virt" >&2
 	@cd $(ROOT) && CRT0="kernel/platform/virt/platform_virt.s kernel/src/trap_common.s" \
-	    CRT0_DATA=kernel/platform/virt/crt0_data.s \
+	    CRT0_DATA="kernel/platform/virt/crt0_data.s $(BUILD_DIR)/kbuild.s" \
 	    ASM_PROLOGUE="; raw" GEN2_DIR=compiler/build/gen2 \
 	    CACHED_S_DIR=userland/build/shared \
 	    ./compiler/scripts/compile-gen2.sh -o $@ kernel/src/kernel.tc 2>/dev/null
@@ -358,7 +373,7 @@ define TN20K_KERNEL_RECIPE
 	cp $(TN20K_DISK) "$$_labdir/dx.img" && \
 	cd $(ROOT) && userland/scripts/bin2s_incbin.sh $(TN20K_DISK) _mtfs_image dx.img > "$$_tmp/mtfs_image.s" && \
 	cd $(ROOT) && CRT0="kernel/platform/tn20k/platform_tn20k.s kernel/src/trap_common.s" \
-	    CRT0_DATA="kernel/platform/tn20k/crt0_tn20k_data.s $$_tmp/mtfs_image.s" \
+	    CRT0_DATA="kernel/platform/tn20k/crt0_tn20k_data.s $$_tmp/mtfs_image.s $(BUILD_DIR)/kbuild.s" \
 	    ASM_PROLOGUE="; raw" GEN2_DIR=compiler/build/gen2 \
 	    CACHED_S_DIR=userland/build/shared \
 	    ./compiler/scripts/compile-gen2.sh -o $@ kernel/src/kernel_tn20k.tc 2>/dev/null && \
@@ -366,6 +381,11 @@ define TN20K_KERNEL_RECIPE
 	printf '  kernel.bin: %s bytes, disk: %s bytes\n' "$$_ksz" "$$_dsz" >&2 && \
 	rm -rf "$$_tmp"
 endef
+
+# tn20k links the /proc/kernel build stamp (see the FORCE rule above).
+TN20K_KERNEL_BINS := $(addprefix $(BUILD_DIR)/tn20k_kernel,.bin _extra.bin \
+    _console_land.bin _console.bin _console_vram.bin _console_text.bin)
+$(TN20K_KERNEL_BINS): $(BUILD_DIR)/kbuild.s
 
 $(BUILD_DIR)/tn20k_kernel.bin: TN20K_DISK := $(BUILD_DIR)/disk.img
 $(BUILD_DIR)/tn20k_kernel.bin: $(KERNEL_COMPILE_DEPS) $(BUILD_DIR)/disk.img \

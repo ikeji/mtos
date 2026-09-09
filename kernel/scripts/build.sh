@@ -380,6 +380,16 @@ if [ "$TARGET" = "pico2" ]; then
     MTFS_S="$TMP/mtfs_image.s"
 fi
 
+# Build stamp for /proc/kernel. virt only, for the same reason as in
+# kernel/Makefile: pico2's on-device self-replicate rebuilds the kernel from a
+# fixed asm_pass1 input list, and pico2 embeds /etc/version in the kernel image
+# anyway. kernel_pico2.tc supplies a stub kernel_build_addr() instead.
+KBUILD_S=""
+if [ "$TARGET" = "virt" ]; then
+    "$ROOT_DIR/kernel/scripts/gen_build_id.sh" "$TMP/kbuild.s"
+    KBUILD_S="$TMP/kbuild.s"
+fi
+
 # --- Step 3: Build kernel ---
 # CRT0 and CRT0_DATA are space-separated lists; compile-gen2.sh runs
 # asm_pass1 per file (no cat). On Pico 2 the mtfs image .s is appended
@@ -395,7 +405,7 @@ echo "Building kernel: $TARGET" >&2
 # kernels at the time of switchover. Override =0 only when bisecting
 # asm_pass1 changes.
 CRT0="$PLATFORM_S $KERN_DIR/src/trap_common.s" \
-CRT0_DATA="$DATA_S ${MTFS_S:-}" \
+CRT0_DATA="$DATA_S ${MTFS_S:-} ${KBUILD_S:-}" \
 ASM_PROLOGUE="; raw" \
 GEN2_DIR="$GEN2_DIR" \
 UNIFIED_PRELUDE="${KERN_UNIFIED_PRELUDE:-1}" \

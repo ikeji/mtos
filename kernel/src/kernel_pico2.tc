@@ -74,6 +74,19 @@ fn ticks_per_ms() -> u32 {
     return 131500u32;
 }
 
+// ===== identity hooks (/proc/soc, /proc/kernel) =====
+// RP2350 has a SYSINFO block with CHIP_ID, but reading it would mean trusting
+// offsets not verified against the datasheet here, so report the name only.
+fn soc_name() -> StringLiteral { return "rp2350"; }
+fn soc_id() -> u32 { return 0u32; }
+
+// pico2 links no kbuild.s: its on-device self-replicate rebuilds the kernel
+// from a fixed asm_pass1 input list, and one more input would break the
+// byte-exact match. Nothing is lost — pico2 embeds the mtfs inside the kernel
+// image, so /etc/version already identifies this exact kernel binary. 0 makes
+// /proc/kernel say so instead of printing a stamp.
+fn kernel_build_addr() -> u32 { return 0u32; }
+
 // Print "[N ms] " prefix for boot trace messages. N is wall-clock
 // elapsed since power-on, computed from full 64-bit SIO_MTIME
 // (kern_uptime_us / 1000) so it doesn't wrap every 32 sec the way

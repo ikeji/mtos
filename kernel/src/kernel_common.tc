@@ -27,6 +27,14 @@ fn rearm_timer() -> void;
 fn read_mtime() -> u32;
 fn read_mtime_hi() -> u32;
 fn ticks_per_ms() -> u32;
+// Identity hooks, reported by /proc/soc and /proc/kernel (kernel/src/procfs.tc).
+//   soc_name()          — the SoC/board this kernel was built for
+//   soc_id()            — its build/revision number, 0 when the SoC has none
+//   kernel_build_addr() — address of a NUL-terminated build stamp, 0 when the
+//                         platform links no kbuild.s (pico2; see kernel/Makefile)
+fn soc_name() -> StringLiteral;
+fn soc_id() -> u32;
+fn kernel_build_addr() -> u32;
 
 // Scheduler state (private to this module)
 // State values:
@@ -1423,6 +1431,12 @@ export fn sys_nanosleep_handler(ms: i32) -> i32 {
 export fn kern_read_mtime() -> u32 {
     return read_mtime();
 }
+
+// Re-export the platform identity hooks so procfs.tc can reach them through
+// its kernel_common import (the bodyless decls above are module-private).
+export fn kern_soc_name() -> StringLiteral { return soc_name(); }
+export fn kern_soc_id() -> u32 { return soc_id(); }
+export fn kern_kernel_build_addr() -> u32 { return kernel_build_addr(); }
 
 // Microseconds since boot (low 32 bits — wraps at ~71 minutes).
 // Reads 64-bit mtime so the divide-by-ticks-per-us doesn't lose data

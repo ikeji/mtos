@@ -217,6 +217,48 @@ fn print_build_line() -> void {
     return;
 }
 
+// Print one "key: value" field out of a /proc file. Same KEY VALUE line shape
+// as /etc/version, so print_version_field does the parsing. Prints nothing at
+// all when the file is missing: /proc/soc and /proc/kernel are newer than some
+// kernels this binary may be running on, and a splash line reading "?" would be
+// noise rather than information.
+fn print_proc_field(path: StringLiteral, key: StringLiteral, label: StringLiteral) -> void {
+    var fd: i32 = do_openat(0, path, 0);
+    if fd < 0 { return; }
+    var buf: U8Array = U8Array(128);
+    var n: i32 = sys_read(fd, buf, 128);
+    do_close(fd);
+    if n <= 0 { delete(buf); return; }
+    puts("                ");
+    puts(label);
+    print_version_field(buf, n, key);
+    puts("\n");
+    delete(buf);
+    return;
+}
+
+// The three build stamps, one per layer, so a mismatch between them is visible
+// at a glance:
+//   soc    — the gateware/SoC (tn20k: the git hash synthesized into the FPGA)
+//   kbuild — the running kernel binary
+//   build  — the disk image (/etc/version), printed by print_build_line
+fn print_soc_line() -> void {
+    var fd: i32 = do_openat(0, "/proc/soc", 0);
+    if fd < 0 { return; }
+    var buf: U8Array = U8Array(128);
+    var n: i32 = sys_read(fd, buf, 128);
+    do_close(fd);
+    if n <= 0 { delete(buf); return; }
+    puts("                ");
+    puts("  soc   : ");
+    print_version_field(buf, n, "soc: ");
+    puts(" (");
+    print_version_field(buf, n, "build: ");
+    puts(")\n");
+    delete(buf);
+    return;
+}
+
 // Stream /proc/diskinfo into stdout, one line per mounted FS, each
 // preceded by the 16-space banner padding so the FS table aligns
 // with the rest of the right column. Lines from the kernel are key=
@@ -314,6 +356,8 @@ fn main() -> i32 {
     puts(" ready / ");
     print(total(stats));
     puts(" total\n");
+    print_soc_line();
+    print_proc_field("/proc/kernel", "build: ", "  kbuild: ");
     puts("                ");
     print_build_line();
     puts("                ");

@@ -125,13 +125,21 @@ $(BUILD)/tb_top_blink.vvp: sim/tb_top_blink.v boards/$(BOARD)/top_blink.v rtl/so
 $(BUILD)/tb_uart.vvp: sim/tb_uart.v rtl/soc/uart_tx.v rtl/soc/uart_rx.v | $(BUILD)
 	iverilog -g2012 -o $@ $^
 
+# ---- gateware build stamp ----------------------------------------------
+# Baked into the bitstream as SOC_BUILD_ID (0x0010_0008) so software can tell
+# which gateware is actually running: bit31 = working tree dirty, bits[27:0] =
+# 7-hex-digit git hash. See /proc/soc.
+GW_HASH  := $(shell git rev-parse --short=7 HEAD 2>/dev/null || echo 0000000)
+GW_DIRTY := $(shell git diff --quiet HEAD 2>/dev/null || echo 8)
+BUILD_ID := 32'h$(if $(GW_DIRTY),$(GW_DIRTY),0)$(GW_HASH)
+
 # ---- synthesis ---------------------------------------------------------
 PROG ?= $(BUILD)/smoke.bin
 $(BUILD)/prog.hex: $(PROG) | $(BUILD)
 	python3 tools/bin2hex.py $< $@
 
 $(BUILD)/$(TOP).json: boards/$(BOARD)/$(TOP).v $(RTL_SOC) $(RTL_CPU) $(BUILD)/prog.hex $(BUILD)/bootrom.hex | $(BUILD)
-	yosys -q -l $(BUILD)/$(TOP).yosys.log -p "read_verilog -sv $(if $(UART_BAUD),-DUART_BAUD=$(UART_BAUD)) -DSYS_CLK_HZ=$(SYS_CLK_HZ) $(if $(USE_CACHE),-DUSE_CACHE=$(USE_CACHE)) $(filter %.v,$^); synth_gowin -top $(TOP) -json $@"
+	yosys -q -l $(BUILD)/$(TOP).yosys.log -p "read_verilog -sv $(if $(UART_BAUD),-DUART_BAUD=$(UART_BAUD)) -DSYS_CLK_HZ=$(SYS_CLK_HZ) -DBUILD_ID=$(BUILD_ID) $(if $(USE_CACHE),-DUSE_CACHE=$(USE_CACHE)) $(filter %.v,$^); synth_gowin -top $(TOP) -json $@"
 
 $(BUILD)/$(TOP)_pnr.json: $(BUILD)/$(TOP).json $(CST)
 	nextpnr-himbaechel -q -l $(BUILD)/$(TOP).pnr.log --json $< --write $@ \

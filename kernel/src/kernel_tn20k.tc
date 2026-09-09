@@ -75,6 +75,21 @@ fn ticks_per_ms() -> u32 {
     return 40500u32;
 }
 
+// ===== identity hooks (/proc/soc, /proc/kernel) =====
+// The gateware stamps its own git hash into a read-only register at synth time
+// (SOC_BUILD_ID, hw/rtl/soc/soc.v + -DBUILD_ID in hw/Makefile): bit 31 = the
+// tree was dirty, bits [27:0] = the 7-hex commit. That makes the bitstream
+// currently in the FPGA self-identifying, which matters because the gateware
+// and the kernel are flashed separately and drift apart easily.
+const SOC_BUILD_ID: u32 = 0x00100008u32;
+
+fn soc_name() -> StringLiteral { return "tn20k-rv32im"; }
+fn soc_id() -> u32 { return peek32(SOC_BUILD_ID); }
+
+// Build stamp linked in from kernel/build/kbuild.s (kernel/scripts/gen_build_id.sh).
+fn kernel_build_str_addr() -> u32;
+fn kernel_build_addr() -> u32 { return kernel_build_str_addr(); }
+
 // ===== goldfish-rtc (qemu virt) — backs /dev/rtc via rtc.tc =====
 // qemu virt maps a goldfish-rtc at 0x101000. TIME_LOW (0x00) returns
 // the low 32 bits of nanoseconds-since-epoch and latches the high

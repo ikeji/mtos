@@ -61,6 +61,16 @@ fn ticks_per_ms() -> u32 {
     return 10000u32;
 }
 
+// ===== identity hooks (/proc/soc, /proc/kernel) =====
+// qemu's virt machine is a moving target defined by the qemu build, not by
+// anything the guest can read, so there is no id to report.
+fn soc_name() -> StringLiteral { return "qemu-virt"; }
+fn soc_id() -> u32 { return 0u32; }
+
+// Build stamp linked in from kernel/build/kbuild.s (kernel/scripts/gen_build_id.sh).
+fn kernel_build_str_addr() -> u32;
+fn kernel_build_addr() -> u32 { return kernel_build_str_addr(); }
+
 // ===== goldfish-rtc (qemu virt) — backs /dev/rtc via rtc.tc =====
 // qemu virt maps a goldfish-rtc at 0x101000. TIME_LOW (0x00) returns
 // the low 32 bits of nanoseconds-since-epoch and latches the high

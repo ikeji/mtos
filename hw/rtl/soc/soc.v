@@ -4,6 +4,7 @@
 // (kernel/src/kernel.tc CLINT, platform_virt.tc UART) runs unchanged:
 //   0x0010_0000  exit/LED   (SiFive test: 0x5555 = pass, 0x3333|code<<16 = fail)
 //   0x0010_0004  BOOT_UART_WAIT (read-only; boot ROM's UART-vs-flash timeout)
+//   0x0010_0008  SOC_BUILD_ID   (read-only; git hash of the gateware, -DBUILD_ID at synth)
 //   0x0200_0000  CLINT      (+0x4000 mtimecmp lo/hi, +0xBFF8 mtime lo/hi)
 //   0x1000_0000  UART       (+0 DR, +5 LSR: bit0 RX ready, bit5/6 TX empty)
 //   0xD000_0000  GPIO       (RP2350 SIO register layout, 48 pins; gpio_sio.v)
@@ -16,6 +17,12 @@
 //
 // A UART DR write stalls the bus until the transmitter is free, so
 // software may write without polling (qemu behaviour).
+// Gateware build stamp: the synth passes -DBUILD_ID=32'h<git short hash> so
+// software can tell which bitstream is actually running (see /proc/soc).
+`ifndef BUILD_ID
+`define BUILD_ID 32'h00000000
+`endif
+
 module soc #(
     parameter integer RAM_WORDS = 2*1024*1024,   // 8 MB (BSRAM mode only)
     parameter integer CLK_HZ    = 27_000_000,
@@ -330,7 +337,8 @@ module soc #(
                     mem_ready <= 1'b1;
                 end else if (sel_exit) begin
                     if (is_write && mem_addr[3:0] == 4'd0) begin exit_code <= mem_wdata; exit_valid <= 1'b1; end
-                    mem_rdata <= (mem_addr[3:0] == 4'd4) ? BOOT_UART_WAIT : 32'd0;
+                    mem_rdata <= (mem_addr[3:0] == 4'd4) ? BOOT_UART_WAIT
+                               : (mem_addr[3:0] == 4'd8) ? `BUILD_ID : 32'd0;
                     mem_ready <= 1'b1;
                 end else begin
                     // unmapped: read as zero, writes ignored
