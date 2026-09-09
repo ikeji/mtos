@@ -141,13 +141,11 @@ const TCONT_X0:   i32 = 2;
 const TCONT_Y0:   i32 = 1;
 const TCONT_COLS: i32 = 56;                // 60 - 2*(│ width in cells)
 const TCONT_ROWS: i32 = 18;                // 20 - top - bottom
-const ZEN_SZ: i32 = 282752;                // 94*94*32 = zenkaku font bytes (OFF_U2K-OFF_ZEN)
 var g_cells: I32Array = 0 as I32Array;     // shadow of the cell grid (for scroll)
 var g_trow:  i32 = 0;                       // content-relative cursor row (0..TCONT_ROWS-1)
 var g_tcol:  i32 = 0;                       // content-relative cursor col (0..TCONT_COLS-1)
 var g_zen_ok: i32 = 0;                     // 1 = zenkaku font loaded into SDRAM
 fn peek8(addr: u32) -> u8;                 // runtime primitive
-fn poke8(addr: u32, v: u8) -> void;        // runtime primitive
 fn vram_fill(x: i32, y: i32, w: i32, h: i32, col: i32) -> void;   // defined below
 var g_grid:      I32Array = 0 as I32Array;   // codepoint grid, sw mode only
 // g_grid_prev shadows what we last painted to /dev/fb. redraw() only
@@ -556,20 +554,15 @@ fn text_draw_frame() -> void {
 // buffer the engine can read, and point ZBASE at it. Byte-read + word-write so
 // the .incbin source needn't be word-aligned; dst is aligned. ~0.35 s once.
 fn load_zen_font() -> void {
-    var buf: U8Array = U8Array((ZEN_SZ + 8) as u32);
-    if (buf as u32) == 0u32 { return; }
-    var dst: u32 = (((buf as u32) + 4u32) + 3u32) & 0xFFFFFFFCu32;   // round up to word
-    var src: u32 = g_font_addr + (OFF_ZEN as u32);
-    var i: i32 = 0;
-    while i < ZEN_SZ {
-        var b0: u32 = peek8(src + (i as u32)) as u32;
-        var b1: u32 = peek8(src + (i as u32) + 1u32) as u32;
-        var b2: u32 = peek8(src + (i as u32) + 2u32) as u32;
-        var b3: u32 = peek8(src + (i as u32) + 3u32) as u32;
-        poke32(dst + (i as u32), b0 | (b1 << 8u32) | (b2 << 16u32) | (b3 << 24u32));
-        i = i + 4;
-    }
-    poke32(TEXT_ZBASE, (dst - 0x80000000u32) >> 2u32);
+    // No copy needed: the jpfont blob is .incbin'd into this task's binary,
+    // which the loader already placed in SDRAM (mtfs image / task RAM), and the
+    // engine reads SDRAM directly. So just point ZBASE at the zenkaku section
+    // in place. jpfont_start is .align 4 (16-byte) and OFF_ZEN is a multiple of
+    // 4, so the address is word aligned as the engine requires.
+    var zb: u32 = g_font_addr + (OFF_ZEN as u32);
+    if zb < 0x80000000u32 { return; }        // engine can only read SDRAM
+    if (zb & 3u32) != 0u32 { return; }       // must be word aligned
+    poke32(TEXT_ZBASE, (zb - 0x80000000u32) >> 2u32);
     g_zen_ok = 1;
     return;
 }
