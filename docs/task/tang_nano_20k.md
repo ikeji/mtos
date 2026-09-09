@@ -97,6 +97,8 @@ Verilator シミュレーションで `virt_kernel.bin` 相当 (mtfs 埋め込�
 | SPI master | `0x1002_0000` (新規) | 8-bit xfer + clkdiv + CS。LCD の SCK/MOSI (pico2 で PIO の代替) と SPI flash 読み出しに使う。SD / touch は最初 GPIO bit-bang のまま |
 | SDRAM | `0x8000_0000` 〜 8 MB | kernel + mtfs + arena + task |
 | exit/LED | `0x0010_0000` (SiFive test 互換) | `_park` の書き込みを LED 表示に流用 |
+| BOOT_UART_WAIT | `0x0010_0004` (read-only) | ブート ROM が UART ローダを待つサイクル数 |
+| SOC_BUILD_ID | `0x0010_0008` (read-only) | gateware の git hash。bit31 = dirty、bits[27:0] = 7-hex commit。synth 時に `hw/Makefile` が `-DBUILD_ID` で焼き込む。FPGA と kernel は別々に書くので食い違いやすく、`/proc/soc` (neofetch の `soc :` 行) がこれを読んで実機の bitstream を同定する |
 
 kernel はロードアドレス `0x8000_0000`、sp 初期値は virt の
 `0x8800_0000` (128 MB) から `0x8080_0000` (8 MB 末尾) に変える必要が
