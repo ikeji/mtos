@@ -162,10 +162,16 @@ load_zen_font で jpfont zenkaku 部を word 整列 SDRAM バッファにコピ�
 スクロールも内側だけ。**この jpfont は PC-98 フォントで罫線は 12区 (ku=12) にある** (JIS 標準の 8区は
 空)。角は PC-98 の丸角。最下段はメニューバー (反転表示 File/Edit/View/Help) +
 右下に時計 (CLINT mtime からの uptime HH:MM:SS、tn20k に RTC 無し)。
-~~poke8 (バイト書き込み) が SDRAM に届かない~~ → **修正済 (commit a84e5d6)**:
-sdram_cache.v を sub-word write の read-modify-write 化 (SDRAM へ常に full word)。
-DQM マスク write が実機で silent drop していた (sim は通過)。今は byte write も
-SDRAM に届く。
+**注意: poke8 (バイト書き込み) は SDRAM の「別マスタから」見えない**。DQM マスク
+write が実機で silent drop する (sim は通過)。CPU 自身は cache 更新で正しく読める
+ので OS は正常動作するが、SDRAM を直接読む display engine は stale を見る。
+→ **SDRAM に置いて engine が読むデータは poke32 (word) で書くこと**。
+
+試行と revert (a84e5d6 → 7489f91): sdram_cache.v を sub-word write の
+read-modify-write 化すれば byte write は SDRAM に届く (実機検証 OK) が、
+**作業セットが 8KB キャッシュを大きく超えるアクセスが実機で 20〜140 倍遅化**
+する回帰が出た (282KB フォントコピーが 0.5s → 70s、malloc 9.3s)。sim では
+再現せず原因未特定。console は全て poke32 なので実害が無く、revert した。
 
 **残**: HW スクロール (base-row レジスタ)、fg/bg カラー属性の活用 (16色パレット
 実装済、console が白黒固定なだけ)。
