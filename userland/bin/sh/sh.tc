@@ -708,18 +708,41 @@ fn open_redir_path(p: String, flags: i32) -> i32 {
 // scripted input (e.g. /etc/login). Returns the line length, 0 on a
 // blank line, -1 on clean EOF before any byte was read. Lines longer
 // than CMD_MAX-1 are truncated silently; trailing \r is dropped.
+// Read-ahead for the login script. Reading it a byte at a time cost one
+// syscall per byte, and a syscall round trip is ~16 ms on the tn20k core — a
+// 443-byte /etc/login spent ~7 s in read() alone, which was most of the delay
+// between "SH: ready" and the first prompt. Refill in blocks instead.
+// The buffer is fine as module state: run_login_script is the only caller and
+// it reads exactly one file, once.
+const SCRIPT_BUF: i32 = 256;
+var g_sb:   U8Array = 0 as U8Array;
+var g_sb_n: i32 = 0;      // valid bytes in the buffer
+var g_sb_i: i32 = 0;      // next byte to hand out
+
+// Next script byte, or -1 at EOF.
+fn script_getc(fd: i32) -> i32 {
+    if g_sb_i >= g_sb_n {
+        if g_sb as u32 == 0u32 { g_sb = U8Array(SCRIPT_BUF as u32); }
+        g_sb_n = sys_read(fd, g_sb, SCRIPT_BUF);
+        g_sb_i = 0;
+        if g_sb_n <= 0 { g_sb_n = 0; return 0 - 1; }
+    }
+    var c: i32 = get(g_sb, g_sb_i) as i32;
+    g_sb_i = g_sb_i + 1;
+    return c;
+}
+
 fn read_script_line(fd: i32, buf: U8Array) -> i32 {
-    var one: U8Array = U8Array(1);
     var pos: i32 = 0;
     var got_any: i32 = 0;
     var done: i32 = 0;
     while done == 0 {
-        var n: i32 = sys_read(fd, one, 1);
-        if n <= 0 {
+        var n: i32 = script_getc(fd);
+        if n < 0 {
             done = 1;
         } else {
             got_any = 1;
-            var c: u8 = get(one, 0);
+            var c: u8 = n as u8;
             if c == ('\n' as u8) {
                 done = 1;
             } else if c == ('\r' as u8) {
@@ -730,7 +753,6 @@ fn read_script_line(fd: i32, buf: U8Array) -> i32 {
             }
         }
     }
-    delete(one);
     set(buf, pos, 0u8);
     if got_any == 0 { return -1; }
     return pos;
@@ -961,11 +983,18 @@ fn run_login_script(cmd: U8Array, path: U8Array) -> i32 {
             puts("sh$ ");
             sys_write(1, cmd, ln);
             puts("\n");
+            var t0: i32 = do_uptime_us();
             if exec_command(cmd, ln, path) == 0 {
                 keep = 0;
                 do_close(fd);
                 return 0;
             }
+            // Boot profiling: /etc/login is the bulk of the time between
+            // "SH: ready" and the first prompt, so stamp each line's cost on
+            // stderr (UART) where it is visible even when fd 1 goes to the LCD.
+            eputs("[");
+            emit_ms_dec(do_uptime_us() - t0);
+            eputs("ms] SH: login line done\n");
         }
     }
     do_close(fd);
