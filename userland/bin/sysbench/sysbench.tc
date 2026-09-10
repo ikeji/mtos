@@ -1,0 +1,85 @@
+// sysbench.tc — decompose the cost of a syscall on this machine.
+//
+// Boot profiling kept running into "a syscall costs ~16 ms", a number big
+// enough (650k cycles at 40.5 MHz) that it cannot be the ecall itself. This
+// separates the parts:
+//
+//   compute   a pure loop, no syscall at all — the CPU baseline
+//   uptime    syscall 270, which touches no fd and no VFS — the bare trap cost
+//   read1     1-byte sys_read from a file — trap + VFS dispatch + mtfs
+//   read64    64-byte sys_read — same path, 64× the payload
+//
+// read1 minus uptime is what the VFS/mtfs path costs; read64 minus read1 is
+// what the payload costs. Run it with as little else runnable as possible: on
+// a console kernel the render loop competes for the CPU and inflates every
+// number.
+
+import "../../lib/libtc/libtc.tc";
+
+fn do_uptime_us() -> i32;
+
+const N: i32 = 200;
+const PATH: StringLiteral = "/bin/sh";   // big enough that N reads never hit EOF
+
+// us/op to 3 decimals, from an elapsed-microsecond total over N iterations.
+fn report(name: StringLiteral, us: i32) -> void {
+    puts(name);
+    puts(": ");
+    print(us / N);
+    puts(".");
+    var frac: i32 = ((us % N) * 1000) / N;
+    if frac < 100 { puts("0"); }
+    if frac < 10  { puts("0"); }
+    print(frac);
+    puts(" us/op  (");
+    print(us);
+    puts(" us / ");
+    print(N);
+    puts(")\n");
+    return;
+}
+
+fn main() -> i32 {
+    var acc: i32 = 0;
+    var i: i32 = 0;
+
+    // (a) compute baseline — no syscalls, so this is pure CPU.
+    var t0: i32 = do_uptime_us();
+    i = 0;
+    while i < N { acc = acc + i * 3 + (acc / 7); i = i + 1; }
+    var t1: i32 = do_uptime_us();
+
+    // (b) bare trap: syscall 270 reads the timer and returns. No fd, no VFS.
+    i = 0;
+    while i < N { acc = acc + do_uptime_us(); i = i + 1; }
+    var t2: i32 = do_uptime_us();
+
+    // (c) 1-byte file read: trap + VFS dispatch + mtfs.
+    var one: U8Array = U8Array(1u32);
+    var fd: i32 = do_openat(0, PATH, 0);
+    if fd < 0 { puts("sysbench: cannot open "); puts(PATH); puts("\n"); return 1; }
+    i = 0;
+    while i < N { sys_read(fd, one, 1); i = i + 1; }
+    var t3: i32 = do_uptime_us();
+    do_close(fd);
+
+    // (d) 64-byte file read: same path, more payload.
+    var b64: U8Array = U8Array(64u32);
+    fd = do_openat(0, PATH, 0);
+    i = 0;
+    while i < N { sys_read(fd, b64, 64); i = i + 1; }
+    var t4: i32 = do_uptime_us();
+    do_close(fd);
+
+    puts("sysbench: N=");
+    print(N);
+    puts("\n");
+    report("compute ", t1 - t0);
+    report("uptime  ", t2 - t1);
+    report("read1   ", t3 - t2);
+    report("read64  ", t4 - t3);
+    if acc == 12345678 { puts(""); }   // keep the compute loop from being dead
+    delete(one);
+    delete(b64);
+    return 0;
+}
