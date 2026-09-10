@@ -17,6 +17,8 @@
 import "../../lib/libtc/libtc.tc";
 
 fn do_uptime_us() -> i32;
+fn do_nanosleep(ms: i32) -> i32;
+fn do_read_nb(fd: i32, buf_addr: u32, n: i32) -> i32;
 
 const N: i32 = 200;
 const PATH: StringLiteral = "/bin/sh";   // big enough that N reads never hit EOF
@@ -71,6 +73,18 @@ fn main() -> i32 {
     var t4: i32 = do_uptime_us();
     do_close(fd);
 
+    // (e) sleeps. The console's render loop pairs a non-blocking read with
+    // do_nanosleep(3) as its "fast poll" cadence, so what that sleep really
+    // costs decides how long the fast-poll window actually lasts. The timer
+    // tick is 1 ms on tn20k, so sleep3 should land near 3-4 ms; anything much
+    // larger means the yield path, not the requested duration, dominates.
+    i = 0;
+    while i < N { do_nanosleep(0); i = i + 1; }
+    var t5: i32 = do_uptime_us();
+    i = 0;
+    while i < N { do_nanosleep(3); i = i + 1; }
+    var t6: i32 = do_uptime_us();
+
     puts("sysbench: N=");
     print(N);
     puts("\n");
@@ -78,6 +92,8 @@ fn main() -> i32 {
     report("uptime  ", t2 - t1);
     report("read1   ", t3 - t2);
     report("read64  ", t4 - t3);
+    report("sleep0  ", t5 - t4);
+    report("sleep3  ", t6 - t5);
     if acc == 12345678 { puts(""); }   // keep the compute loop from being dead
     delete(one);
     delete(b64);
