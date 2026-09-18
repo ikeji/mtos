@@ -468,6 +468,65 @@ subproject split 以前の `$ROOT/tc_run.sh` パスを参照したままで、
 
 ## カーネル / OS
 
+### 31. tn20k のブートが遅い — 完了 (2026-09-10)
+
+LCD console の tn20k 実機で `SH: ready` からプロンプトまで ~5 s、
+プロンプト後に時計が動き出すまで ~10 s かかっていた。
+
+**推測で 2 回外し、実測で当てた**ので経緯を残す。
+
+**外した推測 1: 「syscall 1 回が ~16 ms」**。`memory` に残っていた
+古いベンチの数字を「syscall 一般のコスト」と一般化してしまった。実際は
+その 16 ms は `sys_write` の**中身込み**であって trap のコストではない。
+`userland/bin/sysbench` (この件で新規作成) で分解した実測値:
+
+| 項目 | us/op |
+|---|---:|
+| compute (ループ 1 周、syscall なし) | 35 |
+| **uptime (bare ecall、fd も VFS も通らない syscall 270)** | **300** |
+| read1 (1 バイト file read) | 10754 |
+| read64 (64 バイト file read) | 11737 |
+| sleep0 (yield 往復のみ) | 930 |
+| sleep3 (`nanosleep(3)`) | 3692 |
+
+**ecall 自体は 0.30 ms**。read1 と read64 の差が 64 倍のデータで 1.0 ms
+しかない = コストはペイロードではなく**呼び出し 1 回あたり固定**、と読めた
+ことが原因特定の決め手になった。
+
+**真因 1 (プロンプトまで ~5 s)**: `sh` の `read_script_line` が
+`sys_read(fd, one, 1)` で **1 バイトずつ** 読んでいた。443 バイトの
+`/etc/login` で 443 往復。さらに `mtfs_read` が **1 バイト読むためだけに
+512 バイトのスクラッチを確保してブロック全体をバイト単位でコピー**して
+いたので 1 往復が 10.75 ms。合わせて ~4.8 s。256 バイト先読み
+(`script_getc`) に変更 → **first prompt 9483 → 3951 ms**。
+
+**真因 2 (時計が ~10 s 動かない)**: console の render loop の
+fast-poll 窓 (パイプが空のとき、直後は sleep 3 ms で細かく回し、静かに
+なったら 250 ms 周期でカーソル点滅 + 時計更新に落ちる) が「500 回
+ポーリングしたら」という**回数**で書かれていた。コメントは「~1.5 s」と
+*時間*のつもり。fast poll 中は `draw_clock` を呼ばないので窓の間ずっと
+時計が凍る。text mode は CLINT を syscall 無しで読めるので 300 ms の
+時間窓に変更。なお 1 周は実測 ~4.2 ms なので 500 周は ~2.1 s であって
+10 s ではない — 観測された 10 s は、当時直っていなかった真因 1 の間に
+断続的な出力で fast poll にリセットされ続けたぶんが乗っていた
+(両方直して実機で解消を確認)。
+
+**副産物: mtfs の XIP fast path**。`block_xip_base()` が非 0
+(pico2 / tn20k の埋め込み mtfs) なら scratch を経由せず直接コピーする
+経路を `mtfs_read` に追加、`copy_bytes` は両端 4 byte 整列時にワード
+単位。**read1 10754 → 1697 us/op (6.3x)**。virt は XIP 不可で従来経路の
+まま残るので、**既知良好の参照実装として差分検証に使える** — `wc` の
+3 数値が `/bin/console` (428496 B = 837 ブロック) を含む全ファイルで
+virt と一致することを確認した。
+
+残: read1 1.70 ms と bare ecall 0.30 ms の差 ~1.4 ms が vfs/mtfs の
+呼び出し経路自体に残っている (未解明)。`grep` / `head` / `msh` / `vi` に
+同じ 1 バイト read パターンが残っている。
+
+commits: 81c3cc2 (sh 先読み)、dccc663 (fast-poll 窓 + neofetch 1 write 化)、
+3ecec9c (mtfs XIP)、f0c56b8 (sleep 計測 + 原因帰属の訂正)
+
+
 ### 30. tmpfs に unlink が無い — 完了 (2026-07-05)
 
 `rm /tmp/x` が常に "cannot remove" になっていた。
