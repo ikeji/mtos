@@ -28,6 +28,14 @@
 fn read_mtime() -> u32;
 fn kputs_t(s: StringLiteral) -> void;
 
+// Panel mount orientation. Tasks pick a MADCTL for the orientation they
+// want (/dev/fb mode 3: console -l / gcc_doom / touchtest send 0xE8) and
+// the driver XORs this in, so a remounted panel is fixed here once
+// instead of in every task. 0xC0 = MY|MX = 180° turn, 0 = as requested.
+// The boot-time portrait MADCTL (0x48) is left alone on purpose: MY also
+// reverses the row order the mode-2 hardware scroll relies on.
+const LCD_MOUNT_FLIP: i32 = 0xC0;
+
 // ===== RP2350 register addresses =====
 const LCD_IO_BANK0:    u32 = 0x40028000u32;
 const LCD_PADS_SET:    u32 = 0x4003A000u32;
@@ -584,9 +592,11 @@ export fn fb_backend_write(buf_addr: u32, n: i32) -> void {
         // Set MADCTL (memory access control: rotation / mirroring).
         // The low 8 bits of buf+10 select the ILI9488 MADCTL value.
         // Portrait (default) = 0x48, landscape = 0x28 / 0xE8 etc.
+        // LCD_MOUNT_FLIP turns the requested orientation 180° to match
+        // how the panel is mounted on this board.
         if n >= 12 {
             lcd_cmd(0x36);
-            lcd_dat(fb_rd16(buf_addr + 10u32) & 0xFF);
+            lcd_dat((fb_rd16(buf_addr + 10u32) ^ LCD_MOUNT_FLIP) & 0xFF);
         }
     } else if mode == 4 {
         // 1-bpp glyph: [fg u16][bg u16][bitmap]. w=gw, h=h, bpr=(gw+7)/8.
