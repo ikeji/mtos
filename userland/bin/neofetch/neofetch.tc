@@ -270,20 +270,43 @@ fn print_build_line() -> void {
     return;
 }
 
-// Print one "key: value" field out of a /proc file. Same KEY VALUE line shape
-// as /etc/version, so print_version_field does the parsing. Prints nothing at
-// all when the file is missing: /proc/soc and /proc/kernel are newer than some
-// kernels this binary may be running on, and a splash line reading "?" would be
-// noise rather than information.
-fn print_proc_field(path: StringLiteral, key: StringLiteral, label: StringLiteral) -> void {
-    var fd: i32 = do_openat(0, path, 0);
+// True when some line of buf starts with `prefix`.
+fn has_line(buf: U8Array, n: i32, prefix: StringLiteral) -> i32 {
+    var i: i32 = 0;
+    while i < n {
+        if match_prefix(buf, i, n, prefix) > 0 { return 1; }
+        while i < n && get(buf, i) != 10u8 { i = i + 1; }
+        if i < n { i = i + 1; }
+    }
+    return 0;
+}
+
+// The running kernel's build stamp, out of /proc/kernel. Prints nothing at all
+// when the file is missing: /proc/kernel is newer than some kernels this binary
+// may be running on, and a splash line reading "?" would be noise rather than
+// information.
+//
+// pico2 links no stamp — its mtfs sits inside the kernel image, so the disk's
+// stamp is the kernel's — and /proc/kernel says "see /etc/version" there.
+// Follow that pointer so the splash shows the hash instead of the redirect.
+fn print_kbuild_line() -> void {
+    var fd: i32 = do_openat(0, "/proc/kernel", 0);
     if fd < 0 { return; }
     var buf: U8Array = U8Array(128);
     var n: i32 = sys_read(fd, buf, 128);
     do_close(fd);
     if n <= 0 { delete(buf); return; }
+    var key: StringLiteral = "build: ";
+    if has_line(buf, n, "build: see /etc/version") != 0 {
+        var vfd: i32 = do_openat(0, "/etc/version", 0);
+        if vfd >= 0 {
+            var vn: i32 = sys_read(vfd, buf, 128);
+            do_close(vfd);
+            if vn > 0 { n = vn;  key = "build="; }
+        }
+    }
     ob_puts("                ");
-    ob_puts(label);
+    ob_puts("  kbuild: ");
     print_version_field(buf, n, key);
     ob_puts("\n");
     delete(buf);
@@ -410,7 +433,7 @@ fn main() -> i32 {
     ob_print(total(stats));
     ob_puts(" total\n");
     print_soc_line();
-    print_proc_field("/proc/kernel", "build: ", "  kbuild: ");
+    print_kbuild_line();
     ob_puts("                ");
     print_build_line();
     ob_puts("                ");
