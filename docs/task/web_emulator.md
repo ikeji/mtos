@@ -1,6 +1,10 @@
 # Web ブラウザ上で MTOS を動かす計画 (JS/TS 製 RV32IM エミュレータ)
 
-作成: 2026-10-15。状態: **計画のみ (未着手)**。
+作成: 2026-10-15。状態: **Phase 0〜2 完了 (headless、2026-10-15)**。
+`make -C web test` (~3.5 s) で riscv-tests 49/49 + tn20k kernel の
+headless boot (`sh$` / echo / cat / ls / neofetch) が通る。実測
+**110〜120 MIPS** (Node 22、V8)、`KERN: starting → sh$` はゲスト時間
+46 ms (tn20k 実機 0.48 s、pico2 61 ms)。次は Phase 3 (ブラウザ UI)。
 
 ## 1. ゴール
 
@@ -69,7 +73,7 @@
 |---|---|---|---|---|
 | pico2 (Hazard3 150 MHz ~1 CPI) | ~150 MIPS | 61 ms | 13.8 s | ~55 min (SD 書き込み律速) |
 | tn20k (自作コア 40.5 MHz、マルチサイクル ~5 CPI、I$ 込み ~1.9x) | **~10〜15 MIPS** | 0.48 s | 161 s | 数時間 (未実施) |
-| ブラウザ JS インタプリタ (見込み) | **30〜80 MIPS** | **~0.05〜0.15 s** | **~25〜60 s** | 1 時間前後 (SD が RAM なので pico2 の支配項 SD I/O は消える、CPU 律速) |
+| ブラウザ JS インタプリタ (見込み → **実測**) | 見込み 30〜80 → **実測 110〜120 MIPS** (Node 22 headless) | 見込み ~0.1 s → **実測 46 ms** | **~20 s** (見込み、pipeline 未実施) | 1 時間前後 (SD が RAM なので pico2 の支配項 SD I/O は消える、CPU 律速) |
 | 同 wasm 版 (Rust/C → wasm、将来) | 100〜200 MIPS | — | ~10〜20 s | — |
 
 根拠:
@@ -161,18 +165,26 @@ Phase 1 時点では SD SPI は STATUS=idle、DATA 読みが常に 0xFF を返�
 
 ## 5. フェーズ
 
-- [ ] **Phase 0 土台**: `web/` + Makefile + Node で動く最小 CPU
-  (`addi`/`lui`/`sw` と exit デバイスだけ) + `hw/tests` の riscv-tests
-  `.bin` を読む Node ランナー。`make -C web test` を root `make test`
-  には **入れない** (Node 依存、1 分枠を守る)。
-- [ ] **Phase 1 CPU 完成**: riscv-tests 48/48 (`fence_i` は hw と
-  同様 skip 可)。さらに `compiler/tests/*.tc` を `; raw` + virt crt0
-  でビルドした bin を回し、qemu の出力と一致させる (test_asm.sh の
-  hello2 / test_timer が CSR + タイマの検証になる)。
-- [ ] **Phase 2 sh 起動 (Node, headless)**: `tn20k_kernel.bin` を
-  0x8000_0000 に置き、UART に `KERN: starting ... sh$` が出る。
-  `ls / cat /hello.txt / echo` と、`count` 2 本でタイマ preempt を
-  確認 (`hw/tests/test_kernel_hw.sh` と同じ期待値)。
+- [x] **Phase 0 土台** (2026-10-15): `web/` + Makefile + `src/cpu.js`
+  (RV32IM + Zicsr、最小ではなく全命令を最初から) + `src/soc.js` +
+  `src/node_run.js` (headless ランナー、UART → stdout、`--stdin` で RX
+  FIFO 事前投入、`--lenient` で unmapped MMIO を集計) +
+  `tests/run_riscv_tests.sh`。`tsc` が無いので plain ES modules +
+  JSDoc。`make -C web test` は root `make test` に **入れない** (Node
+  依存)。
+- [x] **Phase 1 CPU** (2026-10-15): riscv-tests **49/49** (`fence_i` も
+  zifencei で build して含める、`ma_data` は hw と同様 skip)。初回
+  実行で全通過。残: `compiler/tests/*.tc` を `; raw` + virt crt0 で
+  ビルドした bin を回し qemu の出力と一致させる (test_asm.sh の
+  hello2 / test_timer) — kernel が動いたので優先度低。
+- [x] **Phase 2 sh 起動 (Node, headless)** (2026-10-15): lenient で
+  流したら一発で `sh$`。unmapped は SD SPI 3 レジスタだけだったので
+  「カード無し」スタブ (DATA 読み 0xFF、STATUS idle) を足して strict
+  で起動。`SD: card init failed` 経路は続行する (§6 の懸念は解消)。
+  `tests/test_boot.sh` が `hw/tests/test_kernel_hw.sh` と同じ 4
+  チェック (echo / cat / ls /bin / neofetch) + `sh$` を検証。タイマ
+  preempt の明示的な確認 (`count` 2 本) は未実施 (sh が spawn されて
+  いるので scheduler 自体は回っている)。
 - [ ] **Phase 3 ブラウザ**: Worker + xterm.js。sh と対話できる。MIPS
   を表示し §3 の見込みを実測で置き換える。
 - [ ] **Phase 4 SD + pipeline**: SD SPI 状態機械 + FAT イメージ。
@@ -188,9 +200,9 @@ Phase 1 時点では SD SPI は STATUS=idle、DATA 読みが常に 0xFF を返�
 
 | リスク | 対処 |
 |---|---|
-| SD ダミーで kernel が panic / ハング (`kernel_tn20k.tc:280` の失敗経路が本当に続行するか未検証) | Phase 2 の最初に確認。駄目なら SD SPI 状態機械を Phase 2 に前倒し |
-| UART TX ready bit: tn20k 実機で「TX ready 追加 + poll」が必要だった経緯 (`tang_nano_20k.md` §3)。現在のドライバがどの bit を見るか | `platform_virt.tc` は LSR bit0 のみ。tn20k 固有の poll があれば `hw/rtl/soc/uart.v` を見て同じ bit を立てる |
-| JS の速度が見込みを下回る (10 MIPS 台) | ホットパス (load/store のアドレス変換、デコード) を先に計測。wasm 化を Phase 6 から前倒し |
+| ~~SD ダミーで kernel が panic / ハング~~ | **解消** (Phase 2): 失敗経路は続行し `/sd` なしで sh が立つ |
+| ~~UART TX ready bit~~ | **解消**: `soc.v` は LSR bit5/6 = ~tx_busy、DR 書き込みはバス stall。エミュレータは bit5/6 常時 1 + 即時送信 |
+| ~~JS の速度が見込みを下回る~~ | **解消**: headless 110〜120 MIPS。ブラウザ (Worker) でどこまで落ちるかは Phase 3 で実測 |
 | 64-bit mtime / mulh の BigInt が遅い | u32 2 本で持つ。mulh は 16-bit 分割 |
 | Worker ↔ UI の `postMessage` 往復 | UART 出力をバッチ (数 ms 単位) にする。入力は少量なので問題なし |
 | 命令数ベース mtime だとタイマ量子が実機と変わる | kernel の quantum は mtimecmp の相対加算なので tick 周波数を実機の `MTIME` 想定に合わせれば同じ挙動。実測して調整 |

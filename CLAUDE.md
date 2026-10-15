@@ -136,10 +136,12 @@ as-String 片付け (`path: String` syscall ABI)、フェーズ 8 部分着手
 - **Tang Nano 20K に自作 RV32IM コア + SoC を作って OS を載せる**:
   最終形は ILI9488 + マトリクスキーボードで PC から独立したスタンドアロン機。
   計画は `docs/task/tang_nano_20k.md` (2026-08-28、未着手)
-- **Web ブラウザで MTOS を動かす**: tn20k 版 kernel (UART 16550 +
-  CLINT + exit だけで `sh$`) を JS/TS 製 RV32IM エミュレータで動かし、
-  xterm.js + canvas (LCD) の静的ページにする。計画は
-  `docs/task/web_emulator.md` (2026-10-15、未着手)
+- **Web ブラウザで MTOS を動かす**: tn20k 版 kernel を JS 製 RV32IM
+  エミュレータ (`web/`、4 つ目のサブプロジェクト) で動かす。
+  **Phase 0〜2 完了 (2026-10-15)**: `make -C web test` (~3.5 s) で
+  riscv-tests 49/49 + `tn20k_kernel.bin` の headless boot (Node、
+  110〜120 MIPS、`sh$` まで 46 ms) が通る。次は Phase 3 (Web Worker +
+  xterm.js のページ)。計画は `docs/task/web_emulator.md`
 - **K22 続編 (DOOM 実プレイ)**: TITLEPIC まで来たので autostart E1M1
   を狙う。`P_SetupLevel` が ~24 KB の PU_LEVEL を要求 (blockmap 17 KB
   ほか) するので zone 112 KB 不足。blockmap など大物を .bss に固定
