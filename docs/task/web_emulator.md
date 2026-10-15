@@ -1,10 +1,12 @@
 # Web ブラウザ上で MTOS を動かす計画 (JS/TS 製 RV32IM エミュレータ)
 
-作成: 2026-10-15。状態: **Phase 0〜2 完了 (headless、2026-10-15)**。
-`make -C web test` (~3.5 s) で riscv-tests 49/49 + tn20k kernel の
-headless boot (`sh$` / echo / cat / ls / neofetch) が通る。実測
-**110〜120 MIPS** (Node 22、V8)、`KERN: starting → sh$` はゲスト時間
-46 ms (tn20k 実機 0.48 s、pico2 61 ms)。次は Phase 3 (ブラウザ UI)。
+作成: 2026-10-15。状態: **Phase 0〜3 完了 (2026-10-15)**。
+`make -C web serve` → `http://localhost:8000/web/` で tn20k kernel が
+xterm.js 上で sh まで起動し対話できる。`make -C web test` (~5.5 s) で
+riscv-tests 49/49 + headless boot + Worker コア + headless Chromium の
+ページ smoke test が通る。実測 **110〜120 MIPS** (Node 22 / Chromium
+Worker とも)、`KERN: starting → sh$` はゲスト時間 46 ms (tn20k 実機
+0.48 s、pico2 61 ms)。次は Phase 4 (SD + コンパイラ pipeline)。
 
 ## 1. ゴール
 
@@ -185,8 +187,20 @@ Phase 1 時点では SD SPI は STATUS=idle、DATA 読みが常に 0xFF を返�
   チェック (echo / cat / ls /bin / neofetch) + `sh$` を検証。タイマ
   preempt の明示的な確認 (`count` 2 本) は未実施 (sh が spawn されて
   いるので scheduler 自体は回っている)。
-- [ ] **Phase 3 ブラウザ**: Worker + xterm.js。sh と対話できる。MIPS
-  を表示し §3 の見込みを実測で置き換える。
+- [x] **Phase 3 ブラウザ** (2026-10-15): `src/runner.js` (EmuRunner:
+  環境非依存のスライス実行、yield / sleep を注入、targetMips で
+  スロットル) + `src/worker.js` (MessageChannel yield の Web Worker
+  glue) + `src/main.js` / `index.html` (xterm.js 5.5.0 vendored、
+  kernel 選択 / file picker / Run / Pause / Reset / speed max・150・
+  40・12 MIPS / MIPS・insns 表示 / unmapped MMIO 表示 / CPU error dump)。
+  `window.__emu` (log / stats) はテスト用フック。Worker 内の実測は
+  **~113 MIPS** (headless Chromium、Node の 120 とほぼ同じ)。テスト:
+  `tests/test_runner.mjs` (Node、Worker コアを setImmediate yield で
+  回しスロットル 12 MIPS の精度も確認) と `tests/test_browser.mjs`
+  (playwright、npx キャッシュの chromium を使い boot / 入力 / Pause /
+  Reset / xterm 描画を検証、無ければ SKIP)。学び: Node では
+  MessageChannel yield がタイマを飢餓させる (ブラウザ Worker では page
+  からの message と同じタスクソースなので問題なし)。
 - [ ] **Phase 4 SD + pipeline**: SD SPI 状態機械 + FAT イメージ。
   `tn20k-extra` kernel で `integration/test_phase7.sh` 相当の 15 段を
   流し `/tmp/hw` → "Hello, World!"。時間を §3 に記録。
@@ -202,7 +216,8 @@ Phase 1 時点では SD SPI は STATUS=idle、DATA 読みが常に 0xFF を返�
 |---|---|
 | ~~SD ダミーで kernel が panic / ハング~~ | **解消** (Phase 2): 失敗経路は続行し `/sd` なしで sh が立つ |
 | ~~UART TX ready bit~~ | **解消**: `soc.v` は LSR bit5/6 = ~tx_busy、DR 書き込みはバス stall。エミュレータは bit5/6 常時 1 + 即時送信 |
-| ~~JS の速度が見込みを下回る~~ | **解消**: headless 110〜120 MIPS。ブラウザ (Worker) でどこまで落ちるかは Phase 3 で実測 |
+| ~~JS の速度が見込みを下回る~~ | **解消**: Node / Chromium Worker とも 110〜120 MIPS |
+| ~~Worker ↔ UI の postMessage 往復~~ | **解消**: TX はスライス (~8 ms) ごとにまとめて 1 message。入力は keystroke ごと |
 | 64-bit mtime / mulh の BigInt が遅い | u32 2 本で持つ。mulh は 16-bit 分割 |
 | Worker ↔ UI の `postMessage` 往復 | UART 出力をバッチ (数 ms 単位) にする。入力は少量なので問題なし |
 | 命令数ベース mtime だとタイマ量子が実機と変わる | kernel の quantum は mtimecmp の相対加算なので tick 周波数を実機の `MTIME` 想定に合わせれば同じ挙動。実測して調整 |
