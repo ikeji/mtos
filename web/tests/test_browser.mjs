@@ -36,6 +36,25 @@ try {
   await page.waitForFunction(() => document.querySelector(".xterm-rows").textContent.includes("sh$"), null, { timeout: 2000 }).catch(() => {});
   const termText = await page.textContent(".xterm-rows");
   check("xterm renders the prompt", termText.includes("sh$"));
+
+  // SD: new empty image → reboot mounts /sd → write a file → autosave to IndexedDB → reload restores it
+  await page.click("#btn-sd-new");
+  await page.waitForFunction(() => window.__emu.log.includes("FATFS: mounted"), null, { timeout: 10000 });
+  check("New SD image mounts at /sd after reboot", true);
+  await page.waitForFunction(() => window.__emu.log.lastIndexOf("sh$ ") > window.__emu.log.lastIndexOf("FATFS: mounted"), null, { timeout: 5000 });
+  await page.keyboard.type("echo persisted in idb > /sd/p.txt\r");
+  await page.waitForFunction(() => document.getElementById("sd-status").textContent.includes("unsaved writes"), null, { timeout: 5000 });
+  await page.waitForFunction(() => document.getElementById("sd-status").textContent.includes("saved in browser"), null, { timeout: 10000 });
+  check("SD writes are saved to IndexedDB", true);
+  await page.reload({ waitUntil: "load" });
+  await page.waitForFunction(() => window.__emu && window.__emu.log.includes("FATFS: mounted"), null, { timeout: 15000 });
+  await page.waitForFunction(() => window.__emu.log.includes("sh$ "), null, { timeout: 5000 });
+  await page.keyboard.type("cat /sd/p.txt\r");
+  await page.waitForFunction(() => window.__emu.log.includes("\npersisted in idb"), null, { timeout: 5000 });
+  check("saved image is restored after reload and readable", true);
+  await page.click("#btn-sd-forget");
+  await page.waitForFunction(() => document.getElementById("sd-status").textContent === "no card", null, { timeout: 5000 });
+  check("Forget detaches the card", true);
 } catch (e) {
   console.log("[test] " + e.message.split("\n")[0]);
   fails++;

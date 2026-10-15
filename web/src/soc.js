@@ -3,8 +3,9 @@
 //   0x0200_0000  CLINT: +0x4000 mtimecmp lo/hi, +0xBFF8 mtime lo/hi
 //   0x1000_0000  UART 16550: +0 DR, +5 LSR (bit0 RX ready, bit5/6 TX empty)
 //   0x1003_0000  SD SPI master (hw/rtl/soc/spi_master.v): +0 DATA, +4 STATUS bit0 busy, +8 CTRL
-//                — stub with no card: every transfer completes at once and reads 0xFF,
-//                so block_sd.tc reports "SD: card init failed" and the kernel runs without /sd
+//                — transfers complete at once. With `sd` (an SdCard) attached the byte goes
+//                through its state machine; without a card every read is 0xFF so block_sd.tc
+//                reports "SD: card init failed" and the kernel runs without /sd
 //   0x8000_0000  SDRAM (8 MB)
 // mtime advances one tick per executed instruction (deterministic, like
 // qemu icount). Other MMIO is unmapped for now (Phase 2 adds SD / LCD /
@@ -34,6 +35,8 @@ export class Soc {
     this.rxHead = 0;
     this.onTx = (byte) => {};     // UART TX sink
 
+    this.sd = null;               // SdCard or null
+    this.spiRx = 0xff;            // last byte received on the SD SPI
     this.halted = false;
     this.exitCode = null;
     this.unmapped = new Map();    // lenient mode: addr -> count, for Phase 2 stubs
@@ -94,8 +97,8 @@ export class Soc {
     if (page === 0x0010) {                    // exit device
       return (addr & 0xf) === 4 ? 0 : (this.exitCode | 0);
     }
-    if (page === 0x1003) {                    // SD SPI: no card
-      return (addr & 0xf) === 0 ? 0xff : 0;
+    if (page === 0x1003) {                    // SD SPI master
+      return (addr & 0xf) === 0 ? this.spiRx : 0;   // DATA: last rx; STATUS: never busy
     }
     if (this.strict) throw new Error("unmapped MMIO read " + hex(addr) + " size " + size);
     this.noteUnmapped(addr);
@@ -126,7 +129,12 @@ export class Soc {
       }
       return;
     }
-    if (page === 0x1003) return;              // SD SPI: no card, accept writes
+    if (page === 0x1003) {                    // SD SPI master
+      const reg = addr & 0xf;
+      if (reg === 0) this.spiRx = this.sd ? this.sd.xfer(value & 0xff) : 0xff;
+      else if (reg === 8 && this.sd) this.sd.setCs((value & 1) !== 0);
+      return;
+    }
     if (this.strict) throw new Error("unmapped MMIO write " + hex(addr) + " size " + size + " value " + hex(value));
     this.noteUnmapped(addr);
   }

@@ -1,12 +1,15 @@
 # Web ブラウザ上で MTOS を動かす計画 (JS/TS 製 RV32IM エミュレータ)
 
-作成: 2026-10-15。状態: **Phase 0〜3 完了 (2026-10-15)**。
+作成: 2026-10-15。状態: **Phase 0〜4 完了 (2026-10-16)**。
 `make -C web serve` → `http://localhost:8000/web/` で tn20k kernel が
-xterm.js 上で sh まで起動し対話できる。`make -C web test` (~5.5 s) で
-riscv-tests 49/49 + headless boot + Worker コア + headless Chromium の
-ページ smoke test が通る。実測 **110〜120 MIPS** (Node 22 / Chromium
-Worker とも)、`KERN: starting → sh$` はゲスト時間 46 ms (tn20k 実機
-0.48 s、pico2 61 ms)。次は Phase 4 (SD + コンパイラ pipeline)。
+xterm.js 上で sh まで起動し対話でき、SD カード (FAT32 イメージ) を
+付けて `/sd` を読み書き、書き込みは IndexedDB に自動保存される。
+`tn20k_kernel_extra.bin` なら 15 段のコンパイラ pipeline
+(`hw.tc → Hello, World!`) が **3.4 s** で完走 (pico2 13.8 s、tn20k
+実機 161 s)。`make -C web test` (~15 s) で riscv-tests 49/49 +
+headless boot + SD 往復 + pipeline + Worker コア + headless Chromium
+のページ smoke test (SD 永続化込み) が通る。実測 **110〜120 MIPS**
+(Node 22 / Chromium Worker とも)。次は Phase 5 (LCD + キーボード)。
 
 ## 1. ゴール
 
@@ -75,7 +78,7 @@ Worker とも)、`KERN: starting → sh$` はゲスト時間 46 ms (tn20k 実機
 |---|---|---|---|---|
 | pico2 (Hazard3 150 MHz ~1 CPI) | ~150 MIPS | 61 ms | 13.8 s | ~55 min (SD 書き込み律速) |
 | tn20k (自作コア 40.5 MHz、マルチサイクル ~5 CPI、I$ 込み ~1.9x) | **~10〜15 MIPS** | 0.48 s | 161 s | 数時間 (未実施) |
-| ブラウザ JS インタプリタ (見込み → **実測**) | 見込み 30〜80 → **実測 110〜120 MIPS** (Node 22 headless) | 見込み ~0.1 s → **実測 46 ms** | **~20 s** (見込み、pipeline 未実施) | 1 時間前後 (SD が RAM なので pico2 の支配項 SD I/O は消える、CPU 律速) |
+| ブラウザ JS インタプリタ (見込み → **実測**) | 見込み 30〜80 → **実測 110〜120 MIPS** (Node 22 headless) | 見込み ~0.1 s → **実測 46 ms** | 見込み ~20 s → **実測 3.4 s** (402M 命令) | 1 時間前後 (SD が RAM なので pico2 の支配項 SD I/O は消える、CPU 律速) |
 | 同 wasm 版 (Rust/C → wasm、将来) | 100〜200 MIPS | — | ~10〜20 s | — |
 
 根拠:
@@ -201,9 +204,26 @@ Phase 1 時点では SD SPI は STATUS=idle、DATA 読みが常に 0xFF を返�
   Reset / xterm 描画を検証、無ければ SKIP)。学び: Node では
   MessageChannel yield がタイマを飢餓させる (ブラウザ Worker では page
   からの message と同じタスクソースなので問題なし)。
-- [ ] **Phase 4 SD + pipeline**: SD SPI 状態機械 + FAT イメージ。
-  `tn20k-extra` kernel で `integration/test_phase7.sh` 相当の 15 段を
-  流し `/tmp/hw` → "Hello, World!"。時間を §3 に記録。
+- [x] **Phase 4 SD + pipeline** (2026-10-16): pipeline は mtfs + /tmp
+  だけで完結するので SD 無しで先に完走 (`tests/test_pipeline.sh`、
+  3.4 s / 402M 命令。pico2 の 4×、tn20k 実機の 47× 速い)。SD は
+  `src/sd.js` (SPI モード状態機械: CMD0/8/55+ACMD41/58 (SDHC 申告で
+  引数 = セクタ番号)/59/17/24/25 (0xFC/0xFD トークン)、CRC 無視) を
+  soc.js の SPI マスタ (0x1003_0000) に接続。FAT32 イメージは
+  `tools/fatimg.py` (mkfs / add / ls / cat、mtools 不要、superfloppy
+  で BPB@0 / FSInfo@1 / backup@6 / root=cluster 2 / 512 B クラスタ) と
+  ブラウザ用の `src/fat32.js` (空イメージの format のみ)。
+  `node_run.js --sd IMG --sd-out IMG` で headless、`tests/test_sd.sh`
+  が OS で書いたファイルを fatimg.py で読み戻して検証 (12 セクタ
+  書き込み)。ブラウザは SD 行 (file / New 33 MB / Download / Forget)、
+  付け替えは kernel の boot 時 probe に合わせて自動 reboot、書き込み
+  通知 (1 s スロットル) → 2 s 静穏後に Worker からイメージを取り
+  IndexedDB に保存、次回訪問時に復元 (`tests/test_browser.mjs` で
+  reload 越しの `cat /sd/p.txt` を検証)。学び: ボタン click でフォーカス
+  がターミナルから外れる (全ボタンで `term.focus()` し直す)、Worker の
+  `performance.now()` は 0 始まりなのでスロットルの初期値は -Infinity、
+  保存完了表示は書き込み世代番号で gate しないと初期保存の遅延完了が
+  「unsaved」を上書きする。
 - [ ] **Phase 5 LCD + キーボード**: `lcd_spi.v` 互換 + GPIO マトリクス
   → `tn20k-console-*` kernel で `console` が canvas に出る。tn20k の
   「配線待ち」の LCD/キーボードドライバをここで先に動作確認できる。
@@ -222,6 +242,7 @@ Phase 1 時点では SD SPI は STATUS=idle、DATA 読みが常に 0xFF を返�
 | Worker ↔ UI の `postMessage` 往復 | UART 出力をバッチ (数 ms 単位) にする。入力は少量なので問題なし |
 | 命令数ベース mtime だとタイマ量子が実機と変わる | kernel の quantum は mtimecmp の相対加算なので tick 周波数を実機の `MTIME` 想定に合わせれば同じ挙動。実測して調整 |
 | xterm.js を CDN から読むとオフラインで動かない | vendored コピーを `web/vendor/` に置く (ライセンス MIT) |
+| IndexedDB に 33 MB を 2 s ごとに丸ごと保存 (書き込み中) | 現状は静穏 2 s 待ちで十分軽い。大きいイメージ (DOOM WAD 入り等) で遅ければ dirty セクタ差分保存に変える |
 
 ## 7. 既存資産の流用
 

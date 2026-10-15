@@ -2,6 +2,8 @@
 // Serve the repository root (make -C web serve) and open /web/; the
 // default kernel path is relative to that.
 
+import { formatFat32 } from "./fat32.js";
+
 const $ = (id) => document.getElementById(id);
 const term = new Terminal({ cols: 80, rows: 30, convertEol: true, cursorBlink: true, scrollback: 5000,
                             fontFamily: "ui-monospace, Menlo, Consolas, monospace", fontSize: 14 });
@@ -14,7 +16,48 @@ let running = false;
 const dec = new TextDecoder("latin1");
 let emuLog = "";                 // all UART output, for tests (window.__emu)
 let lastStats = null;
-window.__emu = { get log() { return emuLog; }, get stats() { return lastStats; }, get loaded() { return loaded; } };
+let kernelBuf = null;            // last loaded kernel (ArrayBuffer copy) so Reset / SD attach can reboot
+let kernelName = "";
+let sdName = "";                 // "" = no card
+let sdSaveTimer = null;
+let sdWriteGen = 0;              // bumped on every sd-write notification
+let sdSaveGen = 0;               // write generation the in-flight save captured
+window.__emu = { get log() { return emuLog; }, get stats() { return lastStats; }, get loaded() { return loaded; }, get sdName() { return sdName; } };
+
+// ---- SD image persistence (IndexedDB, one record) ----
+const DB_NAME = "mtos-web", STORE = "sd";
+function idb() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open(DB_NAME, 1);
+    r.onupgradeneeded = () => r.result.createObjectStore(STORE);
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+async function idbGet() {
+  try { const db = await idb(); return await new Promise((res, rej) => { const q = db.transaction(STORE).objectStore(STORE).get("image"); q.onsuccess = () => res(q.result || null); q.onerror = () => rej(q.error); }); }
+  catch (e) { return null; }
+}
+async function idbPut(rec) {
+  try { const db = await idb(); await new Promise((res, rej) => { const q = db.transaction(STORE, "readwrite").objectStore(STORE).put(rec, "image"); q.onsuccess = res; q.onerror = () => rej(q.error); }); return true; }
+  catch (e) { return false; }
+}
+async function idbDel() {
+  try { const db = await idb(); await new Promise((res, rej) => { const q = db.transaction(STORE, "readwrite").objectStore(STORE).delete("image"); q.onsuccess = res; q.onerror = () => rej(q.error); }); }
+  catch (e) {}
+}
+function setSdStatus(text) { $("sd-status").textContent = text; }
+function attachSd(buf, name) {
+  sdName = name;
+  const mb = buf ? (buf.byteLength / 1048576).toFixed(0) : 0;   // before the transfer detaches buf
+  worker.postMessage({ type: "sd", image: buf }, buf ? [buf] : []);
+  setSdStatus(name ? `${name} (${mb} MB)` : "no card");
+}
+function saveSd() {
+  sdSaveTimer = null;
+  sdSaveGen = sdWriteGen;
+  worker.postMessage({ type: "sd-get", tag: "save" });
+}
 
 function setStatus(text) { $("status").textContent = text; }
 function fmt(n) { return n.toLocaleString("en-US"); }
@@ -49,10 +92,32 @@ worker.onmessage = (e) => {
     case "halt":
       term.write(`\r\n\x1b[33m[emu] exit device: 0x${(m.code >>> 0).toString(16)}\x1b[0m\r\n`);
       break;
+    case "sd-write":                       // OS wrote to the card: persist after 2 s of quiet
+      sdWriteGen++;
+      setSdStatus(`${sdName} (unsaved writes)`);
+      if (sdSaveTimer) clearTimeout(sdSaveTimer);
+      sdSaveTimer = setTimeout(saveSd, 2000);
+      break;
+    case "sd-image":
+      if (!m.image || !sdName) break;
+      if (m.tag === "download") {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([m.image])); a.download = sdName; a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+      } else {
+        const gen = sdSaveGen, mb = (m.image.byteLength / 1048576).toFixed(0);
+        idbPut({ name: sdName, image: m.image }).then((ok) => {
+          if (sdWriteGen !== gen) return;          // newer writes exist; a save is already scheduled
+          setSdStatus(`${sdName} (${mb} MB, ${ok ? "saved in browser" : "save failed"})`);
+        });
+      }
+      break;
   }
 };
 
 function loadKernel(buf, name) {
+  kernelBuf = buf.slice(0);
+  kernelName = name;
   worker.postMessage({ type: "load", bin: buf }, [buf]);
   loaded = true;
   term.reset();
@@ -60,6 +125,14 @@ function loadKernel(buf, name) {
   $("kernel-name").textContent = name;
   setStatus("loaded " + name);
   worker.postMessage({ type: "mips", value: Number($("speed").value) });
+  worker.postMessage({ type: "start" });
+  term.focus();
+}
+
+function reboot() {
+  if (!loaded) return;
+  term.reset();
+  worker.postMessage({ type: "reset" });
   worker.postMessage({ type: "start" });
   term.focus();
 }
@@ -81,9 +154,27 @@ $("file").onchange = async (ev) => {
   if (f) loadKernel(await f.arrayBuffer(), f.name);
 };
 $("btn-run").onclick = () => { worker.postMessage({ type: running ? "pause" : "start" }); term.focus(); };
-$("btn-reset").onclick = () => { if (!loaded) return; term.reset(); worker.postMessage({ type: "reset" }); worker.postMessage({ type: "start" }); term.focus(); };
+$("btn-reset").onclick = reboot;
 $("speed").onchange = () => worker.postMessage({ type: "mips", value: Number($("speed").value) });
+
+// ---- SD controls: the kernel probes the card at boot, so attaching reboots ----
+$("sd-file").onchange = async (ev) => {
+  const f = ev.target.files[0];
+  if (!f) return;
+  attachSd(await f.arrayBuffer(), f.name);
+  saveSd();                                    // persist the fresh image right away
+  reboot();
+};
+$("btn-sd-new").onclick = () => { attachSd(formatFat32(33).buffer, "sd.img"); saveSd(); reboot(); };
+$("btn-sd-download").onclick = () => { if (sdName) worker.postMessage({ type: "sd-get", tag: "download" }); };
+$("btn-sd-forget").onclick = async () => { await idbDel(); attachSd(null, ""); reboot(); };
+
+for (const b of document.querySelectorAll("button")) b.addEventListener("click", () => setTimeout(() => term.focus(), 0));
 
 const params = new URLSearchParams(location.search);
 if (params.get("kernel")) $("kernel").value = params.get("kernel");
-if (params.get("autoload") !== "0") fetchKernel($("kernel").value);
+(async () => {
+  const saved = await idbGet();
+  if (saved && saved.image) attachSd(saved.image, saved.name || "sd.img");
+  if (params.get("autoload") !== "0") fetchKernel($("kernel").value);
+})();

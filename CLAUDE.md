@@ -138,13 +138,15 @@ as-String 片付け (`path: String` syscall ABI)、フェーズ 8 部分着手
   計画は `docs/task/tang_nano_20k.md` (2026-08-28、未着手)
 - **Web ブラウザで MTOS を動かす**: tn20k 版 kernel を JS 製 RV32IM
   エミュレータ (`web/`、4 つ目のサブプロジェクト) で動かす。
-  **Phase 0〜3 完了 (2026-10-15)**: `make -C web serve` →
-  `http://localhost:8000/web/` で xterm.js 上の sh と対話できる
-  (Web Worker 内 ~113 MIPS、`sh$` までゲスト時間 46 ms)。
-  `make -C web test` (~5.5 s) = riscv-tests 49/49 + headless boot +
-  Worker コア + playwright の headless Chromium smoke。次は Phase 4
-  (SD SPI 状態機械 + FAT イメージでコンパイラ pipeline)。計画は
-  `docs/task/web_emulator.md`
+  **Phase 0〜4 完了 (2026-10-16)**: `make -C web serve` →
+  `http://localhost:8000/web/` で xterm.js 上の sh と対話でき、SD
+  (FAT32 イメージ、`web/tools/fatimg.py` で作成) を `/sd` に読み書き、
+  書き込みは IndexedDB に自動保存。`tn20k_kernel_extra.bin` で 15 段
+  コンパイラ pipeline が **3.4 s** (pico2 13.8 s、tn20k 実機 161 s)。
+  Worker 内 ~113 MIPS。`make -C web test` (~15 s) = riscv-tests 49/49
+  + headless boot + SD 往復 + pipeline + Worker コア + playwright の
+  headless Chromium smoke。次は Phase 5 (LCD + キーボード → canvas)。
+  計画は `docs/task/web_emulator.md`
 - **K22 続編 (DOOM 実プレイ)**: TITLEPIC まで来たので autostart E1M1
   を狙う。`P_SetupLevel` が ~24 KB の PU_LEVEL を要求 (blockmap 17 KB
   ほか) するので zone 112 KB 不足。blockmap など大物を .bss に固定

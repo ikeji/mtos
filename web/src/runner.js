@@ -10,6 +10,7 @@
 
 import { Cpu, CpuError, hex } from "./cpu.js";
 import { Soc } from "./soc.js";
+import { SdCard } from "./sd.js";
 
 const SLICE_INSNS = 1 << 20;        // ~8 ms at 120 MIPS
 const STATS_INTERVAL_MS = 250;
@@ -30,6 +31,9 @@ export class EmuRunner {
     this.onStats = (s) => {};           // {insns, mips, running, halted, exitCode, unmapped}
     this.onError = (msg, dump) => {};
     this.onHalt = (exitCode) => {};
+    this.onSdWrite = () => {};          // called at most once per second while the OS writes the card
+    this.sdImage = null;                // Uint8Array, survives reset()
+    this.sdNotifiedAt = -Infinity;      // performance.now() starts near 0 in a fresh Worker
     this.epochT = 0;                    // throttle reference (wall clock ms)
     this.epochInsns = 0;
     this.statsT = 0;
@@ -45,7 +49,27 @@ export class EmuRunner {
     this.soc.onTx = (b) => { this.txBuf.push(b); };
     this.cpu = new Cpu(this.soc);
     this.txBuf.length = 0;
+    this.attachSdToSoc();
     this.emitStats(true);
+  }
+
+  // Attach (or detach with null) an SD image. Takes effect at the next
+  // reset for the kernel's boot-time probe, but the card itself is live
+  // immediately.
+  attachSd(image) {
+    this.sdImage = image;
+    this.attachSdToSoc();
+  }
+
+  attachSdToSoc() {
+    if (!this.soc) return;
+    if (!this.sdImage) { this.soc.sd = null; return; }
+    const card = new SdCard(this.sdImage);
+    card.onWrite = () => {
+      const t = this.now();
+      if (t - this.sdNotifiedAt > 1000) { this.sdNotifiedAt = t; this.onSdWrite(); }
+    };
+    this.soc.sd = card;
   }
 
   reset() {

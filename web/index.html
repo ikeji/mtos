@@ -41,6 +41,14 @@
     <option value="12">12 MIPS (tn20k)</option>
   </select>
 </div>
+<div class="row">
+  <label for="sd-file">SD card</label>
+  <input id="sd-file" type="file" accept=".img,.bin">
+  <button id="btn-sd-new">New 33 MB image</button>
+  <button id="btn-sd-download">Download image</button>
+  <button id="btn-sd-forget">Forget</button>
+  <span class="stats" id="sd-status">no card</span>
+</div>
 <div class="row stats">
   <span id="status">no kernel</span> · <span id="kernel-name"></span> ·
   <span><b id="mips">-</b> MIPS</span> · <span><b id="insns">0</b> insns</span>
@@ -51,7 +59,10 @@
 <p class="help">UART console: type at the <code>sh$</code> prompt (Enter sends CR). The page expects the
 repository root to be served (<code>make -C web serve</code>, then open <code>/web/</code>) so it can fetch
 <code>kernel/build/tn20k_kernel.bin</code>; otherwise pick the .bin with the file button.
-<code>?kernel=path</code> overrides the default, <code>?autoload=0</code> skips the initial fetch.</p>
+<code>?kernel=path</code> overrides the default, <code>?autoload=0</code> skips the initial fetch.
+SD card: pick a FAT32 image (<code>web/tools/fatimg.py mkfs sd.img</code> + <code>add</code>) or make an empty one; it mounts
+at <code>/sd</code> after the reboot. Writes are saved in this browser (IndexedDB) a couple of seconds after the OS stops
+writing and restored on the next visit; Download gets the current image as a file.</p>
 <script src="vendor/xterm/xterm.js"></script>
 <script type="module" src="src/main.js"></script>
 </body>
