@@ -272,11 +272,13 @@ Phase 1 時点では SD SPI は STATUS=idle、DATA 読みが常に 0xFF を返�
   順に試すので、同じ index.html が Pages でも `make -C web serve` でも
   動く (`?kernel=name` も同じ探索、`/` 入りはそのまま)。**既定 kernel
   は `tn20k_kernel_console_land.bin`** (開くとすぐ landscape の
-  `console -l` が LCD に出る、2026-10-17)。console 4 種の kern.conf には
-  `init=/bin/sh` も足したので UART 側にも sh が立つ (`/dev/kbd` が GPIO
-  マトリクスの tn20k / pico2 / Web では UART RX と取り合わない。virt は
-  console disk を boot しない)。両方に同時に打鍵できることを
-  `node_run.js --stdin + --kbd` で確認。Pages の
+  `console -l` が LCD に出る、2026-10-17)。tn20k の console kernel 4 種は
+  kern.conf に `init=/bin/sh` も持つので UART 側にも sh が立ち、両方に
+  同時に打鍵できる (`node_run.js --stdin + --kbd` で確認)。portrait /
+  landscape は virt の test_os と disk を共有していたので tn20k 専用の
+  `disk-console{,-land}-tn20k.img` + `kern_console{,_land}_tn20k.conf`
+  に分けた (virt は `/dev/kbd` が UART-RX stub で sh 2 本が入力を
+  取り合い、test_os の console_scroll / console_kernconf_argv が落ちる)。Pages の
   source は gh-pages / root (`gh api -X POST repos/ikeji/mtos/pages`
   で設定済、gh-pages push で自動有効化された)。公開後は `make -C web
   test-pages-live` が実サイトを headless Chromium で smoke (boot 0.5〜2 s、

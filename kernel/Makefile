@@ -118,6 +118,12 @@ $(BUILD_DIR)/disk.img:              DISK_KERN_CONF := $(wildcard $(ROOT)/kernel/
 $(BUILD_DIR)/disk-demo.img:         DISK_KERN_CONF := $(ROOT)/kernel/tests/fixtures/kern_demo.conf
 $(BUILD_DIR)/disk-console.img:      DISK_KERN_CONF := $(ROOT)/kernel/tests/fixtures/kern_console.conf
 $(BUILD_DIR)/disk-console-land.img: DISK_KERN_CONF := $(ROOT)/kernel/tests/fixtures/kern_console_land.conf
+# disk-console{,-land}-tn20k: same + a UART shell (init=/bin/sh). tn20k's
+# /dev/kbd is the GPIO matrix so the two shells do not share an input;
+# the shared disk-console*.img stay console-only because test_os boots
+# them on qemu virt where /dev/kbd is the UART-RX stub.
+$(BUILD_DIR)/disk-console-tn20k.img:      DISK_KERN_CONF := $(ROOT)/kernel/tests/fixtures/kern_console_tn20k.conf
+$(BUILD_DIR)/disk-console-land-tn20k.img: DISK_KERN_CONF := $(ROOT)/kernel/tests/fixtures/kern_console_land_tn20k.conf
 # disk-console-vram: tn20k standalone — landscape + hardware VRAM refresh
 # engine (console -l -v). Never used on pico2 (no VRAM engine there).
 $(BUILD_DIR)/disk-console-vram.img: DISK_KERN_CONF := $(ROOT)/kernel/tests/fixtures/kern_console_vram.conf
@@ -128,6 +134,8 @@ $(BUILD_DIR)/disk-console-text.img: DISK_KERN_CONF := $(ROOT)/kernel/tests/fixtu
 $(BUILD_DIR)/disk-demo.img:         $(ROOT)/kernel/tests/fixtures/kern_demo.conf
 $(BUILD_DIR)/disk-console.img:      $(ROOT)/kernel/tests/fixtures/kern_console.conf
 $(BUILD_DIR)/disk-console-land.img: $(ROOT)/kernel/tests/fixtures/kern_console_land.conf
+$(BUILD_DIR)/disk-console-tn20k.img:      $(ROOT)/kernel/tests/fixtures/kern_console_tn20k.conf
+$(BUILD_DIR)/disk-console-land-tn20k.img: $(ROOT)/kernel/tests/fixtures/kern_console_land_tn20k.conf
 $(BUILD_DIR)/disk-console-vram.img: $(ROOT)/kernel/tests/fixtures/kern_console_vram.conf
 $(BUILD_DIR)/disk-console-text.img: $(ROOT)/kernel/tests/fixtures/kern_console_text.conf
 
@@ -136,10 +144,14 @@ $(BUILD_DIR)/disk-console-text.img: $(ROOT)/kernel/tests/fixtures/kern_console_t
 # would push the test_os landscape test past its budget.
 $(BUILD_DIR)/disk-console.img:      DISK_LOGIN := $(ROOT)/kernel/fs-spec/etc/login
 $(BUILD_DIR)/disk-console-land.img: DISK_LOGIN := $(ROOT)/kernel/fs-spec/etc/login
+$(BUILD_DIR)/disk-console-tn20k.img:      DISK_LOGIN := $(ROOT)/kernel/fs-spec/etc/login
+$(BUILD_DIR)/disk-console-land-tn20k.img: DISK_LOGIN := $(ROOT)/kernel/fs-spec/etc/login
 $(BUILD_DIR)/disk-console-vram.img: DISK_LOGIN := $(ROOT)/kernel/fs-spec/etc/login
 $(BUILD_DIR)/disk-console-text.img: DISK_LOGIN := $(ROOT)/kernel/fs-spec/etc/login
 $(BUILD_DIR)/disk-console.img:      $(ROOT)/kernel/fs-spec/etc/login
 $(BUILD_DIR)/disk-console-land.img: $(ROOT)/kernel/fs-spec/etc/login
+$(BUILD_DIR)/disk-console-tn20k.img:      $(ROOT)/kernel/fs-spec/etc/login
+$(BUILD_DIR)/disk-console-land-tn20k.img: $(ROOT)/kernel/fs-spec/etc/login
 $(BUILD_DIR)/disk-console-vram.img: $(ROOT)/kernel/fs-spec/etc/login
 $(BUILD_DIR)/disk-console-text.img: $(ROOT)/kernel/fs-spec/etc/login
 
@@ -148,10 +160,14 @@ $(BUILD_DIR)/disk-console-text.img: $(ROOT)/kernel/fs-spec/etc/login
 # the UART terminal falls back to its 80x24 compile-time default.
 $(BUILD_DIR)/disk-console.img:      DISK_TERM_CONF := $(ROOT)/kernel/fs-spec/etc/term_portrait.conf
 $(BUILD_DIR)/disk-console-land.img: DISK_TERM_CONF := $(ROOT)/kernel/fs-spec/etc/term_landscape.conf
+$(BUILD_DIR)/disk-console-tn20k.img:      DISK_TERM_CONF := $(ROOT)/kernel/fs-spec/etc/term_portrait.conf
+$(BUILD_DIR)/disk-console-land-tn20k.img: DISK_TERM_CONF := $(ROOT)/kernel/fs-spec/etc/term_landscape.conf
 $(BUILD_DIR)/disk-console-vram.img: DISK_TERM_CONF := $(ROOT)/kernel/fs-spec/etc/term_landscape.conf
 $(BUILD_DIR)/disk-console-text.img: DISK_TERM_CONF := $(ROOT)/kernel/fs-spec/etc/term_landscape.conf
 $(BUILD_DIR)/disk-console.img:      $(ROOT)/kernel/fs-spec/etc/term_portrait.conf
 $(BUILD_DIR)/disk-console-land.img: $(ROOT)/kernel/fs-spec/etc/term_landscape.conf
+$(BUILD_DIR)/disk-console-tn20k.img:      $(ROOT)/kernel/fs-spec/etc/term_portrait.conf
+$(BUILD_DIR)/disk-console-land-tn20k.img: $(ROOT)/kernel/fs-spec/etc/term_landscape.conf
 $(BUILD_DIR)/disk-console-vram.img: $(ROOT)/kernel/fs-spec/etc/term_landscape.conf
 $(BUILD_DIR)/disk-console-text.img: $(ROOT)/kernel/fs-spec/etc/term_landscape.conf
 
@@ -175,7 +191,8 @@ endef
 DEFAULT_SPEC := $(ROOT)/kernel/fs-spec/default.spec
 
 # Common recipe for the standard disks (different DISK_KERN_CONF only)
-$(BUILD_DIR)/disk.img $(BUILD_DIR)/disk-demo.img $(BUILD_DIR)/disk-console.img $(BUILD_DIR)/disk-console-land.img $(BUILD_DIR)/disk-console-vram.img $(BUILD_DIR)/disk-console-text.img: \
+$(BUILD_DIR)/disk.img $(BUILD_DIR)/disk-demo.img $(BUILD_DIR)/disk-console.img $(BUILD_DIR)/disk-console-land.img $(BUILD_DIR)/disk-console-vram.img $(BUILD_DIR)/disk-console-text.img \
+$(BUILD_DIR)/disk-console-tn20k.img $(BUILD_DIR)/disk-console-land-tn20k.img: \
     $(GUEST_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) \
     $(GEN2_DIR)/asm_pass1 $(GEN2_DIR)/asm_pass2 $(GEN2_DIR)/asm_pass3 \
     $(DEFAULT_SPEC) $(ROOT)/kernel/scripts/stage-fs.sh \
@@ -405,13 +422,13 @@ $(BUILD_DIR)/tn20k_kernel_extra.bin: $(KERNEL_COMPILE_DEPS) $(BUILD_DIR)/disk-ex
     $(ROOT)/userland/scripts/bin2s_incbin.sh | $(BUILD_DIR)
 	$(TN20K_KERNEL_RECIPE)
 
-$(BUILD_DIR)/tn20k_kernel_console_land.bin: TN20K_DISK := $(BUILD_DIR)/disk-console-land.img
-$(BUILD_DIR)/tn20k_kernel_console_land.bin: $(KERNEL_COMPILE_DEPS) $(BUILD_DIR)/disk-console-land.img \
+$(BUILD_DIR)/tn20k_kernel_console_land.bin: TN20K_DISK := $(BUILD_DIR)/disk-console-land-tn20k.img
+$(BUILD_DIR)/tn20k_kernel_console_land.bin: $(KERNEL_COMPILE_DEPS) $(BUILD_DIR)/disk-console-land-tn20k.img \
     $(ROOT)/userland/scripts/bin2s_incbin.sh | $(BUILD_DIR)
 	$(TN20K_KERNEL_RECIPE)
 
-$(BUILD_DIR)/tn20k_kernel_console.bin: TN20K_DISK := $(BUILD_DIR)/disk-console.img
-$(BUILD_DIR)/tn20k_kernel_console.bin: $(KERNEL_COMPILE_DEPS) $(BUILD_DIR)/disk-console.img \
+$(BUILD_DIR)/tn20k_kernel_console.bin: TN20K_DISK := $(BUILD_DIR)/disk-console-tn20k.img
+$(BUILD_DIR)/tn20k_kernel_console.bin: $(KERNEL_COMPILE_DEPS) $(BUILD_DIR)/disk-console-tn20k.img \
     $(ROOT)/userland/scripts/bin2s_incbin.sh | $(BUILD_DIR)
 	$(TN20K_KERNEL_RECIPE)
 
