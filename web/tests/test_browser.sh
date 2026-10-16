@@ -14,5 +14,5 @@ python3 -m http.server "$PORT" --bind 127.0.0.1 -d "$ROOT" >/dev/null 2>&1 &
 srv=$!
 trap 'kill $srv 2>/dev/null' EXIT
 for i in $(seq 50); do curl -sf "http://127.0.0.1:$PORT/web/" >/dev/null && break; sleep 0.1; done
-CONSOLE=0; [ -s "$ROOT/kernel/build/tn20k_kernel_console.bin" ] && CONSOLE=1
+CONSOLE=0; [ -s "$ROOT/kernel/build/tn20k_kernel_console_land.bin" ] && CONSOLE=1
 node "$WEB/tests/test_browser.mjs" "$PW" "http://127.0.0.1:$PORT" "$CONSOLE"

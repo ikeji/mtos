@@ -3,7 +3,7 @@
 // xterm.js and check the UART log. argv: <playwright module path> <base url>
 import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
-const [pwPath, baseUrl, consoleBuilt] = process.argv.slice(2);   // consoleBuilt: "1" when tn20k_kernel_console.bin exists
+const [pwPath, baseUrl, consoleBuilt] = process.argv.slice(2);   // consoleBuilt: "1" when tn20k_kernel_console_land.bin exists
 const { chromium } = require(pwPath);
 
 let fails = 0;
@@ -14,7 +14,7 @@ const errors = [];
 page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
 page.on("console", (m) => { if (m.type() === "error") errors.push("console: " + m.text()); });
 try {
-  await page.goto(baseUrl + "/web/", { waitUntil: "load" });
+  await page.goto(baseUrl + "/web/?kernel=tn20k_kernel.bin", { waitUntil: "load" });   // UART shell kernel (default is console -l)
   await page.waitForFunction(() => window.__emu && window.__emu.log.includes("sh$ "), null, { timeout: 15000 });
   check("kernel boots to sh$ in the Worker", true);
   await page.keyboard.type("echo from browser\r");
@@ -58,19 +58,19 @@ try {
 
   // LCD console kernel: /bin/console renders on the canvas, input comes from the matrix keyboard
   if (consoleBuilt === "1") {
-    await page.goto(baseUrl + "/web/?kernel=tn20k_kernel_console.bin", { waitUntil: "load" });
+    await page.goto(baseUrl + "/web/", { waitUntil: "load" });     // the default kernel: console -l (landscape)
     await page.waitForFunction(() => window.__emu && window.__emu.log.includes("CONSOLE: LCD ready"), null, { timeout: 15000 });
     await page.waitForFunction(() => window.__emu.screenText().includes("sh$"), null, { timeout: 10000 });
-    check("console kernel paints the sh prompt on the LCD canvas", true);
+    check("default kernel (console -l) paints the sh prompt on the LCD canvas", true);
     const size = await page.evaluate(() => [document.getElementById("lcd").width, document.getElementById("lcd").height]);
-    check("canvas is portrait 320x480", size[0] === 320 && size[1] === 480, `(${size.join("x")})`);
+    check("canvas is landscape 480x320", size[0] === 480 && size[1] === 320, `(${size.join("x")})`);
     await page.click("#lcd");
     await page.keyboard.type("cat /hello.txt\n");
     await page.waitForFunction(() => window.__emu.screenText().includes("hello, mtfs"), null, { timeout: 10000 });
     check("keys typed on the canvas reach sh via the matrix keyboard and the output shows on the LCD", true);
     await page.screenshot({ path: new URL("../build/browser_console.png", import.meta.url).pathname });
   } else {
-    console.log("[test] console kernel: SKIP (kernel/build/tn20k_kernel_console.bin not built)");
+    console.log("[test] console kernel: SKIP (kernel/build/tn20k_kernel_console_land.bin not built)");
   }
 } catch (e) {
   console.log("[test] " + e.message.split("\n")[0]);

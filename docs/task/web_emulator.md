@@ -270,7 +270,10 @@ Phase 1 時点では SD SPI は STATUS=idle、DATA 読みが常に 0xFF を返�
   git-credential` (ssh remote は鍵 agent が要るため)。ページ側は
   `src/main.js` の `KERNEL_DIRS = ["kernels/", "../kernel/build/"]` を
   順に試すので、同じ index.html が Pages でも `make -C web serve` でも
-  動く (`?kernel=name` も同じ探索、`/` 入りはそのまま)。Pages の
+  動く (`?kernel=name` も同じ探索、`/` 入りはそのまま)。**既定 kernel
+  は `tn20k_kernel_console_land.bin`** (開くとすぐ landscape の
+  `console -l` が LCD に出る、2026-10-17)。UART sh が欲しいときは
+  select で `tn20k_kernel.bin` か `?kernel=tn20k_kernel.bin`。Pages の
   source は gh-pages / root (`gh api -X POST repos/ikeji/mtos/pages`
   で設定済、gh-pages push で自動有効化された)。公開後は `make -C web
   test-pages-live` が実サイトを headless Chromium で smoke (boot 0.5〜2 s、

@@ -216,9 +216,13 @@ $("btn-sd-forget").onclick = async () => { await idbDel(); attachSd(null, ""); r
 for (const b of document.querySelectorAll("button")) b.addEventListener("click", () => setTimeout(() => term.focus(), 0));
 
 const params = new URLSearchParams(location.search);
-if (params.get("kernel")) $("kernel").value = params.get("kernel");
+let initialKernel = $("kernel").value;                      // the <option selected> (console -l)
+if (params.get("kernel")) {
+  initialKernel = params.get("kernel");
+  if ([...$("kernel").options].some((o) => o.value === initialKernel)) $("kernel").value = initialKernel;
+}
 (async () => {
   const saved = await idbGet();
   if (saved && saved.image) attachSd(saved.image, saved.name || "sd.img");
-  if (params.get("autoload") !== "0") fetchKernel($("kernel").value);
+  if (params.get("autoload") !== "0") fetchKernel(initialKernel);
 })();

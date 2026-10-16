@@ -33,7 +33,7 @@
     <option value="tn20k_kernel.bin">tn20k_kernel.bin (sh + coreutils)</option>
     <option value="tn20k_kernel_extra.bin">tn20k_kernel_extra.bin (+ compiler tasks)</option>
     <option value="tn20k_kernel_console.bin">tn20k_kernel_console.bin (LCD console, portrait)</option>
-    <option value="tn20k_kernel_console_land.bin">tn20k_kernel_console_land.bin (LCD console, landscape)</option>
+    <option value="tn20k_kernel_console_land.bin" selected>tn20k_kernel_console_land.bin (LCD console, landscape)</option>
     <option value="tn20k_kernel_console_vram.bin">tn20k_kernel_console_vram.bin (console -l -v, VRAM engine)</option>
     <option value="tn20k_kernel_console_text.bin">tn20k_kernel_console_text.bin (console -t, text engine)</option>
   </select>
@@ -71,9 +71,10 @@
   </div>
 </div>
 <pre id="dump"></pre>
-<p class="help">UART console: type at the <code>sh$</code> prompt (Enter sends CR). The console kernels
-(<code>make -C kernel tn20k-console</code> etc.) run <code>/bin/console</code> on the LCD instead of a UART shell:
-click the LCD and type there (the 5x12 matrix keyboard has no shift, so lowercase only; Enter / Backspace / Esc / Tab work).
+<p class="help">The default kernel runs <code>/bin/console -l</code> (landscape) on the LCD: click the LCD and type there.
+The other console kernels (<code>make -C kernel tn20k-console</code> etc.) work the same way; <code>tn20k_kernel.bin</code>
+and <code>tn20k_kernel_extra.bin</code> put a UART shell on the terminal instead (type at the <code>sh$</code> prompt, Enter sends CR).
+Matrix keyboard (the 5x12 matrix keyboard has no shift, so lowercase only; Enter / Backspace / Esc / Tab work).
 Kernels are fetched from <code>kernels/</code> next to the page (a symlink to <code>kernel/build/</code> in the
 repository: <code>make -C web serve</code>, then open <code>/web/</code>; real copies in the GitHub Pages build);
 otherwise pick the .bin with the file button.
