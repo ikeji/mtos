@@ -71,9 +71,10 @@
   </div>
 </div>
 <pre id="dump"></pre>
-<p class="help">The default kernel runs <code>/bin/console -l</code> (landscape) on the LCD: click the LCD and type there.
-The other console kernels (<code>make -C kernel tn20k-console</code> etc.) work the same way; <code>tn20k_kernel.bin</code>
-and <code>tn20k_kernel_extra.bin</code> put a UART shell on the terminal instead (type at the <code>sh$</code> prompt, Enter sends CR).
+<p class="help">The default kernel runs <code>/bin/console -l</code> (landscape) on the LCD and a second sh on the UART
+terminal: type at the <code>sh$</code> prompt on the left (Enter sends CR), or click the LCD and type there.
+The other console kernels (<code>make -C kernel tn20k-console</code> etc.) do the same; <code>tn20k_kernel.bin</code>
+and <code>tn20k_kernel_extra.bin</code> have only the UART shell.
 Matrix keyboard (the 5x12 matrix keyboard has no shift, so lowercase only; Enter / Backspace / Esc / Tab work).
 Kernels are fetched from <code>kernels/</code> next to the page (a symlink to <code>kernel/build/</code> in the
 repository: <code>make -C web serve</code>, then open <code>/web/</code>; real copies in the GitHub Pages build);

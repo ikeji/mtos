@@ -272,8 +272,11 @@ Phase 1 時点では SD SPI は STATUS=idle、DATA 読みが常に 0xFF を返�
   順に試すので、同じ index.html が Pages でも `make -C web serve` でも
   動く (`?kernel=name` も同じ探索、`/` 入りはそのまま)。**既定 kernel
   は `tn20k_kernel_console_land.bin`** (開くとすぐ landscape の
-  `console -l` が LCD に出る、2026-10-17)。UART sh が欲しいときは
-  select で `tn20k_kernel.bin` か `?kernel=tn20k_kernel.bin`。Pages の
+  `console -l` が LCD に出る、2026-10-17)。console 4 種の kern.conf には
+  `init=/bin/sh` も足したので UART 側にも sh が立つ (`/dev/kbd` が GPIO
+  マトリクスの tn20k / pico2 / Web では UART RX と取り合わない。virt は
+  console disk を boot しない)。両方に同時に打鍵できることを
+  `node_run.js --stdin + --kbd` で確認。Pages の
   source は gh-pages / root (`gh api -X POST repos/ikeji/mtos/pages`
   で設定済、gh-pages push で自動有効化された)。公開後は `make -C web
   test-pages-live` が実サイトを headless Chromium で smoke (boot 0.5〜2 s、
