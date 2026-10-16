@@ -272,8 +272,10 @@ Phase 1 時点では SD SPI は STATUS=idle、DATA 読みが常に 0xFF を返�
   順に試すので、同じ index.html が Pages でも `make -C web serve` でも
   動く (`?kernel=name` も同じ探索、`/` 入りはそのまま)。Pages の
   source は gh-pages / root (`gh api -X POST repos/ikeji/mtos/pages`
-  で設定済)。kernel を更新したら `make -C kernel tn20k ...` →
-  `make -C web deploy-pages` で再公開 (CI は組んでいない: kernel
+  で設定済、gh-pages push で自動有効化された)。公開後は `make -C web
+  test-pages-live` が実サイトを headless Chromium で smoke (boot 0.5〜2 s、
+  Pages は .bin を gzip 配信: 2.3 MB → 365 KB)。kernel を更新したら
+  `make -C kernel tn20k ...` → `make -C web deploy-pages` で再公開 (CI は組んでいない: kernel
   build に Gen1/Gen2 toolchain + qemu-riscv32 が要るため、host で
   build した bin を push する方式)。
 - [ ] **Phase 6 残り (余力)**: wasm 化 (速度 2〜3x)、wall-clock 連動
