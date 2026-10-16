@@ -166,6 +166,10 @@ TASK_ARENA_<name> / TASK_STACK_<name>) を置く。
 | `rm/` | ファイル削除 (`-r` / `-f` 対応) |
 | `mkdir/`, `rmdir/` | ディレクトリ作成 / 削除 (ecall 34/40、`/sd/` 専用) |
 | `md5sum/` | MD5 ハッシュ |
+| `ps/` | タスク一覧 (`/proc/tasks` を整形、`-a` で unused も) |
+| `free/` | kernel heap の used / peak (`/proc/meminfo` を整形、`-b` で raw) |
+| `uptime/` | 起動からの秒数 (sys_uptime_us ecall 270) |
+| `df/` | マウント中 FS (`/proc/diskinfo` を整形) |
 
 **アプリ系**:
 

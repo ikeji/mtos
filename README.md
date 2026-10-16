@@ -18,7 +18,7 @@ pipeline (`tn20k_kernel_extra.bin`)、ILI9488 LCD console + マトリクス
 | | 説明 |
 |---|---|
 | [`compiler/`](compiler/README.md) | TinyC コンパイラ (Gen1: C → Gen2/3: TC 自己ホスト) |
-| [`userland/`](userland/README.md) | MTOS ユーザータスク (sh, ls, vi, console, ... 40 個) |
+| [`userland/`](userland/README.md) | MTOS ユーザータスク (sh, ls, vi, console, ... 44 個) |
 | [`kernel/`](kernel/README.md) | OS カーネル (virt + pico2 共通) |
 | [`integration/`](integration/README.md) | 3 サブプロジェクトをまたぐテスト |
 | `web/` | ブラウザ用 JS RV32IM エミュレータ (`make -C web serve` / `make -C web test` / `make -C web deploy-pages`) |

@@ -1,0 +1,20 @@
+// uptime.tc — seconds since boot, from the sys_uptime_us ecall (a7 = 270,
+// the same clock /proc/uptime's raw mtime comes from). Prints
+//     up 12.345 s
+// u32 microseconds wrap after ~71 minutes; that is the kernel's limit.
+
+import "../../lib/libtc/libtc.tc";
+
+fn main() -> i32 {
+    var us: u32 = do_uptime_us();
+    var s: i32 = (us / 1000000u32) as i32;
+    var ms: i32 = ((us % 1000000u32) / 1000u32) as i32;
+    puts("up ");
+    print(s);
+    putchar('.' as u8);
+    if ms < 100 { putchar('0' as u8); }
+    if ms < 10 { putchar('0' as u8); }
+    print(ms);
+    puts(" s\n");
+    return 0;
+}

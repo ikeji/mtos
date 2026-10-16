@@ -208,10 +208,11 @@ compiler/   サブプロジェクト 1: TinyC コンパイラ
 
 userland/   サブプロジェクト 2: MTOS ユーザータスク
   lib/libtc/   共通ユーザライブラリ (puts/eputs/print/syscall stub forward decl)
-  bin/<task>/  TC タスク (40 個) + task.mk (GUEST_TASKS / EXTRA_GUEST_TASKS 宣言)
+  bin/<task>/  TC タスク (44 個) + task.mk (GUEST_TASKS / EXTRA_GUEST_TASKS 宣言)
     sh, msh, ls, cat, echo, wc, head, cp, du, grep, rm, mkdir, rmdir,
-    md5sum, vi, neofetch, console, fbtest, count, seq, mx, mr, muxon, muxoff,
-    sdprobe, kbdump, bin2uf2, launcher, hello, hello2, catfile, tmpdemo
+    md5sum, ps, free, uptime, df, vi, neofetch, console, fbtest, count, seq,
+    mx, mr, muxon, muxoff, sdprobe, kbdump, bin2uf2, launcher, hello, hello2,
+    catfile, tmpdemo
     parse/, sigscan/, tcheck/, codegen/, bc2asm/, asm_pass{1,2,3}/
       → compiler/src/<name>.tc への symlink (compiler-on-MTOS)。
         EXTRA_GUEST_TASKS なので default ビルドには含まれない
@@ -271,7 +272,7 @@ build/      生成物 (gitignored)
 | 編集対象 | コマンド | 内容 |
 |---|---|---|
 | `compiler/src/*.tc` | `make -C compiler test` | compiler 140 tests (~60s) |
-| `userland/bin/<task>/*.tc` | `make -C userland test` | 40 タスク build smoke (~0.07s warm) |
+| `userland/bin/<task>/*.tc` | `make -C userland test` | 44 タスク build smoke (~0.07s warm) |
 | `kernel/src/*.tc`, `kernel/platform/*` | `make -C kernel test` | test_os 8 tests (~10s) |
 | integration | `make full-test` | 上記 + test_phase7 等 |
 | 全部統合 | `make test` (root) | 148 tests (~50s warm) |
@@ -314,7 +315,7 @@ make -C kernel run-pico2-console{,-land}  # console 起動
 make -C kernel flash              # 既存 UF2 を再 flash (build 無し)
 
 # userland サブプロジェクト
-make -C userland                  # 全 40 タスク build
+make -C userland                  # 全 44 タスク build
 make -C userland test             # smoke (build OK 確認)
 make -C userland test-quick       # GUEST_TASKS のみ (compiler symlink 除外)
 
@@ -491,7 +492,7 @@ Phase 3 で 3 サブプロジェクトに物理分離済。各 Makefile が test
 - `fixtures/` — kern_*.conf + msh_*.sh
 
 ### userland test (`userland/Makefile`, `make -C userland test`)
-全 40 タスクの build smoke のみ (タスクごとの単体テストは未整備)。
+全 44 タスクの build smoke のみ (タスクごとの単体テストは未整備)。
 
 ### integration test (`integration/`, `make full-test` または手動)
 - `test_phase7.sh` — phase 7 自己ホスト実行テスト。`make full-test` から
@@ -615,8 +616,8 @@ GEN2_DIR=/path/to/gen2 ./kernel/scripts/build.sh --target pico2 -o kernel.uf2
 2. ゲストタスク (`userland/bin/*/task.mk` が GUEST_TASKS に積む: hello,
    hello2, catfile, sh, msh, tmpdemo, echo, cat, ls, wc, head, cp, du,
    grep, rm, mkdir, rmdir, neofetch, vi, console, fbtest, launcher,
-   count, seq, mx, mr, muxon, muxoff, sdprobe, kbdump, md5sum,
-   bin2uf2) を raw バイナリにコンパイル。各タスクには
+   count, seq, mx, mr, muxon, muxoff, sdprobe, kbdump, md5sum, ps,
+   free, uptime, df, bin2uf2) を raw バイナリにコンパイル。各タスクには
    `task_arena_size()` / `task_stack_size()` の値を `.word` 2 本の
    header として prepend する (K3 案C)。`EXTRA_TASKS="parse sigscan
    tcheck codegen bc2asm asm_pass1 asm_pass2 asm_pass3 cat"` を渡すと

@@ -1,0 +1,3 @@
+GUEST_TASKS += free
+TASK_ARENA_free := 16384
+TASK_STACK_free := 8192

@@ -171,9 +171,10 @@ fn synth_tasks() -> u32 {
         pos = append_byte(buf, pos, ' ' as u8, cap);
         var nm: U8Array = task_get_name(i);
         if nm as u32 != 0u32 {
-            // name is NUL-terminated; exclude the trailing NUL
+            // task_set_name* store the NUL past the count, so len(nm) is
+            // the name length already; only strip a NUL if one is counted.
             var nlen: i32 = len(nm);
-            if nlen > 0 { nlen = nlen - 1; }
+            if nlen > 0 && get(nm, nlen - 1) == 0u8 { nlen = nlen - 1; }
             var j: i32 = 0;
             while j < nlen {
                 pos = append_byte(buf, pos, get(nm, j), cap);

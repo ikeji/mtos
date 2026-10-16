@@ -1,0 +1,75 @@
+// free.tc — kernel heap usage. Reads /proc/meminfo
+// (kernel/src/procfs.tc::synth_meminfo), whose lines are `label: bytes`,
+// and prints each as bytes plus KB with one decimal:
+//     used:    130560 B   127.5 KB
+//     peak:    138342 B   135.1 KB
+// `free -b` prints the raw file. New labels the kernel adds show up
+// automatically; the numbers are the runtime kmalloc counters that
+// neofetch's "mem" line also shows.
+
+import "../../lib/libtc/libtc.tc";
+
+fn pad_to(n: i32, width: i32) -> void {
+    while n < width { putchar(' ' as u8); n = n + 1; }
+}
+fn dec_width(v: i32) -> i32 {
+    var w: i32 = 1;
+    while v >= 10 { v = v / 10; w = w + 1; }
+    return w;
+}
+
+fn main(argv: StringArray) -> i32 {
+    var raw: i32 = 0;
+    if len(argv) >= 2 {
+        var a: String = get(argv, 1);
+        if len(a) == 2 && get(a, 0) == '-' as u8 && get(a, 1) == 'b' as u8 { raw = 1; }
+        else { puts("free: usage: free [-b]\n"); return 1; }
+    }
+    var fd: i32 = do_openat(0, "/proc/meminfo", 0);
+    if fd < 0 { puts("free: cannot open /proc/meminfo\n"); return 1; }
+    var buf: U8Array = U8Array(512);
+    var n: i32 = sys_read(fd, buf, 512);
+    do_close(fd);
+    if n <= 0 { delete(buf); puts("free: empty /proc/meminfo\n"); return 1; }
+    if raw == 1 {
+        var k: i32 = 0;
+        while k < n { putchar(get(buf, k)); k = k + 1; }
+        delete(buf);
+        return 0;
+    }
+    var i: i32 = 0;
+    while i < n {
+        // label: up to and including ':'
+        var ls: i32 = i;
+        while i < n && get(buf, i) != ':' as u8 && get(buf, i) != 10u8 { i = i + 1; }
+        var le: i32 = i;
+        if i < n && get(buf, i) == ':' as u8 { i = i + 1; }
+        while i < n && get(buf, i) == ' ' as u8 { i = i + 1; }
+        var v: i32 = 0;
+        var digits: i32 = 0;
+        while i < n && get(buf, i) >= '0' as u8 && get(buf, i) <= '9' as u8 {
+            v = v * 10 + ((get(buf, i) - '0' as u8) as i32);
+            i = i + 1;
+            digits = digits + 1;
+        }
+        while i < n && get(buf, i) != 10u8 { i = i + 1; }
+        if i < n { i = i + 1; }
+        if digits > 0 {
+            var j: i32 = ls;
+            while j < le { putchar(get(buf, j)); j = j + 1; }
+            putchar(':' as u8);
+            pad_to(le - ls + 1, 8);
+            pad_to(dec_width(v), 9);
+            print(v);
+            puts(" B  ");
+            var tenths: i32 = (v * 10 + 512) / 1024;
+            pad_to(dec_width(tenths / 10), 5);
+            print(tenths / 10);
+            putchar('.' as u8);
+            print(tenths % 10);
+            puts(" KB\n");
+        }
+    }
+    delete(buf);
+    return 0;
+}

@@ -286,8 +286,18 @@ Phase 1 時点では SD SPI は STATUS=idle、DATA 読みが常に 0xFF を返�
   `node_run.js --kbd-at N` で遅延打鍵して再現・回帰テスト。②LCD canvas
   が column flex の `align-items: stretch` でキャプション幅 (~487 px) に
   引き伸ばされ、最近傍拡大で数列が 2 重 (「2 文字目の縦線が太い」)。
-  `align-items: flex-start` + `fitLcd()` (CSS 幅 = w × round(dpr) / dpr
-  で device pixel の整数倍) で dot-by-dot に。Pages の
+  `align-items: flex-start` + `fitLcd()` (CSS 幅 = w × k / dpr、k は
+  round(dpr) から画面幅に収まるまで下げた整数、で device pixel の整数倍)
+  で dot-by-dot に。③Android で LCD をタップしてもソフトキーボードが
+  出ない: canvas は focus してもキーボードを出さないので、不可視の
+  `<textarea id="lcd-input">` を canvas に重ね、タップで focus → キー
+  は textarea で受ける。物理キーは keydown/keyup (押しっぱなしを
+  マトリクスに反映)、ソフトキーボード / IME は keydown が
+  "Unidentified" なので `input` イベントで textarea の内容と前回送った
+  内容の差分 (削られた分は BS、増えた分は文字) を `kbd-type` で送り、
+  改行で仕切り直す (Gboard の composition / autocorrect が単語を
+  書き換えても追従する)。test_browser.mjs に Pixel 相当 (393 px、
+  2.75x、touch) の節を追加。Pages の
   source は gh-pages / root (`gh api -X POST repos/ikeji/mtos/pages`
   で設定済、gh-pages push で自動有効化された)。公開後は `make -C web
   test-pages-live` が実サイトを headless Chromium で smoke (boot 0.5〜2 s、

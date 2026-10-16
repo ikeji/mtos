@@ -1,0 +1,3 @@
+GUEST_TASKS += df
+TASK_ARENA_df := 16384
+TASK_STACK_df := 8192

@@ -1,0 +1,3 @@
+GUEST_TASKS += ps
+TASK_ARENA_ps := 16384
+TASK_STACK_ps := 8192

@@ -69,6 +69,33 @@ try {
     await page.waitForFunction(() => window.__emu.screenText().includes("hello, mtfs"), null, { timeout: 10000 });
     check("keys typed on the canvas reach sh via the matrix keyboard and the output shows on the LCD", true);
     await page.screenshot({ path: new URL("../build/browser_console.png", import.meta.url).pathname });
+    const lcdBox = await page.evaluate(() => { const b = document.getElementById("lcd").getBoundingClientRect(); return [b.width, b.height]; });
+    check("LCD canvas is shown dot-by-dot (480x320 + 3 px border at 1x)", lcdBox[0] === 486 && lcdBox[1] === 326, `(${lcdBox.join("x")})`);
+
+    // Phone: touch screen, 2.75x pixels, 393 px wide, soft keyboard. Tapping the
+    // LCD must focus the hidden textarea (that is what opens the keyboard), the
+    // LCD must fit the screen at an integer scale, and text typed through the
+    // textarea (compositions rewrite the word, like Gboard) must reach sh.
+    const phone = await browser.newContext({ viewport: { width: 393, height: 851 }, deviceScaleFactor: 2.75, isMobile: true, hasTouch: true });
+    const mp = await phone.newPage();
+    mp.on("pageerror", (e) => errors.push("phone pageerror: " + e.message));
+    await mp.goto(baseUrl + "/web/", { waitUntil: "load" });
+    await mp.waitForFunction(() => window.__emu && window.__emu.screenText().includes("sh$") && window.__emu.log.includes("SH: first prompt"), null, { timeout: 20000 });
+    await mp.tap("#lcd");
+    const focused = await mp.evaluate(() => document.activeElement && document.activeElement.id);
+    check("phone: tapping the LCD focuses the keyboard textarea", focused === "lcd-input", `(${focused})`);
+    const mbox = await mp.evaluate(() => { const b = document.getElementById("lcd").getBoundingClientRect(); return [b.width, b.height, window.devicePixelRatio]; });
+    check("phone: LCD fits the 393 px screen at an integer scale (2/2.75 -> 349 css px)", mbox[0] <= 393 && Math.abs((mbox[0] - 6) * mbox[2] - 960) < 1, `(${mbox[0]}x${mbox[1]} css px @ ${mbox[2]}x)`);
+    const soft = async (value, inputType) => mp.evaluate(([v, t]) => { const el = document.getElementById("lcd-input"); el.value = v; el.dispatchEvent(new InputEvent("input", { inputType: t, bubbles: true })); }, [value, inputType]);
+    await soft("c", "insertCompositionText"); await soft("ca", "insertCompositionText"); await soft("cat", "insertCompositionText");
+    await soft("cat ", "insertText"); await soft("cat /hello.txt", "insertText");
+    await soft("cat /hello.tx", "deleteContentBackward"); await soft("cat /hello.txt", "insertText");   // backspace + retype
+    await soft("cat /hello.txt\n", "insertLineBreak");
+    await mp.waitForFunction(() => window.__emu.screenText().includes("hello, mtfs"), null, { timeout: 10000 });
+    const cleared = await mp.evaluate(() => document.getElementById("lcd-input").value === "");
+    check("phone: soft-keyboard text (composition + backspace + newline) reaches sh on the LCD", cleared, "(textarea cleared after newline)");
+    await mp.screenshot({ path: new URL("../build/browser_phone.png", import.meta.url).pathname });
+    await phone.close();
   } else {
     console.log("[test] console kernel: SKIP (kernel/build/tn20k_kernel_console_land.bin not built)");
   }

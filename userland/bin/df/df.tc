@@ -1,0 +1,45 @@
+// df.tc — mounted file systems, from /proc/diskinfo
+// (kernel/src/procfs.tc::synth_diskinfo). Each input line is
+//     name path key=value [key=value...]
+// and we print one row per line, keeping the key=value pairs but
+// aligning the first two columns:
+//     FS     MOUNT  INFO
+//     mtfs   /      total=1905152 files=63
+//     tmpfs  /tmp   files=0/32 used=0
+//     fatfs  /sd    total_kib=33280 free_kib=33100
+// `cat /proc/diskinfo` shows the same thing unaligned.
+
+import "../../lib/libtc/libtc.tc";
+
+fn main() -> i32 {
+    var fd: i32 = do_openat(0, "/proc/diskinfo", 0);
+    if fd < 0 { puts("df: cannot open /proc/diskinfo\n"); return 1; }
+    var buf: U8Array = U8Array(512);
+    var n: i32 = sys_read(fd, buf, 512);
+    do_close(fd);
+    if n <= 0 { delete(buf); puts("df: empty /proc/diskinfo\n"); return 1; }
+    puts("FS     MOUNT  INFO\n");
+    var i: i32 = 0;
+    while i < n {
+        var col: i32 = 0;      // 0 = name, 1 = mount, 2 = rest
+        var w: i32 = 0;        // chars printed in the current column
+        while i < n && get(buf, i) != 10u8 {
+            var c: u8 = get(buf, i);
+            if c == ' ' as u8 && col < 2 {
+                var width: i32 = 7;
+                if col == 1 { width = 7; }
+                while w < width { putchar(' ' as u8); w = w + 1; }
+                col = col + 1;
+                w = 0;
+            } else {
+                putchar(c);
+                w = w + 1;
+            }
+            i = i + 1;
+        }
+        if i < n { i = i + 1; }
+        putchar(10u8);
+    }
+    delete(buf);
+    return 0;
+}

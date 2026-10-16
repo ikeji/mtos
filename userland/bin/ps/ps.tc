@@ -1,0 +1,95 @@
+// ps.tc — list tasks. `ps` hides unused slots, `ps -a` shows them too.
+//
+// Reads /proc/tasks (kernel/src/procfs.tc::synth_tasks):
+//   SLOT STATE FRAME WAIT RAM STACK NAME     (one line per scheduler slot)
+// and prints it as a fixed-width table without the FRAME column. Pure
+// reformatting: everything shown is what `cat /proc/tasks` shows.
+
+import "../../lib/libtc/libtc.tc";
+
+// Field start/length of the k-th space-separated token in buf[a..b).
+fn tok_start(buf: U8Array, a: i32, b: i32, k: i32) -> i32 {
+    var i: i32 = a;
+    var t: i32 = 0;
+    while i < b {
+        while i < b && get(buf, i) == ' ' as u8 { i = i + 1; }
+        if t == k { return i; }
+        while i < b && get(buf, i) != ' ' as u8 { i = i + 1; }
+        t = t + 1;
+    }
+    return b;
+}
+fn tok_end(buf: U8Array, s: i32, b: i32) -> i32 {
+    var i: i32 = s;
+    while i < b && get(buf, i) != ' ' as u8 { i = i + 1; }
+    return i;
+}
+fn out_bytes(buf: U8Array, s: i32, e: i32) -> void {
+    var i: i32 = s;
+    while i < e { putchar(get(buf, i)); i = i + 1; }
+}
+// Print token padded (left-aligned) to `width` columns.
+fn out_field(buf: U8Array, s: i32, e: i32, width: i32) -> void {
+    out_bytes(buf, s, e);
+    var n: i32 = e - s;
+    while n < width { putchar(' ' as u8); n = n + 1; }
+}
+// Print token right-aligned to `width` columns.
+fn out_field_r(buf: U8Array, s: i32, e: i32, width: i32) -> void {
+    var n: i32 = e - s;
+    while n < width { putchar(' ' as u8); n = n + 1; }
+    out_bytes(buf, s, e);
+}
+fn tok_is(buf: U8Array, s: i32, e: i32, lit: StringLiteral) -> bool {
+    if e - s != len(lit) { return false; }
+    var i: i32 = 0;
+    while i < len(lit) {
+        if get(buf, s + i) != get(lit, i) { return false; }
+        i = i + 1;
+    }
+    return true;
+}
+
+fn main(argv: StringArray) -> i32 {
+    var show_all: i32 = 0;
+    if len(argv) >= 2 {
+        var a: String = get(argv, 1);
+        if len(a) == 2 && get(a, 0) == '-' as u8 && get(a, 1) == 'a' as u8 { show_all = 1; }
+        else { puts("ps: usage: ps [-a]\n"); return 1; }
+    }
+    var fd: i32 = do_openat(0, "/proc/tasks", 0);
+    if fd < 0 { puts("ps: cannot open /proc/tasks\n"); return 1; }
+    var buf: U8Array = U8Array(4096);
+    var n: i32 = sys_read(fd, buf, 4096);
+    do_close(fd);
+    if n <= 0 { delete(buf); puts("ps: empty /proc/tasks\n"); return 1; }
+    puts("SLOT STATE   WAIT    RAM  STACK NAME\n");
+    var i: i32 = 0;
+    var first: i32 = 1;
+    while i < n {
+        var a: i32 = i;
+        while i < n && get(buf, i) != 10u8 { i = i + 1; }
+        var b: i32 = i;
+        if i < n { i = i + 1; }
+        if first == 1 { first = 0; }      // header line of /proc/tasks
+        else {
+            var s0: i32 = tok_start(buf, a, b, 0); var e0: i32 = tok_end(buf, s0, b);   // slot
+            var s1: i32 = tok_start(buf, a, b, 1); var e1: i32 = tok_end(buf, s1, b);   // state
+            var s3: i32 = tok_start(buf, a, b, 3); var e3: i32 = tok_end(buf, s3, b);   // wait
+            var s4: i32 = tok_start(buf, a, b, 4); var e4: i32 = tok_end(buf, s4, b);   // ram
+            var s5: i32 = tok_start(buf, a, b, 5); var e5: i32 = tok_end(buf, s5, b);   // stack
+            var s6: i32 = tok_start(buf, a, b, 6); var e6: i32 = tok_end(buf, s6, b);   // name
+            if show_all == 1 || !tok_is(buf, s1, e1, "unused") {
+                out_field_r(buf, s0, e0, 4); putchar(' ' as u8);
+                out_field(buf, s1, e1, 7); putchar(' ' as u8);
+                out_field_r(buf, s3, e3, 4); putchar(' ' as u8);
+                out_field_r(buf, s4, e4, 6); putchar(' ' as u8);
+                out_field_r(buf, s5, e5, 6); putchar(' ' as u8);
+                out_bytes(buf, s6, e6);
+                putchar(10u8);
+            }
+        }
+    }
+    delete(buf);
+    return 0;
+}

@@ -38,15 +38,25 @@ window.__emu = {
 // Dot-by-dot LCD: pick a CSS size so every LCD pixel covers a whole number
 // of device pixels (k = 1 on a 1x / 1.25x screen, 2 on 1.5x / 2x, ...); any
 // other scale makes nearest-neighbour sampling double some pixel columns.
+// On a narrow screen (phones: 2x-3x) step k down until the LCD fits.
 function fitLcd() {
-  const dpr = window.devicePixelRatio || 1, k = Math.max(1, Math.round(dpr));
+  const dpr = window.devicePixelRatio || 1;
+  let k = Math.max(1, Math.round(dpr));
+  const avail = document.documentElement.clientWidth - 32 - 6;      // page gutters + canvas border
+  while (k > 1 && lcd.width * k / dpr > avail) k--;
   lcd.style.width = (lcd.width * k / dpr) + "px";
   lcd.style.height = (lcd.height * k / dpr) + "px";
 }
 fitLcd();
 window.addEventListener("resize", fitLcd);          // browser zoom changes devicePixelRatio
 
-// ---- matrix keyboard: keys typed while the LCD canvas has focus ----
+// ---- matrix keyboard: keys typed while the LCD has focus ----
+// Focus lives on #lcd-input, an invisible textarea: tapping the canvas focuses
+// it, which is what makes phones open their soft keyboard. Physical keyboards
+// arrive as keydown/keyup (held keys stay closed in the matrix until keyup);
+// soft keyboards mostly report "Unidentified" keydowns and deliver the text
+// as textarea edits (the input event), which we diff into typed keys.
+const lcdInput = $("lcd-input");
 const held = new Map();          // KeyboardEvent.code -> scancode, so key-up releases what key-down pressed
 function keyToSc(e) {
   if (e.ctrlKey || e.altKey || e.metaKey) return -1;
@@ -54,21 +64,40 @@ function keyToSc(e) {
   if (e.key in special) return scancodeOf(special[e.key]);
   return e.key.length === 1 ? scancodeOf(e.key.charCodeAt(0)) : -1;
 }
-lcd.addEventListener("keydown", (e) => {
+lcd.addEventListener("pointerdown", (e) => { e.preventDefault(); });             // keep focus on the textarea
+lcd.addEventListener("pointerup", () => { lcdInput.focus({ preventScroll: true }); });
+lcd.addEventListener("click", () => { lcdInput.focus({ preventScroll: true }); });
+let lcdPrev = "";                // textarea text already sent to the matrix (soft keyboards)
+lcdInput.addEventListener("keydown", (e) => {
   const sc = keyToSc(e);
-  if (sc < 0) return;
+  if (sc < 0) return;                                   // IME / soft keyboard: text arrives via the input event
+  if (e.key === "Backspace" && lcdInput.value) return;  // let the textarea delete; the input diff sends the backspace
   e.preventDefault();
+  if (e.key === "Enter") { lcdInput.value = ""; lcdPrev = ""; }
   if (e.repeat || held.has(e.code)) return;
   held.set(e.code, sc);
   worker.postMessage({ type: "key", sc, down: true });
 });
-lcd.addEventListener("keyup", (e) => {
+lcdInput.addEventListener("keyup", (e) => {
   const sc = held.get(e.code);
   if (sc === undefined) return;
   held.delete(e.code);
   worker.postMessage({ type: "key", sc, down: false });
 });
-lcd.addEventListener("blur", () => { for (const sc of held.values()) worker.postMessage({ type: "key", sc, down: false }); held.clear(); });
+// Soft keyboards (and desktop IMEs) edit the textarea instead of sending
+// keys: compositions rewrite the current word, autocorrect replaces it. Send
+// the difference between what the matrix already got and the new text —
+// backspaces for the removed tail, then the added characters — and start
+// over at a newline.
+lcdInput.addEventListener("input", () => {
+  const v = lcdInput.value;
+  let p = 0;
+  while (p < lcdPrev.length && p < v.length && lcdPrev[p] === v[p]) p++;
+  const out = "\b".repeat(lcdPrev.length - p) + v.slice(p);
+  if (out) worker.postMessage({ type: "kbd-type", bytes: enc.encode(out) });
+  if (v.includes("\n")) { lcdInput.value = ""; lcdPrev = ""; } else lcdPrev = v;
+});
+lcdInput.addEventListener("blur", () => { for (const sc of held.values()) worker.postMessage({ type: "key", sc, down: false }); held.clear(); });
 
 // ---- SD image persistence (IndexedDB, one record) ----
 const DB_NAME = "mtos-web", STORE = "sd";

@@ -20,8 +20,13 @@
      item it would otherwise be stretched to the caption's width (480 -> ~487 px),
      and nearest-neighbour scaling then doubles a few pixel columns. main.js also
      sets an explicit CSS size so each LCD pixel maps to a whole number of device pixels. */
-  #lcd { background: #000; image-rendering: pixelated; border: 3px solid #333; border-radius: 6px; cursor: text; flex: none; }
-  #lcd:focus { outline: none; border-color: #4af; }
+  #lcd { background: #000; image-rendering: pixelated; border: 3px solid #333; border-radius: 6px; cursor: text; flex: none; display: block; }
+  /* Keys for the LCD go through a textarea (so phones show their soft keyboard
+     when the LCD is tapped); it sits invisibly over the canvas' top-left corner. */
+  .lcd-wrap { position: relative; }
+  #lcd-input { position: absolute; left: 4px; top: 4px; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0;
+               resize: none; overflow: hidden; font-size: 16px; }
+  .lcd-wrap:focus-within #lcd { border-color: #4af; }
   .lcd-box .stats { font-size: 13px; }
   .stats { color: var(--muted); font-variant-numeric: tabular-nums; }
   .stats b { color: var(--fg); font-weight: 600; }
@@ -70,8 +75,12 @@
 <div class="main">
   <div id="term"></div>
   <div class="lcd-box">
-    <canvas id="lcd" width="320" height="480" tabindex="0" title="ILI9488 LCD — click, then type on the matrix keyboard"></canvas>
-    <span class="stats">LCD (ILI9488 320x480) — click it and type: matrix keyboard, lowercase only</span>
+    <div class="lcd-wrap">
+      <canvas id="lcd" width="320" height="480" title="ILI9488 LCD — tap / click, then type on the matrix keyboard"></canvas>
+      <textarea id="lcd-input" rows="1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                aria-label="matrix keyboard input"></textarea>
+    </div>
+    <span class="stats">LCD (ILI9488 320x480) — tap it and type: matrix keyboard, lowercase only</span>
   </div>
 </div>
 <pre id="dump"></pre>
