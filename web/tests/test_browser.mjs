@@ -58,7 +58,7 @@ try {
 
   // LCD console kernel: /bin/console renders on the canvas, input comes from the matrix keyboard
   if (consoleBuilt === "1") {
-    await page.goto(baseUrl + "/web/?kernel=../kernel/build/tn20k_kernel_console.bin", { waitUntil: "load" });
+    await page.goto(baseUrl + "/web/?kernel=tn20k_kernel_console.bin", { waitUntil: "load" });
     await page.waitForFunction(() => window.__emu && window.__emu.log.includes("CONSOLE: LCD ready"), null, { timeout: 15000 });
     await page.waitForFunction(() => window.__emu.screenText().includes("sh$"), null, { timeout: 10000 });
     check("console kernel paints the sh prompt on the LCD canvas", true);

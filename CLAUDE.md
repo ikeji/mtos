@@ -149,8 +149,12 @@ as-String 片付け (`path: String` syscall ABI)、フェーズ 8 部分着手
   `/bin/console` の sh に届く。Worker 内 ~113 MIPS。`make -C web test`
   (~17 s) = riscv-tests 49/49 + headless boot + SD 往復 + pipeline +
   console 4 種 (LCD を OCR で読み戻し) + Worker コア + playwright の
-  headless Chromium smoke。残りは Phase 6 (wasm、wall-clock mtime、
-  GitHub Pages、self-replicate)。計画は `docs/task/web_emulator.md`
+  headless Chromium smoke。**GitHub Pages で公開中:
+  https://ikeji.github.io/mtos/** (`make -C web deploy-pages` が
+  `kernel/build/tn20k_kernel*.bin` 込みの静的サイトを gh-pages に
+  orphan 1 commit で force-push、kernel 更新時は再実行)。残りは Phase 6
+  (wasm、wall-clock mtime、self-replicate)。計画は
+  `docs/task/web_emulator.md`
 - **K22 続編 (DOOM 実プレイ)**: TITLEPIC まで来たので autostart E1M1
   を狙う。`P_SetupLevel` が ~24 KB の PU_LEVEL を要求 (blockmap 17 KB
   ほか) するので zone 112 KB 不足。blockmap など大物を .bss に固定

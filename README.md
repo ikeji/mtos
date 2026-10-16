@@ -8,6 +8,11 @@
 Pico 2 実機で kernel + 全コンパイラを byte-exact に self-replicate
 可能 (K18、2026-05-14)。
 
+**ブラウザで試す: https://ikeji.github.io/mtos/** — tn20k 版 kernel を
+JS 製 RV32IM エミュレータ (`web/`) で動かす。xterm.js の sh、コンパイラ
+pipeline (`tn20k_kernel_extra.bin`)、ILI9488 LCD console + マトリクス
+キーボード (`tn20k_kernel_console*.bin`) まで同じページで動く。
+
 ## ディレクトリ
 
 | | 説明 |
@@ -16,6 +21,8 @@ Pico 2 実機で kernel + 全コンパイラを byte-exact に self-replicate
 | [`userland/`](userland/README.md) | MTOS ユーザータスク (sh, ls, vi, console, ... 40 個) |
 | [`kernel/`](kernel/README.md) | OS カーネル (virt + pico2 共通) |
 | [`integration/`](integration/README.md) | 3 サブプロジェクトをまたぐテスト |
+| `web/` | ブラウザ用 JS RV32IM エミュレータ (`make -C web serve` / `make -C web test` / `make -C web deploy-pages`) |
+| `hw/` | Tang Nano 20K 用 RV32IM コア + SoC (yosys / nextpnr) |
 | `tests/` | 共有テストインフラ (test_all.sh, test_common.sh) |
 | `docs/` | ドキュメント |
 

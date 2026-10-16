@@ -14,7 +14,9 @@ text_lcd エンジンがここで先に動作確認できた)。`make -C web tes
 (~17 s) で riscv-tests 49/49 + headless boot + SD 往復 + pipeline +
 console 4 種 (LCD を OCR で読み戻し) + Worker コア + headless Chromium
 のページ smoke test (SD 永続化 + LCD/キーボード込み) が通る。実測
-**110〜120 MIPS** (Node 22 / Chromium Worker とも)。残りは Phase 6。
+**110〜120 MIPS** (Node 22 / Chromium Worker とも)。**GitHub Pages
+で公開中: https://ikeji.github.io/mtos/** (`make -C web deploy-pages`、
+Phase 6a)。残りは Phase 6 の wasm / wall-clock mtime / self-replicate。
 
 ## 1. ゴール
 
@@ -257,8 +259,25 @@ Phase 1 時点では SD SPI は STATUS=idle、DATA 読みが常に 0xFF を返�
   ハードコードし console は書かないので、エミュレータも同じ既定値が
   必要だった。LCD_MTIME_PER_MS = 40500 の busy-wait (init 415 ms 分 ≈
   17M 命令) は命令数 mtime でもそのまま動く。
-- [ ] **Phase 6 (余力)**: wasm 化 (速度 2〜3x)、wall-clock 連動
-  mtime、GitHub Pages 公開、self-replicate。
+- [x] **Phase 6a GitHub Pages 公開** (2026-10-16):
+  **https://ikeji.github.io/mtos/** で動く。`make -C web dist` が
+  `web/build/dist/` に index.html + src/ + vendor/ + `kernels/
+  tn20k_kernel*.bin` (6 種、~17 MB) + MANIFEST.txt を集め、
+  `make -C web deploy-pages` (`web/tools/pages.sh deploy`) が
+  `tests/test_dist.sh` (dist を headless Chromium で smoke) を通して
+  から **orphan 1 commit を `gh-pages` に force-push** する (バイナリ
+  履歴を積まない)。push は `github` remote の https URL + `gh auth
+  git-credential` (ssh remote は鍵 agent が要るため)。ページ側は
+  `src/main.js` の `KERNEL_DIRS = ["kernels/", "../kernel/build/"]` を
+  順に試すので、同じ index.html が Pages でも `make -C web serve` でも
+  動く (`?kernel=name` も同じ探索、`/` 入りはそのまま)。Pages の
+  source は gh-pages / root (`gh api -X POST repos/ikeji/mtos/pages`
+  で設定済)。kernel を更新したら `make -C kernel tn20k ...` →
+  `make -C web deploy-pages` で再公開 (CI は組んでいない: kernel
+  build に Gen1/Gen2 toolchain + qemu-riscv32 が要るため、host で
+  build した bin を push する方式)。
+- [ ] **Phase 6 残り (余力)**: wasm 化 (速度 2〜3x)、wall-clock 連動
+  mtime、self-replicate。
 
 ## 6. リスク / 未確認
 

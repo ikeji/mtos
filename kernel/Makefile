@@ -236,7 +236,15 @@ EXTRA_SPEC := $(ROOT)/kernel/fs-spec/extra.spec
 # extra disk: GUEST + EXTRA tasks + 全 source 同梱 (device 側 self-replicate
 # 用)。静的 file copy は fs-spec/extra.spec が宣言。動的部分 (tasks,
 # prelude, kern.conf, per-task header) は recipe 内で処理。
-$(BUILD_DIR)/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(EXTRA_SRC_DEPS) \
+#
+# disk-extra-tn20k.img is the same image without the two DOOM binaries
+# (gcc_doom 0.6 MB + gcc_doom_pico2 4.5 MB): with them the tn20k kernel
+# is ~9.9 MB and cannot fit the 8 MB SDRAM (nor the web emulator's RAM).
+# DOOM only runs on qemu virt / pico2 anyway.
+$(BUILD_DIR)/disk-extra.img:       EXTRA_DISK_TASKS := $(GUEST_TASKS) $(EXTRA_GUEST_TASKS)
+$(BUILD_DIR)/disk-extra-tn20k.img: EXTRA_DISK_TASKS := $(filter-out gcc_doom gcc_doom_pico2,$(GUEST_TASKS) $(EXTRA_GUEST_TASKS))
+$(BUILD_DIR)/disk-extra.img $(BUILD_DIR)/disk-extra-tn20k.img: \
+    $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(EXTRA_SRC_DEPS) \
     $(GEN2_DIR)/asm_pass1 $(GEN2_DIR)/asm_pass2 $(GEN2_DIR)/asm_pass3 \
     $(EXTRA_SPEC) $(DEFAULT_SPEC) $(ROOT)/kernel/scripts/stage-fs.sh \
     $(ROOT)/userland/scripts/bin2s_incbin.sh \
@@ -245,7 +253,7 @@ $(BUILD_DIR)/disk-extra.img: $(ALL_TASK_BINS) $(SHARED_S) $(DISK_STATIC_DEPS) $(
 	@echo "Building disk image (extra): $@" >&2
 	@_tmp=$$(mktemp -d) && _r="$$_tmp/root" && \
 	mkdir -p "$$_r/bin" "$$_r/src" && \
-	for t in $(GUEST_TASKS) $(EXTRA_GUEST_TASKS); do \
+	for t in $(EXTRA_DISK_TASKS); do \
 	    cp $(USERLAND_BUILD)/tasks/$$t.bin "$$_r/bin/$$t" || exit 1; \
 	done && \
 	$(ROOT)/kernel/scripts/stage-fs.sh "$$_r" $(EXTRA_SPEC) && \
@@ -392,8 +400,8 @@ $(BUILD_DIR)/tn20k_kernel.bin: $(KERNEL_COMPILE_DEPS) $(BUILD_DIR)/disk.img \
     $(ROOT)/userland/scripts/bin2s_incbin.sh | $(BUILD_DIR)
 	$(TN20K_KERNEL_RECIPE)
 
-$(BUILD_DIR)/tn20k_kernel_extra.bin: TN20K_DISK := $(BUILD_DIR)/disk-extra.img
-$(BUILD_DIR)/tn20k_kernel_extra.bin: $(KERNEL_COMPILE_DEPS) $(BUILD_DIR)/disk-extra.img \
+$(BUILD_DIR)/tn20k_kernel_extra.bin: TN20K_DISK := $(BUILD_DIR)/disk-extra-tn20k.img
+$(BUILD_DIR)/tn20k_kernel_extra.bin: $(KERNEL_COMPILE_DEPS) $(BUILD_DIR)/disk-extra-tn20k.img \
     $(ROOT)/userland/scripts/bin2s_incbin.sh | $(BUILD_DIR)
 	$(TN20K_KERNEL_RECIPE)
 

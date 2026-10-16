@@ -1,6 +1,6 @@
 // main.js — page glue: xterm.js <-> Worker, kernel loading, controls.
-// Serve the repository root (make -C web serve) and open /web/; the
-// default kernel path is relative to that.
+// Kernels named in the <select> are fetched from kernels/ next to the page
+// (see fetchKernel); serve the repository root (make -C web serve) and open /web/.
 
 import { formatFat32 } from "./fat32.js";
 import { scancodeOf } from "./gpio.js";
@@ -178,7 +178,10 @@ function reboot() {
   term.focus();
 }
 
-async function fetchKernel(path) {
+// Kernels live in kernels/ next to the page: a symlink to ../kernel/build in
+// the repository (make -C web serve), real copies in the Pages build (tools/pages.sh).
+async function fetchKernel(name) {
+  const path = name.includes("/") ? name : "kernels/" + name;    // a path is used as given
   setStatus("fetching " + path);
   try {
     const r = await fetch(path, { cache: "no-store" });

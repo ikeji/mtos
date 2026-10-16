@@ -30,12 +30,12 @@
 <div class="row">
   <label for="kernel">kernel</label>
   <select id="kernel">
-    <option value="../kernel/build/tn20k_kernel.bin">tn20k_kernel.bin (sh + coreutils)</option>
-    <option value="../kernel/build/tn20k_kernel_extra.bin">tn20k_kernel_extra.bin (+ compiler tasks)</option>
-    <option value="../kernel/build/tn20k_kernel_console.bin">tn20k_kernel_console.bin (LCD console, portrait)</option>
-    <option value="../kernel/build/tn20k_kernel_console_land.bin">tn20k_kernel_console_land.bin (LCD console, landscape)</option>
-    <option value="../kernel/build/tn20k_kernel_console_vram.bin">tn20k_kernel_console_vram.bin (console -l -v, VRAM engine)</option>
-    <option value="../kernel/build/tn20k_kernel_console_text.bin">tn20k_kernel_console_text.bin (console -t, text engine)</option>
+    <option value="tn20k_kernel.bin">tn20k_kernel.bin (sh + coreutils)</option>
+    <option value="tn20k_kernel_extra.bin">tn20k_kernel_extra.bin (+ compiler tasks)</option>
+    <option value="tn20k_kernel_console.bin">tn20k_kernel_console.bin (LCD console, portrait)</option>
+    <option value="tn20k_kernel_console_land.bin">tn20k_kernel_console_land.bin (LCD console, landscape)</option>
+    <option value="tn20k_kernel_console_vram.bin">tn20k_kernel_console_vram.bin (console -l -v, VRAM engine)</option>
+    <option value="tn20k_kernel_console_text.bin">tn20k_kernel_console_text.bin (console -t, text engine)</option>
   </select>
   <button id="btn-load">Load</button>
   <label for="file">or file</label>
@@ -74,10 +74,11 @@
 <p class="help">UART console: type at the <code>sh$</code> prompt (Enter sends CR). The console kernels
 (<code>make -C kernel tn20k-console</code> etc.) run <code>/bin/console</code> on the LCD instead of a UART shell:
 click the LCD and type there (the 5x12 matrix keyboard has no shift, so lowercase only; Enter / Backspace / Esc / Tab work).
-The page expects the
-repository root to be served (<code>make -C web serve</code>, then open <code>/web/</code>) so it can fetch
-<code>kernel/build/tn20k_kernel.bin</code>; otherwise pick the .bin with the file button.
-<code>?kernel=path</code> overrides the default, <code>?autoload=0</code> skips the initial fetch.
+Kernels are fetched from <code>kernels/</code> next to the page (a symlink to <code>kernel/build/</code> in the
+repository: <code>make -C web serve</code>, then open <code>/web/</code>; real copies in the GitHub Pages build);
+otherwise pick the .bin with the file button.
+<code>?kernel=name</code> (or a path with a <code>/</code>) overrides the default, <code>?autoload=0</code> skips the initial fetch.
+Source: <a href="https://github.com/ikeji/mtos">github.com/ikeji/mtos</a> (<code>web/</code>).
 SD card: pick a FAT32 image (<code>web/tools/fatimg.py mkfs sd.img</code> + <code>add</code>) or make an empty one; it mounts
 at <code>/sd</code> after the reboot. Writes are saved in this browser (IndexedDB) a couple of seconds after the OS stops
 writing and restored on the next visit; Download gets the current image as a file.</p>
