@@ -35,6 +35,17 @@ window.__emu = {
   screenText() { return lastFrame ? screenToText(lastFrame.rgba, lastFrame.w, lastFrame.h).lines.join("\n") : ""; },
 };
 
+// Dot-by-dot LCD: pick a CSS size so every LCD pixel covers a whole number
+// of device pixels (k = 1 on a 1x / 1.25x screen, 2 on 1.5x / 2x, ...); any
+// other scale makes nearest-neighbour sampling double some pixel columns.
+function fitLcd() {
+  const dpr = window.devicePixelRatio || 1, k = Math.max(1, Math.round(dpr));
+  lcd.style.width = (lcd.width * k / dpr) + "px";
+  lcd.style.height = (lcd.height * k / dpr) + "px";
+}
+fitLcd();
+window.addEventListener("resize", fitLcd);          // browser zoom changes devicePixelRatio
+
 // ---- matrix keyboard: keys typed while the LCD canvas has focus ----
 const held = new Map();          // KeyboardEvent.code -> scancode, so key-up releases what key-down pressed
 function keyToSc(e) {
@@ -128,7 +139,7 @@ worker.onmessage = (e) => {
       term.write(`\r\n\x1b[33m[emu] exit device: 0x${(m.code >>> 0).toString(16)}\x1b[0m\r\n`);
       break;
     case "frame":
-      if (lcd.width !== m.w || lcd.height !== m.h) { lcd.width = m.w; lcd.height = m.h; }
+      if (lcd.width !== m.w || lcd.height !== m.h) { lcd.width = m.w; lcd.height = m.h; fitLcd(); }
       lcdCtx.putImageData(new ImageData(m.rgba, m.w, m.h), 0, 0);
       lastFrame = m;
       frames++;

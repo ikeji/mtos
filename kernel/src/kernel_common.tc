@@ -1212,15 +1212,7 @@ export fn sched_wait(target: i32) -> u32 {
             i = i + 1;
         }
         // No READY task. Advance sleepers whose wake_time has arrived.
-        var now: u32 = read_mtime();
-        var w: i32 = 0;
-        while w < g_num_tasks {
-            var wt: Task = get(g_tasks, w);
-            if state(wt) == STATE_SLEEPING && (now - wake_time(wt)) as i32 >= 0 {
-                state(wt, STATE_READY);
-            }
-            w = w + 1;
-        }
+        wake_sleepers();
         // If no task is sleeping either, we'd spin forever here.
         // sched_wait on a target that can never run is a caller bug;
         // return 0 so the ecall handler can advance mepc instead.
@@ -1235,12 +1227,39 @@ export fn sched_wait(target: i32) -> u32 {
     return 0u32;
 }
 
+// Wake every SLEEPING task whose wake_time has arrived. read_mtime
+// only returns the low 32 bits of the monotonic counter, so the naive
+// `now >= wake_time` breaks once mtime wraps. Use the wraparound-safe
+// signed-diff form: for any sleep duration < 2^31 ticks,
+// (now - wake_time) as i32 is negative while wake is pending and
+// non-negative once the wake time has passed, regardless of whether
+// either half has wrapped since wake_time was set.
+fn wake_sleepers() -> void {
+    var now: u32 = read_mtime();
+    var w: i32 = 0;
+    while w < g_num_tasks {
+        var wt: Task = get(g_tasks, w);
+        if state(wt) == STATE_SLEEPING && (now - wake_time(wt)) as i32 >= 0 {
+            state(wt, STATE_READY);
+        }
+        w = w + 1;
+    }
+}
+
 // Called from _ecall_read when UART stdin returns 0 bytes.
 // Yields the current timeslice so other tasks can run while
 // waiting for UART input. mepc is NOT advanced by the caller,
 // so the ecall re-executes when this task is rescheduled.
 export fn sched_yield_read() -> void {
     var from_slot: i32 = g_current;
+    // Wake sleepers here too, not only on timer interrupts: when two or
+    // more tasks are all -2-yielding (e.g. a UART sh and the LCD
+    // console's sh, both blocked on input), every yield switches to the
+    // other one and rearms the timer below, so the timer interrupt never
+    // fires and a nanosleep'ing task (console's 250 ms poll) would never
+    // wake — its output then stalls until something else breaks the
+    // ping-pong (seen as "typed l, nothing shows until the next key").
+    wake_sleepers();
     var i: i32 = 0;
     while i < g_num_tasks {
         var next: i32 = (g_current + 1 + i) % g_num_tasks;
@@ -1273,23 +1292,8 @@ export fn sched_yield_read() -> void {
 // Called from assembly _trap_entry on non-ecall traps
 fn trap_handler(cause: u32, epc: u32) -> void {
     if cause == 0x80000007u32 {
-        // Wake sleeping tasks whose wake_time has arrived. read_mtime
-        // only returns the low 32 bits of the monotonic counter, so
-        // the naive `now >= wake_time` breaks once mtime wraps. Use
-        // the wraparound-safe signed-diff form: for any sleep
-        // duration < 2^31 ticks, (now - wake_time) as i32 is
-        // negative while wake is pending and non-negative once the
-        // wake time has passed, regardless of whether either half
-        // has wrapped since wake_time was set.
-        var now: u32 = read_mtime();
-        var w: i32 = 0;
-        while w < g_num_tasks {
-            var wt: Task = get(g_tasks, w);
-            if state(wt) == STATE_SLEEPING && (now - wake_time(wt)) as i32 >= 0 {
-                state(wt, STATE_READY);
-            }
-            w = w + 1;
-        }
+        // Wake sleeping tasks whose wake_time has arrived.
+        wake_sleepers();
 
         var from_slot: i32 = g_current;
         var i: i32 = 0;

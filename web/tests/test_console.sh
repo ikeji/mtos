@@ -23,6 +23,17 @@ for v in console console_land console_vram console_text; do
     grep -q "CONSOLE: LCD ready" "$OUT/${v}_log.txt" || { echo "[test] $v: console never reported LCD ready"; ok=0; }
     grep -q '^\[sc=.*=c\]' "$OUT/${v}_log.txt" || { echo "[test] $v: kernel did not see the matrix key press"; ok=0; }
     [ $rc = 0 ] || { echo "[test] $v: LCD never showed 'hello, mtfs' (rc=$rc)"; ok=0; }
+    # Regression (docs/solved.md #49): with a UART sh alongside the console,
+    # a key typed at an idle prompt must show up on the LCD by itself — the
+    # two -2-yielding shells used to ping-pong and rearm the timer forever,
+    # so the console's nanosleep never woke until the next key. Type one
+    # key once the login banner is long done and expect it within ~0.7 s
+    # of guest time (70M insns).
+    if [ $ok = 1 ] && [ "$v" = console_land ]; then
+        node "$WEB/src/node_run.js" "$bin" --max 420000000 --kbd 'l' --kbd-at 350000000 \
+            --expect-screen 'sh$ l' --quiet > /dev/null 2> "$OUT/${v}_late_emu.txt" \
+            || { echo "[test] $v: a lone key at the idle prompt never reached the LCD (sleeper wakeup)"; ok=0; }
+    fi
     if [ $ok = 1 ]; then
         echo "[test] $v: PASS $(grep -o 'matched after.*' "$OUT/${v}_emu.txt")"
     else

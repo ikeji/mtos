@@ -230,6 +230,37 @@ fib.bc / global_str.bc を Gen1 bcrun と同一出力で実行。回帰は
 これで tcheck の実 worst case は bc2asm.tc (nc=1656) → bcrun.tc
 (nc=2387) に更新。vm_run の関数分解は不要だった。
 
+### 49. sh 2 本が -2 yield でピンポンすると timer が発火せず nanosleep が永遠に起きない (2026-10-17)
+
+**現象**: Web エミュレータ (tn20k console kernel) の kern.conf に
+`init=/bin/sh` (UART sh) を足して LCD console と同居させたところ、LCD
+の sh に `l` と打っても何も出ず、次の `s` を打った瞬間に `ls` がまとめて
+出る。kernel は `[sc=26=l]` を出していて sh は echo を pipe に書いている
+(headless で `node_run.js --kbd l --kbd-at 350000000` でも再現)。
+
+**原因**: `sched_yield_read` (read が -2 を返して yield する経路) は、
+別タスクへ切り替えたときだけ `rearm_timer()` で mtimecmp を先送りする
+(#35 の「切り替え先が 0 命令で跳ね返される」対策)。入力待ちで -2 を
+繰り返すタスクが **2 本** (UART sh と console の子 sh) あると、yield
+のたびに互いへ切り替わる → 毎回 rearm → timer 割り込みが永遠に来ない。
+`/bin/console` は pipe が空のとき `nanosleep(250)` で STATE_SLEEPING
+になるが、sleeper を起こすのは timer 割り込みの wake loop と「READY が
+1 つも無いとき」の idle loop だけなので、永遠に起きない。次のキーで
+sh が echo を書く → … でも本来は起きないはずだが、console が起きるのは
+たまたま切り替えパターンが崩れて timer が発火したとき。1 本のときは
+yield しても切り替え先が無く rearm されないので timer が普通に鳴る。
+
+**修正**: 起床判定を `wake_sleepers()` に括り出し、timer 割り込み /
+idle loop に加えて **`sched_yield_read` の先頭でも呼ぶ**。-2 yield は
+入力待ち中ずっと走るので、timer が押し出され続けても sleeper は
+wake_time 経過後の最初の yield で READY になる。CPU bound なタスクだけが
+走っている場合は yield が無いので timer が普通に鳴る (そちらは不変)。
+回帰テストは `web/tests/test_console.sh` の console_land (`--kbd-at`
+で prompt が静止してから 1 キー打つ)。
+
+**教訓**: 「切り替えたら quantum を与える」は、切り替え先も即 yield する
+タスクだと timer を止める。sleeper の起床を timer だけに頼らない。
+
 ### 48. mkfs.tc の末尾切り落としで最後のファイルのデータが消える (2026-08-29)
 
 **現象**: tn20k 実機と qemu virt の両方で、OS 上の `tcheck < /tmp/1.wrap`

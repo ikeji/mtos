@@ -278,7 +278,16 @@ Phase 1 時点では SD SPI は STATUS=idle、DATA 読みが常に 0xFF を返�
   landscape は virt の test_os と disk を共有していたので tn20k 専用の
   `disk-console{,-land}-tn20k.img` + `kern_console{,_land}_tn20k.conf`
   に分けた (virt は `/dev/kbd` が UART-RX stub で sh 2 本が入力を
-  取り合い、test_os の console_scroll / console_kernconf_argv が落ちる)。Pages の
+  取り合い、test_os の console_scroll / console_kernconf_argv が落ちる)。
+  副産物 2 件 (2026-10-17): ①sh 2 本が -2 yield でピンポンすると
+  `sched_yield_read` の rearm で timer が鳴らず console の nanosleep が
+  永遠に起きない kernel バグ (`docs/solved.md` #49、`wake_sleepers()` を
+  yield 経路でも呼ぶ)。症状は「`l` を打っても出ず、`s` で `ls` が出る」。
+  `node_run.js --kbd-at N` で遅延打鍵して再現・回帰テスト。②LCD canvas
+  が column flex の `align-items: stretch` でキャプション幅 (~487 px) に
+  引き伸ばされ、最近傍拡大で数列が 2 重 (「2 文字目の縦線が太い」)。
+  `align-items: flex-start` + `fitLcd()` (CSS 幅 = w × round(dpr) / dpr
+  で device pixel の整数倍) で dot-by-dot に。Pages の
   source は gh-pages / root (`gh api -X POST repos/ikeji/mtos/pages`
   で設定済、gh-pages push で自動有効化された)。公開後は `make -C web
   test-pages-live` が実サイトを headless Chromium で smoke (boot 0.5〜2 s、
