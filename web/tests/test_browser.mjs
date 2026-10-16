@@ -3,7 +3,7 @@
 // xterm.js and check the UART log. argv: <playwright module path> <base url>
 import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
-const [pwPath, baseUrl] = process.argv.slice(2);
+const [pwPath, baseUrl, consoleBuilt] = process.argv.slice(2);   // consoleBuilt: "1" when tn20k_kernel_console.bin exists
 const { chromium } = require(pwPath);
 
 let fails = 0;
@@ -55,6 +55,23 @@ try {
   await page.click("#btn-sd-forget");
   await page.waitForFunction(() => document.getElementById("sd-status").textContent === "no card", null, { timeout: 5000 });
   check("Forget detaches the card", true);
+
+  // LCD console kernel: /bin/console renders on the canvas, input comes from the matrix keyboard
+  if (consoleBuilt === "1") {
+    await page.goto(baseUrl + "/web/?kernel=../kernel/build/tn20k_kernel_console.bin", { waitUntil: "load" });
+    await page.waitForFunction(() => window.__emu && window.__emu.log.includes("CONSOLE: LCD ready"), null, { timeout: 15000 });
+    await page.waitForFunction(() => window.__emu.screenText().includes("sh$"), null, { timeout: 10000 });
+    check("console kernel paints the sh prompt on the LCD canvas", true);
+    const size = await page.evaluate(() => [document.getElementById("lcd").width, document.getElementById("lcd").height]);
+    check("canvas is portrait 320x480", size[0] === 320 && size[1] === 480, `(${size.join("x")})`);
+    await page.click("#lcd");
+    await page.keyboard.type("cat /hello.txt\n");
+    await page.waitForFunction(() => window.__emu.screenText().includes("hello, mtfs"), null, { timeout: 10000 });
+    check("keys typed on the canvas reach sh via the matrix keyboard and the output shows on the LCD", true);
+    await page.screenshot({ path: new URL("../build/browser_console.png", import.meta.url).pathname });
+  } else {
+    console.log("[test] console kernel: SKIP (kernel/build/tn20k_kernel_console.bin not built)");
+  }
 } catch (e) {
   console.log("[test] " + e.message.split("\n")[0]);
   fails++;

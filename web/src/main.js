@@ -3,6 +3,8 @@
 // default kernel path is relative to that.
 
 import { formatFat32 } from "./fat32.js";
+import { scancodeOf } from "./gpio.js";
+import { screenToText } from "./ocr.js";
 
 const $ = (id) => document.getElementById(id);
 const term = new Terminal({ cols: 80, rows: 30, convertEol: true, cursorBlink: true, scrollback: 5000,
@@ -22,7 +24,40 @@ let sdName = "";                 // "" = no card
 let sdSaveTimer = null;
 let sdWriteGen = 0;              // bumped on every sd-write notification
 let sdSaveGen = 0;               // write generation the in-flight save captured
-window.__emu = { get log() { return emuLog; }, get stats() { return lastStats; }, get loaded() { return loaded; }, get sdName() { return sdName; } };
+let lastFrame = null;            // last LCD frame {w, h, rgba}
+let frames = 0;
+const lcd = $("lcd");
+const lcdCtx = lcd.getContext("2d");
+window.__emu = {
+  get log() { return emuLog; }, get stats() { return lastStats; }, get loaded() { return loaded; }, get sdName() { return sdName; },
+  get frames() { return frames; },
+  kbdType(s) { worker.postMessage({ type: "kbd-type", bytes: enc.encode(s) }); },           // type on the matrix keyboard
+  screenText() { return lastFrame ? screenToText(lastFrame.rgba, lastFrame.w, lastFrame.h).lines.join("\n") : ""; },
+};
+
+// ---- matrix keyboard: keys typed while the LCD canvas has focus ----
+const held = new Map();          // KeyboardEvent.code -> scancode, so key-up releases what key-down pressed
+function keyToSc(e) {
+  if (e.ctrlKey || e.altKey || e.metaKey) return -1;
+  const special = { Enter: 10, Backspace: 8, Escape: 27, Tab: 9 };
+  if (e.key in special) return scancodeOf(special[e.key]);
+  return e.key.length === 1 ? scancodeOf(e.key.charCodeAt(0)) : -1;
+}
+lcd.addEventListener("keydown", (e) => {
+  const sc = keyToSc(e);
+  if (sc < 0) return;
+  e.preventDefault();
+  if (e.repeat || held.has(e.code)) return;
+  held.set(e.code, sc);
+  worker.postMessage({ type: "key", sc, down: true });
+});
+lcd.addEventListener("keyup", (e) => {
+  const sc = held.get(e.code);
+  if (sc === undefined) return;
+  held.delete(e.code);
+  worker.postMessage({ type: "key", sc, down: false });
+});
+lcd.addEventListener("blur", () => { for (const sc of held.values()) worker.postMessage({ type: "key", sc, down: false }); held.clear(); });
 
 // ---- SD image persistence (IndexedDB, one record) ----
 const DB_NAME = "mtos-web", STORE = "sd";
@@ -91,6 +126,12 @@ worker.onmessage = (e) => {
       break;
     case "halt":
       term.write(`\r\n\x1b[33m[emu] exit device: 0x${(m.code >>> 0).toString(16)}\x1b[0m\r\n`);
+      break;
+    case "frame":
+      if (lcd.width !== m.w || lcd.height !== m.h) { lcd.width = m.w; lcd.height = m.h; }
+      lcdCtx.putImageData(new ImageData(m.rgba, m.w, m.h), 0, 0);
+      lastFrame = m;
+      frames++;
       break;
     case "sd-write":                       // OS wrote to the card: persist after 2 s of quiet
       sdWriteGen++;

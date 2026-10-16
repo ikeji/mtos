@@ -11,9 +11,11 @@
 import { Cpu, CpuError, hex } from "./cpu.js";
 import { Soc } from "./soc.js";
 import { SdCard } from "./sd.js";
+import { renderDisplay, displayDirty, FRAME_BYTES } from "./display.js";
 
 const SLICE_INSNS = 1 << 20;        // ~8 ms at 120 MIPS
 const STATS_INTERVAL_MS = 250;
+const FRAME_INTERVAL_MS = 33;       // LCD frames to the page, at most ~30 fps and only when changed
 
 export class EmuRunner {
   constructor({ yieldFn, sleepFn, now = () => performance.now(), strict = false } = {}) {
@@ -32,6 +34,8 @@ export class EmuRunner {
     this.onError = (msg, dump) => {};
     this.onHalt = (exitCode) => {};
     this.onSdWrite = () => {};          // called at most once per second while the OS writes the card
+    this.onFrame = (w, h, rgba) => {};  // LCD picture (Uint8ClampedArray RGBA, transferable)
+    this.frameT = -Infinity;
     this.sdImage = null;                // Uint8Array, survives reset()
     this.sdNotifiedAt = -Infinity;      // performance.now() starts near 0 in a fresh Worker
     this.epochT = 0;                    // throttle reference (wall clock ms)
@@ -51,6 +55,28 @@ export class EmuRunner {
     this.txBuf.length = 0;
     this.attachSdToSoc();
     this.emitStats(true);
+    this.pumpFrame(true);
+  }
+
+  // Matrix keyboard: a key press / release by scancode, or bytes to type
+  // one key at a time (gpio.js KeyMatrix).
+  key(sc, down) {
+    if (!this.soc) return;
+    if (down) this.soc.kbd.press(sc); else this.soc.kbd.release(sc);
+  }
+
+  kbdType(bytes) {
+    if (this.soc) this.soc.kbd.type(bytes);
+  }
+
+  pumpFrame(force) {
+    if (!this.soc) return;
+    const t = this.now();
+    if (!force && (t - this.frameT < FRAME_INTERVAL_MS || !displayDirty(this.soc))) return;
+    this.frameT = t;
+    const rgba = new Uint8ClampedArray(FRAME_BYTES);
+    const { w, h } = renderDisplay(this.soc, rgba);
+    this.onFrame(w, h, rgba);
   }
 
   // Attach (or detach with null) an SD image. Takes effect at the next
@@ -103,6 +129,7 @@ export class EmuRunner {
   pause() {
     this.running = false;
     this.emitStats(true);
+    this.pumpFrame(true);
   }
 
   schedule(ms) {
@@ -128,16 +155,19 @@ export class EmuRunner {
       const dump = e instanceof CpuError ? this.cpu.dump() : "";
       this.onError(e.message, dump);
       this.emitStats(true);
+      this.pumpFrame(true);
       return;
     }
     this.flushTx();
     if (this.soc.halted) {
       this.running = false;
       this.emitStats(true);
+      this.pumpFrame(true);
       this.onHalt(this.soc.exitCode);
       return;
     }
     this.emitStats(false);
+    this.pumpFrame(false);
     this.schedule(0);
   }
 

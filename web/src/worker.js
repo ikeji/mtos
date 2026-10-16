@@ -2,9 +2,11 @@
 //   {type:"load", bin:ArrayBuffer}  {type:"start"}  {type:"pause"}  {type:"reset"}
 //   {type:"input", bytes:Uint8Array}  {type:"mips", value:number}
 //   {type:"sd", image:ArrayBuffer|null}  {type:"sd-get", tag}
+//   {type:"key", sc, down}  (matrix keyboard scancode)  {type:"kbd-type", bytes:Uint8Array}
 // Messages to the page:
 //   {type:"tx", bytes:Uint8Array}  {type:"stats", ...}  {type:"error", msg, dump}  {type:"halt", code}
 //   {type:"sd-write"} (the OS wrote to the card; throttled)  {type:"sd-image", tag, image:ArrayBuffer|null, writes}
+//   {type:"frame", w, h, rgba:Uint8ClampedArray}  (LCD picture, <= 30 fps, only when it changed)
 
 import { EmuRunner } from "./runner.js";
 
@@ -20,6 +22,7 @@ runner.onStats = (s) => self.postMessage({ type: "stats", ...s });
 runner.onError = (msg, dump) => self.postMessage({ type: "error", msg, dump });
 runner.onHalt = (code) => self.postMessage({ type: "halt", code });
 runner.onSdWrite = () => self.postMessage({ type: "sd-write" });
+runner.onFrame = (w, h, rgba) => self.postMessage({ type: "frame", w, h, rgba }, [rgba.buffer]);
 
 self.onmessage = (e) => {
   const m = e.data;
@@ -31,6 +34,8 @@ self.onmessage = (e) => {
     case "input": runner.input(m.bytes); break;
     case "mips": runner.setTargetMips(m.value); break;
     case "sd": runner.attachSd(m.image ? new Uint8Array(m.image) : null); break;
+    case "key": runner.key(m.sc, m.down); break;
+    case "kbd-type": runner.kbdType(m.bytes); break;
     case "sd-get": {
       const img = runner.sdImage ? runner.sdImage.slice().buffer : null;
       self.postMessage({ type: "sd-image", tag: m.tag, image: img, writes: runner.soc && runner.soc.sd ? runner.soc.sd.writes : 0 }, img ? [img] : []);

@@ -1,15 +1,20 @@
 # Web ブラウザ上で MTOS を動かす計画 (JS/TS 製 RV32IM エミュレータ)
 
-作成: 2026-10-15。状態: **Phase 0〜4 完了 (2026-10-16)**。
+作成: 2026-10-15。状態: **Phase 0〜5 完了 (2026-10-16)**。
 `make -C web serve` → `http://localhost:8000/web/` で tn20k kernel が
 xterm.js 上で sh まで起動し対話でき、SD カード (FAT32 イメージ) を
 付けて `/sd` を読み書き、書き込みは IndexedDB に自動保存される。
 `tn20k_kernel_extra.bin` なら 15 段のコンパイラ pipeline
 (`hw.tc → Hello, World!`) が **3.4 s** で完走 (pico2 13.8 s、tn20k
-実機 161 s)。`make -C web test` (~15 s) で riscv-tests 49/49 +
-headless boot + SD 往復 + pipeline + Worker コア + headless Chromium
-のページ smoke test (SD 永続化込み) が通る。実測 **110〜120 MIPS**
-(Node 22 / Chromium Worker とも)。次は Phase 5 (LCD + キーボード)。
+実機 161 s)。**console kernel 4 種** (`tn20k_kernel_console{,_land,
+_vram,_text}.bin`) は ILI9488 LCD を canvas に描き、canvas をクリック
+して打鍵するとマトリクスキーボード経由で `/bin/console` の sh に届く
+(実機では「配線待ち」だった LCD / キーボードドライバと vram_lcd /
+text_lcd エンジンがここで先に動作確認できた)。`make -C web test`
+(~17 s) で riscv-tests 49/49 + headless boot + SD 往復 + pipeline +
+console 4 種 (LCD を OCR で読み戻し) + Worker コア + headless Chromium
+のページ smoke test (SD 永続化 + LCD/キーボード込み) が通る。実測
+**110〜120 MIPS** (Node 22 / Chromium Worker とも)。残りは Phase 6。
 
 ## 1. ゴール
 
@@ -150,8 +155,10 @@ fetch で `../kernel/build/` を読む。リポジトリにはコミットしな
 | 0x0200_0000 | CLINT | `0xBFF8` mtime lo/hi、`0x4000` mtimecmp lo/hi |
 | 0x0010_0000 | exit | `0x5555` で halt、他は fail 表示 |
 | 0x1003_0000 | SD SPI | DATA / STATUS / CTRL (`block_sd.tc`)。Phase 4 |
-| 0x1004_0000 | LCD SPI | DATA / STATUS / PIX / FILL (`display_ili9488.tc`、`lcd_spi.v`)。Phase 5 |
-| 0xD000_0000 | SIO 互換 GPIO | IN / OUT_SET / OUT_CLR / OE_SET / OE_CLR (`keyboard_matrix.tc`)。Phase 5 |
+| 0x1004_0000 | LCD SPI | DATA / STATUS / PIX / FILL (`display_ili9488.tc`、`lcd_spi.v`)。Phase 5 (`src/lcd.js`) |
+| 0x1005_0000 | vram_lcd | CTRL / BASE / DIV: enable 中は SDRAM の 480x320 RGB565 (reset BASE = 0x807A5000) を表示。Phase 5 |
+| 0x1006_0000 | text_lcd | セル 1200 word + CTRL / DIV / ZBASE: 内蔵 hankaku font + SDRAM の zenkaku で描画。Phase 5 |
+| 0xD000_0000 | SIO 互換 GPIO | IN / OUT_SET / OUT_CLR / OE_SET / OE_CLR (`keyboard_matrix.tc`)。Phase 5 (`src/gpio.js`) |
 | 0x4002_8000 / 0x4003_A000 / 0x4003_B000 | IO_BANK0 / PADS | 書き込み無視、読み 0 |
 | flash DMA / boot ROM | — | **省略**。bin を直接 RAM に置く |
 
@@ -162,7 +169,9 @@ Phase 1 時点では SD SPI は STATUS=idle、DATA 読みが常に 0xFF を返�
 ### 4.4 ページ
 
 - xterm.js (CDN 固定バージョン or vendored) を UART に接続。
-- 右に 320x480 canvas (Phase 5 から)。
+- 右に 320x480 canvas (Phase 5 から)。MADCTL の MV bit で 480x320
+  に自動で向きを変える。canvas にフォーカスがあるとき keydown/keyup が
+  マトリクスキーボードの scancode になる (shift 無し、小文字のみ)。
 - 上に MIPS 表示、Run/Pause/Reset、kernel.bin 選択 (標準 / extra /
   console)。
 - `/sd` 用 FAT イメージはファイル選択で読み込み、変更分を IndexedDB
@@ -224,9 +233,30 @@ Phase 1 時点では SD SPI は STATUS=idle、DATA 読みが常に 0xFF を返�
   `performance.now()` は 0 始まりなのでスロットルの初期値は -Infinity、
   保存完了表示は書き込み世代番号で gate しないと初期保存の遅延完了が
   「unsaved」を上書きする。
-- [ ] **Phase 5 LCD + キーボード**: `lcd_spi.v` 互換 + GPIO マトリクス
-  → `tn20k-console-*` kernel で `console` が canvas に出る。tn20k の
-  「配線待ち」の LCD/キーボードドライバをここで先に動作確認できる。
+- [x] **Phase 5 LCD + キーボード** (2026-10-16): `src/lcd.js` = ILI9488
+  モデル (320x480 GRAM、CASET/PASET/RAMWR、MADCTL の MV/MX/MY、
+  VSCRDEF/VSCRSADD の縦スクロール、18-bit 3 byte 画素 → RGB565) を
+  lcd_spi (DATA/PIX/FILL、DC は GPIO GP38) の後ろに置き、vram_lcd
+  (0x1005、SDRAM の 480x320 を表示) と text_lcd (0x1006、1200 セル +
+  `src/font_hankaku.js` に埋めた hankaku font ROM、zenkaku は SDRAM
+  から) も `src/display.js` で合成 (優先 text > vram > spi)。
+  `src/gpio.js` = SIO 互換 GPIO + 5x12 マトリクス (右半分ダイオード
+  逆向き: 論理列 0〜5 は行駆動→列読み、6〜11 は列駆動→行読み) で、
+  kernel の走査 (GPIO_IN 11 回 / scan) に対しキーを 22 read 保持 →
+  11 read 空ける、という 1 キーずつの直列キューにした (同じ scan に 2
+  キー入ると kernel は scancode 順に出す / 1 scan に収まる押下は消える
+  ため、ブラウザの keydown/keyup もキューを通す)。表示は Worker が
+  33 ms ごと変更時のみ RGBA を transfer、ページは `putImageData`。
+  canvas (tabindex) にフォーカスで打鍵がマトリクスへ。`src/ocr.js`
+  は描画結果を font で読み戻す (テスト用、`window.__emu.screenText()`
+  と `node_run.js --expect-screen` / `--screen-text` / `--screen-out
+  x.ppm` / `--kbd TEXT`)。`tests/test_console.sh` が 4 kernel で
+  `cat /hello.txt` を打って LCD に `hello, mtfs` が出るまでを検証
+  (portrait 0.6 s、landscape 2.0 s、vram 0.7 s、text 0.4 s)。学び:
+  vram_lcd の BASE は RTL が reset 値 0x1E9400 (= 0x807A5000) を
+  ハードコードし console は書かないので、エミュレータも同じ既定値が
+  必要だった。LCD_MTIME_PER_MS = 40500 の busy-wait (init 415 ms 分 ≈
+  17M 命令) は命令数 mtime でもそのまま動く。
 - [ ] **Phase 6 (余力)**: wasm 化 (速度 2〜3x)、wall-clock 連動
   mtime、GitHub Pages 公開、self-replicate。
 
@@ -249,6 +279,8 @@ Phase 1 時点では SD SPI は STATUS=idle、DATA 読みが常に 0xFF を返�
 - `hw/tests/run_riscv_tests.sh`: riscv-tests のビルド手順と pass/fail
   規約 (exit デバイス)。Node ランナーはこの `.bin` を読む。
 - `hw/tests/test_kernel_hw.sh`: sh 起動の期待文字列。
+- `hw/rtl/soc/font_hankaku.hex`: text_lcd の font ROM。jpfont.dat の
+  hankaku 部と byte 一致するので console の描画を OCR で読み戻せる。
 - `hw/rtl/soc/*.v`: UART / CLINT / spi_master / lcd_spi / GPIO の
   レジスタ仕様 (これが唯一の仕様書)。
 - `kernel/platform/tn20k/*.tc`: ドライバ側から見たレジスタの使い方。
