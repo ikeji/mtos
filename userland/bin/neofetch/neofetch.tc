@@ -110,13 +110,17 @@ fn read_task_stats() -> TaskStats {
 }
 
 // /proc/meminfo layout (from kernel/src/procfs.tc::synth_meminfo):
-//   peak: <decimal>\n
+//   total: <decimal>\n
 //   used: <decimal>\n
+//   free: <decimal>\n
+//   peak: <decimal>\n
+//   largest: <decimal>\n
 // We parse it by scanning labels; whichever orders procfs uses, the
 // match is by label so reordering doesn't break us.
 struct MemInfo {
     used: i32,
     peak: i32,
+    total: i32,
 }
 
 fn parse_dec_at(buf: U8Array, off: i32, n: i32) -> i32 {
@@ -143,7 +147,7 @@ fn match_prefix(buf: U8Array, off: i32, n: i32, prefix: StringLiteral) -> i32 {
 }
 
 fn read_meminfo() -> MemInfo {
-    var info: MemInfo = MemInfo(0, 0);
+    var info: MemInfo = MemInfo(0, 0, 0);
     var fd: i32 = do_openat(0, "/proc/meminfo", 0);
     if fd < 0 { return info; }
     var buf: U8Array = U8Array(256);
@@ -159,6 +163,11 @@ fn read_meminfo() -> MemInfo {
             m = match_prefix(buf, i, n, "used: ");
             if m > 0 {
                 used(info, parse_dec_at(buf, i + m, n));
+            } else {
+                m = match_prefix(buf, i, n, "total: ");
+                if m > 0 {
+                    total(info, parse_dec_at(buf, i + m, n));
+                }
             }
         }
         // skip to next line
@@ -449,7 +458,9 @@ fn main() -> i32 {
     print_kb(used(mem));
     ob_puts(" used / ");
     print_kb(peak(mem));
-    ob_puts(" peak\n");
+    ob_puts(" peak / ");
+    print_kb(total(mem));
+    ob_puts(" total\n");
     print_diskinfo();
     ob_flush();          // the whole splash leaves in one write
     delete(stats);

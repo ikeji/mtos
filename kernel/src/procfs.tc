@@ -19,6 +19,9 @@ import "kernel_common.tc";
 fn kfree(ptr: u32) -> void;
 fn km_peak_bytes() -> i32;
 fn km_curr_bytes() -> i32;
+fn km_heap_bytes() -> i32;
+fn km_free_bytes() -> i32;
+fn km_largest_free() -> i32;
 
 // Per-FS stats consumed by synth_diskinfo. mtfs / tmpfs are always
 // present; fatfs is optional (vfs_fatfs_ready reports the mount).
@@ -191,15 +194,28 @@ fn synth_tasks() -> u32 {
     return buf as u32;
 }
 
+// /proc/meminfo — kernel heap (runtime.tc kmalloc arena) in bytes:
+//   total: <heap size>        used: <live blocks incl. headers>
+//   free:  total - used        peak: high-water mark of used
+//   largest: biggest contiguous free block (max single allocation)
 fn synth_meminfo() -> u32 {
     var cap: i32 = 256;
     var buf: U8Array = U8Array(cap as u32);
     var pos: i32 = 0;
-    pos = append_str(buf, pos, "peak: ", cap);
-    pos = append_dec(buf, pos, km_peak_bytes(), cap);
+    pos = append_str(buf, pos, "total: ", cap);
+    pos = append_dec(buf, pos, km_heap_bytes(), cap);
     pos = append_byte(buf, pos, 10u8, cap);
     pos = append_str(buf, pos, "used: ", cap);
     pos = append_dec(buf, pos, km_curr_bytes(), cap);
+    pos = append_byte(buf, pos, 10u8, cap);
+    pos = append_str(buf, pos, "free: ", cap);
+    pos = append_dec(buf, pos, km_free_bytes(), cap);
+    pos = append_byte(buf, pos, 10u8, cap);
+    pos = append_str(buf, pos, "peak: ", cap);
+    pos = append_dec(buf, pos, km_peak_bytes(), cap);
+    pos = append_byte(buf, pos, 10u8, cap);
+    pos = append_str(buf, pos, "largest: ", cap);
+    pos = append_dec(buf, pos, km_largest_free(), cap);
     pos = append_byte(buf, pos, 10u8, cap);
     poke32(buf as u32, pos as u32);
     return buf as u32;

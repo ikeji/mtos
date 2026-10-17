@@ -1,8 +1,14 @@
 // free.tc — kernel heap usage. Reads /proc/meminfo
 // (kernel/src/procfs.tc::synth_meminfo), whose lines are `label: bytes`,
 // and prints each as bytes plus KB with one decimal:
-//     used:    130560 B   127.5 KB
-//     peak:    138342 B   135.1 KB
+//     total:    7372800 B   7200.0 KB
+//     used:      155524 B    151.9 KB
+//     free:     7217276 B   7048.1 KB
+//     peak:      192088 B    187.6 KB
+//     largest:  7213056 B   7044.0 KB
+// total is the kernel's kmalloc arena, used + free == total, peak is
+// the high-water mark of used, largest is the biggest contiguous free
+// block (the largest single allocation that can still succeed).
 // `free -b` prints the raw file. New labels the kernel adds show up
 // automatically; the numbers are the runtime kmalloc counters that
 // neofetch's "mem" line also shows.
@@ -58,12 +64,12 @@ fn main(argv: StringArray) -> i32 {
             var j: i32 = ls;
             while j < le { putchar(get(buf, j)); j = j + 1; }
             putchar(':' as u8);
-            pad_to(le - ls + 1, 8);
-            pad_to(dec_width(v), 9);
+            pad_to(le - ls + 1, 9);
+            pad_to(dec_width(v), 10);
             print(v);
             puts(" B  ");
             var tenths: i32 = (v * 10 + 512) / 1024;
-            pad_to(dec_width(tenths / 10), 5);
+            pad_to(dec_width(tenths / 10), 7);
             print(tenths / 10);
             putchar('.' as u8);
             print(tenths % 10);

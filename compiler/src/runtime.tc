@@ -47,6 +47,11 @@ var g_free_list: u32 = 0u32;
 // the per-allocation overhead shows up in the total.
 var g_km_curr_bytes: i32 = 0;
 var g_km_peak_bytes: i32 = 0;
+// Size of the heap region handed to __runtime_init (bss_size minus the
+// bucket/stat tables). This is the "total" that /proc/meminfo reports;
+// used + free == total, where free is total - g_km_curr_bytes (bucket
+// free nodes count as free since kfree already subtracted them).
+var g_km_heap_bytes: i32 = 0;
 
 var KM_STAT_OFFSET: i32 = 40;
 var KM_LARGE_STAT_OFFSET: i32 = 160;
@@ -375,6 +380,7 @@ export fn __runtime_init(bss: u32, bss_size: i32) -> void {
         poke32(heap, hsz as u32);
         poke32(heap + 4u32, 0);
         g_free_list = heap;
+        g_km_heap_bytes = hsz;
     }
     return;
 }
@@ -876,6 +882,21 @@ export fn km_dump_brief() -> void {
 
 export fn km_peak_bytes() -> i32 { return g_km_peak_bytes; }
 export fn km_curr_bytes() -> i32 { return g_km_curr_bytes; }
+export fn km_heap_bytes() -> i32 { return g_km_heap_bytes; }
+export fn km_free_bytes() -> i32 { return g_km_heap_bytes - g_km_curr_bytes; }
+// Largest contiguous free block on the large free list: the biggest
+// single allocation that can still succeed (bucket free nodes are not
+// counted, they only serve their own size class).
+export fn km_largest_free() -> i32 {
+    var cur: u32 = g_free_list;
+    var best: i32 = 0;
+    while cur != 0u32 {
+        var bsz: i32 = peek32(cur) as i32;
+        if bsz > best { best = bsz; }
+        cur = peek32(cur + 4u32);
+    }
+    return best;
+}
 
 // ===== Print helpers =====
 //

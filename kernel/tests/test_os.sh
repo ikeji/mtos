@@ -167,7 +167,7 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     # ps / free / uptime / df reformat /proc/{tasks,meminfo,diskinfo} and
     # the uptime ecall: one header / value line each.
     fs_has_ps=$(echo "$fs_out" | grep -c "SLOT STATE   WAIT")
-    fs_has_free=$(echo "$fs_out" | grep -c "^used:.* KB")
+    fs_has_free=$(echo "$fs_out" | grep -c "^\(total\|used\|free\):.* KB")
     fs_has_uptime=$(echo "$fs_out" | grep -c "^up [0-9]*\.[0-9][0-9][0-9] s")
     fs_has_df=$(echo "$fs_out" | grep -c "^mtfs   /      total=")
     fs_has_devwrite=$(echo "$fs_out" | grep -c "DEVFS_OK")
@@ -214,7 +214,7 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
                 && [ "$fs_has_rtc" -gt 0 ] && [ "$fs_has_fb" -gt 0 ] \
                 && [ "$fs_has_kbd" -gt 0 ] && [ "$fs_has_pipe" -gt 0 ] \
                 && [ "$fs_has_console" -gt 0 ] \
-                && [ "$fs_has_ps" -gt 0 ] && [ "$fs_has_free" -gt 0 ] \
+                && [ "$fs_has_ps" -gt 0 ] && [ "$fs_has_free" -eq 3 ] \
                 && [ "$fs_has_uptime" -gt 0 ] && [ "$fs_has_df" -gt 0 ] \
                 && [ "$fs_has_sh" -gt 0 ] && [ "$fs_has_bye" -gt 0 ] \
                 && [ -n "$fs_live" ] && [ "$fs_live" -le 145 ]; then

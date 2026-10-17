@@ -326,7 +326,7 @@ Version を実測してから決める。
 |---|---|
 | `/proc/{pid}/status` | pid, state, heap_start, heap_end |
 | `/proc/{pid}/maps` | メモリ領域一覧 |
-| `/proc/meminfo` | SRAM・PSRAM の使用量 |
+| `/proc/meminfo` | kernel heap (kmalloc arena) の `total` / `used` / `free` / `peak` / `largest` (bytes、`largest` は最大連続空きブロック) |
 
 ## syscall
 
