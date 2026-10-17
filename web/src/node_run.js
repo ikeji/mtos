@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // node_run.js — run a raw RV32 bin on the emulated SoC from the command line.
 //
-//   node web/src/node_run.js prog.bin [--max N] [--quiet] [--stdin FILE] [--sd IMG [--sd-out IMG]]
+//   node web/src/node_run.js prog.bin [--max N] [--quiet] [--stdin FILE [--stdin-at INSNS]] [--sd IMG [--sd-out IMG]]
 //                                     [--kbd TEXT [--kbd-at INSNS]] [--expect-screen STR] [--screen-text] [--screen-out F.ppm]
 //
 // Loads prog.bin at 0x80000000, runs until the exit device is written or
@@ -24,7 +24,7 @@ import { screenToText } from "./ocr.js";
 
 function main(argv) {
   let bin = null, max = 200e6, quiet = false, stdinFile = null, strict = true, sdFile = null, sdOut = null;
-  let kbdText = null, kbdAt = 0, expect = null, screenText = false, screenOut = null;
+  let kbdText = null, kbdAt = 0, expect = null, screenText = false, screenOut = null, stdinAt = 0;
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--max") max = Number(argv[++i]);
@@ -35,6 +35,7 @@ function main(argv) {
     else if (a === "--sd-out") sdOut = argv[++i];
     else if (a === "--kbd") kbdText = argv[++i].replace(/\\n/g, "\n");
     else if (a === "--kbd-at") kbdAt = Number(argv[++i]);           // type --kbd once this many insns have run (default: at boot)
+    else if (a === "--stdin-at") stdinAt = Number(argv[++i]);       // push --stdin into UART RX once this many insns have run (default: at boot)
     else if (a === "--expect-screen") expect = argv[++i];
     else if (a === "--screen-text") screenText = true;
     else if (a === "--screen-out") screenOut = argv[++i];
@@ -45,7 +46,8 @@ function main(argv) {
 
   const soc = new Soc({ strict });
   soc.loadBin(readFileSync(bin), RAM_BASE);
-  if (stdinFile) for (const b of readFileSync(stdinFile)) soc.uartPush(b);
+  let stdinBytes = stdinFile ? readFileSync(stdinFile) : null;
+  if (stdinBytes && stdinAt <= 0) { for (const b of stdinBytes) soc.uartPush(b); stdinBytes = null; }
   if (sdFile) soc.sd = new SdCard(new Uint8Array(readFileSync(sdFile)));
   if (kbdText && kbdAt <= 0) { soc.kbd.type(Buffer.from(kbdText, "latin1")); kbdText = null; }
   const frame = new Uint8ClampedArray(FRAME_BYTES);
@@ -64,6 +66,7 @@ function main(argv) {
     while (!soc.halted && cpu.insns < max) {
       cpu.run(Math.min(1 << 20, max - cpu.insns));
       if (kbdText && cpu.insns >= kbdAt) { soc.kbd.type(Buffer.from(kbdText, "latin1")); kbdText = null; }
+      if (stdinBytes && cpu.insns >= stdinAt) { for (const b of stdinBytes) soc.uartPush(b); stdinBytes = null; }
       if (expect && displayDirty(soc) && ocr().includes(expect)) { found = true; break; }
     }
     status = found ? 0 : soc.halted ? (soc.exitCode === EXIT_PASS ? 0 : 1) : 2;
