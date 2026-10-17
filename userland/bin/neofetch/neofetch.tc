@@ -245,6 +245,14 @@ fn write_bytes(buf: U8Array, off: i32, count: i32) -> void {
 // or a short hash, short enough to keep the splash from wrapping.
 // Trims trailing CR so files saved with CRLF still align cleanly.
 fn print_version_field(buf: U8Array, n: i32, prefix: StringLiteral) -> void {
+    print_version_field_max(buf, n, prefix, 32);
+    return;
+}
+
+// Same, printing at most `max` bytes of the value (the build line
+// shows only the date part of the ISO timestamp so it fits in the
+// 56-column landscape LCD even with a "+dirty" build id).
+fn print_version_field_max(buf: U8Array, n: i32, prefix: StringLiteral, max: i32) -> void {
     var i: i32 = 0;
     while i < n {
         var m: i32 = match_prefix(buf, i, n, prefix);
@@ -255,7 +263,7 @@ fn print_version_field(buf: U8Array, n: i32, prefix: StringLiteral) -> void {
                 end = end + 1;
             }
             var w: i32 = end - start;
-            if w > 32 { w = 32; }
+            if w > max { w = max; }
             write_bytes(buf, start, w);
             return;
         }
@@ -288,7 +296,7 @@ fn print_build_line() -> void {
     ob_puts("  build : ");
     print_version_field(buf, n, "build=");
     ob_puts(" (");
-    print_version_field(buf, n, "date=");
+    print_version_field_max(buf, n, "date=", 10);     // YYYY-MM-DD only
     ob_puts(")\n");
     delete(buf);
     return;
@@ -451,29 +459,30 @@ fn main() -> i32 {
     ob_puts("  /___|___|__\\  ");
     ob_puts("  arch  : RV32IM\n");
     ob_puts(" /____|_____|_\\ ");
-    ob_puts("  tasks : ");
+    ob_puts("  tasks : ");               // 26-col prefix + <= 30 here (56-col LCD)
     ob_print(ready(stats));
-    ob_puts(" ready / ");
+    ob_puts(" ready, ");
     ob_print(waiting(stats));
-    ob_puts(" wait / ");
+    ob_puts(" wait, ");
     ob_print(done(stats));
     ob_puts(" done / ");
     ob_print(total(stats));
-    ob_puts(" total\n");
+    ob_puts("\n");
     print_soc_line();
     print_kbuild_line();
     ob_puts("                ");
     print_build_line();
     ob_puts("                ");
-    // Fits the 60-column landscape LCD: 26 columns of prefix leave 34
-    // for the three numbers, so K/M suffixes and no decimals here.
-    ob_puts("  mem   : ");
+    // Fits the 56-column landscape LCD (term_landscape.conf): 26
+    // columns of prefix leave 30 for the numbers, so K/M suffixes,
+    // no decimals, and "used/total" packed together.
+    ob_puts("  mem   : used ");
     print_short(used(mem));
-    ob_puts(" used, ");
-    print_short(peak(mem));
-    ob_puts(" peak, ");
+    ob_puts("/");
     print_short(total(mem));
-    ob_puts(" total\n");
+    ob_puts(", peak ");
+    print_short(peak(mem));
+    ob_puts("\n");
     print_diskinfo();
     ob_flush();          // the whole splash leaves in one write
     delete(stats);
