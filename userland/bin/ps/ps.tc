@@ -2,7 +2,8 @@
 //
 // Reads /proc/tasks (kernel/src/procfs.tc::synth_tasks):
 //   SLOT STATE FRAME WAIT RAM STACK NAME     (one line per scheduler slot)
-// and prints it as a fixed-width table without the FRAME column. Pure
+// and prints it as a fixed-width table without the FRAME column, with
+// RAM / STACK (bytes in /proc/tasks) shown as KB with one decimal. Pure
 // reformatting: everything shown is what `cat /proc/tasks` shows.
 
 import "../../lib/libtc/libtc.tc";
@@ -40,6 +41,32 @@ fn out_field_r(buf: U8Array, s: i32, e: i32, width: i32) -> void {
     while n < width { putchar(' ' as u8); n = n + 1; }
     out_bytes(buf, s, e);
 }
+// Decimal token → i32 (tokens in /proc/tasks are plain digits).
+fn tok_dec(buf: U8Array, s: i32, e: i32) -> i32 {
+    var v: i32 = 0;
+    while s < e {
+        var c: u8 = get(buf, s);
+        if c < '0' as u8 || c > '9' as u8 { return v; }
+        v = v * 10 + ((c - '0' as u8) as i32);
+        s = s + 1;
+    }
+    return v;
+}
+fn dec_width(v: i32) -> i32 {
+    var w: i32 = 1;
+    while v >= 10 { v = v / 10; w = w + 1; }
+    return w;
+}
+// Bytes as "123.4K", right-aligned to `width` columns.
+fn out_kb_r(v: i32, width: i32) -> void {
+    var tenths: i32 = (v * 10 + 512) / 1024;
+    var n: i32 = dec_width(tenths / 10) + 3;
+    while n < width { putchar(' ' as u8); n = n + 1; }
+    print(tenths / 10);
+    putchar('.' as u8);
+    print(tenths % 10);
+    putchar('K' as u8);
+}
 fn tok_is(buf: U8Array, s: i32, e: i32, lit: StringLiteral) -> bool {
     if e - s != len(lit) { return false; }
     var i: i32 = 0;
@@ -63,7 +90,7 @@ fn main(argv: StringArray) -> i32 {
     var n: i32 = sys_read(fd, buf, 4096);
     do_close(fd);
     if n <= 0 { delete(buf); puts("ps: empty /proc/tasks\n"); return 1; }
-    puts("SLOT STATE   WAIT    RAM  STACK NAME\n");
+    puts("SLOT STATE   WAIT     RAM  STACK NAME\n");
     var i: i32 = 0;
     var first: i32 = 1;
     while i < n {
@@ -83,8 +110,8 @@ fn main(argv: StringArray) -> i32 {
                 out_field_r(buf, s0, e0, 4); putchar(' ' as u8);
                 out_field(buf, s1, e1, 7); putchar(' ' as u8);
                 out_field_r(buf, s3, e3, 4); putchar(' ' as u8);
-                out_field_r(buf, s4, e4, 6); putchar(' ' as u8);
-                out_field_r(buf, s5, e5, 6); putchar(' ' as u8);
+                out_kb_r(tok_dec(buf, s4, e4), 7); putchar(' ' as u8);
+                out_kb_r(tok_dec(buf, s5, e5), 6); putchar(' ' as u8);
                 out_bytes(buf, s6, e6);
                 putchar(10u8);
             }

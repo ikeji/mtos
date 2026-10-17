@@ -179,6 +179,21 @@ fn read_meminfo() -> MemInfo {
 }
 
 // Print v as "X.Y KB" — one decimal digit, rounded. v is bytes.
+// Bytes as a compact size: "152K" below 10 MB, "131.0M" above.
+fn print_short(v: i32) -> void {
+    if v < 10 * 1024 * 1024 {
+        ob_print((v + 512) / 1024);
+        ob_puts("K");
+        return;
+    }
+    var mib_tenths: i32 = (v / 1024 * 10 + 512) / 1024;
+    ob_print(mib_tenths / 10);
+    ob_puts(".");
+    ob_print(mib_tenths % 10);
+    ob_puts("M");
+    return;
+}
+
 fn print_kb(v: i32) -> void {
     var tenths: i32 = (v * 10 + 512) / 1024;   // round to one decimal
     ob_print(tenths / 10);
@@ -439,6 +454,10 @@ fn main() -> i32 {
     ob_puts("  tasks : ");
     ob_print(ready(stats));
     ob_puts(" ready / ");
+    ob_print(waiting(stats));
+    ob_puts(" wait / ");
+    ob_print(done(stats));
+    ob_puts(" done / ");
     ob_print(total(stats));
     ob_puts(" total\n");
     print_soc_line();
@@ -446,20 +465,14 @@ fn main() -> i32 {
     ob_puts("                ");
     print_build_line();
     ob_puts("                ");
-    ob_puts("  done  : ");
-    ob_print(done(stats));
-    ob_puts("\n");
-    ob_puts("                ");
-    ob_puts("  wait  : ");
-    ob_print(waiting(stats));
-    ob_puts("\n");
-    ob_puts("                ");
+    // Fits the 60-column landscape LCD: 26 columns of prefix leave 34
+    // for the three numbers, so K/M suffixes and no decimals here.
     ob_puts("  mem   : ");
-    print_kb(used(mem));
-    ob_puts(" used / ");
-    print_kb(peak(mem));
-    ob_puts(" peak / ");
-    print_kb(total(mem));
+    print_short(used(mem));
+    ob_puts(" used, ");
+    print_short(peak(mem));
+    ob_puts(" peak, ");
+    print_short(total(mem));
     ob_puts(" total\n");
     print_diskinfo();
     ob_flush();          // the whole splash leaves in one write

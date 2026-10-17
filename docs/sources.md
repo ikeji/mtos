@@ -166,7 +166,7 @@ TASK_ARENA_<name> / TASK_STACK_<name>) を置く。
 | `rm/` | ファイル削除 (`-r` / `-f` 対応) |
 | `mkdir/`, `rmdir/` | ディレクトリ作成 / 削除 (ecall 34/40、`/sd/` 専用) |
 | `md5sum/` | MD5 ハッシュ |
-| `ps/` | タスク一覧 (`/proc/tasks` を整形、`-a` で unused も) |
+| `ps/` | タスク一覧 (`/proc/tasks` を整形、RAM / STACK は KB 表示、`-a` で unused も) |
 | `free/` | kernel heap の total / used / free / peak / largest (`/proc/meminfo` を整形、`-b` で raw) |
 | `uptime/` | 起動からの秒数 (sys_uptime_us ecall 270) |
 | `df/` | マウント中 FS (`/proc/diskinfo` を整形) |
@@ -179,7 +179,7 @@ TASK_ARENA_<name> / TASK_STACK_<name>) を置く。
 | `msh/` | プロンプト/echo なしの silent sh (UART mux driver 用) |
 | `vi/` | 最小 vi エディタ (hjkl/dd/gg/:w/:q、ANSI 描画、縦スクロール) |
 | `console/` | Windows 95 風 GUI コンソール (LCD 接続時) |
-| `neofetch/` | ASCII banner + /proc/tasks stats |
+| `neofetch/` | ASCII banner + /proc/tasks, /proc/meminfo, /proc/diskinfo の要約 (12 行、60 桁の LCD に収まる幅) |
 | `count/`, `seq/` | 数字を一定間隔で出力 (協調 preempt 可視化) |
 
 **phase 7 / テスト用**:
