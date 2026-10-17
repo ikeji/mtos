@@ -162,6 +162,7 @@ TASK_ARENA_<name> / TASK_STACK_<name>) を置く。
 | `head/` | 先頭 N 行 |
 | `cp/` | ファイルコピー |
 | `du/` | ディレクトリ使用量 |
+| `find/` | 再帰的にパスを列挙 (`find [path ...] [-name GLOB] [-type f\|d]`、readdir / open の probe でファイルとディレクトリを判別) |
 | `grep/` | 部分文字列検索 |
 | `rm/` | ファイル削除 (`-r` / `-f` 対応) |
 | `mkdir/`, `rmdir/` | ディレクトリ作成 / 削除 (ecall 34/40、`/sd/` 専用) |

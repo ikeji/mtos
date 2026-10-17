@@ -1,0 +1,3 @@
+GUEST_TASKS += find
+TASK_ARENA_find := 32768
+TASK_STACK_find := 8192

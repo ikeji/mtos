@@ -1,0 +1,178 @@
+// find.tc — walk directories recursively and print every path.
+//
+// Usage: find [path ...] [-name GLOB] [-type f|d]
+//   path      start point(s), default "/"
+//   -name     print only entries whose basename matches GLOB
+//             (`*` = any run, `?` = one byte; sh does not expand globs,
+//             so `find / -name *.tc` works unquoted)
+//   -type f   print only files, -type d only directories
+//
+// Each path is classified by probing: readdir > 0 ⇒ directory. readdir
+// == 0 is either an empty directory or (mtfs) a plain file — mtfs_readdir
+// of a file inode just finds no children — so open() decides (mtfs
+// refuses to open a directory). readdir < 0 ⇒ plain file (tmpfs / procfs
+// / devfs entries and FAT files), so device nodes are never opened and
+// a busy /dev/fb is still listed. The depth is bounded by MAX_DEPTH;
+// each level holds one DIR_BUF-byte readdir buffer on the heap.
+
+import "../../lib/libtc/libtc.tc";
+
+const DIR_BUF: i32 = 2048;
+const PATH_MAX: i32 = 512;
+const MAX_DEPTH: i32 = 8;
+
+const T_ANY: i32 = 0;
+const T_FILE: i32 = 1;
+const T_DIR: i32 = 2;
+
+// Glob match of pat[pi..] against name[ni..ne).
+fn glob_match(pat: String, pi: i32, name: U8Array, ni: i32, ne: i32) -> bool {
+    var pl: i32 = len(pat);
+    while pi < pl {
+        var pc: u8 = get(pat, pi);
+        if pc == '*' as u8 {
+            var k: i32 = ni;
+            while k <= ne {
+                if glob_match(pat, pi + 1, name, k, ne) { return true; }
+                k = k + 1;
+            }
+            return false;
+        }
+        if ni >= ne { return false; }
+        if pc != '?' as u8 && pc != get(name, ni) { return false; }
+        pi = pi + 1;
+        ni = ni + 1;
+    }
+    return ni == ne;
+}
+
+// Does path[0..plen) pass the -name / -type filters?
+fn selected(path: U8Array, plen: i32, pat: String, has_pat: i32,
+            tsel: i32, is_dir: i32) -> bool {
+    if tsel == T_FILE && is_dir == 1 { return false; }
+    if tsel == T_DIR && is_dir == 0 { return false; }
+    if has_pat == 0 { return true; }
+    var bs: i32 = plen;          // basename start = after the last '/'
+    while bs > 0 && get(path, bs - 1) != '/' as u8 { bs = bs - 1; }
+    return glob_match(pat, 0, path, bs, plen);
+}
+
+fn is_dot_entry(buf: U8Array, s: i32, n: i32) -> bool {
+    if n == 1 && get(buf, s) == '.' as u8 { return true; }
+    if n == 2 && get(buf, s) == '.' as u8 && get(buf, s + 1) == '.' as u8 { return true; }
+    return false;
+}
+
+// Visit path[0..plen) (path has room for PATH_MAX bytes and is reused
+// for the children). top == 1 for a command-line start point: those
+// are allowed an open() probe even when readdir fails, so a missing
+// start path is reported instead of being printed as a file.
+// Returns 0 on success, 1 when a top-level path does not exist.
+fn walk(path: U8Array, plen: i32, pat: String, has_pat: i32, tsel: i32,
+        depth: i32, top: i32) -> i32 {
+    var ps: String = string_from_bytes(path, 0, plen);
+    var dirbuf: U8Array = U8Array(DIR_BUF as u32);
+    var n: i32 = do_readdir(ps, dirbuf as u32 + 4u32, DIR_BUF);
+    var is_dir: i32 = 0;
+    if n > 0 {
+        is_dir = 1;
+    } else if n == 0 || top == 1 {
+        var fd: i32 = do_openat(0, ps, 0);
+        if fd >= 0 {
+            do_close(fd);
+        } else if n == 0 {
+            is_dir = 1;             // readable but childless and not a file
+        } else {
+            eputs("find: not found: ");
+            sys_write(2, path, plen);
+            eputs("\n");
+            delete(ps as U8Array);
+            delete(dirbuf);
+            return 1;
+        }
+    }
+    delete(ps as U8Array);
+    if selected(path, plen, pat, has_pat, tsel, is_dir) {
+        sys_write(1, path, plen);
+        putchar(10u8);
+    }
+    if is_dir == 1 && n > 0 && depth < MAX_DEPTH {
+        var i: i32 = 0;
+        while i < n {
+            var s: i32 = i;
+            while i < n && get(dirbuf, i) != 0u8 { i = i + 1; }
+            var nl: i32 = i - s;
+            i = i + 1;              // skip the NUL
+            if nl > 0 && is_dot_entry(dirbuf, s, nl) == false
+               && plen + 1 + nl < PATH_MAX {
+                var np: i32 = plen;
+                if get(path, np - 1) != '/' as u8 {
+                    set(path, np, '/' as u8);
+                    np = np + 1;
+                }
+                var j: i32 = 0;
+                while j < nl {
+                    set(path, np + j, get(dirbuf, s + j));
+                    j = j + 1;
+                }
+                walk(path, np + nl, pat, has_pat, tsel, depth + 1, 0);
+            }
+        }
+    }
+    delete(dirbuf);
+    return 0;
+}
+
+fn main(argv: StringArray) -> i32 {
+    var pat: String = get(argv, 0);   // placeholder until -name is seen
+    var has_pat: i32 = 0;
+    var tsel: i32 = T_ANY;
+    var starts: i32 = 0;
+    var rc: i32 = 0;
+    var path: U8Array = U8Array(PATH_MAX as u32);
+    // Pass 1: options (so they may follow or precede the paths).
+    var i: i32 = 1;
+    while i < len(argv) {
+        var a: String = get(argv, i);
+        if len(a) == 5 && get(a, 0) == '-' as u8 && get(a, 1) == 'n' as u8 {
+            if i + 1 >= len(argv) { puts("find: -name needs a pattern\n"); delete(path); return 2; }
+            pat = get(argv, i + 1);
+            has_pat = 1;
+            i = i + 1;
+        } else if len(a) == 5 && get(a, 0) == '-' as u8 && get(a, 1) == 't' as u8 {
+            if i + 1 >= len(argv) { puts("find: -type needs f or d\n"); delete(path); return 2; }
+            var t: String = get(argv, i + 1);
+            if len(t) == 1 && get(t, 0) == 'f' as u8 { tsel = T_FILE; }
+            else if len(t) == 1 && get(t, 0) == 'd' as u8 { tsel = T_DIR; }
+            else { puts("find: -type needs f or d\n"); delete(path); return 2; }
+            i = i + 1;
+        } else if len(a) > 0 && get(a, 0) == '-' as u8 {
+            puts("find: usage: find [path ...] [-name GLOB] [-type f|d]\n");
+            delete(path);
+            return 2;
+        }
+        i = i + 1;
+    }
+    // Pass 2: start paths in order.
+    i = 1;
+    while i < len(argv) {
+        var a: String = get(argv, i);
+        if len(a) > 0 && get(a, 0) == '-' as u8 {
+            i = i + 1;              // option + its argument
+        } else {
+            var pl: i32 = len(a);
+            if pl >= PATH_MAX { pl = PATH_MAX - 1; }
+            var j: i32 = 0;
+            while j < pl { set(path, j, get(a, j)); j = j + 1; }
+            if walk(path, pl, pat, has_pat, tsel, 0, 1) != 0 { rc = 1; }
+            starts = starts + 1;
+        }
+        i = i + 1;
+    }
+    if starts == 0 {
+        set(path, 0, '/' as u8);
+        if walk(path, 1, pat, has_pat, tsel, 0, 1) != 0 { rc = 1; }
+    }
+    delete(path);
+    return rc;
+}

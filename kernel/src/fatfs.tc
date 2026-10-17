@@ -1493,6 +1493,23 @@ export fn fatfs_open(path_addr: u32, plen: i32, flags: i32) -> i32 {
     var dir_off: i32 = peek32(doff_addr) as i32;
     delete(tmp);
 
+    // Reject directory entries (attr DIR bit): callers use file fds,
+    // not dir fds — like mtfs_open. Without this an existing subdir
+    // opens as an empty "file" (O_TRUNC would even wipe its cluster
+    // chain), and find's open() probe cannot tell an empty directory
+    // from a file. Only an existing entry needs the check (r == 0);
+    // dir_create_entry above always creates a plain file.
+    if r == 0 {
+        var attrbuf: U8Array = U8Array(512);
+        if fat_block_read(dir_sec, attrbuf) != 512 {
+            delete(attrbuf);
+            return -1;
+        }
+        var attr: u8 = get(attrbuf, dir_off + 11);
+        delete(attrbuf);
+        if (attr & 0x10u8) != 0u8 { return -1; }
+    }
+
     // O_TRUNC: free existing clusters and reset size to 0
     if (flags & FATFS_O_TRUNC) != 0 {
         if found_clus >= 2u32 {

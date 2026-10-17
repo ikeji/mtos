@@ -112,7 +112,7 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     # kfree path for frame_buf / ram / stack / img / argv / stdio fds;
     # the kernel prints "KERN: live=N" at shutdown so the test asserts
     # the count stays bounded regardless of spawn iterations.
-    fs_out=$(printf 'tmpdemo\ncatfile\ncatfile /hello.txt\necho hi > /tmp/redir\ncatfile /tmp/redir\nrm /tmp/redir\nrm /tmp/redir\nls /dev\necho DEVFS_OK > /dev/uart\necho 2031-08-20 09:15:42 > /dev/rtc\ncat /dev/rtc\nfbtest\nkbdump\nKBDTEST_HELLO\necho PIPEWORD | wc\nps\nfree\nuptime\ndf\nconsole\necho CTEST\nquit\nquit\n' \
+    fs_out=$(printf 'tmpdemo\ncatfile\ncatfile /hello.txt\necho hi > /tmp/redir\ncatfile /tmp/redir\nrm /tmp/redir\nrm /tmp/redir\nls /dev\necho DEVFS_OK > /dev/uart\necho 2031-08-20 09:15:42 > /dev/rtc\ncat /dev/rtc\nfbtest\nkbdump\nKBDTEST_HELLO\necho PIPEWORD | wc\nps\nfree\nuptime\ndf\nfind /bin -name hel*\nfind /tmp /proc -type f\nconsole\necho CTEST\nquit\nquit\n' \
         | timeout 10 qemu-system-riscv32 -smp 1 -nographic \
         -serial mon:stdio --no-reboot -m 128 \
         -machine virt,aclint=on -bios none \
@@ -170,6 +170,13 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     fs_has_free=$(echo "$fs_out" | grep -c "^\(total\|used\|free\):.* KB")
     fs_has_uptime=$(echo "$fs_out" | grep -c "^up [0-9]*\.[0-9][0-9][0-9] s")
     fs_has_df=$(echo "$fs_out" | grep -c "^mtfs   /      total=")
+    # find: recursive walk + -name glob (basename) + -type f across mounts.
+    # /bin/hello2 must appear exactly once (glob hel*), /tmp/demo (left by
+    # tmpdemo) proves tmpfs entries are classified as files, and no
+    # directory (/bin/hel* has none, /tmp, /proc) may leak through.
+    fs_has_find=$(echo "$fs_out" | grep -c "^/bin/hello2$")
+    fs_has_find_tmp=$(echo "$fs_out" | grep -c "^/tmp/demo$")
+    fs_find_dir=$(echo "$fs_out" | grep -c "^/tmp$\\|^/proc$\\|^/bin$")
     fs_has_devwrite=$(echo "$fs_out" | grep -c "DEVFS_OK")
     # /dev/rtc roundtrip: writing a fixed datetime then reading it
     # back exercises devfs_write accumulation + commit-at-close +
@@ -216,12 +223,13 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
                 && [ "$fs_has_console" -gt 0 ] \
                 && [ "$fs_has_ps" -gt 0 ] && [ "$fs_has_free" -eq 3 ] \
                 && [ "$fs_has_uptime" -gt 0 ] && [ "$fs_has_df" -gt 0 ] \
+                && [ "$fs_has_find" -eq 1 ] && [ "$fs_has_find_tmp" -eq 1 ] && [ "$fs_find_dir" -eq 0 ] \
                 && [ "$fs_has_sh" -gt 0 ] && [ "$fs_has_bye" -gt 0 ] \
                 && [ -n "$fs_live" ] && [ "$fs_live" -le 145 ]; then
-                report_pass "fs_virtio: kern.conf init + tmpdemo + catfile argv + redirect + devfs + rtc + fb + kbd + pipe + ps/free/uptime/df + console, live=$fs_live" "$elapsed"
+                report_pass "fs_virtio: kern.conf init + tmpdemo + catfile argv + redirect + devfs + rtc + fb + kbd + pipe + ps/free/uptime/df/find + console, live=$fs_live" "$elapsed"
             else
                 report_fail_msg "fs_virtio" \
-                    "cat=$fs_cat_count cat2=$fs_cat2_count tmpok=$fs_has_tmpfs_ok tmppayload=$fs_has_tmpfs_payload redir=$fs_has_redir rmfail=$fs_rm_fail_count dev=$fs_has_dev devwr=$fs_has_devwrite rtc=$fs_has_rtc fb=$fs_has_fb kbd=$fs_has_kbd pipe=$fs_has_pipe ps=$fs_has_ps free=$fs_has_free uptime=$fs_has_uptime df=$fs_has_df console=$fs_has_console live=$fs_live a=$fs_has_a b=$fs_has_b mtfs=$fs_has_mtfs_msg sh=$fs_has_sh bye=$fs_has_bye; got: $(printf '%s' "$fs_out" | head -c 480)"
+                    "cat=$fs_cat_count cat2=$fs_cat2_count tmpok=$fs_has_tmpfs_ok tmppayload=$fs_has_tmpfs_payload redir=$fs_has_redir rmfail=$fs_rm_fail_count dev=$fs_has_dev devwr=$fs_has_devwrite rtc=$fs_has_rtc fb=$fs_has_fb kbd=$fs_has_kbd pipe=$fs_has_pipe ps=$fs_has_ps free=$fs_has_free uptime=$fs_has_uptime df=$fs_has_df find=$fs_has_find/$fs_has_find_tmp/$fs_find_dir console=$fs_has_console live=$fs_live a=$fs_has_a b=$fs_has_b mtfs=$fs_has_mtfs_msg sh=$fs_has_sh bye=$fs_has_bye; got: $(printf '%s' "$fs_out" | head -c 480)"
             fi
             ;;
         *)

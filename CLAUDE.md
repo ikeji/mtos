@@ -209,7 +209,7 @@ compiler/   サブプロジェクト 1: TinyC コンパイラ
 userland/   サブプロジェクト 2: MTOS ユーザータスク
   lib/libtc/   共通ユーザライブラリ (puts/eputs/print/syscall stub forward decl)
   bin/<task>/  TC タスク (44 個) + task.mk (GUEST_TASKS / EXTRA_GUEST_TASKS 宣言)
-    sh, msh, ls, cat, echo, wc, head, cp, du, grep, rm, mkdir, rmdir,
+    sh, msh, ls, cat, echo, wc, head, cp, du, find, grep, rm, mkdir, rmdir,
     md5sum, ps, free, uptime, df, vi, neofetch, console, fbtest, count, seq,
     mx, mr, muxon, muxoff, sdprobe, kbdump, bin2uf2, launcher, hello, hello2,
     catfile, tmpdemo
@@ -614,7 +614,7 @@ GEN2_DIR=/path/to/gen2 ./kernel/scripts/build.sh --target pico2 -o kernel.uf2
    だけコンパイルし `CACHED_S_DIR` 経由で各タスクビルドで共有 (phase 7 で
    導入、-8.8 s)
 2. ゲストタスク (`userland/bin/*/task.mk` が GUEST_TASKS に積む: hello,
-   hello2, catfile, sh, msh, tmpdemo, echo, cat, ls, wc, head, cp, du,
+   hello2, catfile, sh, msh, tmpdemo, echo, cat, ls, wc, head, cp, du, find,
    grep, rm, mkdir, rmdir, neofetch, vi, console, fbtest, launcher,
    count, seq, mx, mr, muxon, muxoff, sdprobe, kbdump, md5sum, ps,
    free, uptime, df, bin2uf2) を raw バイナリにコンパイル。各タスクには
