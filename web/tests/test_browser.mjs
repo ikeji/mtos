@@ -3,7 +3,7 @@
 // xterm.js and check the UART log. argv: <playwright module path> <base url>
 import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
-const [pwPath, baseUrl, consoleBuilt] = process.argv.slice(2);   // consoleBuilt: "1" when tn20k_kernel_console_land.bin exists
+const [pwPath, baseUrl, consoleBuilt] = process.argv.slice(2);   // consoleBuilt: "1" when tn20k_kernel_console_vram.bin exists
 const { chromium } = require(pwPath);
 
 let fails = 0;
@@ -14,7 +14,7 @@ const errors = [];
 page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
 page.on("console", (m) => { if (m.type() === "error") errors.push("console: " + m.text()); });
 try {
-  await page.goto(baseUrl + "/web/?kernel=tn20k_kernel.bin", { waitUntil: "load" });   // UART shell kernel (default is console -l)
+  await page.goto(baseUrl + "/web/?kernel=tn20k_kernel.bin", { waitUntil: "load" });   // UART shell kernel (default is console -l -v)
   await page.waitForFunction(() => window.__emu && window.__emu.log.includes("sh$ "), null, { timeout: 15000 });
   check("kernel boots to sh$ in the Worker", true);
   await page.keyboard.type("echo from browser\r");
@@ -58,10 +58,10 @@ try {
 
   // LCD console kernel: /bin/console renders on the canvas, input comes from the matrix keyboard
   if (consoleBuilt === "1") {
-    await page.goto(baseUrl + "/web/", { waitUntil: "load" });     // the default kernel: console -l (landscape)
+    await page.goto(baseUrl + "/web/", { waitUntil: "load" });     // the default kernel: console -l -v (landscape, VRAM engine)
     await page.waitForFunction(() => window.__emu && window.__emu.log.includes("CONSOLE: LCD ready"), null, { timeout: 15000 });
     await page.waitForFunction(() => window.__emu.screenText().includes("sh$"), null, { timeout: 10000 });
-    check("default kernel (console -l) paints the sh prompt on the LCD canvas", true);
+    check("default kernel (console -l -v, VRAM engine) paints the sh prompt on the LCD canvas", true);
     const size = await page.evaluate(() => [document.getElementById("lcd").width, document.getElementById("lcd").height]);
     check("canvas is landscape 480x320", size[0] === 480 && size[1] === 320, `(${size.join("x")})`);
     await page.click("#lcd");
@@ -97,7 +97,7 @@ try {
     await mp.screenshot({ path: new URL("../build/browser_phone.png", import.meta.url).pathname });
     await phone.close();
   } else {
-    console.log("[test] console kernel: SKIP (kernel/build/tn20k_kernel_console_land.bin not built)");
+    console.log("[test] console kernel: SKIP (kernel/build/tn20k_kernel_console_vram.bin not built)");
   }
 } catch (e) {
   console.log("[test] " + e.message.split("\n")[0]);

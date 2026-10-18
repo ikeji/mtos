@@ -42,8 +42,8 @@
     <option value="tn20k_kernel.bin">tn20k_kernel.bin (sh + coreutils)</option>
     <option value="tn20k_kernel_extra.bin">tn20k_kernel_extra.bin (+ compiler tasks)</option>
     <option value="tn20k_kernel_console.bin">tn20k_kernel_console.bin (LCD console, portrait)</option>
-    <option value="tn20k_kernel_console_land.bin" selected>tn20k_kernel_console_land.bin (LCD console, landscape)</option>
-    <option value="tn20k_kernel_console_vram.bin">tn20k_kernel_console_vram.bin (console -l -v, VRAM engine)</option>
+    <option value="tn20k_kernel_console_land.bin">tn20k_kernel_console_land.bin (LCD console, landscape)</option>
+    <option value="tn20k_kernel_console_vram.bin" selected>tn20k_kernel_console_vram.bin (console -l -v, VRAM engine)</option>
     <option value="tn20k_kernel_console_text.bin">tn20k_kernel_console_text.bin (console -t, text engine)</option>
   </select>
   <button id="btn-load">Load</button>
@@ -84,7 +84,7 @@
   </div>
 </div>
 <pre id="dump"></pre>
-<p class="help">The default kernel runs <code>/bin/console -l</code> (landscape) on the LCD and a second sh on the UART
+<p class="help">The default kernel runs <code>/bin/console -l -v</code> (landscape, VRAM engine) on the LCD and a second sh on the UART
 terminal: type at the <code>sh$</code> prompt on the left (Enter sends CR), or click the LCD and type there.
 The other console kernels (<code>make -C kernel tn20k-console</code> etc.) do the same; <code>tn20k_kernel.bin</code>
 and <code>tn20k_kernel_extra.bin</code> have only the UART shell.

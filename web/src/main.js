@@ -256,7 +256,7 @@ $("btn-sd-forget").onclick = async () => { await idbDel(); attachSd(null, ""); r
 for (const b of document.querySelectorAll("button")) b.addEventListener("click", () => setTimeout(() => term.focus(), 0));
 
 const params = new URLSearchParams(location.search);
-let initialKernel = $("kernel").value;                      // the <option selected> (console -l)
+let initialKernel = $("kernel").value;                      // the <option selected> (console -l -v, VRAM engine)
 if (params.get("kernel")) {
   initialKernel = params.get("kernel");
   if ([...$("kernel").options].some((o) => o.value === initialKernel)) $("kernel").value = initialKernel;

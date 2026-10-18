@@ -271,8 +271,9 @@ Phase 1 時点では SD SPI は STATUS=idle、DATA 読みが常に 0xFF を返�
   `src/main.js` の `KERNEL_DIRS = ["kernels/", "../kernel/build/"]` を
   順に試すので、同じ index.html が Pages でも `make -C web serve` でも
   動く (`?kernel=name` も同じ探索、`/` 入りはそのまま)。**既定 kernel
-  は `tn20k_kernel_console_land.bin`** (開くとすぐ landscape の
-  `console -l` が LCD に出る、2026-10-17)。tn20k の console kernel 4 種は
+  は `tn20k_kernel_console_vram.bin`** (開くとすぐ landscape +
+  VRAM engine の `console -l -v` が LCD に出る、2026-10-18。10-17 までは
+  `_console_land.bin` の `console -l`)。tn20k の console kernel 4 種は
   kern.conf に `init=/bin/sh` も持つので UART 側にも sh が立ち、両方に
   同時に打鍵できる (`node_run.js --stdin + --kbd` で確認)。portrait /
   landscape は virt の test_os と disk を共有していたので tn20k 専用の

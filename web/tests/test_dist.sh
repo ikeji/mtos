@@ -18,6 +18,6 @@ python3 -m http.server "$PORT" --bind 127.0.0.1 -d "$SITE" >/dev/null 2>&1 &
 srv=$!
 trap 'kill $srv 2>/dev/null; rm -rf "$SITE"' EXIT
 for i in $(seq 50); do curl -sf "http://127.0.0.1:$PORT/web/" >/dev/null && break; sleep 0.1; done
-CONSOLE=0; [ -s "$DIST/kernels/tn20k_kernel_console_land.bin" ] && CONSOLE=1
+CONSOLE=0; [ -s "$DIST/kernels/tn20k_kernel_console_vram.bin" ] && CONSOLE=1
 node "$WEB/tests/test_browser.mjs" "$PW" "http://127.0.0.1:$PORT" "$CONSOLE" | sed 's/^test_browser:/test_dist:/'
 exit "${PIPESTATUS[0]}"
