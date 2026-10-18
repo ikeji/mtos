@@ -155,7 +155,7 @@ $(BUILD_DIR)/disk-console-land-tn20k.img: $(ROOT)/kernel/fs-spec/etc/login
 $(BUILD_DIR)/disk-console-vram.img: $(ROOT)/kernel/fs-spec/etc/login
 $(BUILD_DIR)/disk-console-text.img: $(ROOT)/kernel/fs-spec/etc/login
 
-# /etc/term.conf: COLS/ROWS for full-screen apps (sl, eventually vi).
+# /etc/term.conf: COLS/ROWS for full-screen apps (sl, vi).
 # Only console disks ship it; the plain disk leaves it absent so sl on
 # the UART terminal falls back to its 80x24 compile-time default.
 $(BUILD_DIR)/disk-console.img:      DISK_TERM_CONF := $(ROOT)/kernel/fs-spec/etc/term_portrait.conf

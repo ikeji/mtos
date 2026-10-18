@@ -34,6 +34,19 @@ for v in console console_land console_vram console_text; do
             --expect-screen 'sh$ l' --quiet > /dev/null 2> "$OUT/${v}_late_emu.txt" \
             || { echo "[test] $v: a lone key at the idle prompt never reached the LCD (sleeper wakeup)"; ok=0; }
     fi
+    # vi sizes itself from /etc/term.conf (COLS=56 / ROWS=15 on the
+    # landscape disks): the status line must land on the last LCD row
+    # and the file's first line must still be visible, i.e. no long
+    # line wrapped and scrolled the top of the file away.
+    if [ $ok = 1 ] && [ "$v" = console_vram ]; then
+        node "$WEB/src/node_run.js" "$bin" --max 400000000 --kbd 'vi /etc/login\n' \
+            --expect-screen '-- NORMAL' --screen-text > /dev/null 2> "$OUT/${v}_vi_emu.txt" \
+            || { echo "[test] $v: vi never drew its status line on the LCD"; ok=0; }
+        grep -q '^| .*/etc/login  runs at sh startup' "$OUT/${v}_vi_emu.txt" \
+            || { echo "[test] $v: vi scrolled the first line of /etc/login off the LCD (term.conf geometry)"; ok=0; }
+        sed -n '/\[emu\] screen/,$p' "$OUT/${v}_vi_emu.txt" | grep '^| ' | grep -n 'NORMAL' | grep -q '^17:' \
+            || { echo "[test] $v: vi status line is not on LCD row 15 (2 title rows + 15)"; ok=0; }
+    fi
     if [ $ok = 1 ]; then
         echo "[test] $v: PASS $(grep -o 'matched after.*' "$OUT/${v}_emu.txt")"
     else
