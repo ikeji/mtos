@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MTOS in the browser</title>
+<link rel="stylesheet" href="vendor/xterm/xterm.css">
+<style>
+  :root { color-scheme: light dark; --fg: #222; --bg: #f4f4f4; --muted: #666; --panel: #fff; --border: #ccc; }
+  @media (prefers-color-scheme: dark) { :root { --fg: #ddd; --bg: #1b1b1b; --muted: #999; --panel: #262626; --border: #444; } }
+  body { margin: 0; padding: 16px; background: var(--bg); color: var(--fg); font: 14px/1.4 system-ui, sans-serif; }
+  h1 { font-size: 18px; margin: 0 0 8px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .row label { color: var(--muted); }
+  select, button, input { font: inherit; }
+  #term { background: #000; padding: 4px; border-radius: 4px; width: fit-content; max-width: 100%; }
+  .main { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+  .lcd-box { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+  /* align-items: flex-start keeps the canvas at its own size: as a column-flex
+     item it would otherwise be stretched to the caption's width (480 -> ~487 px),
+     and nearest-neighbour scaling then doubles a few pixel columns. main.js also
+     sets an explicit CSS size so each LCD pixel maps to a whole number of device pixels. */
+  #lcd { background: #000; image-rendering: pixelated; border: 3px solid #333; border-radius: 6px; cursor: text; flex: none; display: block; }
+  /* Keys for the LCD go through a textarea (so phones show their soft keyboard
+     when the LCD is tapped); it sits invisibly over the canvas' top-left corner. */
+  .lcd-wrap { position: relative; }
+  #lcd-input { position: absolute; left: 4px; top: 4px; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0;
+               resize: none; overflow: hidden; font-size: 16px; }
+  .lcd-wrap:focus-within #lcd { border-color: #4af; }
+  .lcd-box .stats { font-size: 13px; }
+  .stats { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .stats b { color: var(--fg); font-weight: 600; }
+  #dump { white-space: pre; font: 12px ui-monospace, monospace; color: var(--muted); }
+  .help { color: var(--muted); font-size: 13px; margin-top: 12px; }
+</style>
+</head>
+<body>
+<h1>MTOS in the browser <span class="stats">— tn20k kernel on a JS RV32IM emulator</span></h1>
+<div class="row">
+  <label for="kernel">kernel</label>
+  <select id="kernel">
+    <option value="tn20k_kernel.bin">tn20k_kernel.bin (sh + coreutils)</option>
+    <option value="tn20k_kernel_extra.bin">tn20k_kernel_extra.bin (+ compiler tasks)</option>
+    <option value="tn20k_kernel_console.bin">tn20k_kernel_console.bin (LCD console, portrait)</option>
+    <option value="tn20k_kernel_console_land.bin">tn20k_kernel_console_land.bin (LCD console, landscape)</option>
+    <option value="tn20k_kernel_console_vram.bin" selected>tn20k_kernel_console_vram.bin (console -l -v, VRAM engine)</option>
+    <option value="tn20k_kernel_console_text.bin">tn20k_kernel_console_text.bin (console -t, text engine)</option>
+  </select>
+  <button id="btn-load">Load</button>
+  <label for="file">or file</label>
+  <input id="file" type="file" accept=".bin">
+  <button id="btn-run">Run</button>
+  <button id="btn-reset">Reset</button>
+  <label for="speed">speed</label>
+  <select id="speed">
+    <option value="0">max</option>
+    <option value="150">150 MIPS (pico2)</option>
+    <option value="40">40 MIPS</option>
+    <option value="12">12 MIPS (tn20k)</option>
+  </select>
+</div>
+<div class="row">
+  <label for="sd-file">SD card</label>
+  <input id="sd-file" type="file" accept=".img,.bin">
+  <button id="btn-sd-new">New 33 MB image</button>
+  <button id="btn-sd-download">Download image</button>
+  <button id="btn-sd-forget">Forget</button>
+  <span class="stats" id="sd-status">no card</span>
+</div>
+<div class="row stats">
+  <span id="status">no kernel</span> · <span id="kernel-name"></span> ·
+  <span><b id="mips">-</b> MIPS</span> · <span><b id="insns">0</b> insns</span>
+  <span id="unmapped"></span>
+</div>
+<div class="main">
+  <div id="term"></div>
+  <div class="lcd-box">
+    <div class="lcd-wrap">
+      <canvas id="lcd" width="320" height="480" title="ILI9488 LCD — tap / click, then type on the matrix keyboard"></canvas>
+      <textarea id="lcd-input" rows="1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                aria-label="matrix keyboard input"></textarea>
+    </div>
+    <span class="stats">LCD (ILI9488 320x480) — tap it and type: matrix keyboard, lowercase only</span>
+  </div>
+</div>
+<pre id="dump"></pre>
+<p class="help">The default kernel runs <code>/bin/console -l -v</code> (landscape, VRAM engine) on the LCD and a second sh on the UART
+terminal: type at the <code>sh$</code> prompt on the left (Enter sends CR), or click the LCD and type there.
+The other console kernels (<code>make -C kernel tn20k-console</code> etc.) do the same; <code>tn20k_kernel.bin</code>
+and <code>tn20k_kernel_extra.bin</code> have only the UART shell.
+Matrix keyboard (the 5x12 matrix keyboard has no shift, so lowercase only; Enter / Backspace / Esc / Tab work).
+Kernels are fetched from <code>kernels/</code> next to the page (a symlink to <code>kernel/build/</code> in the
+repository: <code>make -C web serve</code>, then open <code>/web/</code>; real copies in the GitHub Pages build);
+otherwise pick the .bin with the file button.
+<code>?kernel=name</code> (or a path with a <code>/</code>) overrides the default, <code>?autoload=0</code> skips the initial fetch.
+Source: <a href="https://github.com/ikeji/mtos">github.com/ikeji/mtos</a> (<code>web/</code>).
+SD card: pick a FAT32 image (<code>web/tools/fatimg.py mkfs sd.img</code> + <code>add</code>) or make an empty one; it mounts
+at <code>/sd</code> after the reboot. Writes are saved in this browser (IndexedDB) a couple of seconds after the OS stops
+writing and restored on the next visit; Download gets the current image as a file.</p>
+<script src="vendor/xterm/xterm.js"></script>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>
