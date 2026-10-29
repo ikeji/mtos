@@ -24,7 +24,7 @@ fn main() -> i32 {
         var r: i32 = sys_read(fd, ch, 1);
         if r == 1 {
             var c: u8 = get(ch, 0);
-            if c == '\n' as u8 {
+            if c == '\n' as u8 || c == '\r' as u8 {
                 done = 1;
             } else {
                 set(line, n, c);

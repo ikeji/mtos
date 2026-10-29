@@ -46,6 +46,15 @@ for v in console console_land console_vram console_text; do
             || { echo "[test] $v: vi scrolled the first line of /etc/login off the LCD (term.conf geometry)"; ok=0; }
         sed -n '/\[emu\] screen/,$p' "$OUT/${v}_vi_emu.txt" | grep '^| ' | grep -n 'NORMAL' | grep -q '^17:' \
             || { echo "[test] $v: vi status line is not on LCD row 15 (2 title rows + 15)"; ok=0; }
+        # Enter in vi insert mode must split the line. The matrix keyboard's
+        # ENT key used to emit LF, which vi takes as Ctrl+J (TUT-code toggle)
+        # instead of a newline; it now emits CR like a UART terminal.
+        node "$WEB/src/node_run.js" "$bin" --max 500000000 \
+            --kbd 'vi /tmp/nl\nia\nb\n\e:wq\ncat /tmp/nl\necho nlok\n' \
+            --expect-screen 'nlok' --screen-text > /dev/null 2> "$OUT/${v}_vi_nl_emu.txt" \
+            || { echo "[test] $v: vi :wq round trip never finished (Enter in insert mode?)"; ok=0; }
+        grep -A1 '^| *.a *.$' "$OUT/${v}_vi_nl_emu.txt" | grep -q '^| *.b *.$' \
+            || { echo "[test] $v: Enter in vi insert mode did not insert a newline"; ok=0; }
     fi
     if [ $ok = 1 ]; then
         echo "[test] $v: PASS $(grep -o 'matched after.*' "$OUT/${v}_emu.txt")"

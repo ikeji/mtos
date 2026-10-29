@@ -157,7 +157,8 @@ fn kbd_init() -> void {
     set(g_keymap,  0,  8u8);    // row 0 logical 0  — BS  (phys col 12)
     set(g_keymap,  6, 27u8);    // row 0 logical 6  — ESC (phys col 1)
     set(g_keymap, 18,  9u8);    // row 1 logical 6  — TAB (phys col 1)
-    set(g_keymap, 24, 10u8);    // row 2 logical 0  — ENT (phys col 12)
+    set(g_keymap, 24, 13u8);    // row 2 logical 0  — ENT (phys col 12): CR, like a UART terminal
+                                //   (vi insert mode takes LF as Ctrl+J = TUT-code toggle)
     set(g_keymap, 30,  0u8);    // row 2 logical 6  — CTL (phys col 1)
     set(g_keymap, 36,  0u8);    // row 3 logical 0  — SFT (phys col 12)
     set(g_keymap, 42,  0u8);    // row 3 logical 6  — SFT (phys col 1)

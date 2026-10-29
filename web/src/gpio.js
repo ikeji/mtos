@@ -62,14 +62,14 @@ export const KEYMAP = (() => {
   const s = "_09876_12345'poiuy_qwert_:lkjh_asdfg_/.,mn_zxcvb_     _     ";
   const m = new Uint8Array(60);
   for (let i = 0; i < 60; i++) m[i] = s.charCodeAt(i);
-  m[0] = 8; m[6] = 27; m[18] = 9; m[24] = 10;          // BS ESC TAB ENTER
+  m[0] = 8; m[6] = 27; m[18] = 9; m[24] = 13;          // BS ESC TAB ENTER (CR, like a UART terminal)
   for (const sc of [30, 36, 42, 48, 54]) m[sc] = 0;    // CTL SFT FN: no byte
   return m;
 })();
 
 // byte -> scancode (first match), -1 when the matrix has no such key.
 export function scancodeOf(ch) {
-  if (ch === 13) ch = 10;
+  if (ch === 10) ch = 13;                              // "\n" in typed text means Enter
   if (ch >= 65 && ch <= 90) ch += 32;                  // no shift on the matrix: fold to lowercase
   for (let sc = 0; sc < 60; sc++) if (KEYMAP[sc] === ch && ch !== 0) return sc;
   return -1;

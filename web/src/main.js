@@ -60,7 +60,7 @@ const lcdInput = $("lcd-input");
 const held = new Map();          // KeyboardEvent.code -> scancode, so key-up releases what key-down pressed
 function keyToSc(e) {
   if (e.ctrlKey || e.altKey || e.metaKey) return -1;
-  const special = { Enter: 10, Backspace: 8, Escape: 27, Tab: 9 };
+  const special = { Enter: 13, Backspace: 8, Escape: 27, Tab: 9 };
   if (e.key in special) return scancodeOf(special[e.key]);
   return e.key.length === 1 ? scancodeOf(e.key.charCodeAt(0)) : -1;
 }
