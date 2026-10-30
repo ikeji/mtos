@@ -68,9 +68,11 @@ ProcFD に slot 番号を記録する。これにより:
   env を継承しているので sh が設定した値が見える。
 - `ls /proc/self/env` も同様に ls の継承 env を列挙する。
 
-つまり sh に `export` builtin が無くても、環境変数の設定・参照・列挙が
-既存コマンドだけで成立する。`export K=V` / `$VAR` 展開は sugar として
-後で足せる (読むだけで書ける)。
+つまり sh に builtin が無くても、環境変数の設定・参照・列挙が既存
+コマンドだけで成立する。ただし `>` 経由の設定はこの「open 時解決」に
+依存していて直感に反する (echo の env に入ると誤解しやすい) ので、
+sh には `setenv` / `getenv` / `env` builtin を UI として足す (後述)。
+機構は /proc、builtin はその薄い皮、という分担。
 
 ## kernel 側
 
@@ -156,11 +158,22 @@ fn task_get_argv(slot) -> u32
 
 ## userland 側
 
-- **libtc**: `env_get_int(key: StringLiteral, dflt: i32) -> i32`
-  (open `/proc/self/env/<key>` → read → 10 進 parse → close、失敗なら
-  dflt) と `env_set_int(key, v) -> i32` を追加。vi と sl が持つ
-  term.conf パーサ (`load_term_conf` / `buf_starts_with` /
-  `parse_dec_buf`) は削除。
+- **libtc**: 文字列の読み書きだけを提供し、型は知らない。
+  ```tc
+  export fn env_get(key: StringLiteral, buf: U8Array, cap: i32) -> i32;
+      // open /proc/self/env/<key> → read → close。値のバイト数 (LF 抜き)、
+      // 無ければ -1
+  export fn env_set(key: StringLiteral, buf: U8Array, n: i32) -> i32;
+      // O_CREAT|O_WRONLY|O_TRUNC で open → write → close。0 / -1
+  export fn parse_dec(buf: U8Array, off: i32, n: i32) -> i32;
+      // 非数字で止まる 10 進パーサ。vi / sl / ps が私物で持っている
+      // parse_dec_buf / tok→i32 をここに寄せる (副産物の集約)
+  ```
+  数値化は呼び手 (vi / sl) がプロセス内で `parse_dec` する。key の
+  `/proc/self/env/` prefix 連結は env_get / env_set の内部で行う
+  (U8Array に String layout で組んで do_openat へ渡す、vi の g_path と
+  同じ手口)。vi と sl が持つ term.conf パーサ (`load_term_conf` /
+  `buf_starts_with` / `parse_dec_buf`) は削除。
 - **console**: sh を `do_spawn_fds` する**前**に自分の env に
   `COLS` / `ROWS` (と `TERM=lcd`) を書く。子は spawn 時に継承する。
   値は今の `term_landscape.conf` (56 / 15) と `term_portrait.conf`
@@ -170,15 +183,21 @@ fn task_get_argv(slot) -> u32
     (web/tests/test_console.sh が「status 行が LCD 15 行目」を検証)。
     実装時に console のどの変数が子に見せる端末領域なのかを確かめ、
     その値を export する (差があるなら理由をコメントに残す)。
-- **vi**: `g_screen_rows = env_get_int("ROWS", 24)`、
-  `g_print_cols = env_get_int("COLS", 81) - 1` (eager wrap の -1 は
-  据え置き。既定 80 桁を保つため 81 を既定値にするか、`COLS` 未設定を
-  別扱いにする)。ROWS < 2 / COLS < 3 の無視も据え置き。
+- **vi**: `env_get("ROWS", ...)` が成功したら `parse_dec` して
+  `g_screen_rows` / `g_text_rows` に、`COLS` が成功したら `cols - 1` を
+  `g_print_cols` に (eager wrap の -1 は据え置き)。未設定なら 80x24 の
+  既定のまま。ROWS < 2 / COLS < 3 の無視も据え置き。
 - **sl**: 優先順位は argv (`sl COLS ROWS`) > env > 80x24。
 - **ps** (Phase 4、任意): `/proc/<slot>/cmdline` を読んで NAME の代わり
   に cmdline を出す。
-- **sh** (Phase 4、任意): `export K=V` builtin と `$VAR` 展開。どちらも
-  `/proc/self/env/` を読み書きするだけ。
+- **sh** (Phase 3): 現在の builtin は `exec_command` 先頭の `quit`
+  だけ (専用の仕組みは無く `eq(cmd, n, "quit")` で見ている)。同じ場所に
+  3 つ足す。どれも libtc の env_get / env_set の薄い皮:
+  - `setenv KEY VALUE` — `env_set`。VALUE 省略は空文字列
+  - `getenv KEY` — `env_get` して値 + LF を出力。無ければ exit≠0 相当の
+    メッセージ
+  - `env` — `/proc/self/env` を readdir して `KEY=VALUE` を 1 行ずつ
+  `$VAR` 展開は Phase 4 (任意)。同じ env_get に乗るだけ。
 
 ## 廃止するもの
 
@@ -194,7 +213,10 @@ fn task_get_argv(slot) -> u32
   ```
   echo 15 > /proc/self/env/ROWS      # sh の env に入る (self = open 時の sh)
   cat /proc/self/env/ROWS            # → 15 (cat が継承)
-  ls /proc/self/env                  # → ROWS
+  setenv COLS 56                     # builtin 経由
+  getenv COLS                        # → 56
+  env                                # → COLS=56 / ROWS=15
+  ls /proc/self/env                  # → COLS ROWS
   catfile /proc/self/cmdline         # → catfile /proc/self/cmdline
   cat /proc/self/env/NOPE            # → open 失敗 (エラー表示、exit≠0)
   ```
@@ -220,12 +242,13 @@ fn task_get_argv(slot) -> u32
 2. **kernel 書き込み**: ProcFD の write モード、`procfs_write` +
    vtable、close commit。`echo 15 > /proc/self/env/ROWS` が通る。
    test_os に上記チェックを追加。
-3. **userland**: libtc `env_get_int` / `env_set_int`、console の export、
-   vi / sl の切替、term.conf 廃止、web テスト (UART 側 24 行) 追加。
-   docs/filesystem.md の procfs 節 (「読み取り専用」の記述) と
+3. **userland**: libtc `env_get` / `env_set` / `parse_dec`、console の
+   export、vi / sl の切替 (+ ps の parse_dec 集約)、sh の `setenv` /
+   `getenv` / `env` builtin、term.conf 廃止、web テスト (UART 側 24 行)
+   追加。docs/filesystem.md の procfs 節 (「読み取り専用」の記述) と
    docs/sources.md を更新。
 4. **任意**: `rm` で unset、`/proc/<slot>/{cmdline,env}`、ps の cmdline
-   列、sh の `export` / `$VAR`。
+   列、sh の `$VAR` 展開。
 
 ## 判断の記録
 
@@ -237,5 +260,11 @@ fn task_get_argv(slot) -> u32
   が確実に走る。
 - **env 表は 1 kmalloc / 256 B 固定**: K16 (kernel arena fragmentation)
   の経験から、可変長の多数 kmalloc は避ける。満杯は loud に失敗させる。
+- **libtc は文字列、数値化は呼び手**: env の値は文字列 (`TERM=lcd` の
+  ように数値でないものもある)。libtc に int 版を置くと型ごとに API が
+  増えるので、`env_get` / `env_set` + 汎用 `parse_dec` に留める。
+- **sh builtin は機構ではなく UI**: `/proc/self/env/` だけで機能は
+  完結させ、`setenv` / `getenv` / `env` は libtc を呼ぶだけの皮にする。
+  テストは /proc 直叩きと builtin の両方を通す。
 - **`self` 以外を書けるようにしない**: 他 task の env を書く用途が無く、
   読み取り専用に限れば `g_current` 以外の slot の同期を考えなくてよい。
