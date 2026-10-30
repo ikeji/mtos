@@ -430,6 +430,9 @@ export fn sys_exec_handler(path: String, argv_addr: u32,
     // gets the default (UART) stdio. A redirect fd is tagged owned by
     // the post-exec slot so slot_free_allocs closes it at exit.
     set_last_stdio(in_rd, out_rd);
+    // exec keeps the environment (docs/task/proc_env.md): copy the old
+    // block's env table into the new block before the old one is freed.
+    task_env_carry_to_last(sched_current_idx());
     sched_replace_current(frame);
     task_set_name_basename(sched_current_idx(), path);
     if in_rd  > 0 { vfs_set_owner(in_rd, sched_current_idx()); }
@@ -483,6 +486,7 @@ export fn sys_spawn_handler(path: String, argv_addr: u32,
     var slot: i32 = sched_spawn(frame);
     if slot >= 0 {
         task_set_name_basename(slot, path);
+        task_env_inherit(slot, sched_current_idx());
         if in_rd  > 0 { vfs_set_owner(in_rd, slot); }
         if out_rd > 0 { vfs_set_owner(out_rd, slot); }
     } else {
@@ -537,6 +541,7 @@ export fn sys_spawn_fds_handler(path: String, argv_addr: u32,
     var slot: i32 = sched_spawn(frame);
     if slot >= 0 {
         task_set_name_basename(slot, path);
+        task_env_inherit(slot, sched_current_idx());
         // Explicitly-passed fds (pipe ends) become child-owned, so
         // slot_free_allocs closes them at the child's exit and the
         // parent closing first doesn't yank them away. Inherited fds

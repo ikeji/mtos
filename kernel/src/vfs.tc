@@ -252,7 +252,7 @@ export fn vfs_open_owned(path: String, flags: i32, owner_slot: i32) -> i32 {
     }
 
     if is_proc_path(path_addr, plen) {
-        var inner_fd: i32 = procfs_open(path_addr, plen);
+        var inner_fd: i32 = procfs_open(path_addr, plen, flags);
         if inner_fd < 0 { return -1; }
         var fd: i32 = alloc_vfs_fd(FS_PROCFS, inner_fd, owner_slot);
         if fd < 0 { procfs_close(inner_fd); return -1; }
@@ -511,8 +511,9 @@ export fn vfs_readdir(path: String, buf_addr: u32, buf_size: i32) -> i32 {
     if path_eq_or_trailing(path_addr, plen, "/tmp") {
         return tmpfs_readdir(buf_addr, buf_size);
     }
-    if path_eq_or_trailing(path_addr, plen, "/proc") {
-        return procfs_readdir(buf_addr, buf_size);
+    if path_eq_or_trailing(path_addr, plen, "/proc") || is_proc_path(path_addr, plen) {
+        // /proc, /proc/self, /proc/self/env — procfs resolves the subdir.
+        return procfs_readdir(path_addr, plen, buf_addr, buf_size);
     }
     if path_eq_or_trailing(path_addr, plen, "/dev") {
         return devfs_readdir(buf_addr, buf_size);

@@ -1,13 +1,22 @@
-// procfs.tc — read-only virtual filesystem rooted at /proc.
+// procfs.tc — virtual filesystem rooted at /proc.
 //
-// Currently exposes a single synthesized file:
+// Synthesized files (read-only snapshots):
 //   /proc/tasks   — one line per scheduler slot:
 //                   "<slot> <state> <frame> <wait_on>"
 //                   state names: ready / done / unused / waiting
+//   /proc/meminfo /proc/cpuinfo /proc/uptime /proc/diskinfo /proc/soc
+//   /proc/kernel
+//   /proc/self/cmdline    — the opening task's argv, space-joined + LF
+//   /proc/self/env/<KEY>  — the opening task's env value + LF
+//                           (docs/task/proc_env.md). `self` is resolved
+//                           to sched_current_idx() at open / readdir time,
+//                           so `echo 15 > /proc/self/env/ROWS` typed at sh
+//                           lands in sh's env: the redirect is opened by
+//                           sys_spawn_handler in sh's context.
 //
-// On open, we snapshot the scheduler state into a kmalloc'd byte
-// buffer and return a procfs-fd. sys_read consumes from the buffer.
-// close frees the snapshot. No writes.
+// On open, we snapshot the contents into a kmalloc'd byte buffer and
+// return a procfs-fd. sys_read consumes from the buffer. close frees
+// the snapshot. Writes (env set) come in Phase 2.
 //
 // Concurrent readers: up to PROCFS_MAX_FDS (4) snapshots alive
 // simultaneously. Each snapshot is its own buffer so readers don't
@@ -349,6 +358,98 @@ fn synth_uptime() -> u32 {
     return buf as u32;
 }
 
+// /proc/self/cmdline — argv joined by single spaces + LF. Init tasks
+// (kern.conf, no argv) show their task name instead.
+fn synth_cmdline(slot: i32) -> u32 {
+    var cap: i32 = 256;
+    var buf: U8Array = U8Array(cap as u32);
+    var pos: i32 = 0;
+    var argv: u32 = task_get_argv(slot);
+    if argv == 0u32 {
+        var nm: U8Array = task_get_name(slot);
+        if nm as u32 != 0u32 {
+            var nlen: i32 = len(nm);
+            if nlen > 0 && get(nm, nlen - 1) == 0u8 { nlen = nlen - 1; }
+            var j: i32 = 0;
+            while j < nlen { pos = append_byte(buf, pos, get(nm, j), cap); j = j + 1; }
+        }
+    } else {
+        // Packed layout (loader.tc pack_argv_at):
+        //   [count][ptr_i ...] with each ptr → [len][bytes]
+        var n: i32 = peek32(argv) as i32;
+        var i: i32 = 0;
+        while i < n {
+            if i > 0 { pos = append_byte(buf, pos, ' ' as u8, cap); }
+            var sp: u32 = peek32(argv + ((4 + 4 * i) as u32));
+            if sp != 0u32 {
+                var slen: i32 = peek32(sp) as i32;
+                var j: i32 = 0;
+                while j < slen {
+                    pos = append_byte(buf, pos, peek8(sp + 4u32 + (j as u32)), cap);
+                    j = j + 1;
+                }
+            }
+            i = i + 1;
+        }
+    }
+    pos = append_byte(buf, pos, 10u8, cap);
+    poke32(buf as u32, pos as u32);
+    return buf as u32;
+}
+
+// /proc/self/env/<KEY> read: value + LF, or 0 when the key is unset
+// (→ open fails, like a missing file).
+fn synth_env_value(slot: i32, key_addr: u32, klen: i32) -> u32 {
+    var cap: i32 = 160;                    // ENV_VAL_MAX (127) + LF
+    var buf: U8Array = U8Array(cap as u32);
+    var vlen: i32 = task_env_get(slot, key_addr, klen, buf as u32 + 4u32, cap - 1);
+    if vlen < 0 { delete(buf); return 0u32; }
+    if vlen > cap - 1 { vlen = cap - 1; }
+    set(buf, vlen, 10u8);
+    poke32(buf as u32, (vlen + 1) as u32);
+    return buf as u32;
+}
+
+// True iff path[0..plen) starts with `prefix`.
+fn path_prefix(path_addr: u32, plen: i32, prefix: StringLiteral) -> bool {
+    var pl: i32 = len(prefix);
+    if plen < pl { return false; }
+    var i: i32 = 0;
+    while i < pl {
+        if peek8(path_addr + (i as u32)) != get(prefix, i) { return false; }
+        i = i + 1;
+    }
+    return true;
+}
+
+// True iff path is exactly `s` or `s` + "/" (directory spellings).
+fn path_is_dir(path_addr: u32, plen: i32, s: StringLiteral) -> bool {
+    var sl: i32 = len(s);
+    if plen == sl { return path_is(path_addr, plen, s); }
+    if plen != sl + 1 { return false; }
+    if peek8(path_addr + (sl as u32)) != '/' as u8 { return false; }
+    return path_prefix(path_addr, plen, s);
+}
+
+// Env keys: [A-Za-z0-9_]+, 1..31 bytes (ENV_KEY_MAX in kernel_common).
+fn env_key_ok(key_addr: u32, klen: i32) -> bool {
+    if klen <= 0 || klen > 31 { return false; }
+    var i: i32 = 0;
+    while i < klen {
+        var c: u8 = peek8(key_addr + (i as u32));
+        var ok: bool = false;
+        if c >= 'a' as u8 && c <= 'z' as u8 { ok = true; }
+        if c >= 'A' as u8 && c <= 'Z' as u8 { ok = true; }
+        if c >= '0' as u8 && c <= '9' as u8 { ok = true; }
+        if c == '_' as u8 { ok = true; }
+        if !ok { return false; }
+        i = i + 1;
+    }
+    return true;
+}
+
+const PROC_ENV_PREFIX_LEN: i32 = 15;   // len("/proc/self/env/")
+
 // Match path against "/proc/tasks"; return true if so.
 fn path_is(path_addr: u32, plen: i32, s: StringLiteral) -> bool {
     var sl: i32 = len(s);
@@ -361,11 +462,21 @@ fn path_is(path_addr: u32, plen: i32, s: StringLiteral) -> bool {
     return true;
 }
 
-export fn procfs_open(path_addr: u32, plen: i32) -> i32 {
+export fn procfs_open(path_addr: u32, plen: i32, flags: i32) -> i32 {
     procfs_init();
     var buf_hdr: u32 = 0u32;
     var size: i32 = 0;
-    if path_is(path_addr, plen, "/proc/tasks") {
+    if path_prefix(path_addr, plen, "/proc/self/env/") {
+        var key_addr: u32 = path_addr + (PROC_ENV_PREFIX_LEN as u32);
+        var klen: i32 = plen - PROC_ENV_PREFIX_LEN;
+        if !env_key_ok(key_addr, klen) { return -1; }
+        // O_WRONLY / O_RDWR / O_CREAT / O_TRUNC: env set (Phase 2).
+        if (flags & (1 | 2 | 64 | 512)) != 0 { return -1; }
+        buf_hdr = synth_env_value(sched_current_idx(), key_addr, klen);
+        if buf_hdr == 0u32 { return -1; }
+    } else if path_is(path_addr, plen, "/proc/self/cmdline") {
+        buf_hdr = synth_cmdline(sched_current_idx());
+    } else if path_is(path_addr, plen, "/proc/tasks") {
         buf_hdr = synth_tasks();
     } else if path_is(path_addr, plen, "/proc/meminfo") {
         buf_hdr = synth_meminfo();
@@ -436,9 +547,21 @@ export fn procfs_close(fd: i32) -> i32 {
     return 0;
 }
 
-// Enumerate /proc entries into `buf_addr` as NUL-separated names.
-// Currently /proc exposes a single entry: "tasks". Returns the number
-// of bytes written (including trailing NULs), or -1 on error.
+// Enumerate a /proc directory into `buf_addr` as NUL-separated names.
+// Returns the number of bytes written (including trailing NULs), or -1
+// when the path is not a procfs directory.
+fn readdir_append_bytes(buf_addr: u32, buf_size: i32, pos: i32, src: u32, nlen: i32) -> i32 {
+    if pos + nlen + 1 > buf_size { return pos; }
+    var i: i32 = 0;
+    while i < nlen {
+        poke8(buf_addr + (pos as u32), peek8(src + (i as u32)));
+        pos = pos + 1;
+        i = i + 1;
+    }
+    poke8(buf_addr + (pos as u32), 0u8);
+    return pos + 1;
+}
+
 fn readdir_append(buf_addr: u32, buf_size: i32, pos: i32, name: StringLiteral) -> i32 {
     var nlen: i32 = len(name);
     if pos + nlen + 1 > buf_size { return pos; }
@@ -452,14 +575,37 @@ fn readdir_append(buf_addr: u32, buf_size: i32, pos: i32, name: StringLiteral) -
     return pos + 1;
 }
 
-export fn procfs_readdir(buf_addr: u32, buf_size: i32) -> i32 {
+export fn procfs_readdir(path_addr: u32, plen: i32, buf_addr: u32, buf_size: i32) -> i32 {
     var pos: i32 = 0;
-    pos = readdir_append(buf_addr, buf_size, pos, "tasks");
-    pos = readdir_append(buf_addr, buf_size, pos, "meminfo");
-    pos = readdir_append(buf_addr, buf_size, pos, "cpuinfo");
-    pos = readdir_append(buf_addr, buf_size, pos, "uptime");
-    pos = readdir_append(buf_addr, buf_size, pos, "diskinfo");
-    pos = readdir_append(buf_addr, buf_size, pos, "soc");
-    pos = readdir_append(buf_addr, buf_size, pos, "kernel");
-    return pos;
+    if path_is_dir(path_addr, plen, "/proc") {
+        pos = readdir_append(buf_addr, buf_size, pos, "tasks");
+        pos = readdir_append(buf_addr, buf_size, pos, "meminfo");
+        pos = readdir_append(buf_addr, buf_size, pos, "cpuinfo");
+        pos = readdir_append(buf_addr, buf_size, pos, "uptime");
+        pos = readdir_append(buf_addr, buf_size, pos, "diskinfo");
+        pos = readdir_append(buf_addr, buf_size, pos, "soc");
+        pos = readdir_append(buf_addr, buf_size, pos, "kernel");
+        pos = readdir_append(buf_addr, buf_size, pos, "self");
+        return pos;
+    }
+    if path_is_dir(path_addr, plen, "/proc/self") {
+        pos = readdir_append(buf_addr, buf_size, pos, "cmdline");
+        pos = readdir_append(buf_addr, buf_size, pos, "env");
+        return pos;
+    }
+    if path_is_dir(path_addr, plen, "/proc/self/env") {
+        var slot: i32 = sched_current_idx();
+        var key: U8Array = U8Array(32u32);
+        var i: i32 = 0;
+        var klen: i32 = task_env_key_at(slot, i, key as u32 + 4u32, 31);
+        while klen >= 0 {
+            if klen > 31 { klen = 31; }
+            pos = readdir_append_bytes(buf_addr, buf_size, pos, key as u32 + 4u32, klen);
+            i = i + 1;
+            klen = task_env_key_at(slot, i, key as u32 + 4u32, 31);
+        }
+        delete(key);
+        return pos;
+    }
+    return -1;
 }

@@ -104,6 +104,15 @@ struct Task {
     // parents that block in sys_wait, the kernel pokes their saved
     // a0 directly when waking them in sched_task_exit.
     exit_code: i32,
+    // /proc/self/{env,cmdline} (docs/task/proc_env.md). Both live inside
+    // the ram block, so they free with it and need no kfree here.
+    //   env_tab: env table slot — [used: u32][KEY=VALUE\0 ...]
+    //            (TASK_ENV_RESERVE bytes after the name slot)
+    //   argv_at: packed argv (make_task_argv_addr), 0 = no argv. Kept
+    //            here because the frame's saved a2 is only the argv
+    //            pointer until the task's first trap re-saves live a2.
+    env_tab:   u32,
+    argv_at:   u32,
 }
 
 var g_num_tasks: i32 = 0;
@@ -132,6 +141,14 @@ var g_last_argv_addr: u32 = 0u32;
 // the carve stranded a permanent fragment above it (see docs).
 var g_last_name_addr: u32 = 0u32;
 const TASK_NAME_RESERVE: i32 = 64;
+// Env table slot inside the ram block (right after the name slot):
+// [used: u32][KEY=VALUE\0 ...]. In-block like the name so a spawn
+// never carves a standalone heap bucket (docs/scaling.md Q1 / K16).
+var g_last_env_addr: u32 = 0u32;
+const TASK_ENV_RESERVE: i32 = 256;
+const ENV_DATA_CAP: i32 = 252;      // TASK_ENV_RESERVE - 4 (used header)
+const ENV_KEY_MAX: i32 = 31;
+const ENV_VAL_MAX: i32 = 127;
 
 // ===== UART frame multiplexer (docs/task/uart_multiplex.md) =====
 //
@@ -837,7 +854,8 @@ export fn make_task(entry: u32, ram_size: i32, stack_size: i32,
     // it frees atomically with the rest of the block — no standalone
     // bucket alloc that would strand the large heap.
     var total_size: i32 = ram_size + stack_size + argv_aligned
-                        + FRAME_RESERVE + TASK_NAME_RESERVE;
+                        + FRAME_RESERVE + TASK_NAME_RESERVE
+                        + TASK_ENV_RESERVE;
     var task_ram: U8Array = U8Array((total_size) as u32);
     var ram_base: u32 = task_ram as u32 + 4u32;
     var task_gp: u32 = ram_base + 0x800u32;
@@ -852,6 +870,10 @@ export fn make_task(entry: u32, ram_size: i32, stack_size: i32,
     // Name slot starts right after the 132-byte frame save area.
     var name_addr: u32 = frame + 132u32;
     poke32(name_addr, 0u32);   // empty name until task_set_name runs
+    // Env table slot follows the name slot; empty until a /proc/self/env
+    // write or task_env_inherit fills it.
+    var env_addr: u32 = name_addr + (TASK_NAME_RESERVE as u32);
+    poke32(env_addr, 0u32);
 
     init_task_frame(frame, entry, stack_top, task_gp, arena_addr, arena_size);
 
@@ -866,11 +888,13 @@ export fn make_task(entry: u32, ram_size: i32, stack_size: i32,
     g_last_stack_size = stack_size;
     g_last_argv_addr = argv_addr;
     g_last_name_addr = name_addr;
+    g_last_env_addr  = env_addr;
     return frame;
 }
 
 export fn make_task_argv_addr() -> u32 { return g_last_argv_addr; }
 export fn make_task_name_addr() -> u32 { return g_last_name_addr; }
+export fn make_task_env_addr()  -> u32 { return g_last_env_addr; }
 
 // Reset the g_last_* allocation bases. Callers do this before
 // load_fd / make_task so that the XIP path (which never touches img)
@@ -880,6 +904,7 @@ export fn reset_last_alloc() -> void {
     g_last_img       = 0u32;
     g_last_argv_addr = 0u32;
     g_last_name_addr = 0u32;
+    g_last_env_addr  = 0u32;
     g_last_stdin_fd  = 0;
     g_last_stdout_fd = 0;
     g_last_ram_size  = 0;
@@ -1033,6 +1058,179 @@ export fn sched_current_idx() -> i32 {
     return g_current;
 }
 
+// ===== Per-task environment + argv (docs/task/proc_env.md) =====
+// procfs serves /proc/self/env/<KEY> and /proc/self/cmdline from these.
+// Keys / values arrive as (addr, len) byte ranges because procfs
+// extracts them from path bytes and write buffers, not TC Strings.
+
+export fn task_get_argv(idx: i32) -> u32 {
+    if g_tasks as u32 == 0u32 { return 0u32; }
+    if idx < 0 || idx >= g_num_tasks { return 0u32; }
+    return argv_at(get(g_tasks, idx));
+}
+
+fn task_env_tab(idx: i32) -> u32 {
+    if g_tasks as u32 == 0u32 { return 0u32; }
+    if idx < 0 || idx >= g_num_tasks { return 0u32; }
+    return env_tab(get(g_tasks, idx));
+}
+
+// Length of the entry starting at data offset `off`, including its NUL.
+fn env_entry_len(tab: u32, off: i32) -> i32 {
+    var used: i32 = peek32(tab) as i32;
+    var data: u32 = tab + 4u32;
+    var e: i32 = off;
+    while e < used && peek8(data + (e as u32)) != 0u8 { e = e + 1; }
+    return e - off + 1;
+}
+
+// Data offset of the entry whose key is key_addr[0..klen), or -1.
+fn env_find(tab: u32, key_addr: u32, klen: i32) -> i32 {
+    var used: i32 = peek32(tab) as i32;
+    var data: u32 = tab + 4u32;
+    var off: i32 = 0;
+    while off < used {
+        var same: bool = true;
+        var i: i32 = 0;
+        while same && i < klen {
+            if off + i >= used { same = false; }
+            else if peek8(data + ((off + i) as u32)) != peek8(key_addr + (i as u32)) { same = false; }
+            i = i + 1;
+        }
+        if same && off + klen < used
+            && peek8(data + ((off + klen) as u32)) == '=' as u8 {
+            return off;
+        }
+        off = off + env_entry_len(tab, off);
+    }
+    return -1;
+}
+
+// Copy the value of KEY into out_addr (at most cap bytes). Returns the
+// full value length (may exceed cap), or -1 when the key is unset.
+export fn task_env_get(idx: i32, key_addr: u32, klen: i32,
+                       out_addr: u32, cap: i32) -> i32 {
+    var tab: u32 = task_env_tab(idx);
+    if tab == 0u32 { return -1; }
+    var off: i32 = env_find(tab, key_addr, klen);
+    if off < 0 { return -1; }
+    var data: u32 = tab + 4u32;
+    var vstart: i32 = off + klen + 1;
+    var vlen: i32 = env_entry_len(tab, off) - 1 - (klen + 1);
+    var i: i32 = 0;
+    while i < vlen && i < cap {
+        poke8(out_addr + (i as u32), peek8(data + ((vstart + i) as u32)));
+        i = i + 1;
+    }
+    return vlen;
+}
+
+// Remove KEY. Returns 0, or -1 when it was not set.
+export fn task_env_unset(idx: i32, key_addr: u32, klen: i32) -> i32 {
+    var tab: u32 = task_env_tab(idx);
+    if tab == 0u32 { return -1; }
+    var off: i32 = env_find(tab, key_addr, klen);
+    if off < 0 { return -1; }
+    var elen: i32 = env_entry_len(tab, off);
+    var used: i32 = peek32(tab) as i32;
+    var data: u32 = tab + 4u32;
+    var i: i32 = off;
+    while i + elen < used {
+        poke8(data + (i as u32), peek8(data + ((i + elen) as u32)));
+        i = i + 1;
+    }
+    poke32(tab, (used - elen) as u32);
+    return 0;
+}
+
+// Set KEY=VALUE (replacing any previous value). Returns 0, or -1 when
+// the key / value is out of range or the table is full — loud, like
+// the fd tables, so a silently dropped variable is noticed.
+export fn task_env_set(idx: i32, key_addr: u32, klen: i32,
+                       val_addr: u32, vlen: i32) -> i32 {
+    var tab: u32 = task_env_tab(idx);
+    if tab == 0u32 { return -1; }
+    if klen <= 0 || klen > ENV_KEY_MAX { return -1; }
+    if vlen < 0 || vlen > ENV_VAL_MAX { return -1; }
+    var old: i32 = 0;
+    var off: i32 = env_find(tab, key_addr, klen);
+    if off >= 0 { old = env_entry_len(tab, off); }
+    var used: i32 = peek32(tab) as i32;
+    var need: i32 = klen + 1 + vlen + 1;
+    if used - old + need > ENV_DATA_CAP {
+        kputs("KERN: env table full\n");
+        return -1;
+    }
+    if off >= 0 { task_env_unset(idx, key_addr, klen); used = peek32(tab) as i32; }
+    var data: u32 = tab + 4u32;
+    var w: u32 = data + (used as u32);
+    var i: i32 = 0;
+    while i < klen { poke8(w, peek8(key_addr + (i as u32))); w = w + 1u32; i = i + 1; }
+    poke8(w, '=' as u8); w = w + 1u32;
+    i = 0;
+    while i < vlen { poke8(w, peek8(val_addr + (i as u32))); w = w + 1u32; i = i + 1; }
+    poke8(w, 0u8);
+    poke32(tab, (used + need) as u32);
+    return 0;
+}
+
+export fn task_env_count(idx: i32) -> i32 {
+    var tab: u32 = task_env_tab(idx);
+    if tab == 0u32 { return 0; }
+    var used: i32 = peek32(tab) as i32;
+    var off: i32 = 0;
+    var n: i32 = 0;
+    while off < used { off = off + env_entry_len(tab, off); n = n + 1; }
+    return n;
+}
+
+// Copy the key of the n-th entry into out_addr (at most cap bytes).
+// Returns the key length, or -1 past the end.
+export fn task_env_key_at(idx: i32, n: i32, out_addr: u32, cap: i32) -> i32 {
+    var tab: u32 = task_env_tab(idx);
+    if tab == 0u32 { return -1; }
+    var used: i32 = peek32(tab) as i32;
+    var data: u32 = tab + 4u32;
+    var off: i32 = 0;
+    while off < used && n > 0 { off = off + env_entry_len(tab, off); n = n - 1; }
+    if off >= used { return -1; }
+    var klen: i32 = 0;
+    while off + klen < used && peek8(data + ((off + klen) as u32)) != '=' as u8 {
+        if klen < cap { poke8(out_addr + (klen as u32), peek8(data + ((off + klen) as u32))); }
+        klen = klen + 1;
+    }
+    return klen;
+}
+
+// Copy task `src`'s env table into the slot at dst_tab (a fresh
+// make_task's env slot, or a child's). No-op when src has none.
+fn env_copy_into(src_tab: u32, dst_tab: u32) -> void {
+    if src_tab == 0u32 || dst_tab == 0u32 || src_tab == dst_tab { return; }
+    var used: i32 = peek32(src_tab) as i32;
+    if used > ENV_DATA_CAP { used = ENV_DATA_CAP; }
+    var i: i32 = 0;
+    while i < used {
+        poke8(dst_tab + 4u32 + (i as u32), peek8(src_tab + 4u32 + (i as u32)));
+        i = i + 1;
+    }
+    poke32(dst_tab, used as u32);
+    return;
+}
+
+// spawn: the child starts with a copy of the parent's env.
+export fn task_env_inherit(child: i32, parent: i32) -> void {
+    env_copy_into(task_env_tab(parent), task_env_tab(child));
+    return;
+}
+
+// exec: the caller's env must survive the ram-block swap. Called after
+// load_fd (the new block's env slot is g_last_env_addr) and before
+// sched_replace_current frees the old block.
+export fn task_env_carry_to_last(idx: i32) -> void {
+    env_copy_into(task_env_tab(idx), g_last_env_addr);
+    return;
+}
+
 // Write the argv pointer into the trap frame's saved a2 slot (offset
 // 48 in the 132-byte layout). task_crt0.s forwards a2 to main's first
 // argument after the runtime is initialized. argv = 0 means "no argv"
@@ -1058,6 +1256,9 @@ fn slot_capture_last(idx: i32) -> void {
     t_stk_sz(t, g_last_stack_size);
     // The name slot lives inside the ram block; task_set_name fills it.
     name(t, g_last_name_addr);
+    // env table + packed argv: also in-block (docs/task/proc_env.md).
+    env_tab(t, g_last_env_addr);
+    argv_at(t, g_last_argv_addr);
     return;
 }
 
@@ -1083,6 +1284,8 @@ fn slot_free_allocs(idx: i32) -> void {
     // parent still uses them.
     vfs_close_owned_by(idx);
     name(t, 0);
+    env_tab(t, 0);
+    argv_at(t, 0);
     in_buf(t, 0);
     in_head(t, 0);
     in_tail(t, 0);
@@ -1103,7 +1306,7 @@ export fn sched_init(max: i32) -> void {
         set(g_tasks, i,
             Task(0, STATE_UNUSED, -1,
                  0, 0, 0, 0, 0, 0, 0,
-                 0, 0, 0, 0, 0, 0));
+                 0, 0, 0, 0, 0, 0, 0, 0));
         i = i + 1;
     }
     return;
