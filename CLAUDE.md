@@ -17,6 +17,19 @@ I_InitGraphics) を完走、`DG_DrawFrame` から `/dev/fb` mode=0
 band-blit 経由で LCD に DOOM ロゴ + Doomguy を表示するまで到達。
 
 **最近の改善 (tn20k / K21 / K22)**:
+- 2026-10-30: **環境変数を `/proc/self/env/<KEY>` として導入**
+  (`docs/task/proc_env.md`)。spawn ABI は不変。kernel が task ram block
+  内に env 表 (256 B) を持ち、spawn で親→子にコピー、exec で保持。
+  procfs は唯一の書き込み可能パスとして `/proc/self/env/<KEY>` を受け
+  (write を close で commit、unlink で unset)、`/proc/self/cmdline` も
+  追加。`self` は open 時の呼び出し task で解決するので
+  `echo 15 > /proc/self/env/ROWS` は sh の env に入る (が `rm` は別 task
+  なので sh の変数は消えない → sh builtin `setenv / unsetenv / getenv /
+  env`)。libtc に `env_get / env_set / env_unset / parse_dec`。console が
+  COLS / ROWS / TERM=lcd を export し vi / sl が読む (`/etc/term.conf`
+  廃止)。これで同じディスクの UART sh の vi は 80x24、LCD は 56x15。
+  同日: マトリクスキーボードの Enter を LF→CR に (vi insert モードで
+  LF は Ctrl+J = TUT 切替だったため改行できなかった、commit 044aa3f)。
 - 2026-08-28: **Tang Nano 20K + 自作 RV32IM コアで MTOS が sh まで起動**
   (`docs/task/tang_nano_20k.md` Phase 0〜4)。新サブプロジェクト `hw/`
   (yosys + nextpnr-himbaechel + apicula、`~/opt/oss-cad-suite`):
