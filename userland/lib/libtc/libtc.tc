@@ -146,3 +146,89 @@ export fn string_from_bytes(buf: U8Array, off: i32, n: i32) -> String {
     poke32(s as u32, n as u32);
     return s as String;
 }
+
+// ---- /proc/self/env — per-task environment (docs/task/proc_env.md) ----
+// The kernel keeps a KEY=VALUE table per task, copied to children at
+// spawn and kept across exec; procfs exposes it as /proc/self/env/<KEY>.
+// Values are byte strings: a caller that wants a number runs parse_dec
+// on what env_get returned. Keys come either as literals ("ROWS") or
+// as runtime Strings (sh's argv), hence the overload pairs.
+
+// "/proc/self/env/<key>" in String layout. Caller deletes.
+fn env_path_bytes(key_addr: u32, klen: i32) -> U8Array {
+    var pre: StringLiteral = "/proc/self/env/";
+    var pl: i32 = len(pre);
+    var p: U8Array = U8Array((pl + klen + 1) as u32);
+    var i: i32 = 0;
+    while i < pl { set(p, i, get(pre, i)); i = i + 1; }
+    i = 0;
+    while i < klen { set(p, pl + i, peek8(key_addr + (i as u32))); i = i + 1; }
+    set(p, pl + klen, 0u8);
+    poke32(p as u32, (pl + klen) as u32);
+    return p;
+}
+
+// Value of KEY into buf (at most cap bytes, trailing LF stripped).
+// Returns the byte count, or -1 when the key is unset.
+fn env_get_at(key_addr: u32, klen: i32, buf: U8Array, cap: i32) -> i32 {
+    var p: U8Array = env_path_bytes(key_addr, klen);
+    var fd: i32 = do_openat(0, p as String, 0);
+    delete(p);
+    if fd < 0 { return -1; }
+    var n: i32 = sys_read(fd, buf, cap);
+    do_close(fd);
+    if n < 0 { return -1; }
+    if n > 0 && get(buf, n - 1) == 10u8 { n = n - 1; }
+    return n;
+}
+
+// Set KEY to buf[0..n). Returns 0, or -1 (bad key, value too long, env
+// table full — the kernel logs which).
+fn env_set_at(key_addr: u32, klen: i32, buf: U8Array, n: i32) -> i32 {
+    var p: U8Array = env_path_bytes(key_addr, klen);
+    var fd: i32 = do_openat(0, p as String, 1 | 64 | 512);   // O_WRONLY|O_CREAT|O_TRUNC
+    delete(p);
+    if fd < 0 { return -1; }
+    if n > 0 { sys_write(fd, buf, n); }
+    return do_close(fd);                  // commit happens at close
+}
+
+fn env_unset_at(key_addr: u32, klen: i32) -> i32 {
+    var p: U8Array = env_path_bytes(key_addr, klen);
+    var rc: i32 = do_unlink(p as String);
+    delete(p);
+    return rc;
+}
+
+export fn env_get(key: StringLiteral, buf: U8Array, cap: i32) -> i32 {
+    return env_get_at(key as u32 + 4u32, len(key), buf, cap);
+}
+export fn env_get(key: String, buf: U8Array, cap: i32) -> i32 {
+    return env_get_at(key as u32 + 4u32, len(key), buf, cap);
+}
+export fn env_set(key: StringLiteral, buf: U8Array, n: i32) -> i32 {
+    return env_set_at(key as u32 + 4u32, len(key), buf, n);
+}
+export fn env_set(key: String, buf: U8Array, n: i32) -> i32 {
+    return env_set_at(key as u32 + 4u32, len(key), buf, n);
+}
+export fn env_unset(key: StringLiteral) -> i32 {
+    return env_unset_at(key as u32 + 4u32, len(key));
+}
+export fn env_unset(key: String) -> i32 {
+    return env_unset_at(key as u32 + 4u32, len(key));
+}
+
+// parse_dec — unsigned decimal in buf[off..n), stopping at the first
+// non-digit (so "15\n" → 15). Shared by vi / sl (env values) and ps
+// (/proc/tasks tokens).
+export fn parse_dec(buf: U8Array, off: i32, n: i32) -> i32 {
+    var v: i32 = 0;
+    while off < n {
+        var c: u8 = get(buf, off);
+        if c < ('0' as u8) || c > ('9' as u8) { return v; }
+        v = v * 10 + (c as i32 - 48);
+        off = off + 1;
+    }
+    return v;
+}

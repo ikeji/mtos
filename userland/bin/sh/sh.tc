@@ -786,6 +786,96 @@ fn emit_ms_dec(us: u32) -> void {
     return;
 }
 
+// --- env builtins (docs/task/proc_env.md) ---------------------------
+//   setenv KEY [VALUE]   set (VALUE = rest of the line, may be empty)
+//   unsetenv KEY         unset
+//   getenv KEY           print the value
+//   env                  print every KEY=VALUE
+// Thin wrappers over libtc env_get / env_set / env_unset. A child task
+// could read the same through /proc/self/env/, and `echo V >
+// /proc/self/env/K` even sets sh's var (the redirect is opened in sh's
+// context), but `rm` / `cat` run in their own task with their own
+// inherited copy — so changing sh's variables is sh's job.
+fn skip_sp(cmd: U8Array, i: i32, n: i32) -> i32 {
+    while i < n && get(cmd, i) == ' ' as u8 { i = i + 1; }
+    return i;
+}
+fn tok_end(cmd: U8Array, i: i32, n: i32) -> i32 {
+    while i < n && get(cmd, i) != ' ' as u8 { i = i + 1; }
+    return i;
+}
+fn tok_is(cmd: U8Array, s: i32, e: i32, lit: StringLiteral) -> bool {
+    if e - s != len(lit) { return false; }
+    var i: i32 = 0;
+    while i < e - s {
+        if get(cmd, s + i) != get(lit, i) { return false; }
+        i = i + 1;
+    }
+    return true;
+}
+
+// Returns 1 if cmd was an env builtin (handled), 0 otherwise.
+fn builtin_env(cmd: U8Array, n: i32) -> i32 {
+    var i0: i32 = skip_sp(cmd, 0, n);
+    var e0: i32 = tok_end(cmd, i0, n);
+    var kind: i32 = 0;
+    if tok_is(cmd, i0, e0, "setenv")   { kind = 1; }
+    if tok_is(cmd, i0, e0, "unsetenv") { kind = 2; }
+    if tok_is(cmd, i0, e0, "getenv")   { kind = 3; }
+    if tok_is(cmd, i0, e0, "env")      { kind = 4; }
+    if kind == 0 { return 0; }
+
+    if kind == 4 {
+        var names: U8Array = U8Array(512u32);
+        var nb: i32 = do_readdir("/proc/self/env", names as u32 + 4u32, 512);
+        var val: U8Array = U8Array(128u32);
+        var p: i32 = 0;
+        while p < nb {
+            var q: i32 = p;
+            while q < nb && get(names, q) != 0u8 { q = q + 1; }
+            var key: String = string_from_bytes(names, p, q - p);
+            var vl: i32 = env_get(key, val, 128);
+            sys_write(1, key);
+            putchar('=' as u8);
+            if vl > 0 { sys_write(1, val, vl); }
+            putchar(10u8);
+            delete(key as U8Array);
+            p = q + 1;
+        }
+        delete(names);
+        delete(val);
+        return 1;
+    }
+
+    var ks: i32 = skip_sp(cmd, e0, n);
+    var ke: i32 = tok_end(cmd, ks, n);
+    if ke == ks {
+        puts("sh: usage: setenv KEY [VALUE] | unsetenv KEY | getenv KEY | env\n");
+        return 1;
+    }
+    var key2: String = string_from_bytes(cmd, ks, ke - ks);
+    if kind == 1 {
+        var vs: i32 = skip_sp(cmd, ke, n);
+        var ve: i32 = n;
+        while ve > vs && get(cmd, ve - 1) == ' ' as u8 { ve = ve - 1; }
+        var v: U8Array = U8Array((ve - vs + 1) as u32);
+        var k: i32 = 0;
+        while k < ve - vs { set(v, k, get(cmd, vs + k)); k = k + 1; }
+        if env_set(key2, v, ve - vs) != 0 { puts("sh: setenv failed\n"); }
+        delete(v);
+    } else if kind == 2 {
+        if env_unset(key2) != 0 { puts("sh: unsetenv: not set\n"); }
+    } else {
+        var gv: U8Array = U8Array(128u32);
+        var gl: i32 = env_get(key2, gv, 128);
+        if gl < 0 { puts("sh: getenv: not set\n"); }
+        else { if gl > 0 { sys_write(1, gv, gl); } putchar(10u8); }
+        delete(gv);
+    }
+    delete(key2 as U8Array);
+    return 1;
+}
+
 // Dispatch one command line stored in cmd[0..n]. `path` is a scratch
 // buffer the caller owns. Returns 0 if the shell should quit (the
 // "quit" built-in), 1 otherwise. Extracted from main() so the same
@@ -795,6 +885,7 @@ fn exec_command(cmd: U8Array, n: i32, path: U8Array) -> i32 {
     if eq(cmd, n, "quit") {
         return 0;
     }
+    if builtin_env(cmd, n) != 0 { return 1; }
     var pipe_pos: I32Array = I32Array(4);
     var num_pipes: i32 = count_pipes(cmd, n, pipe_pos);
 

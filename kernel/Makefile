@@ -155,21 +155,10 @@ $(BUILD_DIR)/disk-console-land-tn20k.img: $(ROOT)/kernel/fs-spec/etc/login
 $(BUILD_DIR)/disk-console-vram.img: $(ROOT)/kernel/fs-spec/etc/login
 $(BUILD_DIR)/disk-console-text.img: $(ROOT)/kernel/fs-spec/etc/login
 
-# /etc/term.conf: COLS/ROWS for full-screen apps (sl, vi).
-# Only console disks ship it; the plain disk leaves it absent so sl on
-# the UART terminal falls back to its 80x24 compile-time default.
-$(BUILD_DIR)/disk-console.img:      DISK_TERM_CONF := $(ROOT)/kernel/fs-spec/etc/term_portrait.conf
-$(BUILD_DIR)/disk-console-land.img: DISK_TERM_CONF := $(ROOT)/kernel/fs-spec/etc/term_landscape.conf
-$(BUILD_DIR)/disk-console-tn20k.img:      DISK_TERM_CONF := $(ROOT)/kernel/fs-spec/etc/term_portrait.conf
-$(BUILD_DIR)/disk-console-land-tn20k.img: DISK_TERM_CONF := $(ROOT)/kernel/fs-spec/etc/term_landscape.conf
-$(BUILD_DIR)/disk-console-vram.img: DISK_TERM_CONF := $(ROOT)/kernel/fs-spec/etc/term_landscape.conf
-$(BUILD_DIR)/disk-console-text.img: DISK_TERM_CONF := $(ROOT)/kernel/fs-spec/etc/term_landscape.conf
-$(BUILD_DIR)/disk-console.img:      $(ROOT)/kernel/fs-spec/etc/term_portrait.conf
-$(BUILD_DIR)/disk-console-land.img: $(ROOT)/kernel/fs-spec/etc/term_landscape.conf
-$(BUILD_DIR)/disk-console-tn20k.img:      $(ROOT)/kernel/fs-spec/etc/term_portrait.conf
-$(BUILD_DIR)/disk-console-land-tn20k.img: $(ROOT)/kernel/fs-spec/etc/term_landscape.conf
-$(BUILD_DIR)/disk-console-vram.img: $(ROOT)/kernel/fs-spec/etc/term_landscape.conf
-$(BUILD_DIR)/disk-console-text.img: $(ROOT)/kernel/fs-spec/etc/term_landscape.conf
+# Terminal geometry for full-screen apps (sl, vi) is no longer a disk
+# file: /bin/console exports COLS / ROWS / TERM through the per-task env
+# (/proc/self/env, docs/task/proc_env.md), so the UART shell on the same
+# disk keeps 80x24.
 
 # Pre-encode prelude (Step 5 of pre-encode, docs/task/asm_pre_encode.md)
 define PRELUDE_PRE_ENCODE
@@ -217,9 +206,6 @@ $(BUILD_DIR)/disk-console-tn20k.img $(BUILD_DIR)/disk-console-land-tn20k.img: \
 	fi && \
 	if [ -n "$(DISK_LOGIN)" ] && [ -f "$(DISK_LOGIN)" ]; then \
 	    mkdir -p "$$_r/etc" && cp "$(DISK_LOGIN)" "$$_r/etc/login"; \
-	fi && \
-	if [ -n "$(DISK_TERM_CONF)" ] && [ -f "$(DISK_TERM_CONF)" ]; then \
-	    mkdir -p "$$_r/etc" && cp "$(DISK_TERM_CONF)" "$$_r/etc/term.conf"; \
 	fi && \
 	mkdir -p "$$_r/etc" && \
 	_kbuild=$$(git -C $(ROOT) rev-parse --short=8 HEAD 2>/dev/null || echo unknown) && \

@@ -178,7 +178,7 @@ TASK_ARENA_<name> / TASK_STACK_<name>) を置く。
 |---|---|
 | `sh/` | 対話シェル (history / TAB 補完 / pipe / `<` `>`) |
 | `msh/` | プロンプト/echo なしの silent sh (UART mux driver 用) |
-| `vi/` | 最小 vi エディタ (hjkl/dd/gg/:w/:q、ANSI 描画、縦スクロール。`/etc/term.conf` の ROWS / COLS で LCD console の画面に合わせ、長い行は COLS で切る) |
+| `vi/` | 最小 vi エディタ (hjkl/dd/gg/:w/:q、ANSI 描画、縦スクロール。env の ROWS / COLS (console が export) で LCD console の画面に合わせ、長い行は COLS で切る) |
 | `console/` | Windows 95 風 GUI コンソール (LCD 接続時) |
 | `neofetch/` | ASCII banner + /proc/tasks, /proc/meminfo, /proc/diskinfo の要約 (12 行、60 桁の LCD に収まる幅) |
 | `count/`, `seq/` | 数字を一定間隔で出力 (協調 preempt 可視化) |
@@ -270,7 +270,7 @@ kernel/
 | `vfs.tc` | VFS 層 (fd table, /tmp は tmpfs, /proc は procfs, /sd は fatfs) |
 | `tmpfs.tc` | RAM backed FS (kmalloc backed, grow-on-write, O_CREAT/O_TRUNC) |
 | `mtfs.tc` | MyTinyFS read-only ドライバ |
-| `procfs.tc` | /proc 仮想 FS (/proc/tasks, /proc/meminfo, ...) |
+| `procfs.tc` | /proc 仮想 FS (/proc/tasks, /proc/meminfo, ..., /proc/self/cmdline, 読み書き可能な /proc/self/env/<KEY> — docs/task/proc_env.md) |
 | `fatfs.tc` | FAT12/16/32 ドライバ (VFAT LFN + サブディレクトリ) |
 | `devfs.tc` | /dev デバイス FS |
 | `loader.tc` | task binary 読み込み + K3 案 C 8 byte header 解析 |

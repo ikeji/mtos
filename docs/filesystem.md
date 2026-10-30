@@ -320,13 +320,21 @@ Version を実測してから決める。
 
 ## procfs
 
-カーネル内部の情報をテキストファイルとして提供する。読み取り専用。
+カーネル内部の情報をテキストファイルとして提供する。open 時にスナップ
+ショットを kmalloc し、read で消費、close で解放。
 
 | パス | 内容 |
 |---|---|
-| `/proc/{pid}/status` | pid, state, heap_start, heap_end |
-| `/proc/{pid}/maps` | メモリ領域一覧 |
+| `/proc/tasks` | scheduler slot ごとに 1 行 (slot / state / frame / wait / RAM / STACK / NAME) |
 | `/proc/meminfo` | kernel heap (kmalloc arena) の `total` / `used` / `free` / `peak` / `largest` (bytes、`largest` は最大連続空きブロック) |
+| `/proc/cpuinfo` `/proc/uptime` `/proc/diskinfo` `/proc/soc` `/proc/kernel` | 各種情報 (procfs.tc 冒頭のコメント参照) |
+| `/proc/self/cmdline` | open した task の argv を空白区切りで 1 行 (kern.conf init は task 名) |
+| `/proc/self/env/<KEY>` | open した task の環境変数 (値 + LF)。**唯一の書き込み可能パス**: O_WRONLY / O_CREAT で open して write → close で commit、unlink で unset |
+
+`/proc/self` の `self` は open / readdir / unlink した瞬間の呼び出し task
+(`sched_current_idx()`) で解決する。env 表は task ram block 内
+(kernel_common.tc `TASK_ENV_RESERVE`)、spawn で親から子へコピー、exec で
+保持。設計は `docs/task/proc_env.md`。
 
 ## syscall
 

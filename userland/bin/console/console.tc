@@ -1544,6 +1544,21 @@ fn eputs_t(s: StringLiteral) -> void {
     return;
 }
 
+// env_set of a non-negative decimal (COLS / ROWS for the child).
+fn env_set_dec(key: StringLiteral, v: i32) -> void {
+    var tmp: U8Array = U8Array(12u32);
+    var buf: U8Array = U8Array(12u32);
+    var dlen: i32 = 0;
+    if v <= 0 { set(tmp, 0, '0' as u8); dlen = 1; }
+    while v > 0 { set(tmp, dlen, ('0' as i32 + v % 10) as u8); dlen = dlen + 1; v = v / 10; }
+    var k: i32 = 0;
+    while k < dlen { set(buf, k, get(tmp, dlen - 1 - k)); k = k + 1; }
+    if env_set(key, buf, dlen) != 0 { eputs("CONSOLE: env_set failed\n"); }
+    delete(tmp);
+    delete(buf);
+    return;
+}
+
 fn main(argv: StringArray) -> i32 {
     eputs_t("CONSOLE: ready\n");
     if jp_load() != 0 { return 1; }
@@ -1667,6 +1682,17 @@ fn main(argv: StringArray) -> i32 {
     }
     var pr: i32 = peek32(pb as u32 + 4u32) as i32;
     var pw: i32 = peek32(pb as u32 + 8u32) as i32;
+
+    // Publish our terminal geometry through the per-task env
+    // (docs/task/proc_env.md). The child inherits it at spawn and passes
+    // it on, so vi / sl under this console size themselves to the LCD
+    // while the UART shell (empty env) keeps 80x24. TERM=lcd marks it.
+    env_set_dec("COLS", COLS);
+    env_set_dec("ROWS", ROWS);
+    var term: U8Array = U8Array(3u32);
+    set(term, 0, 'l' as u8); set(term, 1, 'c' as u8); set(term, 2, 'd' as u8);
+    env_set("TERM", term, 3);
+    delete(term);
 
     eputs_t("CONSOLE: spawning child\n");
     // Spawn the chosen program with stdin = /dev/kbd, stdout = pipe

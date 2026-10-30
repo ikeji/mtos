@@ -101,14 +101,19 @@ struct Task {
   走り出した後の frame+48 は生きた a2 であって argv ではない。
   `slot_capture_last` で `g_last_argv_addr` を `argv` に写す (name と
   同じ経路)。ram block 内なので解放は ram と一緒。
-- `env` の表: 1 本の kmalloc (`ENV_CAP = 256` バイト) に
-  `[used: u32][KEY=VALUE\0 KEY=VALUE\0 ...]` を詰める。線形探索で十分
-  (数本しか入らない)。満杯なら write が -1 を返し `kputs("procfs: env
-  full\n")` で loud に (fd table 満杯の流儀)。
-- **lazily 確保**: 最初の write、または親に非空の env があるときの
-  spawn コピーでだけ kmalloc する。UART の sh (kern.conf init) は 0 の
-  まま。
-- `slot_free_allocs(idx)` で `env` を kfree して 0 に。
+- `env` の表: name slot の直後に `TASK_ENV_RESERVE = 256` バイトを
+  task ram block 内に確保し、`[used: u32][KEY=VALUE\0 KEY=VALUE\0 ...]`
+  を詰める (線形探索で十分、数本しか入らない)。満杯なら set が -1 を
+  返し `kputs("KERN: env table full\n")` で loud に (fd table 満杯の
+  流儀)。
+- **ram block 内に置く理由** (実装時に lazily kmalloc から変更): spawn
+  中の小さな kmalloc は大きな task ram の隙間に bucket を刺して heap を
+  断片化させる (`task_set_name_basename` のコメント、docs/scaling.md
+  Q1、K16)。name slot と同じく block 内なら解放も ram と一緒で kfree
+  不要。UART の sh (kern.conf init) は used = 0 のまま。
+- exec は新 block を確保してから旧 block を解放するので、その間に
+  `task_env_carry_to_last` で旧表を新 block の slot へコピーする
+  (一時 kmalloc 無し)。
 
 API (export):
 
@@ -125,9 +130,9 @@ fn task_get_argv(slot) -> u32
 
 - `sys_spawn_handler` / `sys_spawn_fds_handler`: `sched_spawn` が slot
   を返した直後に `task_env_inherit(slot, sched_current_idx())`。
-- `sys_exec_handler`: `sched_replace_current` が旧 alloc を
-  `slot_free_allocs` で解放するので env も消える。exec 前に `env`
-  ポインタを退避して `env(t, 0)` にし、新 frame 装着後に戻す (Unix の
+- `sys_exec_handler`: `sched_replace_current` が旧 block を
+  `slot_free_allocs` で解放するので、その直前に
+  `task_env_carry_to_last` で新 block の env slot へコピーする (Unix の
   exec は env を保つ)。
 - kern.conf init (`sched_register`) は env 0。
 
@@ -265,8 +270,9 @@ fn task_get_argv(slot) -> u32
 - **close 時 commit**: write ごとに上書きすると `printf` 的な分割 write
   で値が欠ける。sh の `>` は子所有 fd を exit 時に close するので commit
   が確実に走る。
-- **env 表は 1 kmalloc / 256 B 固定**: K16 (kernel arena fragmentation)
-  の経験から、可変長の多数 kmalloc は避ける。満杯は loud に失敗させる。
+- **env 表は task ram block 内の 256 B 固定**: K16 (kernel arena
+  fragmentation) の経験から、spawn 中の小 kmalloc も可変長の多数 kmalloc
+  も避ける。満杯は loud に失敗させる。
 - **libtc は文字列、数値化は呼び手**: env の値は文字列 (`TERM=lcd` の
   ように数値でないものもある)。libtc に int 版を置くと型ごとに API が
   増えるので、`env_get` / `env_set` + 汎用 `parse_dec` に留める。
