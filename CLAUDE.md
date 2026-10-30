@@ -30,6 +30,15 @@ band-blit 経由で LCD に DOOM ロゴ + Doomguy を表示するまで到達。
   当たる、read は 0 = 1970)。同日: sh の TAB 補完がコマンド位置で builtin
   (`quit setenv unsetenv getenv env`) も候補にする (`/bin` の readdir
   結果に名前を追記、builtin はディレクトリ probe をスキップ)。
+  同日: **sh に行編集** (`read_line`)。カーソルを行末と分離し ← → /
+  Home End (`ESC[H` `ESC[F` `ESC[1~` `ESC[4~`、Ctrl-A/E) / Delete
+  (`ESC[3~`) / Ctrl-U / Ctrl-K、途中挿入と削除はコードポイント単位で
+  表示幅 (CJK = 2 桁) を数えて `ESC[nC` / `ESC[nD` / `ESC[K` だけで
+  再描画 (xterm.js と LCD console の両方が実装している CSI)。途中挿入の
+  多バイト文字は揃ってから再描画 (UTF-8 の途中に CSI を挟まない)。TAB
+  補完はカーソルが行末のときだけ。**注意**: test_os は qemu
+  `-serial mon:stdio` なので Ctrl-A (0x01) は qemu が食う → テストでは
+  `ESC[H` を使う。
 - 2026-10-30: **環境変数を `/proc/self/env/<KEY>` として導入**
   (`docs/task/proc_env.md`)。spawn ABI は不変。kernel が task ram block
   内に env 表 (256 B) を持ち、spawn で親→子にコピー、exec で保持。
