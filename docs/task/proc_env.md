@@ -51,8 +51,12 @@ argv は「呼び出しの一部」(関数の引数と同じで、spawn 時に�
   LF は無害。
 - **書き**: `echo 15 > /proc/self/env/ROWS`。書かれたバイト列から末尾の
   LF を 1 つ落として値にする。空文字列も有効な値。
-- **削除** (Phase 4、任意): `rm /proc/self/env/ROWS` → unset。現在 vfs は
-  procfs の unlink を拒否しているので、`vfs_unlink` に procfs 分岐を足す。
+- **削除**: `do_unlink("/proc/self/env/ROWS")` → 呼び出し task 自身の
+  unset (`vfs_unlink` に procfs 分岐、Phase 2 で実装済)。**sh から
+  `rm /proc/self/env/ROWS` と打っても sh の変数は消えない**: rm は別
+  task で、自分が継承したコピーから消すだけ (`>` の open が sh の文脈で
+  行われるのとは違い、unlink は rm の syscall)。sh の変数を消すのは
+  Phase 3 の `unsetenv` builtin (libtc `env_unset` → do_unlink)。
 
 ### `self` の解決タイミング — 重要
 
@@ -165,6 +169,8 @@ fn task_get_argv(slot) -> u32
       // 無ければ -1
   export fn env_set(key: StringLiteral, buf: U8Array, n: i32) -> i32;
       // O_CREAT|O_WRONLY|O_TRUNC で open → write → close。0 / -1
+  export fn env_unset(key: StringLiteral) -> i32;
+      // do_unlink("/proc/self/env/<key>")
   export fn parse_dec(buf: U8Array, off: i32, n: i32) -> i32;
       // 非数字で止まる 10 進パーサ。vi / sl / ps が私物で持っている
       // parse_dec_buf / tok→i32 をここに寄せる (副産物の集約)
@@ -194,6 +200,7 @@ fn task_get_argv(slot) -> u32
   だけ (専用の仕組みは無く `eq(cmd, n, "quit")` で見ている)。同じ場所に
   3 つ足す。どれも libtc の env_get / env_set の薄い皮:
   - `setenv KEY VALUE` — `env_set`。VALUE 省略は空文字列
+  - `unsetenv KEY` — `env_unset` (rm では sh の変数は消えない、上述)
   - `getenv KEY` — `env_get` して値 + LF を出力。無ければ exit≠0 相当の
     メッセージ
   - `env` — `/proc/self/env` を readdir して `KEY=VALUE` を 1 行ずつ
@@ -247,8 +254,8 @@ fn task_get_argv(slot) -> u32
    `getenv` / `env` builtin、term.conf 廃止、web テスト (UART 側 24 行)
    追加。docs/filesystem.md の procfs 節 (「読み取り専用」の記述) と
    docs/sources.md を更新。
-4. **任意**: `rm` で unset、`/proc/<slot>/{cmdline,env}`、ps の cmdline
-   列、sh の `$VAR` 展開。
+4. **任意**: `/proc/<slot>/{cmdline,env}`、ps の cmdline 列、sh の
+   `$VAR` 展開。
 
 ## 判断の記録
 

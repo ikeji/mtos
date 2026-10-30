@@ -16,7 +16,13 @@
 //
 // On open, we snapshot the contents into a kmalloc'd byte buffer and
 // return a procfs-fd. sys_read consumes from the buffer. close frees
-// the snapshot. Writes (env set) come in Phase 2.
+// the snapshot.
+//
+// The one writable path is /proc/self/env/<KEY> opened with O_WRONLY /
+// O_RDWR / O_CREAT / O_TRUNC: writes accumulate in the fd buffer and
+// close commits the value (minus one trailing LF, so `echo 15 > ...`
+// stores "15") into the task recorded at open — same commit-at-close
+// shape as /dev/rtc. `rm /proc/self/env/<KEY>` unsets it.
 //
 // Concurrent readers: up to PROCFS_MAX_FDS (4) snapshots alive
 // simultaneously. Each snapshot is its own buffer so readers don't
@@ -46,12 +52,21 @@ fn fatfs_free_kib()   -> i32;
 var PROCFS_MAX_FDS: i32 = 4;
 
 struct ProcFD {
-    // kmalloc'd U8Array holding the synthesized file contents. 0u32
-    // means this slot is free.
+    // kmalloc'd U8Array holding the synthesized file contents (read
+    // mode) or the accumulated write (env set mode). 0u32 means this
+    // slot is free.
     buf:  u32,
     size: i32,
     pos:  i32,
+    // Env set mode (mode == 1): the target task slot resolved at open
+    // and the key bytes, kept in a small kmalloc'd U8Array.
+    mode: i32,
+    slot: i32,
+    key:  u32,
+    klen: i32,
 }
+
+const PROCFS_WRITE_CAP: i32 = 136;    // ENV_VAL_MAX (127) + LF + slack
 
 var g_procfs_fds:   ProcFDArray = 0 as ProcFDArray;
 var g_procfs_ready: i32 = 0;
@@ -61,7 +76,7 @@ export fn procfs_init() -> void {
     g_procfs_fds = ProcFDArray(PROCFS_MAX_FDS as u32);
     var i: i32 = 0;
     while i < PROCFS_MAX_FDS {
-        set(g_procfs_fds, i, ProcFD(0, 0, 0));
+        set(g_procfs_fds, i, ProcFD(0, 0, 0, 0, -1, 0, 0));
         i = i + 1;
     }
     g_procfs_ready = 1;
@@ -466,14 +481,29 @@ export fn procfs_open(path_addr: u32, plen: i32, flags: i32) -> i32 {
     procfs_init();
     var buf_hdr: u32 = 0u32;
     var size: i32 = 0;
+    var mode: i32 = 0;
+    var key_hdr: u32 = 0u32;
+    var key_len: i32 = 0;
     if path_prefix(path_addr, plen, "/proc/self/env/") {
         var key_addr: u32 = path_addr + (PROC_ENV_PREFIX_LEN as u32);
         var klen: i32 = plen - PROC_ENV_PREFIX_LEN;
         if !env_key_ok(key_addr, klen) { return -1; }
-        // O_WRONLY / O_RDWR / O_CREAT / O_TRUNC: env set (Phase 2).
-        if (flags & (1 | 2 | 64 | 512)) != 0 { return -1; }
-        buf_hdr = synth_env_value(sched_current_idx(), key_addr, klen);
-        if buf_hdr == 0u32 { return -1; }
+        if (flags & (1 | 2 | 64 | 512)) != 0 {
+            // O_WRONLY / O_RDWR / O_CREAT / O_TRUNC: env set. The value
+            // is whatever gets written before close.
+            mode = 1;
+            var kb: U8Array = U8Array(32u32);
+            var i: i32 = 0;
+            while i < klen { set(kb, i, peek8(key_addr + (i as u32))); i = i + 1; }
+            key_hdr = kb as u32;
+            key_len = klen;
+            var wb: U8Array = U8Array(PROCFS_WRITE_CAP as u32);
+            buf_hdr = wb as u32;
+            poke32(buf_hdr, 0u32);             // nothing written yet
+        } else {
+            buf_hdr = synth_env_value(sched_current_idx(), key_addr, klen);
+            if buf_hdr == 0u32 { return -1; }
+        }
     } else if path_is(path_addr, plen, "/proc/self/cmdline") {
         buf_hdr = synth_cmdline(sched_current_idx());
     } else if path_is(path_addr, plen, "/proc/tasks") {
@@ -502,6 +532,10 @@ export fn procfs_open(path_addr: u32, plen: i32, flags: i32) -> i32 {
             buf(e, buf_hdr);
             size(e, size);
             pos(e, 0);
+            mode(e, mode);
+            slot(e, sched_current_idx());
+            key(e, key_hdr);
+            klen(e, key_len);
             return i;
         }
         i = i + 1;
@@ -509,7 +543,38 @@ export fn procfs_open(path_addr: u32, plen: i32, flags: i32) -> i32 {
     // Table full
     kputs("procfs: fd table full\n");
     if buf_hdr != 0u32 { kfree(buf_hdr); }
+    if key_hdr != 0u32 { kfree(key_hdr); }
     return -1;
+}
+
+// Env set: accumulate the written bytes (committed at close). More
+// than PROCFS_WRITE_CAP bytes is an error — the value cannot be valid.
+export fn procfs_write(fd: i32, buf_addr: u32, n: i32) -> i32 {
+    if fd < 0 || fd >= PROCFS_MAX_FDS { return -1; }
+    var e: ProcFD = get(g_procfs_fds, fd);
+    if buf(e) == 0u32 || mode(e) != 1 { return -1; }
+    var used: i32 = size(e);
+    if used + n > PROCFS_WRITE_CAP {
+        kputs("procfs: env value too long\n");
+        return -1;
+    }
+    var i: i32 = 0;
+    while i < n {
+        poke8(buf(e) + 4u32 + ((used + i) as u32), peek8(buf_addr + (i as u32)));
+        i = i + 1;
+    }
+    size(e, used + n);
+    return n;
+}
+
+// rm /proc/self/env/<KEY> — unset. -1 for any other procfs path or an
+// unset key.
+export fn procfs_unlink(path_addr: u32, plen: i32) -> i32 {
+    if !path_prefix(path_addr, plen, "/proc/self/env/") { return -1; }
+    var key_addr: u32 = path_addr + (PROC_ENV_PREFIX_LEN as u32);
+    var klen: i32 = plen - PROC_ENV_PREFIX_LEN;
+    if !env_key_ok(key_addr, klen) { return -1; }
+    return task_env_unset(sched_current_idx(), key_addr, klen);
 }
 
 export fn procfs_read(fd: i32, buf_addr: u32, n: i32) -> i32 {
@@ -540,11 +605,25 @@ export fn procfs_size(fd: i32) -> i32 {
 export fn procfs_close(fd: i32) -> i32 {
     if fd < 0 || fd >= PROCFS_MAX_FDS { return -1; }
     var e: ProcFD = get(g_procfs_fds, fd);
+    var rc: i32 = 0;
+    if buf(e) != 0u32 && mode(e) == 1 {
+        // Commit the env set to the task recorded at open. One trailing
+        // LF is dropped so `echo VALUE > ...` stores VALUE itself.
+        var vlen: i32 = size(e);
+        if vlen > 0 && peek8(buf(e) + 4u32 + ((vlen - 1) as u32)) == 10u8 { vlen = vlen - 1; }
+        rc = task_env_set(slot(e), key(e) + 4u32, klen(e), buf(e) + 4u32, vlen);
+        if rc != 0 { kputs("procfs: env set failed\n"); }
+    }
     if buf(e) != 0u32 { kfree(buf(e)); }
+    if key(e) != 0u32 { kfree(key(e)); }
     buf(e, 0);
     size(e, 0);
     pos(e, 0);
-    return 0;
+    mode(e, 0);
+    slot(e, -1);
+    key(e, 0);
+    klen(e, 0);
+    return rc;
 }
 
 // Enumerate a /proc directory into `buf_addr` as NUL-separated names.

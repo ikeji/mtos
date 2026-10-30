@@ -557,7 +557,11 @@ export fn vfs_unlink(path: String) -> i32 {
         fat_block_sync();
         return dr;
     }
-    // mtfs / procfs / devfs are read-only or synthetic — no unlink.
+    if is_proc_path(path_addr, plen) {
+        // rm /proc/self/env/<KEY> unsets an env var; nothing else.
+        return procfs_unlink(path_addr, plen);
+    }
+    // mtfs / devfs are read-only or synthetic — no unlink.
     return -1;
 }
 

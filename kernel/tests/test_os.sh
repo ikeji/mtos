@@ -112,7 +112,7 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     # kfree path for frame_buf / ram / stack / img / argv / stdio fds;
     # the kernel prints "KERN: live=N" at shutdown so the test asserts
     # the count stays bounded regardless of spawn iterations.
-    fs_out=$(printf 'tmpdemo\ncatfile\ncatfile /hello.txt\necho hi > /tmp/redir\ncatfile /tmp/redir\nrm /tmp/redir\nrm /tmp/redir\nls /dev\necho DEVFS_OK > /dev/uart\necho 2031-08-20 09:15:42 > /dev/rtc\ncat /dev/rtc\nfbtest\nkbdump\nKBDTEST_HELLO\necho PIPEWORD | wc\nps\nfree\nuptime\ndf\nfind /bin -name hel*\nfind /tmp /proc -type f\nconsole\necho CTEST\nquit\nquit\n' \
+    fs_out=$(printf 'tmpdemo\ncatfile\ncatfile /hello.txt\necho hi > /tmp/redir\ncatfile /tmp/redir\nrm /tmp/redir\nrm /tmp/redir\nls /dev\necho DEVFS_OK > /dev/uart\necho 2031-08-20 09:15:42 > /dev/rtc\ncat /dev/rtc\nfbtest\nkbdump\nKBDTEST_HELLO\necho PIPEWORD | wc\nps\nfree\nuptime\ndf\nfind /bin -name hel*\nfind /tmp /proc -type f\necho 15 > /proc/self/env/ROWS\necho lcd > /proc/self/env/TERM\ncat /proc/self/env/ROWS\nls /proc/self/env\ncatfile /proc/self/cmdline\ncat /proc/self/env/NOPE\nrm /proc/self/env/TERM\nls /proc/self/env\nconsole\ncat /proc/self/env/ROWS\necho CTEST\nquit\nquit\n' \
         | timeout 10 qemu-system-riscv32 -smp 1 -nographic \
         -serial mon:stdio --no-reboot -m 128 \
         -machine virt,aclint=on -bios none \
@@ -177,6 +177,20 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     fs_has_find=$(echo "$fs_out" | grep -c "^/bin/hello2$")
     fs_has_find_tmp=$(echo "$fs_out" | grep -c "^/tmp/demo$")
     fs_find_dir=$(echo "$fs_out" | grep -c "^/tmp$\\|^/proc$\\|^/bin$")
+    # /proc/self (docs/task/proc_env.md): `echo 15 > /proc/self/env/ROWS`
+    # sets sh's env (the redirect is opened in sh's context), the child
+    # `cat` inherits it and reads "15"; ls lists ROWS + TERM. `rm
+    # /proc/self/env/TERM` runs in rm's own task and only unsets rm's
+    # inherited copy, so the second ls still shows both (2 "ROWS", 2
+    # "TERM") — unsetting sh's var needs the sh builtin (Phase 3).
+    # cmdline echoes catfile's own argv; an unset key fails open. The
+    # cat inside the console's sh exercises inheritance through console
+    # → sh → cat but its output goes to /dev/fb, so it is not asserted.
+    fs_env_15=$(echo "$fs_out" | grep -c "^15$")
+    fs_env_ls=$(echo "$fs_out" | grep -c "^ROWS$")
+    fs_env_term=$(echo "$fs_out" | grep -c "^TERM$")
+    fs_env_cmd=$(echo "$fs_out" | grep -c "^CAT\[2\]:catfile /proc/self/cmdline$")
+    fs_env_nope=$(echo "$fs_out" | grep -c "cat: /proc/self/env/NOPE: open failed")
     fs_has_devwrite=$(echo "$fs_out" | grep -c "DEVFS_OK")
     # /dev/rtc roundtrip: writing a fixed datetime then reading it
     # back exercises devfs_write accumulation + commit-at-close +
@@ -224,12 +238,14 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
                 && [ "$fs_has_ps" -gt 0 ] && [ "$fs_has_free" -eq 3 ] \
                 && [ "$fs_has_uptime" -gt 0 ] && [ "$fs_has_df" -gt 0 ] \
                 && [ "$fs_has_find" -eq 1 ] && [ "$fs_has_find_tmp" -eq 1 ] && [ "$fs_find_dir" -eq 0 ] \
+                && [ "$fs_env_15" -eq 1 ] && [ "$fs_env_ls" -eq 2 ] && [ "$fs_env_term" -eq 2 ] \
+                && [ "$fs_env_cmd" -eq 1 ] && [ "$fs_env_nope" -eq 1 ] \
                 && [ "$fs_has_sh" -gt 0 ] && [ "$fs_has_bye" -gt 0 ] \
                 && [ -n "$fs_live" ] && [ "$fs_live" -le 145 ]; then
-                report_pass "fs_virtio: kern.conf init + tmpdemo + catfile argv + redirect + devfs + rtc + fb + kbd + pipe + ps/free/uptime/df/find + console, live=$fs_live" "$elapsed"
+                report_pass "fs_virtio: kern.conf init + tmpdemo + catfile argv + redirect + devfs + rtc + fb + kbd + pipe + ps/free/uptime/df/find + /proc/self/env + console, live=$fs_live" "$elapsed"
             else
                 report_fail_msg "fs_virtio" \
-                    "cat=$fs_cat_count cat2=$fs_cat2_count tmpok=$fs_has_tmpfs_ok tmppayload=$fs_has_tmpfs_payload redir=$fs_has_redir rmfail=$fs_rm_fail_count dev=$fs_has_dev devwr=$fs_has_devwrite rtc=$fs_has_rtc fb=$fs_has_fb kbd=$fs_has_kbd pipe=$fs_has_pipe ps=$fs_has_ps free=$fs_has_free uptime=$fs_has_uptime df=$fs_has_df find=$fs_has_find/$fs_has_find_tmp/$fs_find_dir console=$fs_has_console live=$fs_live a=$fs_has_a b=$fs_has_b mtfs=$fs_has_mtfs_msg sh=$fs_has_sh bye=$fs_has_bye; got: $(printf '%s' "$fs_out" | head -c 480)"
+                    "cat=$fs_cat_count cat2=$fs_cat2_count tmpok=$fs_has_tmpfs_ok tmppayload=$fs_has_tmpfs_payload redir=$fs_has_redir rmfail=$fs_rm_fail_count dev=$fs_has_dev devwr=$fs_has_devwrite rtc=$fs_has_rtc fb=$fs_has_fb kbd=$fs_has_kbd pipe=$fs_has_pipe ps=$fs_has_ps free=$fs_has_free uptime=$fs_has_uptime df=$fs_has_df find=$fs_has_find/$fs_has_find_tmp/$fs_find_dir env=$fs_env_15/$fs_env_ls/$fs_env_term/$fs_env_cmd/$fs_env_nope console=$fs_has_console live=$fs_live a=$fs_has_a b=$fs_has_b mtfs=$fs_has_mtfs_msg sh=$fs_has_sh bye=$fs_has_bye; got: $(printf '%s' "$fs_out" | head -c 480)"
             fi
             ;;
         *)

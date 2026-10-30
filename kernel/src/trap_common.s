@@ -604,9 +604,12 @@ fs_ops_init__u32__u32__u32__u32:
     sw   t0, 20(a0)
     la   t0, devfs_read__i32__u32__i32
     sw   t0, 24(a0)
-    # --- write (mtfs / procfs are read-only, pipe uses pipe_write) ---
+    # --- write (mtfs is read-only, pipe uses pipe_write, procfs only
+    #     accepts /proc/self/env/<KEY> — docs/task/proc_env.md) ---
     la   t0, tmpfs_write__i32__u32__i32
     sw   t0, 8(a1)
+    la   t0, procfs_write__i32__u32__i32
+    sw   t0, 12(a1)
     la   t0, pipe_write__i32__u32__i32
     sw   t0, 16(a1)
     la   t0, fatfs_write_synced__i32__u32__i32
