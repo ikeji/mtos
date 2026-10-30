@@ -8,8 +8,11 @@
 // pin -> column pin (visible when the row is driven low: scan phase A),
 // a key in logical column 6..11 connects column pin -> row pin (phase B).
 // Scancode = row * 12 + logical column, mapped by KBD_KEYMAP below (the
-// same table as the kernel). Modifier keys produce no byte on hardware,
-// so there is no shift: letters are lowercase only.
+// same table as the kernel). The modifier keys (CTL / SFT / FN) emit no
+// byte of their own: the kernel decodes the other keys held in the same
+// scan through them (SFT = upper case / shifted symbols, CTL = Ctrl+A..Z,
+// FN+hjkl = arrows, FN+uiop'n = - = [ ] \ `), so a browser key becomes a
+// chord: the modifier scancodes plus the key's, all closed together.
 
 export class Gpio {
   constructor() {
@@ -67,49 +70,93 @@ export const KEYMAP = (() => {
   return m;
 })();
 
-// byte -> scancode (first match), -1 when the matrix has no such key.
+// Modifier scancodes (keyboard_matrix.tc SC_*; the left-hand SFT / FN).
+export const SC_CTL = 30, SC_SFT = 42, SC_FN = 54;
+
+// The kernel's modifier layers (keyboard_matrix.tc kbd_shift / kbd_fn /
+// kbd_fn_arrow), as "unmodified key -> byte" strings.
+const SHIFT_FROM = "abcdefghijklmnopqrstuvwxyz1234567890',./:";
+const SHIFT_TO   = "ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()\"<>?;";
+const FN_FROM = "uiop'n", FN_TO = "-=[]\\`", FN_SHIFT_TO = "_+{}|~";
+const ARROW_KEY = { A: "k", B: "j", C: "l", D: "h" };   // CSI final byte -> FN + key
+
+// byte -> scancode of the key that emits it unmodified, -1 when none.
 export function scancodeOf(ch) {
   if (ch === 10) ch = 13;                              // "\n" in typed text means Enter
-  if (ch >= 65 && ch <= 90) ch += 32;                  // no shift on the matrix: fold to lowercase
   for (let sc = 0; sc < 60; sc++) if (KEYMAP[sc] === ch && ch !== 0) return sc;
   return -1;
 }
 
+// byte -> the chord (scancodes closed together) that types it, or null.
+// Bytes 1..26 other than BS / TAB / Enter are Ctrl+letter.
+export function chordOf(ch) {
+  const sc = scancodeOf(ch);
+  if (sc >= 0) return [sc];
+  let i = SHIFT_TO.indexOf(String.fromCharCode(ch));
+  if (i >= 0) return [SC_SFT, scancodeOf(SHIFT_FROM.charCodeAt(i))];
+  i = FN_TO.indexOf(String.fromCharCode(ch));
+  if (i >= 0) return [SC_FN, scancodeOf(FN_FROM.charCodeAt(i))];
+  i = FN_SHIFT_TO.indexOf(String.fromCharCode(ch));
+  if (i >= 0) return [SC_FN, SC_SFT, scancodeOf(FN_FROM.charCodeAt(i))];
+  if (ch >= 1 && ch <= 26) return [SC_CTL, scancodeOf(ch + 96)];
+  return null;
+}
+
+// Arrow key by its CSI final byte ("A" up, "B" down, "C" right, "D" left).
+export function arrowChord(final) {
+  return final in ARROW_KEY ? [SC_FN, scancodeOf(ARROW_KEY[final].charCodeAt(0))] : null;
+}
+
 // The kernel reads GPIO_IN 11 times per scan (5 rows + 6 columns) and
-// reports a key on the rising edge between two scans, so a press must
-// stay visible for two scans and a release for one before the next press.
-// Keys are closed one at a time in the order they arrived: a scan that
+// reports a key once two consecutive scans saw it after one that did
+// not, so a press must stay visible for two complete scans (33 reads
+// covers two whatever read it starts at) and a release for one complete
+// scan before the next press.
+// Chords are closed one at a time in the order they arrived: a scan that
 // saw two new keys would report them in scancode order, not typing
 // order, and a key-down / key-up pair that fits inside one scan would be
 // missed entirely (browser key events, or a test typing with no delay).
-const HOLD_READS = 22;
-const GAP_READS = 11;
+// A chord's modifiers close and open together with its key, which is
+// all the kernel needs: it reads the modifiers in the scan that sees
+// the key's rising edge.
+const HOLD_READS = 33;
+const GAP_READS = 22;
 
 export class KeyMatrix {
   constructor() {
-    this.queue = [];                 // pending presses {sc, upSeen}
-    this.cur = null;                 // the key currently closed {sc, upSeen, at}
+    this.queue = [];                 // pending chords {scs, upSeen}
+    this.cur = null;                 // the chord currently closed {scs, upSeen, at}
     this.inReads = 0;
     this.releasedAt = -Infinity;
   }
 
-  // Physical key down: queued, closed once the matrix is free.
-  press(sc) {
-    if (sc < 0 || sc >= 60) return;
-    this.queue.push({ sc, upSeen: false });
+  // Physical key down: queued, closed once the matrix is free. `scs` is
+  // a chord (array of scancodes) or a single scancode.
+  press(scs) {
+    scs = [].concat(scs).filter((sc) => sc >= 0 && sc < 60);
+    if (scs.length) this.queue.push({ scs, upSeen: false });
   }
 
   // Physical key up: the matching press opens again after HOLD_READS.
-  release(sc) {
-    if (this.cur && this.cur.sc === sc && !this.cur.upSeen) { this.cur.upSeen = true; return; }
+  release(scs) {
+    const id = [].concat(scs).join(",");
+    if (this.cur && this.cur.scs.join(",") === id && !this.cur.upSeen) { this.cur.upSeen = true; return; }
     for (let i = this.queue.length - 1; i >= 0; i--) {
-      if (this.queue[i].sc === sc && !this.queue[i].upSeen) { this.queue[i].upSeen = true; return; }
+      if (this.queue[i].scs.join(",") === id && !this.queue[i].upSeen) { this.queue[i].upSeen = true; return; }
     }
   }
 
-  // Queue bytes to be typed one key at a time (bytes without a key are dropped).
+  // Queue bytes to be typed one chord at a time (bytes without a key are
+  // dropped). "ESC [ A-D" types the arrow key; a NUL followed by a letter
+  // types Ctrl+letter (so a test can send Ctrl+J, which "\n" cannot).
   type(bytes) {
-    for (const b of bytes) { const sc = scancodeOf(b); if (sc >= 0) this.queue.push({ sc, upSeen: true }); }
+    for (let i = 0; i < bytes.length; i++) {
+      let scs = null;
+      if (bytes[i] === 27 && bytes[i + 1] === 0x5b && (scs = arrowChord(String.fromCharCode(bytes[i + 2])))) i += 2;
+      else if (bytes[i] === 0 && i + 1 < bytes.length) { scs = [SC_CTL, scancodeOf(bytes[i + 1] | 32)]; i++; }
+      else scs = chordOf(bytes[i]);
+      if (scs && scs.every((sc) => sc >= 0)) this.queue.push({ scs, upSeen: true });
+    }
   }
 
   get pending() { return this.queue.length + (this.cur ? 1 : 0); }
@@ -120,10 +167,12 @@ export class KeyMatrix {
     this.tick();
     let v = (outLo & oeLo) | ~oeLo;
     if (this.cur) {
-      const sc = this.cur.sc, r = (sc / 12) | 0, lc = sc % 12;
-      let drv, rd;
-      if (lc < 6) { drv = ROW_GP[r]; rd = COL_GP[lc]; } else { drv = COL_GP[lc - 6]; rd = ROW_GP[r]; }
-      if ((oeLo >> drv) & 1 && !((outLo >> drv) & 1) && !((oeLo >> rd) & 1)) v &= ~(1 << rd);
+      for (const sc of this.cur.scs) {
+        const r = (sc / 12) | 0, lc = sc % 12;
+        let drv, rd;
+        if (lc < 6) { drv = ROW_GP[r]; rd = COL_GP[lc]; } else { drv = COL_GP[lc - 6]; rd = ROW_GP[r]; }
+        if ((oeLo >> drv) & 1 && !((outLo >> drv) & 1) && !((oeLo >> rd) & 1)) v &= ~(1 << rd);
+      }
     }
     return v | 0;
   }

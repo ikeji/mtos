@@ -54,6 +54,13 @@ fn peek16(addr: u32) -> u16;       // task_crt0.s builtin
 
 const BUF_CAP: i32 = 16384;      // max file size in bytes
 const CMD_CAP: i32 = 128;        // max cmdline length
+const IN_CAP: i32 = 8;           // bytes per stdin read (an arrow key is 3)
+
+// Raw read syscall (task_crt0.s): returns what is available now, up to
+// len, blocking only while nothing is. runtime's sys_read keeps reading
+// until len bytes arrived, which would turn a batch read into "wait for
+// 8 keystrokes".
+fn do_read(fd: i32, buf: u32, len: i32) -> i32;
 
 // Screen geometry: we don't query the terminal (would require reading
 // the ESC[6n response back through stdin), so default to the classic
@@ -901,6 +908,22 @@ fn handle_normal(c: u8) -> void {
     return;
 }
 
+// Arrow keys (CSI final byte A up / B down / C right / D left) move the
+// cursor in normal and insert mode; the command line ignores them. In
+// insert mode right may step onto the newline (the append position),
+// which normal mode's move_right never does.
+fn handle_arrow(k: u8) -> void {
+    if g_mode == 2 { return; }
+    if k == 'A' as u8 { move_up(); }
+    else if k == 'B' as u8 { move_down(); }
+    else if k == 'D' as u8 { move_left(); }
+    else if g_mode == 1 && g_cur < g_len && get(g_buf, g_cur) != 10u8 {
+        g_cur = g_cur + utf8_len(get(g_buf, g_cur));
+        if g_cur > g_len { g_cur = g_len; }
+    } else if g_mode == 0 { move_right(); }
+    return;
+}
+
 fn handle_insert(c: u8) -> void {
     if c == 27u8 {
         // ESC → if TUT active, exit TUT only; else exit insert mode.
@@ -1014,23 +1037,40 @@ fn main(argv: StringArray) -> i32 {
     load_term_env();
     load_file();
 
-    var one: U8Array = U8Array(1);
+    // Read whatever is pending (up to IN_CAP bytes) rather than one
+    // byte: an arrow key arrives as the 3 bytes ESC [ A..D in one
+    // read (the matrix keyboard driver queues them together, a UART
+    // terminal sends them back to back), so a lone ESC is a lone ESC
+    // and ESC [ X in the same batch is an arrow instead of ESC + two
+    // stray commands. (A sequence split across two reads, possible on
+    // a slow real UART, degrades to the old ESC + 2 keys behaviour.)
+    var inb: U8Array = U8Array(IN_CAP as u32);
     render();
     while g_running == 1 {
-        var n: i32 = sys_read(0, one, 1);
+        var n: i32 = do_read(0, (inb as u32) + 4u32, IN_CAP);
         if n <= 0 {
             // Treat read error/EOF as implicit quit — avoids pinning
             // a detached serial console forever.
             g_running = 0;
         } else {
-            var c: u8 = get(one, 0);
-            if g_mode == 0 { handle_normal(c); }
-            else if g_mode == 1 { handle_insert(c); }
-            else { handle_cmdline(c); }
+            var i: i32 = 0;
+            while i < n && g_running == 1 {
+                var c: u8 = get(inb, i);
+                if c == 27u8 && i + 2 < n && get(inb, i + 1) == '[' as u8
+                    && get(inb, i + 2) >= 'A' as u8 && get(inb, i + 2) <= 'D' as u8 {
+                    handle_arrow(get(inb, i + 2));
+                    i = i + 3;
+                } else {
+                    if g_mode == 0 { handle_normal(c); }
+                    else if g_mode == 1 { handle_insert(c); }
+                    else { handle_cmdline(c); }
+                    i = i + 1;
+                }
+            }
             render();
         }
     }
-    delete(one);
+    delete(inb);
 
     // Leave the terminal in a sane state for the next shell prompt.
     clear_screen();

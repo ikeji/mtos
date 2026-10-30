@@ -56,6 +56,26 @@ for v in console console_land console_vram console_text; do
             || { echo "[test] $v: vi :wq round trip never finished (Enter in insert mode?)"; ok=0; }
         grep -A1 '^| *.a *.$' "$OUT/${v}_vi_nl_emu.txt" | grep -q '^| *.b *.$' \
             || { echo "[test] $v: Enter in vi insert mode did not insert a newline"; ok=0; }
+        # Modifier layers: the matrix has no shifted / Ctrl / arrow keys of
+        # its own; SFT / FN / CTL held with a key change its byte in the
+        # kernel driver, and the browser sends such keys as chords. Upper
+        # case, shifted symbols, FN symbols (- _ ;) and the up arrow (FN+k
+        # -> ESC [ A -> sh history recall) must all come out on the LCD.
+        node "$WEB/src/node_run.js" "$bin" --max 500000000 \
+            --kbd 'echo Ab-1!_;\n\e[A\necho kdone\n' \
+            --expect-screen 'kdone' --screen-text > /dev/null 2> "$OUT/${v}_mod_emu.txt" \
+            || { echo "[test] $v: modifier / arrow typing never finished"; ok=0; }
+        [ "$(grep -c '^| *.Ab-1!_; *.$' "$OUT/${v}_mod_emu.txt")" = 2 ] \
+            || { echo "[test] $v: SFT / FN chords or up-arrow history recall did not reach sh (want 'Ab-1!_;' echoed twice)"; ok=0; }
+        # vi: arrows move the cursor in insert mode (two lefts from "ab"
+        # then x -> "xab"), Ctrl+J (CTL chord) enters TUT mode so the
+        # following ESC only leaves TUT and z is still inserted -> "xzab".
+        node "$WEB/src/node_run.js" "$bin" --max 600000000 \
+            --kbd 'vi /tmp/ar\niab\e[D\e[Dx\^j\ez\e:wq\ncat /tmp/ar\necho ardone\n' \
+            --expect-screen 'ardone' --screen-text > /dev/null 2> "$OUT/${v}_vi_ar_emu.txt" \
+            || { echo "[test] $v: vi arrow / Ctrl+J round trip never finished"; ok=0; }
+        grep -q '^| *.xzab' "$OUT/${v}_vi_ar_emu.txt" \
+            || { echo "[test] $v: vi arrows / Ctrl+J on the matrix keyboard (want xzab)"; ok=0; }
         # UART side of the same kernel: the xterm sh is a kern.conf init
         # task with an empty env, so ROWS is unset there and vi must keep
         # 80x24 — 23 CRLF-terminated rows between its last ESC[H and the

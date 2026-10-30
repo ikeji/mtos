@@ -298,7 +298,7 @@ kernel/
 | `block_flash.tc` | XIP flash block デバイスドライバ |
 | `block_sd.tc` | SD カード SPI0 backend |
 | `display_ili9488.tc` | ILI9488 LCD over SPI1 |
-| `keyboard_matrix.tc` | GPIO scan matrix keyboard backend |
+| `keyboard_matrix.tc` | GPIO scan matrix keyboard backend (SFT / CTL / FN modifier layers, FN+hjkl = arrows, decoded-byte ring) |
 | `rtc_ds3231.tc` | DS3231 over bit-bang I2C (GP32/33) |
 
 ### ビルドスクリプト (`kernel/scripts/`)

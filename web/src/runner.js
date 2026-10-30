@@ -58,11 +58,11 @@ export class EmuRunner {
     this.pumpFrame(true);
   }
 
-  // Matrix keyboard: a key press / release by scancode, or bytes to type
-  // one key at a time (gpio.js KeyMatrix).
-  key(sc, down) {
+  // Matrix keyboard: a chord (scancodes closed together, e.g. SFT + a)
+  // press / release, or bytes to type one chord at a time (gpio.js KeyMatrix).
+  key(scs, down) {
     if (!this.soc) return;
-    if (down) this.soc.kbd.press(sc); else this.soc.kbd.release(sc);
+    if (down) this.soc.kbd.press(scs); else this.soc.kbd.release(scs);
   }
 
   kbdType(bytes) {

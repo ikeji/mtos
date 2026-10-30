@@ -30,6 +30,20 @@ band-blit 経由で LCD に DOOM ロゴ + Doomguy を表示するまで到達。
   廃止)。これで同じディスクの UART sh の vi は 80x24、LCD は 56x15。
   同日: マトリクスキーボードの Enter を LF→CR に (vi insert モードで
   LF は Ctrl+J = TUT 切替だったため改行できなかった、commit 044aa3f)。
+- 2026-10-30 (夜): **マトリクスキーボードに modifier レイヤ** (web GUI の
+  console で Shift / Ctrl / 矢印が効かなかった)。`keyboard_matrix.tc`
+  (pico2 / tn20k 同一) が CTL / SFT / FN キーを同一スキャンの他キーの
+  decode に使う: SFT = 大文字 / `!@#$%^&*()` / `" < > ? ;`、CTL = Ctrl+A..Z、
+  FN+h/j/k/l = ←↓↑→ (`ESC [ D/B/A/C`)、FN+u/i/o/p/'/n = `- = [ ] \ \``。
+  decode 結果は 32 B リング経由 (1 byte 読みでも矢印 3 byte が落ちない)、
+  キーは 2 スキャン連続で確定 (チョードがスキャン途中で閉じても modifier
+  を取りこぼさない)。web 側 (`gpio.js` chordOf / arrowChord、main.js)
+  はブラウザのキーを「modifier scancode + キー scancode」のチョードで
+  送り、`node_run.js --kbd` も大文字 / `\e[A` / `\^j` を打てる。vi は
+  stdin を `do_read` で最大 8 byte まとめ読みして `ESC [ A-D` を矢印と
+  して扱う (insert / normal でカーソル移動)。**落とし穴**: runtime の
+  `sys_read(fd, buf, len)` は len バイト揃うまで繰り返すので、キー入力の
+  バッチ読みには使えない (生の `do_read` を前方宣言して使う)。
 - 2026-08-28: **Tang Nano 20K + 自作 RV32IM コアで MTOS が sh まで起動**
   (`docs/task/tang_nano_20k.md` Phase 0〜4)。新サブプロジェクト `hw/`
   (yosys + nextpnr-himbaechel + apicula、`~/opt/oss-cad-suite`):

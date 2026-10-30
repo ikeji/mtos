@@ -8,7 +8,9 @@
 // N instructions (default 200M) have run. UART TX goes to stdout. --sd
 // attaches a FAT image as the SD card (web/tools/fatimg.py makes one);
 // --sd-out writes the (possibly modified) image back on exit. --kbd types
-// TEXT on the matrix keyboard ("\n" = Enter, "\e" = Esc) once the kernel scans it;
+// TEXT on the matrix keyboard ("\n" = Enter, "\e" = Esc, "\e[A".."\e[D" =
+// arrow keys, "\^j" = Ctrl+J; upper case and symbols press SFT / FN with
+// the key, like the kernel's modifier layers) once the kernel scans it;
 // --expect-screen stops (status 0) as soon as the LCD, read back through
 // ocr.js, shows STR; --screen-text prints the OCR'd screen to stderr and
 // --screen-out dumps the frame as a binary PPM.
@@ -33,7 +35,7 @@ function main(argv) {
     else if (a === "--lenient") strict = false;
     else if (a === "--sd") sdFile = argv[++i];
     else if (a === "--sd-out") sdOut = argv[++i];
-    else if (a === "--kbd") kbdText = argv[++i].replace(/\\n/g, "\n").replace(/\\e/g, "\x1b");
+    else if (a === "--kbd") kbdText = argv[++i].replace(/\\n/g, "\n").replace(/\\e/g, "\x1b").replace(/\\\^(.)/g, "\0$1");
     else if (a === "--kbd-at") kbdAt = Number(argv[++i]);           // type --kbd once this many insns have run (default: at boot)
     else if (a === "--stdin-at") stdinAt = Number(argv[++i]);       // push --stdin into UART RX once this many insns have run (default: at boot)
     else if (a === "--expect-screen") expect = argv[++i];

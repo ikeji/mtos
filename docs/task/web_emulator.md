@@ -173,7 +173,11 @@ Phase 1 時点では SD SPI は STATUS=idle、DATA 読みが常に 0xFF を返�
 - xterm.js (CDN 固定バージョン or vendored) を UART に接続。
 - 右に 320x480 canvas (Phase 5 から)。MADCTL の MV bit で 480x320
   に自動で向きを変える。canvas にフォーカスがあるとき keydown/keyup が
-  マトリクスキーボードの scancode になる (shift 無し、小文字のみ)。
+  マトリクスキーボードのチョード (modifier の scancode + キーの scancode
+  を同時に閉じる) になる。Shift / Ctrl / 矢印キーはブラウザ側で
+  SFT / CTL / FN+hjkl の組に変換し、kernel 側の modifier レイヤ
+  (`keyboard_matrix.tc` kbd_scan_decode) が実機と同じ経路でバイトに
+  decode する (2026-10-30、`src/gpio.js` chordOf / arrowChord)。
 - 上に MIPS 表示、Run/Pause/Reset、kernel.bin 選択 (標準 / extra /
   console)。
 - `/sd` 用 FAT イメージはファイル選択で読み込み、変更分を IndexedDB

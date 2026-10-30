@@ -3,7 +3,7 @@
 // (see fetchKernel); serve the repository root (make -C web serve) and open /web/.
 
 import { formatFat32 } from "./fat32.js";
-import { scancodeOf } from "./gpio.js";
+import { chordOf, arrowChord, scancodeOf, SC_CTL } from "./gpio.js";
 import { screenToText } from "./ocr.js";
 
 const $ = (id) => document.getElementById(id);
@@ -57,32 +57,44 @@ window.addEventListener("resize", fitLcd);          // browser zoom changes devi
 // soft keyboards mostly report "Unidentified" keydowns and deliver the text
 // as textarea edits (the input event), which we diff into typed keys.
 const lcdInput = $("lcd-input");
-const held = new Map();          // KeyboardEvent.code -> scancode, so key-up releases what key-down pressed
-function keyToSc(e) {
-  if (e.ctrlKey || e.altKey || e.metaKey) return -1;
+const held = new Map();          // KeyboardEvent.code -> chord, so key-up releases what key-down pressed
+// A browser key becomes a matrix chord (gpio.js): the modifier scancodes
+// the kernel needs plus the key's. Shift / Ctrl themselves send nothing;
+// their effect is read off e.key ("A", "!") or e.ctrlKey instead, so a
+// US-layout "A" is SFT + a and ";" is SFT + : whatever the host layout.
+function keyToChord(e) {
+  if (e.altKey || e.metaKey) return null;
   const special = { Enter: 13, Backspace: 8, Escape: 27, Tab: 9 };
-  if (e.key in special) return scancodeOf(special[e.key]);
-  return e.key.length === 1 ? scancodeOf(e.key.charCodeAt(0)) : -1;
+  if (e.key in special) return chordOf(special[e.key]);
+  const arrows = { ArrowUp: "A", ArrowDown: "B", ArrowRight: "C", ArrowLeft: "D" };
+  if (e.key in arrows) return arrowChord(arrows[e.key]);
+  if (e.key.length !== 1) return null;
+  const ch = e.key.charCodeAt(0);
+  if (e.ctrlKey) {
+    const sc = scancodeOf(ch | 32);
+    return ch < 128 && /[a-z]/i.test(e.key) && sc >= 0 ? [SC_CTL, sc] : null;
+  }
+  return ch < 128 ? chordOf(ch) : null;
 }
 lcd.addEventListener("pointerdown", (e) => { e.preventDefault(); });             // keep focus on the textarea
 lcd.addEventListener("pointerup", () => { lcdInput.focus({ preventScroll: true }); });
 lcd.addEventListener("click", () => { lcdInput.focus({ preventScroll: true }); });
 let lcdPrev = "";                // textarea text already sent to the matrix (soft keyboards)
 lcdInput.addEventListener("keydown", (e) => {
-  const sc = keyToSc(e);
-  if (sc < 0) return;                                   // IME / soft keyboard: text arrives via the input event
+  const scs = keyToChord(e);
+  if (!scs) return;                                     // IME / soft keyboard: text arrives via the input event
   if (e.key === "Backspace" && lcdInput.value) return;  // let the textarea delete; the input diff sends the backspace
   e.preventDefault();
   if (e.key === "Enter") { lcdInput.value = ""; lcdPrev = ""; }
   if (e.repeat || held.has(e.code)) return;
-  held.set(e.code, sc);
-  worker.postMessage({ type: "key", sc, down: true });
+  held.set(e.code, scs);
+  worker.postMessage({ type: "key", scs, down: true });
 });
 lcdInput.addEventListener("keyup", (e) => {
-  const sc = held.get(e.code);
-  if (sc === undefined) return;
+  const scs = held.get(e.code);
+  if (scs === undefined) return;
   held.delete(e.code);
-  worker.postMessage({ type: "key", sc, down: false });
+  worker.postMessage({ type: "key", scs, down: false });
 });
 // Soft keyboards (and desktop IMEs) edit the textarea instead of sending
 // keys: compositions rewrite the current word, autocorrect replaces it. Send
@@ -97,7 +109,7 @@ lcdInput.addEventListener("input", () => {
   if (out) worker.postMessage({ type: "kbd-type", bytes: enc.encode(out) });
   if (v.includes("\n")) { lcdInput.value = ""; lcdPrev = ""; } else lcdPrev = v;
 });
-lcdInput.addEventListener("blur", () => { for (const sc of held.values()) worker.postMessage({ type: "key", sc, down: false }); held.clear(); });
+lcdInput.addEventListener("blur", () => { for (const scs of held.values()) worker.postMessage({ type: "key", scs, down: false }); held.clear(); });
 
 // ---- SD image persistence (IndexedDB, one record) ----
 const DB_NAME = "mtos-web", STORE = "sd";

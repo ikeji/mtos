@@ -38,11 +38,31 @@ var g_kbd_rows_mask: u32 = 0u32;
 var g_kbd_cols_mask: u32 = 0u32;
 var g_kbd_inited: i32 = 0;
 
-// 60-bit key state (scancode 0..59): current scan + previous scan.
-var g_cur_lo:  u32 = 0u32;
-var g_cur_hi:  u32 = 0u32;
-var g_prev_lo: u32 = 0u32;
-var g_prev_hi: u32 = 0u32;
+// 60-bit key state (scancode 0..59): current scan + the two before it.
+// A key is reported once it has been seen in two consecutive scans
+// (cur && prev && !prev2): that debounces the switch and, more to the
+// point, lets a modifier pressed "together" with a key but sampled a
+// few GPIO reads later in the scan order still be seen with it (the
+// browser closes a chord at an arbitrary point of the scan).
+var g_cur_lo:   u32 = 0u32;
+var g_cur_hi:   u32 = 0u32;
+var g_prev_lo:  u32 = 0u32;
+var g_prev_hi:  u32 = 0u32;
+var g_prev2_lo: u32 = 0u32;
+var g_prev2_hi: u32 = 0u32;
+
+// Modifier scancodes (row * 12 + logical col, see the layout below).
+const SC_CTL:   i32 = 30;
+const SC_SFT_R: i32 = 36;
+const SC_SFT_L: i32 = 42;
+const SC_FN_R:  i32 = 48;
+const SC_FN_L:  i32 = 54;
+
+// Decoded-byte ring: keys of the last scan not yet handed to a reader.
+const KQ_CAP: i32 = 32;
+var g_kq: U8Array = 0 as U8Array;
+var g_kq_head: i32 = 0;
+var g_kq_len:  i32 = 0;
 
 // scancode -> ASCII. scancode = row * 12 + logical_col, where logical
 // columns are wired to physical positions in this order (see the
@@ -68,8 +88,24 @@ var g_prev_hi: u32 = 0u32;
 // keep this a single literal.
 //
 // Underscores are placeholders for keys that need a non-printable byte
-// (BS / ESC / TAB / ENT) or are modifiers with no input byte (CTL /
-// SFT / FN, patched to 0 below so kbd_backend_read skips them).
+// (BS / ESC / TAB / ENT) or are modifiers with no input byte of their
+// own (CTL / SFT / FN, patched to 0 below). A modifier changes the byte
+// of the keys pressed while it is held (kbd_decode):
+//
+//   SFT  a-z -> A-Z,  1234567890 -> !@#$%^&*(),  ' , . / : -> " < > ? ;
+//   CTL  a-z -> 0x01-0x1a (Ctrl+A .. Ctrl+Z; Ctrl+J = vi TUT toggle)
+//   FN   h j k l -> left / down / up / right as ESC [ D B A C (the
+//        xterm arrow sequences, what sh history and vi expect),
+//        u i o p ' n -> - = [ ] \ `  (with SFT: _ + { } | ~), the US
+//        keyboard symbols the board has no key for
+//
+// A key counts as pressed once two consecutive scans saw it (so the
+// modifiers closed with it are in the picture whatever the sampling
+// order), and the modifiers are taken from the confirming scan.
+// Decoded bytes go through a small ring (g_kq) so a caller reading one
+// byte at a time (sh, vi) still gets every key of a scan and all three
+// bytes of an arrow sequence; the matrix is rescanned only when the
+// ring is empty. web/src/gpio.js mirrors these tables for the browser.
 const KBD_KEYMAP: StringLiteral = "_09876_12345'poiuy_qwert_:lkjh_asdfg_/.,mn_zxcvb_     _     ";
 var g_keymap: U8Array = 0 as U8Array;
 
@@ -127,6 +163,7 @@ fn kbd_init() -> void {
     // Build the runtime keymap from KBD_KEYMAP, then patch controls.
     var src: StringLiteral = KBD_KEYMAP;
     g_keymap = U8Array(60u32);
+    g_kq = U8Array(KQ_CAP as u32);
     var i: i32 = 0;
     while i < 60 {
         set(g_keymap, i, get(src, i));
@@ -134,9 +171,9 @@ fn kbd_init() -> void {
     }
     // Patch in the control bytes and modifier no-ops. Each row's
     // physical col 1 → logical 6 (index row*12+6), and physical col 12
-    // → logical 0 (index row*12+0). Modifier keys (CTL/SFT/FN) get 0
-    // so kbd_backend_read skips them entirely instead of emitting a
-    // bogus printable char.
+    // → logical 0 (index row*12+0). Modifier keys (CTL/SFT/FN) get 0:
+    // they emit nothing themselves and only act on the other keys
+    // held in the same scan (kbd_scan_decode).
     set(g_keymap,  0,  8u8);    // row 0 logical 0  — BS  (phys col 12)
     set(g_keymap,  6, 27u8);    // row 0 logical 6  — ESC (phys col 1)
     set(g_keymap, 18,  9u8);    // row 1 logical 6  — TAB (phys col 1)
@@ -220,32 +257,124 @@ fn kbd_scan_b() -> void {
     return;
 }
 
-// /dev/kbd backend: scan the matrix and return the ASCII of every key
-// pressed since the previous call. Returns the byte count (0 = none).
-fn kbd_backend_read(buf_addr: u32, n: i32) -> i32 {
-    if g_kbd_inited == 0 { kbd_init(); }
+fn kq_push(ch: u8) -> void {
+    if g_kq_len >= KQ_CAP { return; }
+    set(g_kq, (g_kq_head + g_kq_len) % KQ_CAP, ch);
+    g_kq_len = g_kq_len + 1;
+    return;
+}
+
+fn kq_pop() -> u8 {
+    var ch: u8 = get(g_kq, g_kq_head);
+    g_kq_head = (g_kq_head + 1) % KQ_CAP;
+    g_kq_len = g_kq_len - 1;
+    return ch;
+}
+
+// SFT layer: what the key's byte becomes with a shift key held.
+fn kbd_shift(ch: u8) -> u8 {
+    if ch >= 'a' as u8 && ch <= 'z' as u8 { return ch - 32u8; }
+    if ch == '1' as u8 { return '!' as u8; }
+    if ch == '2' as u8 { return '@' as u8; }
+    if ch == '3' as u8 { return '#' as u8; }
+    if ch == '4' as u8 { return '$' as u8; }
+    if ch == '5' as u8 { return '%' as u8; }
+    if ch == '6' as u8 { return '^' as u8; }
+    if ch == '7' as u8 { return '&' as u8; }
+    if ch == '8' as u8 { return '*' as u8; }
+    if ch == '9' as u8 { return '(' as u8; }
+    if ch == '0' as u8 { return ')' as u8; }
+    if ch == 39u8 { return 34u8; }                 // '  -> "
+    if ch == ',' as u8 { return '<' as u8; }
+    if ch == '.' as u8 { return '>' as u8; }
+    if ch == '/' as u8 { return '?' as u8; }
+    if ch == ':' as u8 { return ';' as u8; }
+    return ch;
+}
+
+// FN layer symbols (0 = the key has no FN symbol).
+fn kbd_fn(ch: u8, sft: i32) -> u8 {
+    if ch == 'u' as u8 { if sft != 0 { return '_' as u8; } return '-' as u8; }
+    if ch == 'i' as u8 { if sft != 0 { return '+' as u8; } return '=' as u8; }
+    if ch == 'o' as u8 { if sft != 0 { return '{' as u8; } return '[' as u8; }
+    if ch == 'p' as u8 { if sft != 0 { return '}' as u8; } return ']' as u8; }
+    if ch == 39u8      { if sft != 0 { return '|' as u8; } return 92u8; }      // ' -> \ |
+    if ch == 'n' as u8 { if sft != 0 { return 126u8; } return 96u8; }          // n -> ` ~
+    return 0u8;
+}
+
+// FN layer arrows: the CSI final byte of ESC [ X, or 0.
+fn kbd_fn_arrow(ch: u8) -> u8 {
+    if ch == 'h' as u8 { return 'D' as u8; }
+    if ch == 'j' as u8 { return 'B' as u8; }
+    if ch == 'k' as u8 { return 'A' as u8; }
+    if ch == 'l' as u8 { return 'C' as u8; }
+    return 0u8;
+}
+
+// Scan once and push the bytes of every newly pressed key, decoded
+// through the modifiers held in the same scan.
+fn kbd_scan_decode() -> void {
     g_cur_lo = 0u32;
     g_cur_hi = 0u32;
     kbd_scan_a();
     kbd_scan_b();
-    var emitted: i32 = 0;
+    var sft: i32 = kbd_bit(g_cur_lo, g_cur_hi, SC_SFT_R) | kbd_bit(g_cur_lo, g_cur_hi, SC_SFT_L);
+    var ctl: i32 = kbd_bit(g_cur_lo, g_cur_hi, SC_CTL);
+    var fnk: i32 = kbd_bit(g_cur_lo, g_cur_hi, SC_FN_R) | kbd_bit(g_cur_lo, g_cur_hi, SC_FN_L);
     var sc: i32 = 0;
-    while sc < 60 && emitted < n {
-        // Rising edge: pressed now, not pressed in the previous scan.
+    while sc < 60 {
+        // Rising edge, confirmed: pressed in this scan and the previous
+        // one, not in the one before that.
         if kbd_bit(g_cur_lo, g_cur_hi, sc) != 0
-            && kbd_bit(g_prev_lo, g_prev_hi, sc) == 0 {
+            && kbd_bit(g_prev_lo, g_prev_hi, sc) != 0
+            && kbd_bit(g_prev2_lo, g_prev2_hi, sc) == 0 {
             var ch: u8 = get(g_keymap, sc);
-            // DIAG: dump scancode → ASCII so callers can rebuild
+            // DIAG: dump scancode -> ASCII so callers can rebuild
             // KBD_KEYMAP for their physical board layout.
             kdbg_kbd_sc(sc, ch);
             if ch != 0u8 {
-                poke8(buf_addr + (emitted as u32), ch);
-                emitted = emitted + 1;
+                var arrow: u8 = 0u8;
+                if fnk != 0 {
+                    arrow = kbd_fn_arrow(ch);
+                    if arrow == 0u8 {
+                        var f: u8 = kbd_fn(ch, sft);
+                        if f != 0u8 { ch = f; } else if sft != 0 { ch = kbd_shift(ch); }
+                    }
+                } else if sft != 0 {
+                    ch = kbd_shift(ch);
+                }
+                if arrow != 0u8 {
+                    kq_push(27u8);
+                    kq_push('[' as u8);
+                    kq_push(arrow);
+                } else {
+                    if ctl != 0 {
+                        var lower: i32 = (ch as i32) | 32;
+                        if lower >= 'a' as i32 && lower <= 'z' as i32 { ch = (lower & 31) as u8; }
+                    }
+                    kq_push(ch);
+                }
             }
         }
         sc = sc + 1;
     }
+    g_prev2_lo = g_prev_lo;
+    g_prev2_hi = g_prev_hi;
     g_prev_lo = g_cur_lo;
     g_prev_hi = g_cur_hi;
+    return;
+}
+
+// /dev/kbd backend: hand out decoded bytes, scanning the matrix when
+// none are pending. Returns the byte count (0 = none).
+fn kbd_backend_read(buf_addr: u32, n: i32) -> i32 {
+    if g_kbd_inited == 0 { kbd_init(); }
+    if g_kq_len == 0 { kbd_scan_decode(); }
+    var emitted: i32 = 0;
+    while emitted < n && g_kq_len > 0 {
+        poke8(buf_addr + (emitted as u32), kq_pop());
+        emitted = emitted + 1;
+    }
     return emitted;
 }
