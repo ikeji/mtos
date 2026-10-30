@@ -112,7 +112,7 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     # kfree path for frame_buf / ram / stack / img / argv / stdio fds;
     # the kernel prints "KERN: live=N" at shutdown so the test asserts
     # the count stays bounded regardless of spawn iterations.
-    fs_out=$(printf 'tmpdemo\ncatfile\ncatfile /hello.txt\necho hi > /tmp/redir\ncatfile /tmp/redir\nrm /tmp/redir\nrm /tmp/redir\nls /dev\necho DEVFS_OK > /dev/uart\necho 2031-08-20 09:15:42 > /dev/rtc\ncat /dev/rtc\nfbtest\nkbdump\nKBDTEST_HELLO\necho PIPEWORD | wc\nps\nfree\nuptime\ndf\nfind /bin -name hel*\nfind /tmp /proc -type f\necho 15 > /proc/self/env/ROWS\necho lcd > /proc/self/env/TERM\ncat /proc/self/env/ROWS\nls /proc/self/env\ncatfile /proc/self/cmdline\ncat /proc/self/env/NOPE\nrm /proc/self/env/TERM\nls /proc/self/env\nsetenv COLS 56\ngetenv COLS\nunsetenv TERM\nenv\nconsole\ncat /proc/self/env/ROWS\necho CTEST\nquit\nquit\n' \
+    fs_out=$(printf 'tmpdemo\ncatfile\ncatfile /hello.txt\necho hi > /tmp/redir\ncatfile /tmp/redir\nrm /tmp/redir\nrm /tmp/redir\nls /dev\necho DEVFS_OK > /dev/uart\necho 2031-08-20 09:15:42 > /dev/rtc\ncat /dev/rtc\ndate\ndate 2040-02-29 23:59:58\ndate 2040-02-30 00:00:00\nfbtest\nkbdump\nKBDTEST_HELLO\necho PIPEWORD | wc\nps\nfree\nuptime\ndf\nfind /bin -name hel*\nfind /tmp /proc -type f\necho 15 > /proc/self/env/ROWS\necho lcd > /proc/self/env/TERM\ncat /proc/self/env/ROWS\nls /proc/self/env\ncatfile /proc/self/cmdline\ncat /proc/self/env/NOPE\nrm /proc/self/env/TERM\nls /proc/self/env\nsetenv COLS 56\ngetenv COLS\nunsetenv TERM\nenv\nsete\t TABC tab77\ngete\t TABC\nconsole\ncat /proc/self/env/ROWS\necho CTEST\nquit\nquit\n' \
         | timeout 10 qemu-system-riscv32 -smp 1 -nographic \
         -serial mon:stdio --no-reboot -m 128 \
         -machine virt,aclint=on -bios none \
@@ -197,20 +197,24 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     fs_env_envc=$(echo "$fs_out" | grep -c "^COLS=56$")
     fs_env_envr=$(echo "$fs_out" | grep -c "^ROWS=15$")
     fs_env_envt=$(echo "$fs_out" | grep -c "^TERM=")
+    # Tab completion of builtins: "sete<TAB>" / "gete<TAB>" complete to
+    # setenv / getenv (no /bin entry starts with those), so the value
+    # round-trips.
+    fs_env_tab=$(echo "$fs_out" | grep -c "^tab77$")
     fs_has_devwrite=$(echo "$fs_out" | grep -c "DEVFS_OK")
     # /dev/rtc roundtrip: writing a fixed datetime then reading it
     # back exercises devfs_write accumulation + commit-at-close +
     # rtc_parse_set + the goldfish-rtc set/get + rtc_format.
     fs_has_rtc=$(echo "$fs_out" | grep -c "2031-08-20 09:15:4")
-    # /dev/fb check: fbtest issues fill/blit/vscroll framed writes;
-    # the UART-dump driver echoes each as "FB: mode=N ...".
-    fs_has_fb=$(echo "$fs_out" | grep -c "FB: mode=1 x=0 y=0 w=320 h=480")
-    # /dev/kbd check: kbdump reads a line from /dev/kbd (UART-RX
     # /bin/date: no-arg prints the same /dev/rtc snapshot (2nd 2031 line),
     # a valid argument sets and echoes back, an impossible day (Feb 30)
     # is rejected in date itself before anything is written.
     fs_date_set=$(echo "$fs_out" | grep -c "^2040-02-29 23:59:5")
     fs_date_bad=$(echo "$fs_out" | grep -c "date: day out of range")
+    # /dev/fb check: fbtest issues fill/blit/vscroll framed writes;
+    # the UART-dump driver echoes each as "FB: mode=N ...".
+    fs_has_fb=$(echo "$fs_out" | grep -c "FB: mode=1 x=0 y=0 w=320 h=480")
+    # /dev/kbd check: kbdump reads a line from /dev/kbd (UART-RX
     # backed stub) and echoes "KBD:<line>".
     fs_has_kbd=$(echo "$fs_out" | grep -c "KBD:KBDTEST_HELLO")
     # pipe check: `echo PIPEWORD | wc` exercises sys_pipe +
@@ -252,13 +256,13 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
                 && [ "$fs_has_find" -eq 1 ] && [ "$fs_has_find_tmp" -eq 1 ] && [ "$fs_find_dir" -eq 0 ] \
                 && [ "$fs_env_15" -eq 1 ] && [ "$fs_env_ls" -eq 2 ] && [ "$fs_env_term" -eq 2 ] \
                 && [ "$fs_env_cmd" -eq 1 ] && [ "$fs_env_nope" -eq 1 ] \
-                && [ "$fs_env_56" -eq 1 ] && [ "$fs_env_envc" -eq 1 ] && [ "$fs_env_envr" -eq 1 ] && [ "$fs_env_envt" -eq 0 ] \
+                && [ "$fs_env_56" -eq 1 ] && [ "$fs_env_envc" -eq 1 ] && [ "$fs_env_envr" -eq 1 ] && [ "$fs_env_envt" -eq 0 ] && [ "$fs_env_tab" -eq 1 ] \
                 && [ "$fs_has_sh" -gt 0 ] && [ "$fs_has_bye" -gt 0 ] \
                 && [ -n "$fs_live" ] && [ "$fs_live" -le 145 ]; then
                 report_pass "fs_virtio: kern.conf init + tmpdemo + catfile argv + redirect + devfs + rtc + date + fb + kbd + pipe + ps/free/uptime/df/find + /proc/self/env + console, live=$fs_live" "$elapsed"
             else
                 report_fail_msg "fs_virtio" \
-                    "cat=$fs_cat_count cat2=$fs_cat2_count tmpok=$fs_has_tmpfs_ok tmppayload=$fs_has_tmpfs_payload redir=$fs_has_redir rmfail=$fs_rm_fail_count dev=$fs_has_dev devwr=$fs_has_devwrite rtc=$fs_has_rtc fb=$fs_has_fb kbd=$fs_has_kbd pipe=$fs_has_pipe ps=$fs_has_ps free=$fs_has_free uptime=$fs_has_uptime df=$fs_has_df find=$fs_has_find/$fs_has_find_tmp/$fs_find_dir env=$fs_env_15/$fs_env_ls/$fs_env_term/$fs_env_cmd/$fs_env_nope/$fs_env_56/$fs_env_envc/$fs_env_envr/$fs_env_envt console=$fs_has_console live=$fs_live a=$fs_has_a b=$fs_has_b mtfs=$fs_has_mtfs_msg sh=$fs_has_sh bye=$fs_has_bye; got: $(printf '%s' "$fs_out" | head -c 480)"
+                    "cat=$fs_cat_count cat2=$fs_cat2_count tmpok=$fs_has_tmpfs_ok tmppayload=$fs_has_tmpfs_payload redir=$fs_has_redir rmfail=$fs_rm_fail_count dev=$fs_has_dev devwr=$fs_has_devwrite rtc=$fs_has_rtc date=$fs_date_set/$fs_date_bad fb=$fs_has_fb kbd=$fs_has_kbd pipe=$fs_has_pipe ps=$fs_has_ps free=$fs_has_free uptime=$fs_has_uptime df=$fs_has_df find=$fs_has_find/$fs_has_find_tmp/$fs_find_dir env=$fs_env_15/$fs_env_ls/$fs_env_term/$fs_env_cmd/$fs_env_nope/$fs_env_56/$fs_env_envc/$fs_env_envr/$fs_env_envt/$fs_env_tab console=$fs_has_console live=$fs_live a=$fs_has_a b=$fs_has_b mtfs=$fs_has_mtfs_msg sh=$fs_has_sh bye=$fs_has_bye; got: $(printf '%s' "$fs_out" | head -c 480)"
             fi
             ;;
         *)

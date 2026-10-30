@@ -135,7 +135,8 @@ fn hist_recall(buf: U8Array, cur_pos: i32, idx: i32) -> i32 {
 //
 // On TAB, look at the current whitespace-separated token and try to
 // complete it against a directory listing:
-//   * first token on the line → /bin entries (command names)
+//   * first token on the line → /bin entries (command names) + builtins
+//                               (quit / setenv / unsetenv / getenv / env)
 //   * token containing '/'    → readdir of the parent, match basename
 //   * other tokens            → readdir of "/" (no CWD concept)
 // Exactly one match: the remaining bytes are typed in (echoed to the
@@ -196,6 +197,29 @@ fn tab_echo_str(s: StringLiteral) -> void {
     return;
 }
 
+// Append one NUL-terminated name to the readdir-style listing in dirbuf
+// at offset n (capacity cap). Returns the new length; a name that does
+// not fit is dropped.
+fn tab_append_name(dirbuf: U8Array, n: i32, cap: i32, name: StringLiteral) -> i32 {
+    var nl: i32 = len(name);
+    if n + nl + 1 > cap { return n; }
+    var i: i32 = 0;
+    while i < nl { set(dirbuf, n + i, get(name, i)); i = i + 1; }
+    set(dirbuf, n + nl, 0u8);
+    return n + nl + 1;
+}
+
+// sh builtins, completed in command position alongside /bin. Keep in
+// sync with exec_command / builtin_env below.
+fn tab_append_builtins(dirbuf: U8Array, n: i32, cap: i32) -> i32 {
+    n = tab_append_name(dirbuf, n, cap, "quit");
+    n = tab_append_name(dirbuf, n, cap, "setenv");
+    n = tab_append_name(dirbuf, n, cap, "unsetenv");
+    n = tab_append_name(dirbuf, n, cap, "getenv");
+    n = tab_append_name(dirbuf, n, cap, "env");
+    return n;
+}
+
 // Perform tab completion and return the new end-of-buffer position.
 // The caller keeps pos at the end of buf; we inject the completion
 // bytes into buf and echo them so sh's outer state stays consistent.
@@ -252,6 +276,16 @@ fn complete(buf: U8Array, pos: i32) -> i32 {
     var dirbuf: U8Array = U8Array(4092);
     var n: i32 = do_readdir(dir as String,
                             dirbuf as u32 + 4u32, 4092);
+    // Entries at offset >= listing_n are builtins (no file behind them).
+    var listing_n: i32 = n;
+    if tab_is_first_token(buf, tok_start) {
+        // Command position: the builtins (quit + the env family) live
+        // in no directory, so append them to the /bin listing as extra
+        // NUL-terminated entries and let the matching below treat them
+        // like any other command name.
+        if n < 0 { n = 0; }
+        n = tab_append_builtins(dirbuf, n, 4092);
+    }
     if n <= 0 { delete(dir); delete(dirbuf); return pos; }
 
     // First pass: count matches + remember the first one.
@@ -300,8 +334,9 @@ fn complete(buf: U8Array, pos: i32) -> i32 {
         // If the completed entry is a directory, append '/' so the user
         // can keep typing the next path component without re-tabbing.
         // Probe by opening as a regular file — mtfs/tmpfs/procfs all
-        // reject directories, so open-failure ⇒ directory.
-        if pos < CMD_MAX - 1 {
+        // reject directories, so open-failure ⇒ directory. Builtins
+        // have no file to probe, so skip them.
+        if pos < CMD_MAX - 1 && first_start < listing_n {
             var cp: U8Array = U8Array(256u32);
             var cpos: i32 = 0;
             var ci: i32 = 0;

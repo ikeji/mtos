@@ -177,7 +177,7 @@ TASK_ARENA_<name> / TASK_STACK_<name>) を置く。
 
 | タスク | 説明 |
 |---|---|
-| `sh/` | 対話シェル (history / TAB 補完 / pipe / `<` `>`) |
+| `sh/` | 対話シェル (history / TAB 補完 — コマンド位置では `/bin` + builtin `quit setenv unsetenv getenv env` / pipe / `<` `>`) |
 | `msh/` | プロンプト/echo なしの silent sh (UART mux driver 用) |
 | `vi/` | 最小 vi エディタ (hjkl/dd/gg/:w/:q、ANSI 描画、縦スクロール。env の ROWS / COLS (console が export) で LCD console の画面に合わせ、長い行は COLS で切る) |
 | `console/` | Windows 95 風 GUI コンソール (LCD 接続時) |

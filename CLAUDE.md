@@ -27,7 +27,9 @@ band-blit 経由で LCD に DOOM ロゴ + Doomguy を表示するまで到達。
   soc.v) では 0x0010 ページ全体が exit デバイスだったので、`/dev/rtc` へ
   の write がエミュレータを halt させていた。web はホスト wall clock +
   settable offset で解決、**hw/ 実機は未解決** (write が exit_code に
-  当たる、read は 0 = 1970)。
+  当たる、read は 0 = 1970)。同日: sh の TAB 補完がコマンド位置で builtin
+  (`quit setenv unsetenv getenv env`) も候補にする (`/bin` の readdir
+  結果に名前を追記、builtin はディレクトリ probe をスキップ)。
 - 2026-10-30: **環境変数を `/proc/self/env/<KEY>` として導入**
   (`docs/task/proc_env.md`)。spawn ABI は不変。kernel が task ram block
   内に env 表 (256 B) を持ち、spawn で親→子にコピー、exec で保持。
