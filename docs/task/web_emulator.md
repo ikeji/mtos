@@ -156,6 +156,7 @@ fetch で `../kernel/build/` を読む。リポジトリにはコミットしな
 | 0x1000_0000 | UART 16550 | `+0` DR: write → term、read → RX キュー pop。`+5` LSR: bit0 = RX あり、bit5/6 = 常に 1 |
 | 0x0200_0000 | CLINT | `0xBFF8` mtime lo/hi、`0x4000` mtimecmp lo/hi |
 | 0x0010_0000 | exit | `0x5555` で halt、他は fail 表示 |
+| 0x0010_1000 | goldfish-rtc | `+0` TIME_LOW / `+4` TIME_HIGH (ns since epoch、kernel_tn20k.tc の `/dev/rtc` backend が qemu virt と同じ番地を叩く)。ホスト wall clock + settable offset。hw/ の SoC には無い (0x0010 ページ全体が exit) |
 | 0x1003_0000 | SD SPI | DATA / STATUS / CTRL (`block_sd.tc`)。Phase 4 |
 | 0x1004_0000 | LCD SPI | DATA / STATUS / PIX / FILL (`display_ili9488.tc`、`lcd_spi.v`)。Phase 5 (`src/lcd.js`) |
 | 0x1005_0000 | vram_lcd | CTRL / BASE / DIV: enable 中は SDRAM の 480x320 RGB565 (reset BASE = 0x807A5000) を表示。Phase 5 |

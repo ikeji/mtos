@@ -17,6 +17,17 @@ I_InitGraphics) を完走、`DG_DrawFrame` から `/dev/fb` mode=0
 band-blit 経由で LCD に DOOM ロゴ + Doomguy を表示するまで到達。
 
 **最近の改善 (tn20k / K21 / K22)**:
+- 2026-10-31: **`date` コマンド** (`userland/bin/date/`)。引数なしで
+  `/dev/rtc` を表示、`date YYYY-MM-DD HH:MM:SS` で設定して読み戻す。
+  kernel の `rtc_parse_set` は範囲チェックが緩く devfs_close が結果を
+  捨てるので、フィールド数 / 月 / 月末 (閏年込) / 時分秒 / 年 1970..2105
+  の検証とエラーメッセージは date 側で書き込み前に行う。副産物: web の
+  `soc.js` に **goldfish-rtc (0x0010_1000)** を追加 — kernel_tn20k.tc の
+  `/dev/rtc` backend は qemu virt と同じ番地を叩くが、web (と hw/ の
+  soc.v) では 0x0010 ページ全体が exit デバイスだったので、`/dev/rtc` へ
+  の write がエミュレータを halt させていた。web はホスト wall clock +
+  settable offset で解決、**hw/ 実機は未解決** (write が exit_code に
+  当たる、read は 0 = 1970)。
 - 2026-10-30: **環境変数を `/proc/self/env/<KEY>` として導入**
   (`docs/task/proc_env.md`)。spawn ABI は不変。kernel が task ram block
   内に env 表 (256 B) を持ち、spawn で親→子にコピー、exec で保持。
@@ -237,7 +248,7 @@ userland/   サブプロジェクト 2: MTOS ユーザータスク
   lib/libtc/   共通ユーザライブラリ (puts/eputs/print/syscall stub forward decl)
   bin/<task>/  TC タスク (44 個) + task.mk (GUEST_TASKS / EXTRA_GUEST_TASKS 宣言)
     sh, msh, ls, cat, echo, wc, head, cp, du, find, grep, rm, mkdir, rmdir,
-    md5sum, ps, free, uptime, df, vi, neofetch, console, fbtest, count, seq,
+    md5sum, ps, free, uptime, date, df, vi, neofetch, console, fbtest, count, seq,
     mx, mr, muxon, muxoff, sdprobe, kbdump, bin2uf2, launcher, hello, hello2,
     catfile, tmpdemo
     parse/, sigscan/, tcheck/, codegen/, bc2asm/, asm_pass{1,2,3}/
@@ -644,7 +655,7 @@ GEN2_DIR=/path/to/gen2 ./kernel/scripts/build.sh --target pico2 -o kernel.uf2
    hello2, catfile, sh, msh, tmpdemo, echo, cat, ls, wc, head, cp, du, find,
    grep, rm, mkdir, rmdir, neofetch, vi, console, fbtest, launcher,
    count, seq, mx, mr, muxon, muxoff, sdprobe, kbdump, md5sum, ps,
-   free, uptime, df, bin2uf2) を raw バイナリにコンパイル。各タスクには
+   free, uptime, date, df, bin2uf2) を raw バイナリにコンパイル。各タスクには
    `task_arena_size()` / `task_stack_size()` の値を `.word` 2 本の
    header として prepend する (K3 案C)。`EXTRA_TASKS="parse sigscan
    tcheck codegen bc2asm asm_pass1 asm_pass2 asm_pass3 cat"` を渡すと

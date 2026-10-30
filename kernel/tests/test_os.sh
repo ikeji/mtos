@@ -206,6 +206,11 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     # the UART-dump driver echoes each as "FB: mode=N ...".
     fs_has_fb=$(echo "$fs_out" | grep -c "FB: mode=1 x=0 y=0 w=320 h=480")
     # /dev/kbd check: kbdump reads a line from /dev/kbd (UART-RX
+    # /bin/date: no-arg prints the same /dev/rtc snapshot (2nd 2031 line),
+    # a valid argument sets and echoes back, an impossible day (Feb 30)
+    # is rejected in date itself before anything is written.
+    fs_date_set=$(echo "$fs_out" | grep -c "^2040-02-29 23:59:5")
+    fs_date_bad=$(echo "$fs_out" | grep -c "date: day out of range")
     # backed stub) and echoes "KBD:<line>".
     fs_has_kbd=$(echo "$fs_out" | grep -c "KBD:KBDTEST_HELLO")
     # pipe check: `echo PIPEWORD | wc` exercises sys_pipe +
@@ -238,7 +243,8 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
                 && [ "$fs_has_redir" -gt 0 ] \
                 && [ "$fs_rm_fail_count" -eq 1 ] \
                 && [ "$fs_has_dev" -gt 0 ] && [ "$fs_has_devwrite" -gt 0 ] \
-                && [ "$fs_has_rtc" -gt 0 ] && [ "$fs_has_fb" -gt 0 ] \
+                && [ "$fs_has_rtc" -ge 2 ] && [ "$fs_date_set" -eq 1 ] && [ "$fs_date_bad" -eq 1 ] \
+                && [ "$fs_has_fb" -gt 0 ] \
                 && [ "$fs_has_kbd" -gt 0 ] && [ "$fs_has_pipe" -gt 0 ] \
                 && [ "$fs_has_console" -gt 0 ] \
                 && [ "$fs_has_ps" -gt 0 ] && [ "$fs_has_free" -eq 3 ] \
@@ -249,7 +255,7 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
                 && [ "$fs_env_56" -eq 1 ] && [ "$fs_env_envc" -eq 1 ] && [ "$fs_env_envr" -eq 1 ] && [ "$fs_env_envt" -eq 0 ] \
                 && [ "$fs_has_sh" -gt 0 ] && [ "$fs_has_bye" -gt 0 ] \
                 && [ -n "$fs_live" ] && [ "$fs_live" -le 145 ]; then
-                report_pass "fs_virtio: kern.conf init + tmpdemo + catfile argv + redirect + devfs + rtc + fb + kbd + pipe + ps/free/uptime/df/find + /proc/self/env + console, live=$fs_live" "$elapsed"
+                report_pass "fs_virtio: kern.conf init + tmpdemo + catfile argv + redirect + devfs + rtc + date + fb + kbd + pipe + ps/free/uptime/df/find + /proc/self/env + console, live=$fs_live" "$elapsed"
             else
                 report_fail_msg "fs_virtio" \
                     "cat=$fs_cat_count cat2=$fs_cat2_count tmpok=$fs_has_tmpfs_ok tmppayload=$fs_has_tmpfs_payload redir=$fs_has_redir rmfail=$fs_rm_fail_count dev=$fs_has_dev devwr=$fs_has_devwrite rtc=$fs_has_rtc fb=$fs_has_fb kbd=$fs_has_kbd pipe=$fs_has_pipe ps=$fs_has_ps free=$fs_has_free uptime=$fs_has_uptime df=$fs_has_df find=$fs_has_find/$fs_has_find_tmp/$fs_find_dir env=$fs_env_15/$fs_env_ls/$fs_env_term/$fs_env_cmd/$fs_env_nope/$fs_env_56/$fs_env_envc/$fs_env_envr/$fs_env_envt console=$fs_has_console live=$fs_live a=$fs_has_a b=$fs_has_b mtfs=$fs_has_mtfs_msg sh=$fs_has_sh bye=$fs_has_bye; got: $(printf '%s' "$fs_out" | head -c 480)"

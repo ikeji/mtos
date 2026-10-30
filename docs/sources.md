@@ -170,6 +170,7 @@ TASK_ARENA_<name> / TASK_STACK_<name>) を置く。
 | `ps/` | タスク一覧 (`/proc/tasks` を整形、RAM / STACK は KB 表示、`-a` で unused も) |
 | `free/` | kernel heap の total / used / free / peak / largest (`/proc/meminfo` を整形、`-b` で raw) |
 | `uptime/` | 起動からの秒数 (sys_uptime_us ecall 270) |
+| `date/` | RTC の表示 / 設定 (`date` で `/dev/rtc` を表示、`date YYYY-MM-DD HH:MM:SS` で月末・閏年まで検証してから `/dev/rtc` に書き設定) |
 | `df/` | マウント中 FS (`/proc/diskinfo` を整形) |
 
 **アプリ系**:

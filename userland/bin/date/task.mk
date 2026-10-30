@@ -1,0 +1,3 @@
+GUEST_TASKS += date
+TASK_ARENA_date := 16384
+TASK_STACK_date := 8192

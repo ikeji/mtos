@@ -1,5 +1,11 @@
 // soc.js — the hw/ SoC as seen by software (hw/rtl/soc/soc.v):
 //   0x0010_0000  exit device (0x5555 = pass, 0x3333|code<<16 = fail), +4 BOOT_UART_WAIT (ro)
+//   0x0010_1000  goldfish-rtc (what kernel_tn20k.tc's /dev/rtc backend expects at the qemu virt
+//                address): +0 TIME_LOW (read returns ns-since-epoch lo and latches hi; write
+//                commits hi:lo), +4 TIME_HIGH. Backed by the host wall clock plus a settable
+//                offset, so `date` reads real time and `date YYYY-MM-DD HH:MM:SS` sticks for
+//                the session. hw/rtl/soc/soc.v has no RTC there: the whole 0x0010 page is the
+//                exit device, so on the real board a /dev/rtc write hits exit_code instead
 //   0x0200_0000  CLINT: +0x4000 mtimecmp lo/hi, +0xBFF8 mtime lo/hi
 //   0x1000_0000  UART 16550: +0 DR, +5 LSR (bit0 RX ready, bit5/6 TX empty)
 //   0x1003_0000  SD SPI master (hw/rtl/soc/spi_master.v): +0 DATA, +4 STATUS bit0 busy, +8 CTRL
@@ -60,6 +66,9 @@ export class Soc {
     };
     this.halted = false;
     this.exitCode = null;
+    this.rtcOffsetMs = 0;       // goldfish-rtc: host wall clock + this
+    this.rtcHiLatch = 0;        // TIME_HIGH latched by the last TIME_LOW read
+    this.rtcHiWrite = 0;        // TIME_HIGH written, committed by the next TIME_LOW write
     this.unmapped = new Map();    // lenient mode: addr -> count, for Phase 2 stubs
   }
 
@@ -115,7 +124,16 @@ export class Soc {
         default: return 0;
       }
     }
-    if (page === 0x0010) {                    // exit device
+    if (page === 0x0010) {
+      if ((addr & 0xf000) === 0x1000) {       // goldfish-rtc
+        if ((addr & 7) === 0) {
+          const ns = BigInt(Date.now() + this.rtcOffsetMs) * 1000000n;
+          this.rtcHiLatch = Number((ns >> 32n) & 0xffffffffn);
+          return Number(ns & 0xffffffffn) | 0;
+        }
+        return this.rtcHiLatch | 0;
+      }
+      // exit device
       return (addr & 0xf) === 4 ? 0 : (this.exitCode | 0);
     }
     if (page === 0x1003) {                    // SD SPI master
@@ -165,7 +183,16 @@ export class Soc {
       this.mtimecmp = this.mtimecmpHi * 4294967296 + this.mtimecmpLo;
       return;
     }
-    if (page === 0x0010) {                    // exit device
+    if (page === 0x0010) {
+      if ((addr & 0xf000) === 0x1000) {       // goldfish-rtc
+        if ((addr & 7) === 4) { this.rtcHiWrite = value >>> 0; return; }
+        if ((addr & 7) === 0) {
+          const ns = (BigInt(this.rtcHiWrite) << 32n) | BigInt(value >>> 0);
+          this.rtcOffsetMs = Number(ns / 1000000n) - Date.now();
+        }
+        return;
+      }
+      // exit device
       if ((addr & 0xf) === 0) {
         this.exitCode = value >>> 0;
         this.halted = true;

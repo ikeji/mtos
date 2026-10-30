@@ -1,0 +1,204 @@
+// date.tc — show or set the real-time clock via /dev/rtc.
+//
+//   date                        print "YYYY-MM-DD HH:MM:SS"
+//   date YYYY-MM-DD HH:MM:SS    set the clock, then print it back
+//   date "YYYY-MM-DD HH:MM:SS"  same (argv[1..] is joined with spaces, so
+//                               the quoting does not matter)
+//
+// The kernel side is devfs.tc: a read of /dev/rtc returns a one-shot
+// snapshot rendered by rtc.tc, and bytes written to it are parsed as a
+// datetime and committed to the platform clock at close (goldfish-rtc on
+// qemu virt / tn20k, DS3231 on pico2). rtc_parse_set only range-checks
+// the fields loosely and devfs_close discards its result, so the
+// validation that produces an error message (field count, month, day-
+// of-month incl. leap years, hour/min/sec, year within the u32 epoch
+// range 1970..2105) lives here, before anything is written.
+
+import "../../lib/libtc/libtc.tc";
+
+const RTC_PATH: StringLiteral = "/dev/rtc";
+
+fn usage() -> i32 {
+    eputs("usage: date [YYYY-MM-DD HH:MM:SS]\n");
+    return 1;
+}
+
+// Read /dev/rtc and echo it to stdout (it already ends with LF).
+fn show() -> i32 {
+    var fd: i32 = do_openat(0, RTC_PATH, 0);
+    if fd < 0 {
+        eputs("date: cannot open /dev/rtc\n");
+        return 1;
+    }
+    var buf: U8Array = U8Array(64u32);
+    var n: i32 = sys_read(fd, buf, 64);
+    do_close(fd);
+    if n <= 0 {
+        delete(buf);
+        eputs("date: read failed\n");
+        return 1;
+    }
+    sys_write(1, buf, n);
+    delete(buf);
+    return 0;
+}
+
+fn is_leap(y: i32) -> bool {
+    if y % 400 == 0 { return true; }
+    if y % 100 == 0 { return false; }
+    return y % 4 == 0;
+}
+
+fn days_in_month(y: i32, m: i32) -> i32 {
+    if m == 2 {
+        if is_leap(y) { return 29; }
+        return 28;
+    }
+    if m == 4 || m == 6 || m == 9 || m == 11 { return 30; }
+    return 31;
+}
+
+// Split buf[0..n) into decimal fields (any non-digit run separates),
+// at most 6, into nums. Returns the field count (7 means "too many").
+fn split_fields(buf: U8Array, n: i32, nums: U32Array) -> i32 {
+    var ni: i32 = 0;
+    var cur: u32 = 0u32;
+    var indig: i32 = 0;
+    var i: i32 = 0;
+    while i < n {
+        var c: u8 = get(buf, i);
+        if c >= '0' as u8 && c <= '9' as u8 {
+            if cur < 100000000u32 {
+                cur = cur * 10u32 + ((c as u32) - ('0' as u32));
+            }
+            indig = 1;
+        } else {
+            if indig == 1 {
+                if ni < 6 { set(nums, ni, cur); }
+                ni = ni + 1;
+                cur = 0u32;
+                indig = 0;
+            }
+        }
+        i = i + 1;
+    }
+    if indig == 1 {
+        if ni < 6 { set(nums, ni, cur); }
+        ni = ni + 1;
+    }
+    if ni > 6 { return 7; }
+    return ni;
+}
+
+// Validate the 6 fields; prints the reason to stderr and returns 1 on
+// a bad value, 0 when the datetime is acceptable.
+fn validate(nums: U32Array) -> i32 {
+    var y: i32 = get(nums, 0) as i32;
+    var mon: i32 = get(nums, 1) as i32;
+    var d: i32 = get(nums, 2) as i32;
+    var hh: i32 = get(nums, 3) as i32;
+    var mm: i32 = get(nums, 4) as i32;
+    var ss: i32 = get(nums, 5) as i32;
+    if y < 1970 || y > 2105 {
+        eputs("date: year out of range (1970..2105)\n");
+        return 1;
+    }
+    if mon < 1 || mon > 12 {
+        eputs("date: month out of range (1..12)\n");
+        return 1;
+    }
+    if d < 1 || d > days_in_month(y, mon) {
+        eputs("date: day out of range for that month\n");
+        return 1;
+    }
+    if hh > 23 {
+        eputs("date: hour out of range (0..23)\n");
+        return 1;
+    }
+    if mm > 59 {
+        eputs("date: minute out of range (0..59)\n");
+        return 1;
+    }
+    if ss > 59 {
+        eputs("date: second out of range (0..59)\n");
+        return 1;
+    }
+    return 0;
+}
+
+// Join argv[1..] with single spaces into a fresh U8Array (count header
+// set so sys_write can take it). Caller deletes.
+fn join_args(argv: StringArray) -> U8Array {
+    var nargs: i32 = len(argv);
+    var total: i32 = 0;
+    var i: i32 = 1;
+    while i < nargs {
+        if i > 1 { total = total + 1; }
+        total = total + len(get(argv, i));
+        i = i + 1;
+    }
+    var out: U8Array = U8Array(total as u32);
+    var pos: i32 = 0;
+    i = 1;
+    while i < nargs {
+        if i > 1 {
+            set(out, pos, ' ' as u8);
+            pos = pos + 1;
+        }
+        var a: String = get(argv, i);
+        var alen: i32 = len(a);
+        var j: i32 = 0;
+        while j < alen {
+            set(out, pos, get(a, j));
+            pos = pos + 1;
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    return out;
+}
+
+fn set_clock(argv: StringArray) -> i32 {
+    var text: U8Array = join_args(argv);
+    var n: i32 = len(text);
+    var nums: U32Array = U32Array(6u32);
+    var nf: i32 = split_fields(text, n, nums);
+    if nf != 6 {
+        delete(nums);
+        delete(text);
+        eputs("date: expected 6 fields: YYYY-MM-DD HH:MM:SS\n");
+        return usage();
+    }
+    var bad: i32 = validate(nums);
+    delete(nums);
+    if bad != 0 {
+        delete(text);
+        return 1;
+    }
+    // O_WRONLY|O_CREAT|O_TRUNC, as sh's `>` redirect uses; the kernel
+    // parses + commits the write when the fd is closed.
+    var fd: i32 = do_openat(0, RTC_PATH, 1 | 64 | 512);
+    if fd < 0 {
+        delete(text);
+        eputs("date: cannot open /dev/rtc for writing\n");
+        return 1;
+    }
+    sys_write(fd, text, n);
+    do_close(fd);
+    delete(text);
+    return show();
+}
+
+fn main(argv: StringArray) -> i32 {
+    var nargs: i32 = len(argv);
+    if nargs == 1 { return show(); }
+    var a1: String = get(argv, 1);
+    if len(a1) == 2 && get(a1, 0) == '-' as u8 && get(a1, 1) == 'h' as u8 {
+        return usage();
+    }
+    if len(a1) >= 1 && get(a1, 0) == '-' as u8 {
+        eputs("date: unknown option\n");
+        return usage();
+    }
+    return set_clock(argv);
+}
