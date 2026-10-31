@@ -312,6 +312,7 @@ kernel/
 | `run_pico2.sh` | Debug Probe 経由で pico2 に flash + UART キャプチャ |
 | `run_pico2_interactive.sh` | build + flash + 双方向 UART コンソール |
 | `genjpfont.py` | np21w PC-98 font.bmp → jpfont.dat (console 用) |
+| `genvidict.py` | SKK-JISYO.{S,M,ML} → vidict.dat (vi の単文節かな漢字変換辞書、`docs/task/vi_kanji_conv.md`) |
 
 ### ホストツール (`kernel/tools-src/`)
 

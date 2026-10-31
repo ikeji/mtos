@@ -14,7 +14,7 @@ TUT で「かんじ」と打って **Ctrl-J で「漢字」に置き換える** 
 - TUT モード中の Ctrl-J で、カーソル直前のひらがな列 (最大 8 文字) を
   **長い読みから順に** 辞書引きし、候補でその場置換する。Ctrl-J 連打で
   次候補、他のキーで確定。
-- 辞書は SKK-JISYO.S (送りなし部) をコンパクトなバイナリに変換して
+- 辞書は SKK-JISYO.M (送りなし部) をコンパクトなバイナリに変換して
   `.incbin` で埋め込む。
 - qemu virt / pico2 / tn20k / web の 4 環境すべてで同じバイナリが動く。
 
@@ -80,19 +80,24 @@ Ctrl-J)。`web/tests/test_console.sh` の Enter 回帰テストは CR を使っ�
 
 ### ソース
 
-**SKK-JISYO.S** (skk-dev/dict、GPL-2+、EUC-JP、約 420 KB)。
-送りなし部 ≈ 17k 見出し。送りあり部 (≈ 2.5k) は Phase 3 まで捨てる。
-font.bmp と同じく **リポジトリには入れず `tmp/SKK-JISYO.S` に置く**。
+**SKK-JISYO.M** (skk-dev/dict、GPL-2+、EUC-JP、144 KB、送りなし
+6.4k 見出し) を既定にする (S = 55 KB / 2.4k は語彙不足、ML = 953 KB /
+41k は Phase 0 の表参照)。送りあり部は Phase 3 まで捨てる。
+font.bmp と同じく **リポジトリには入れず `tmp/SKK-JISYO.M` に置く**。
 `make -C userland fetch-dict` で
-`https://raw.githubusercontent.com/skk-dev/dict/master/SKK-JISYO.S`
+`https://raw.githubusercontent.com/skk-dev/dict/master/SKK-JISYO.M`
 を curl する便宜ターゲットを用意する。無ければ **空辞書で vi をビルド**
 し (警告のみ、`make test` は壊れない)、test_os の変換テストは SKIP。
 
 ### 生成: `userland/scripts/genvidict.py`
 
 ```
-genvidict.py <SKK-JISYO.S> <out.dat> [--max-cands 8] [--okuri-ari] [--dump]
+genvidict.py <SKK-JISYO> <out.dat> [--max-cands 8] [--max-read 8]
+genvidict.py --empty <out.dat>      見出し 0 の有効な .dat
+genvidict.py --dump <in.dat>        .dat → テキスト (検証用)
 ```
+(実装済、往復テスト `userland/tests/test_genvidict.sh` を
+`make -C userland test` から実行。)
 - `;; okuri-nasi entries.` 以降を読む。見出し行 `よみ /候補1/候補2;注釈/`
   の `;注釈` を落とし、`(concat ...)` を含む候補は捨てる。
 - 読みは先頭がひらがなで全文字がひらがな / `ー` のものだけ (数値
@@ -100,9 +105,11 @@ genvidict.py <SKK-JISYO.S> <out.dat> [--max-cands 8] [--okuri-ari] [--dump]
 - 候補の各文字は **JIS X 0208 で表せるもの** (`euc_jp` で 2 バイト)、
   または ASCII / かなに限る。console の jpfont は 94×94 の JIS X 0208 全面
   を持つので、この条件を満たせば LCD で豆腐にならない。
-- 1 見出し `--max-cands` 候補まで。読みのコードポイント列で昇順ソート。
+- 1 見出し `--max-cands` 候補まで、読みは `--max-read` 文字まで
+  (vi は最大 8 文字しか引かないので、長い見出しは捨てる)。読みの
+  コードポイント列で昇順ソート。
 - `--dump` は .dat をテキストに戻す (生成テストと目視確認用)。
-- 入力ファイルが無い (or 空) ときは見出し 0 の有効な .dat を出す。
+- `--empty` は見出し 0 の有効な .dat (辞書ファイルが無いときの fallback)。
 
 ### バイナリ形式 `vidict.dat` (全フィールド little-endian、2 B 境界)
 
@@ -130,53 +137,47 @@ entry*:
   最大 8 回引くので tn20k (~5 MIPS) でも数 ms。必要なら
   (先頭文字, rlen) 二段 bucket に後から変えられる。
 
-### サイズ見積と loader の 256 KB しきい値
+### サイズ実測 (Phase 0、2026-11-01) と loader の 256 KB しきい値
 
-| 内容 | 概算 |
-|---|---|
-| 現在の vi.bin | 89 KB |
-| SKK-JISYO.S 送りなし、候補 ≤ 8、u16 | 250〜350 KB (Phase 0 で実測) |
+`genvidict.py` (送りなし、`--max-read 8`) の出力:
 
-`kernel/src/loader.tc` は **256 KB 超のタスクを virt で固定スロット
-0x87000000 に置く** (K22、picolibc の絶対アドレス参照のため gcc_doom
-をリンク時 VMA に置く経路)。サイズはあくまで「GCC タスクか」の代用
-ヒューリスティックで、以下の問題が既にある:
+| ソース | 原本 | 見出し | 候補 | .dat (候補 ≤ 8) | .dat (候補 ≤ 4) |
+|---|---|---|---|---|---|
+| SKK-JISYO.S | 55 KB | 2,373 | 3,890 | 39 KB | 37 KB |
+| SKK-JISYO.M | 144 KB | 6,402 | 8,616 | 112 KB | 109 KB |
+| SKK-JISYO.ML | 953 KB | 40,833 | 55,563 | 814 KB | 801 KB |
 
-- `console.bin` (436 KB、純 TC) が既にしきい値を超え、virt では固定
-  スロットに載っている。console → sh → vi と spawn したとき vi も
-  256 KB 超なら **console の像を上書きする**。
-- `gcc_hello.bin` (273 B) は kmalloc 経路で動く (picolibc の globals を
-  使わないため)。つまり「大きい = 固定 VMA 必要」は両方向で不正確。
+計画時の「S で 300 KB」は見積り違いで、S は小さすぎ (かんじ / にほんご /
+きょう は入るが語彙 2.4k)。**デフォルトは M** (`VI_DICT_SRC ?=
+tmp/SKK-JISYO.M`): vi.bin は 89 + 112 ≈ 200 KB で **256 KB 未満のまま**
+なので、`kernel/src/loader.tc` の固定スロット (virt で 256 KB 超の
+タスクを 0x87000000 に置く経路) には乗らず、virt の console 内でも
+衝突しない。ML (814 KB) を選ぶと固定スロットに乗る (XIP の pico2 /
+tn20k / web には無関係)。その場合の制限は「virt console 内で vi を
+起動すると console の像を上書きする」で、ML を既定にする日が来たら
+`docs/problem.md` に記録するか、下の明示フラグ化を先にやる。
 
-**方針 (2026-11-01 決定)**: **loader はいじらず、vi は固定スロットに
-載せたまま進める**。衝突するのは「virt で 256 KB 超のタスク 2 本が同時
-に生きる」場合だけで、具体的には virt の `console` (kern_console*.conf)
-から sh 経由で vi を起動するケースと、gcc_doom 実行中に vi を起動する
-ケース。pico2 / tn20k / web は XIP でこの経路を通らず、test_os の
-console テストは vi を使わず、web の console + vi テストは XIP なので、
-現行テストは何も壊れない。この制限は `docs/problem.md` に「virt
-console 内で vi を起動すると console の像を上書きする」として記録する。
+`kernel/src/loader.tc` のしきい値は「picolibc 製 GCC タスクか」の代用
+ヒューリスティックで、`console.bin` (436 KB、純 TC) が既に超えている
+一方 `gcc_hello.bin` (273 B) は kmalloc 経路で動く。本修正は別タスク:
+`GCC_TASK_RULE` が出す K3 ヘッダの stack word に bit 31 を立て、
+`read_task_header_stack` がマスク、`load_fd` はそのビットで固定スロット
+/ kmalloc を選ぶ (TC ヘッダ不変で self-replicate byte-exact に影響なし、
+gcc_doom_pico2 は XIP 経路で early return)。
 
-後回しにする本修正 (別タスク): サイズではなく **明示フラグ**で判定する。
-`userland/Makefile` の `GCC_TASK_RULE` が出す K3 ヘッダの stack word に
-bit 31 を立て (`.word stack | 0x80000000`)、`read_task_header_stack`
-がマスクして返し、`load_fd` はそのビットで固定スロット / kmalloc を
-選ぶ。TC タスクのヘッダは不変なので self-replicate の byte-exact にも
-影響しない。gcc_doom_pico2 は XIP 経路で early return するので pico2
-側はマスクだけで足りる。その時点で `GCC_TASK_THRESH` を削除。
+**送りなしだけだと動詞 / 形容詞が引けない** (よむ・かく・たかい は
+okuri-ari 部に `よm /読/` の形でしかない)。Phase 3 の送りあり対応は
+「任意」から**本命の続編**に格上げ。
 
-固定スロットでも kmalloc 経路でも、辞書サイズの制約は **flash /
-SDRAM の容量だけ**: pico2 は kernel.bin ≈ 2.3 MB / 4 MiB、tn20k
-と web は 2.6 MB / 8 MB SDRAM なので、SKK-JISYO.S 送りなし全部 (≈
-300 KB 台) をデフォルトで入れる。`--max-cands` / 見出し数上限は knob
-として残す。self-replicate は DROP_TASKS で vi を落としているので
-影響なし。
+pico2 flash (kernel.bin ≈ 2.3 MB / 4 MiB)、tn20k / web (2.6 MB / 8 MB
+SDRAM) とも M の 112 KB は余裕。self-replicate は DROP_TASKS で vi を
+落としているので影響なし。
 
 ## 実装
 
 ### ビルド配線
 
-- `userland/Makefile`: `VI_DICT_SRC ?= $(ROOT)/tmp/SKK-JISYO.S`、
+- `userland/Makefile`: `VI_DICT_SRC ?= $(ROOT)/tmp/SKK-JISYO.M`、
   `$(BUILD_DIR)/vidict.dat` (genvidict.py)、`$(BUILD_DIR)/vidict_inc.s`
   (`bin2s_incbin.sh vidict.dat vidict <path>` → `_vidict_addr` /
   `_vidict_size_value`)、`TASK_EXTRA_S_vi += $(BUILD_DIR)/vidict_inc.s`、
@@ -220,26 +221,25 @@ SDRAM の容量だけ**: pico2 は kernel.bin ≈ 2.3 MB / 4 MiB、tn20k
 
 ## Phase 分割
 
-- **Phase 0 (計測)**: `tmp/SKK-JISYO.S` 取得、genvidict.py、.dat サイズを
-  候補数 / 見出し数の knob ごとに実測。
+- **Phase 0 (計測、完了 2026-11-01)**: `tmp/SKK-JISYO.{S,M,ML}` 取得、
+  genvidict.py + 往復テスト、.dat サイズ実測 (上表)。M を既定に決定。
 - **Phase 1 (配線)**: Makefile / build.sh / vidict_inc.s、vi に
   `_vidict_addr` を link して `dict_lookup` だけ入れ、status 行に
   見出し数を出すスモーク。空辞書 fallback もここで。
 - **Phase 2 (変換本体)**: 読み切り出し、候補リスト、置換 / 循環 /
   確定、undo、status 表示、カタカナ候補、test_os 追加、ドキュメント
   (vi.tc ヘッダ、`docs/sources.md`、CLAUDE.md 現在のフェーズ)。
-- **Phase 3 (任意)**: 送りあり (`おくr` → 送 + る: 読み末尾のかなを
-  SKK の子音字に写像して okuri-ari 見出しを引き、flags=1 で区別)、
-  (先頭文字, rlen) 二段 bucket、候補の前候補移動。
+- **Phase 3 (続編、動詞 / 形容詞に必須)**: 送りあり (`おくr` → 送 + る:
+  読み末尾のかなを SKK の子音字に写像して okuri-ari 見出しを引き、
+  flags=1 で区別)。任意: (先頭文字, rlen) 二段 bucket、前候補移動。
 
 ## 決めごと (デフォルトで進める、異論があれば変更)
 
 1. **TUT 中の Ctrl-J は変換専用**になり、TUT 終了は ESC のみ。
 2. 辞書ファイルは **コミットしない** (GPL データを tree に入れない)。
-   `tmp/SKK-JISYO.S` + `make -C userland fetch-dict`、無ければ空辞書。
-3. loader は変更せず vi は virt で固定スロットに載る (virt console 内の
-   vi は制限として problem.md に記録、明示フラグ化は別タスク)。
-   vi は SKK-JISYO.S 送りなし全部を持つ (縮小は knob)。
+   `tmp/SKK-JISYO.M` + `make -C userland fetch-dict`、無ければ空辞書。
+3. loader は変更しない。M 既定なら vi.bin ≈ 200 KB で固定スロットに
+   乗らない (ML を選んだときだけ乗る)。明示フラグ化は別タスク。
 4. 候補リストは「長い読みの候補 → 短い読みの候補 → カタカナ」の 1 本。
 
 ## リスク / 注意

@@ -282,8 +282,12 @@ TASK_EXTRA_S_console := $(BUILD_DIR)/jpfont_inc.s
 $(TASK_DIR)/console.bin: $(BUILD_DIR)/jpfont_inc.s
 
 # ===== test =====
-test: all
+test: all test-genvidict
 	@echo "userland smoke: $(words $(ALL_TASK_NAMES)) tasks built OK"
+
+# genvidict.py (vi の辞書生成器) の往復テスト。~0.1 s、辞書ファイル不要。
+test-genvidict:
+	@$(ROOT)/userland/tests/test_genvidict.sh
 
 test-quick: $(GUEST_TASK_BINS)
 	@echo "userland test-quick: $(words $(GUEST_TASKS)) GUEST_TASKS built OK"
