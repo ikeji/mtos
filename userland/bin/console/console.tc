@@ -147,7 +147,7 @@ var g_tcol:  i32 = 0;                       // content-relative cursor col (0..T
 var g_zen_ok: i32 = 0;                     // 1 = zenkaku font loaded into SDRAM
 fn peek8(addr: u32) -> u8;                 // runtime primitive
 fn vram_fill(x: i32, y: i32, w: i32, h: i32, col: i32) -> void;   // defined below
-var g_grid:      I32Array = 0 as I32Array;   // codepoint grid, sw mode only
+var g_grid:      I32Array = 0 as I32Array;   // codepoint grid (logical rows)
 // g_grid_prev shadows what we last painted to /dev/fb. redraw() only
 // re-blits a cell where g_grid != g_grid_prev — typical sh output has
 // long stretches of trailing empties, so the shifted-up grid still
@@ -1062,6 +1062,29 @@ fn vram_scroll_up() -> void {
     return;
 }
 
+// Shift the logical codepoint grid AND its shadow up one row and blank
+// the new bottom row. Hardware scroll uses it to keep the grid in step
+// with the panel (the pixels moved on their own, so prev stays valid).
+fn grid_shift_up() -> void {
+    var r: i32 = 0;
+    while r < ROWS - 1 {
+        var c: i32 = 0;
+        while c < COLS {
+            set(g_grid,      r * COLS + c, get(g_grid,      (r + 1) * COLS + c));
+            set(g_grid_prev, r * COLS + c, get(g_grid_prev, (r + 1) * COLS + c));
+            c = c + 1;
+        }
+        r = r + 1;
+    }
+    var bc: i32 = 0;
+    while bc < COLS {
+        set(g_grid,      (ROWS - 1) * COLS + bc, 0);
+        set(g_grid_prev, (ROWS - 1) * COLS + bc, 0);
+        bc = bc + 1;
+    }
+    return;
+}
+
 // Software scroll: shift the codepoint grid up one row, blank the new
 // bottom row, and re-blit the whole screen. Used in landscape, where
 // the hardware vertical scroll cannot move text.
@@ -1126,28 +1149,24 @@ fn draw_cp(fb: i32, frame: U8Array, cp: i32) -> void {
     } else if cp >= 32 {
         if cp < 256 {
             draw_hankaku(fb, frame, g_col, g_row, cp);
-            if g_sw_scroll != 0 {
-                // Direct paint — grid and grid_prev stay in sync so
-                // the next redraw skips this cell unless a scroll
-                // moves something else into it.
-                var ix: i32 = g_row * COLS + g_col;
-                set(g_grid,      ix, cp);
-                set(g_grid_prev, ix, cp);
-            }
+            // Direct paint — grid and grid_prev stay in sync so the
+            // next redraw skips this cell unless a scroll moves
+            // something else into it.
+            var ix: i32 = g_row * COLS + g_col;
+            set(g_grid,      ix, cp);
+            set(g_grid_prev, ix, cp);
             g_col = g_col + 1;
         } else {
             var kt: i32 = u2k_lookup(cp);
             if kt != 0 {
                 if g_col + 1 >= COLS { newline(); }
                 draw_zenkaku(fb, frame, g_col, g_row, kt);
-                if g_sw_scroll != 0 {
-                    // cp at the left cell, -1 marks the trailing cell.
-                    var iz: i32 = g_row * COLS + g_col;
-                    set(g_grid,      iz,     cp);
-                    set(g_grid,      iz + 1, 0 - 1);
-                    set(g_grid_prev, iz,     cp);
-                    set(g_grid_prev, iz + 1, 0 - 1);
-                }
+                // cp at the left cell, -1 marks the trailing cell.
+                var iz: i32 = g_row * COLS + g_col;
+                set(g_grid,      iz,     cp);
+                set(g_grid,      iz + 1, 0 - 1);
+                set(g_grid_prev, iz,     cp);
+                set(g_grid_prev, iz + 1, 0 - 1);
                 g_col = g_col + 2;
             }
         }
@@ -1165,6 +1184,7 @@ fn draw_cp(fb: i32, frame: U8Array, cp: i32) -> void {
             fb_fill(fb, frame, 0, g_scroll, SCREEN_W, CH, 0);
             g_scroll = (g_scroll + CH) % FB_H;
             fb_scroll(fb, frame, g_scroll);
+            grid_shift_up();
         }
     }
     return;
@@ -1212,13 +1232,40 @@ fn erase_cursor(fb: i32, frame: U8Array) -> void {
     }
     if g_cur_row < 0 || g_cur_row >= ROWS { return; }
     if g_cur_col < 0 || g_cur_col >= COLS { return; }
-    fb_fill(fb, frame, g_content_x + g_cur_col * CW,
-            phys_y(g_cur_row) + CH - CUR_H, CW, CUR_H, COLOR_CONTENT);
-    // Bottom CUR_H pixels of any glyph in this cell are now black even
-    // if the glyph itself had ink there. Mark the cell dirty so the
-    // next redraw (e.g. after a scroll) repaints the glyph cleanly.
-    if g_sw_scroll != 0 && (g_grid_prev as u32) != 0u32 {
-        set(g_grid_prev, g_cur_row * COLS + g_cur_col, 0 - 2);
+    // The underline covered the bottom CUR_H pixel rows of the cell,
+    // which is where glyph ink sits too. Repaint the cell from the grid
+    // rather than blacking the band, so the cursor can rest on typed
+    // text (sh's line editing) and move away without eating it.
+    var row: i32 = g_cur_row;
+    var col: i32 = g_cur_col;
+    var idx: i32 = row * COLS + col;
+    var cp:  i32 = get(g_grid, idx);
+    if cp == (0 - 1) && col > 0 {
+        // Trailing half of a zenkaku: the glyph is owned by the left cell.
+        col = col - 1;
+        idx = idx - 1;
+        cp = get(g_grid, idx);
+    }
+    var painted: i32 = 0;
+    if cp >= 32 {
+        if cp < 256 {
+            draw_hankaku(fb, frame, col, row, cp);
+            painted = 1;
+        } else {
+            var kt: i32 = u2k_lookup(cp);
+            if kt != 0 {
+                draw_zenkaku(fb, frame, col, row, kt);
+                set(g_grid_prev, idx + 1, 0 - 1);
+                painted = 1;
+            }
+        }
+    }
+    if painted == 1 {
+        set(g_grid_prev, idx, cp);
+        flush_batch(fb);
+    } else {
+        fb_fill(fb, frame, g_content_x + g_cur_col * CW,
+                phys_y(g_cur_row) + CH - CUR_H, CW, CUR_H, COLOR_CONTENT);
     }
     g_cur_on = 0;
     return;
@@ -1264,6 +1311,12 @@ fn blank_cells(fb: i32, frame: U8Array, row: i32, c0: i32, len: i32) -> void {
     } else {
         fb_fill(fb, frame, g_content_x + c0 * CW, phys_y(row),
                 len * CW, CH, COLOR_CONTENT);
+        var c: i32 = 0;
+        while c < len {
+            set(g_grid,      row * COLS + c0 + c, 0);
+            set(g_grid_prev, row * COLS + c0 + c, 0);
+            c = c + 1;
+        }
     }
     return;
 }
@@ -1286,6 +1339,12 @@ fn erase_display_all(fb: i32, frame: U8Array) -> void {
         // Hardware scroll: the visible window may have rotated through
         // the framebuffer ring. A whole-FB fill blanks every line in
         // the ring so subsequent scrolls reveal black, not stale text.
+        var i: i32 = 0;
+        while i < COLS * ROWS {
+            set(g_grid,      i, 0);
+            set(g_grid_prev, i, 0);
+            i = i + 1;
+        }
     }
     return;
 }
@@ -1651,17 +1710,18 @@ fn main(argv: StringArray) -> i32 {
         eputs_t("CONSOLE: text mode (hw char-gen)\n");
     }
     FB_H = SCREEN_H;
-    if g_sw_scroll != 0 {
-        g_grid      = I32Array((COLS * ROWS) as u32);
-        g_grid_prev = I32Array((COLS * ROWS) as u32);
-        var gi: i32 = 0;
-        while gi < COLS * ROWS {
-            set(g_grid,      gi, 0);
-            // 0 also matches the initial fb_fill(black) we issue
-            // right after — both arrays describe an empty screen.
-            set(g_grid_prev, gi, 0);
-            gi = gi + 1;
-        }
+    // The codepoint grid is kept in both scroll modes: software scroll
+    // re-blits from it, and erase_cursor repaints the cell it was on
+    // from it (so a glyph under the cursor survives the cursor).
+    g_grid      = I32Array((COLS * ROWS) as u32);
+    g_grid_prev = I32Array((COLS * ROWS) as u32);
+    var gi: i32 = 0;
+    while gi < COLS * ROWS {
+        set(g_grid,      gi, 0);
+        // 0 also matches the initial fb_fill(black) we issue
+        // right after — both arrays describe an empty screen.
+        set(g_grid_prev, gi, 0);
+        gi = gi + 1;
     }
 
     eputs_t("CONSOLE: opening /dev/kbd\n");

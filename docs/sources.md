@@ -331,7 +331,7 @@ qemu-riscv32 経由で呼ぶ。
 | `test_pico2.sh` | pico2 実機 boot smoke (要 Debug Probe) |
 | `test_pico2_hw.sh` | pico2 hardware test |
 | `test_pico2_sd.sh`, `test_pico2_phase7_sd.sh`, `test_pico2_bench.sh` | pico2 SD カード / phase7 / 性能ベンチ |
-| `fb_render.py` | /dev/fb framed-blit dump を BMP に変換 |
+| `fb_render.py` | /dev/fb framed-blit dump を BMP に変換 (mode 0 ピクセル、mode 1 fill、mode 2 scroll、mode 4/5 の 1-bpp グリフも `data=` から展開) |
 | `fixtures/kern_demo.conf` | `init=/bin/hello + hello2 + sh` |
 | `fixtures/kern_console.conf`, `kern_console_land.conf` | console portrait / landscape |
 | `fixtures/msh_smoke.sh`, `msh_abort.sh` | msh script テスト |

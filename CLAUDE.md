@@ -39,6 +39,16 @@ band-blit 経由で LCD に DOOM ロゴ + Doomguy を表示するまで到達。
   補完はカーソルが行末のときだけ。**注意**: test_os は qemu
   `-serial mon:stdio` なので Ctrl-A (0x01) は qemu が食う → テストでは
   `ESC[H` を使う。
+  同日: **console のカーソルが下のグリフを削っていた**のを修正。下線
+  カーソル (セル下 4 px) の消去が黒 fill だったので、行編集でカーソルが
+  文字の上を通る (+ 250 ms blink) とグリフの下部が消えた。`erase_cursor`
+  はセルの codepoint グリッド `g_grid` からグリフを再描画する方式に
+  (全角は左セルから)。グリッドは hw スクロール (portrait) でも持つように
+  なり (`grid_shift_up`、blank_cells / ED も更新)。virt の `/dev/fb`
+  dump が mode 4/5 (1-bpp グリフ) の payload も `data=` で出し、
+  `fb_render.py` が展開するので console.bmp に文字が描かれる。test_os
+  `console_cursor` は「素直に打った画面」と「カーソルを往復させた画面」
+  の BMP を cmp で一致確認 (portrait は時計 chrome が無く決定的)。
 - 2026-10-30: **環境変数を `/proc/self/env/<KEY>` として導入**
   (`docs/task/proc_env.md`)。spawn ABI は不変。kernel が task ram block
   内に env 表 (256 B) を持ち、spawn で親→子にコピー、exec で保持。

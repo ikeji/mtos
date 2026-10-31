@@ -341,6 +341,41 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
         fi
     fi
 
+    # --- console_cursor: the same screen typed two ways must render
+    #     pixel-identically — plain `echo gg`, and `echo gg` with the
+    #     cursor walked back over the text and forward again before
+    #     Enter (sh line editing). The underline cursor sits on the
+    #     bottom rows of the glyph it rests on; erase_cursor must repaint
+    #     the glyph from the grid, not black the band out. Portrait has
+    #     no clock chrome, so the final framebuffers are deterministic. ---
+    if command -v python3 >/dev/null 2>&1; then
+        t0=$(time_ms)
+        run_console_bmp() {
+            printf "$1" \
+                | timeout 10 qemu-system-riscv32 -smp 1 -nographic \
+                -serial mon:stdio --no-reboot -m 128 \
+                -machine virt,aclint=on -bios none \
+                -drive "file=$KERNEL_CONSOLE_DISK,format=raw,if=none,id=blk0" \
+                -device "virtio-blk-device,drive=blk0" \
+                -device "loader,file=$KERNEL_BIN,addr=0x80000000" \
+                -device "loader,addr=0x80000000,cpu-num=0" 2>/dev/null \
+                | tr -d '\0' > "$TMP/cc_$2.txt"
+            python3 "$SCRIPT_DIR/fb_render.py" "$TMP/cc_$2.txt" "$TMP/cc_$2.bmp" 2>/dev/null
+        }
+        run_console_bmp 'echo gg\nquit\n' plain
+        run_console_bmp 'echo gg\e[D\e[D\e[D\e[D\e[D\e[D\e[D\e[C\e[C\e[C\e[C\e[C\e[C\e[C\nquit\n' moved
+        cc_plain_blits=$(grep -cE "FB: mode=(0|4|5)" "$TMP/cc_plain.txt")
+        if [ -s "$TMP/cc_plain.bmp" ] && [ -s "$TMP/cc_moved.bmp" ] \
+            && [ "$cc_plain_blits" -gt 0 ] \
+            && cmp -s "$TMP/cc_plain.bmp" "$TMP/cc_moved.bmp"; then
+            report_pass "console_cursor: cursor moved over typed text leaves the glyphs intact" \
+                "$(( $(time_ms) - t0 ))"
+        else
+            report_fail_msg "console_cursor" \
+                "framebuffers differ after cursor movement (plain blits=$cc_plain_blits, $TMP/cc_plain.bmp vs $TMP/cc_moved.bmp)"
+        fi
+    fi
+
     # --- console_scroll: run `seq 40` through the console so its
     #     output overflows the 30-row window. Exercises the hardware-
     #     vscroll path — console must emit mode-2 scroll blits and

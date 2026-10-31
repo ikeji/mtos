@@ -70,7 +70,8 @@ fn fb_put_hex2(b: U8Array, pos: i32, v: i32) -> i32 {
 }
 
 // /dev/fb backend: dump one framed-blit request to the UART. A mode-0
-// blit also dumps its RGB565 pixel payload as hex (`data=...`) so
+// blit also dumps its RGB565 pixel payload as hex (`data=...`), and the
+// 1-bpp glyph modes 4 / 5 dump their payload the same way, so
 // tests/fb_render.py can reconstruct the exact image.
 export fn fb_backend_write(buf_addr: u32, n: i32) -> void {
     var b: U8Array = U8Array((160 + n * 2) as u32);
@@ -91,9 +92,14 @@ export fn fb_backend_write(buf_addr: u32, n: i32) -> void {
         p = fb_put_str(b, p, " w=");   p = fb_put_dec(b, p, w);
         p = fb_put_str(b, p, " h=");   p = fb_put_dec(b, p, h);
         p = fb_put_str(b, p, " n=");   p = fb_put_dec(b, p, n);
-        if mode == 0 {
-            p = fb_put_str(b, p, " px=");
-            p = fb_put_dec(b, p, w * h);
+        if mode == 0 || mode == 4 || mode == 5 {
+            // Pixel (mode 0) or 1-bpp glyph (mode 4 single / mode 5
+            // batch) payload after the 10-byte header, so fb_render.py
+            // can draw the text, not just the fills.
+            if mode == 0 {
+                p = fb_put_str(b, p, " px=");
+                p = fb_put_dec(b, p, w * h);
+            }
             p = fb_put_str(b, p, " data=");
             var pi: i32 = 10;
             while pi < n {

@@ -11,8 +11,10 @@
 # 24-bit BMP so the rendered result can be eyeballed or regression-
 # checked. It is a faithful replay: a mode-1 fill paints the rect with
 # the RGB565 colour the command carried; a mode-0 blit paints each
-# pixel from the `data=` RGB565 payload (/bin/console emits one such
-# blit per glyph), so the BMP shows the actual rendered text.
+# pixel from the `data=` RGB565 payload; the 1-bpp glyph modes 4
+# (single glyph) and 5 (same-row glyph batch, what /bin/console emits)
+# are expanded from their `data=` payload with the fg/bg colours they
+# carry, so the BMP shows the actual rendered text.
 #
 # Usage: fb_render.py <fb-dump.txt> <out.bmp> [WIDTHxHEIGHT]
 #        WIDTHxHEIGHT defaults to 320x480 (portrait); pass 480x320 for
@@ -108,6 +110,55 @@ def main():
                         rowbase = yy * W
                         for xx in range(x, min(x + w, W)):
                             fb[rowbase + xx] = (128, 128, 128)
+            elif mode in (4, 5):
+                # 1-bpp glyphs. Payload (after the 10-byte header):
+                #   mode 4: [fg u16][bg u16][bitmap (w+7)/8 * h bytes]
+                #   mode 5: [fg u16][bg u16][count u16] then per glyph
+                #           [gw u8][bitmap (gw+7)/8 * h bytes], drawn left
+                #           to right from x.
+                # Rows are big-endian across the row's bytes, MSB = leftmost
+                # pixel (kernel display_ili9488.tc lcd_glyph).
+                blits += 1
+                dm = re.search(r'data=([0-9a-fA-F]+)', tail)
+                if not dm:
+                    continue
+                data = bytes.fromhex(dm.group(1)[:len(dm.group(1)) // 2 * 2])
+                def u16(o):
+                    return data[o] | (data[o + 1] << 8)
+                fg = rgb565_to_rgb(u16(0))
+                bg = rgb565_to_rgb(u16(2))
+
+                def glyph(gx, gy, gw, gh, off):
+                    bpr = (gw + 7) // 8
+                    for ry in range(gh):
+                        bits = 0
+                        for k in range(bpr):
+                            bits = (bits << 8) | data[off + ry * bpr + k]
+                        py = gy + ry
+                        if not (0 <= py < H):
+                            continue
+                        for cx in range(gw):
+                            px = gx + cx
+                            if 0 <= px < W:
+                                on = (bits >> (gw - 1 - cx)) & 1
+                                fb[py * W + px] = fg if on else bg
+                    return off + bpr * gh
+
+                if mode == 4:
+                    if len(data) >= 4 + ((w + 7) // 8) * h:
+                        glyph(x, y, w, h, 4)
+                else:
+                    count = u16(4)
+                    off = 6
+                    gx = x
+                    for _ in range(count):
+                        if off >= len(data):
+                            break
+                        gw = data[off]
+                        if off + 1 + ((gw + 7) // 8) * h > len(data):
+                            break
+                        off = glyph(gx, y, gw, h, off + 1)
+                        gx += gw
             elif mode == 2:
                 # Hardware vertical scroll: VSCRSADD picks the physical
                 # line shown at the top of the panel.
