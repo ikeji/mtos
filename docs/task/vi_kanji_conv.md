@@ -148,17 +148,25 @@ entry*:
 - `gcc_hello.bin` (273 B) は kmalloc 経路で動く (picolibc の globals を
   使わないため)。つまり「大きい = 固定 VMA 必要」は両方向で不正確。
 
-**対処 (Phase 1 に含める)**: サイズではなく **明示フラグ**で判定する。
+**方針 (2026-11-01 決定)**: **loader はいじらず、vi は固定スロットに
+載せたまま進める**。衝突するのは「virt で 256 KB 超のタスク 2 本が同時
+に生きる」場合だけで、具体的には virt の `console` (kern_console*.conf)
+から sh 経由で vi を起動するケースと、gcc_doom 実行中に vi を起動する
+ケース。pico2 / tn20k / web は XIP でこの経路を通らず、test_os の
+console テストは vi を使わず、web の console + vi テストは XIP なので、
+現行テストは何も壊れない。この制限は `docs/problem.md` に「virt
+console 内で vi を起動すると console の像を上書きする」として記録する。
+
+後回しにする本修正 (別タスク): サイズではなく **明示フラグ**で判定する。
 `userland/Makefile` の `GCC_TASK_RULE` が出す K3 ヘッダの stack word に
 bit 31 を立て (`.word stack | 0x80000000`)、`read_task_header_stack`
 がマスクして返し、`load_fd` はそのビットで固定スロット / kmalloc を
 選ぶ。TC タスクのヘッダは不変なので self-replicate の byte-exact にも
 影響しない。gcc_doom_pico2 は XIP 経路で early return するので pico2
-側はマスクだけで足りる。しきい値定数 `GCC_TASK_THRESH` は削除。
+側はマスクだけで足りる。その時点で `GCC_TASK_THRESH` を削除。
 
-これで virt の kmalloc 経路 (kernel arena 96 MB) に 400 KB の vi を
-載せても問題なく、複数同時起動もできる。辞書サイズの制約は **flash /
-SDRAM の容量だけ** になる: pico2 は kernel.bin ≈ 2.3 MB / 4 MiB、tn20k
+固定スロットでも kmalloc 経路でも、辞書サイズの制約は **flash /
+SDRAM の容量だけ**: pico2 は kernel.bin ≈ 2.3 MB / 4 MiB、tn20k
 と web は 2.6 MB / 8 MB SDRAM なので、SKK-JISYO.S 送りなし全部 (≈
 300 KB 台) をデフォルトで入れる。`--max-cands` / 見出し数上限は knob
 として残す。self-replicate は DROP_TASKS で vi を落としているので
@@ -214,8 +222,7 @@ SDRAM の容量だけ** になる: pico2 は kernel.bin ≈ 2.3 MB / 4 MiB、tn2
 
 - **Phase 0 (計測)**: `tmp/SKK-JISYO.S` 取得、genvidict.py、.dat サイズを
   候補数 / 見出し数の knob ごとに実測。
-- **Phase 1 (配線)**: loader の GCC フラグ化 (上記) + test_os の console
-  セッション内で vi を起動する回帰、Makefile / build.sh / vidict_inc.s、vi に
+- **Phase 1 (配線)**: Makefile / build.sh / vidict_inc.s、vi に
   `_vidict_addr` を link して `dict_lookup` だけ入れ、status 行に
   見出し数を出すスモーク。空辞書 fallback もここで。
 - **Phase 2 (変換本体)**: 読み切り出し、候補リスト、置換 / 循環 /
@@ -230,7 +237,8 @@ SDRAM の容量だけ** になる: pico2 は kernel.bin ≈ 2.3 MB / 4 MiB、tn2
 1. **TUT 中の Ctrl-J は変換専用**になり、TUT 終了は ESC のみ。
 2. 辞書ファイルは **コミットしない** (GPL データを tree に入れない)。
    `tmp/SKK-JISYO.S` + `make -C userland fetch-dict`、無ければ空辞書。
-3. loader の 256 KB しきい値は **GCC タスク明示フラグ**に置き換え、
+3. loader は変更せず vi は virt で固定スロットに載る (virt console 内の
+   vi は制限として problem.md に記録、明示フラグ化は別タスク)。
    vi は SKK-JISYO.S 送りなし全部を持つ (縮小は knob)。
 4. 候補リストは「長い読みの候補 → 短い読みの候補 → カタカナ」の 1 本。
 
