@@ -130,7 +130,7 @@ entry*:
   最大 8 回引くので tn20k (~5 MIPS) でも数 ms。必要なら
   (先頭文字, rlen) 二段 bucket に後から変えられる。
 
-### サイズ見積と 256 KB 境界
+### サイズ見積と loader の 256 KB しきい値
 
 | 内容 | 概算 |
 |---|---|
@@ -138,13 +138,31 @@ entry*:
 | SKK-JISYO.S 送りなし、候補 ≤ 8、u16 | 250〜350 KB (Phase 0 で実測) |
 
 `kernel/src/loader.tc` は **256 KB 超のタスクを virt で固定スロット
-0x87000000 に置く** (K22 の gcc_doom 用経路)。XIP の pico2 / tn20k /
-web には関係ないが、virt では vi が kmalloc 経路から外れて同時に 1 本
-しか動かせなくなる。Phase 0 で実測し、256 KB を超えるなら
-`--max-cands 4` / 見出し数上限で **vi.bin ≤ 256 KB** に収める方を
-デフォルトにする (knob で full も選べる)。pico2 flash は kernel.bin
-≈ 2.3 MB / 4 MiB なので +300 KB は入る。self-replicate は DROP_TASKS で
-vi を落としているので影響なし。
+0x87000000 に置く** (K22、picolibc の絶対アドレス参照のため gcc_doom
+をリンク時 VMA に置く経路)。サイズはあくまで「GCC タスクか」の代用
+ヒューリスティックで、以下の問題が既にある:
+
+- `console.bin` (436 KB、純 TC) が既にしきい値を超え、virt では固定
+  スロットに載っている。console → sh → vi と spawn したとき vi も
+  256 KB 超なら **console の像を上書きする**。
+- `gcc_hello.bin` (273 B) は kmalloc 経路で動く (picolibc の globals を
+  使わないため)。つまり「大きい = 固定 VMA 必要」は両方向で不正確。
+
+**対処 (Phase 1 に含める)**: サイズではなく **明示フラグ**で判定する。
+`userland/Makefile` の `GCC_TASK_RULE` が出す K3 ヘッダの stack word に
+bit 31 を立て (`.word stack | 0x80000000`)、`read_task_header_stack`
+がマスクして返し、`load_fd` はそのビットで固定スロット / kmalloc を
+選ぶ。TC タスクのヘッダは不変なので self-replicate の byte-exact にも
+影響しない。gcc_doom_pico2 は XIP 経路で early return するので pico2
+側はマスクだけで足りる。しきい値定数 `GCC_TASK_THRESH` は削除。
+
+これで virt の kmalloc 経路 (kernel arena 96 MB) に 400 KB の vi を
+載せても問題なく、複数同時起動もできる。辞書サイズの制約は **flash /
+SDRAM の容量だけ** になる: pico2 は kernel.bin ≈ 2.3 MB / 4 MiB、tn20k
+と web は 2.6 MB / 8 MB SDRAM なので、SKK-JISYO.S 送りなし全部 (≈
+300 KB 台) をデフォルトで入れる。`--max-cands` / 見出し数上限は knob
+として残す。self-replicate は DROP_TASKS で vi を落としているので
+影響なし。
 
 ## 実装
 
@@ -195,8 +213,9 @@ vi を落としているので影響なし。
 ## Phase 分割
 
 - **Phase 0 (計測)**: `tmp/SKK-JISYO.S` 取得、genvidict.py、.dat サイズを
-  候補数 / 見出し数の knob ごとに実測。256 KB 境界の扱いを決める。
-- **Phase 1 (配線)**: Makefile / build.sh / vidict_inc.s、vi に
+  候補数 / 見出し数の knob ごとに実測。
+- **Phase 1 (配線)**: loader の GCC フラグ化 (上記) + test_os の console
+  セッション内で vi を起動する回帰、Makefile / build.sh / vidict_inc.s、vi に
   `_vidict_addr` を link して `dict_lookup` だけ入れ、status 行に
   見出し数を出すスモーク。空辞書 fallback もここで。
 - **Phase 2 (変換本体)**: 読み切り出し、候補リスト、置換 / 循環 /
@@ -211,8 +230,8 @@ vi を落としているので影響なし。
 1. **TUT 中の Ctrl-J は変換専用**になり、TUT 終了は ESC のみ。
 2. 辞書ファイルは **コミットしない** (GPL データを tree に入れない)。
    `tmp/SKK-JISYO.S` + `make -C userland fetch-dict`、無ければ空辞書。
-3. **vi.bin ≤ 256 KB** を優先し、辞書の候補数 / 見出し数で調整する
-   (full 版は knob)。
+3. loader の 256 KB しきい値は **GCC タスク明示フラグ**に置き換え、
+   vi は SKK-JISYO.S 送りなし全部を持つ (縮小は knob)。
 4. 候補リストは「長い読みの候補 → 短い読みの候補 → カタカナ」の 1 本。
 
 ## リスク / 注意
