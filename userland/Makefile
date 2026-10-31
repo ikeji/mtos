@@ -281,6 +281,40 @@ endif
 TASK_EXTRA_S_console := $(BUILD_DIR)/jpfont_inc.s
 $(TASK_DIR)/console.bin: $(BUILD_DIR)/jpfont_inc.s
 
+# ===== kana→kanji dictionary for /bin/vi =====
+# tmp/SKK-JISYO.M (skk-dev/dict、GPL、user-supplied、never committed) を
+# genvidict.py が vidict.dat に変換、bin2s_incbin.sh で vidict_inc.s に
+# wrap して vi.bin にリンク (docs/task/vi_kanji_conv.md)。辞書ファイルが
+# 無ければ警告して空辞書 (見出し 0) で vi をビルドする — vi 自体は動き、
+# Ctrl-J 変換だけ候補なしになる。`make -C userland fetch-dict` で取得。
+# 置いた / 差し替えた後は `make -C userland dict` で .dat を作り直す
+# (辞書ファイルの有無は make 起動時に wildcard で見るだけ)。
+VI_DICT_SRC   ?= $(ROOT)/tmp/SKK-JISYO.M
+VI_DICT_URL   ?= https://raw.githubusercontent.com/skk-dev/dict/master/$(notdir $(VI_DICT_SRC))
+VI_DICT_FLAGS ?=
+
+dict: $(BUILD_DIR)/vidict_inc.s
+
+fetch-dict:
+	@mkdir -p $(dir $(VI_DICT_SRC))
+	curl -sSL -o $(VI_DICT_SRC) $(VI_DICT_URL)
+	@rm -f $(BUILD_DIR)/vidict.dat $(BUILD_DIR)/vidict_inc.s
+	@ls -la $(VI_DICT_SRC)
+
+$(BUILD_DIR)/vidict.dat: $(wildcard $(VI_DICT_SRC)) $(ROOT)/userland/scripts/genvidict.py | $(BUILD_DIR)
+	@if [ -f "$(VI_DICT_SRC)" ]; then \
+	    python3 -I $(ROOT)/userland/scripts/genvidict.py "$(VI_DICT_SRC)" $@ $(VI_DICT_FLAGS); \
+	else \
+	    echo "Warning: $(VI_DICT_SRC) not found — building vi with an empty dictionary" >&2; \
+	    echo "  (run: make -C userland fetch-dict)" >&2; \
+	    python3 -I $(ROOT)/userland/scripts/genvidict.py --empty $@; \
+	fi
+$(BUILD_DIR)/vidict_inc.s: $(BUILD_DIR)/vidict.dat $(ROOT)/userland/scripts/bin2s_incbin.sh | $(BUILD_DIR)
+	@cd $(ROOT) && userland/scripts/bin2s_incbin.sh userland/build/vidict.dat vidict userland/build/vidict.dat > $@
+
+TASK_EXTRA_S_vi += $(BUILD_DIR)/vidict_inc.s
+$(TASK_DIR)/vi.bin: $(BUILD_DIR)/vidict_inc.s
+
 # ===== test =====
 test: all test-genvidict
 	@echo "userland smoke: $(words $(ALL_TASK_NAMES)) tasks built OK"

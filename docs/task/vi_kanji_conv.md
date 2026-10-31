@@ -223,12 +223,20 @@ SDRAM) とも M の 112 KB は余裕。self-replicate は DROP_TASKS で vi を
 
 - **Phase 0 (計測、完了 2026-11-01)**: `tmp/SKK-JISYO.{S,M,ML}` 取得、
   genvidict.py + 往復テスト、.dat サイズ実測 (上表)。M を既定に決定。
-- **Phase 1 (配線)**: Makefile / build.sh / vidict_inc.s、vi に
-  `_vidict_addr` を link して `dict_lookup` だけ入れ、status 行に
-  見出し数を出すスモーク。空辞書 fallback もここで。
-- **Phase 2 (変換本体)**: 読み切り出し、候補リスト、置換 / 循環 /
-  確定、undo、status 表示、カタカナ候補、test_os 追加、ドキュメント
-  (vi.tc ヘッダ、`docs/sources.md`、CLAUDE.md 現在のフェーズ)。
+- **Phase 1 (配線、完了 2026-11-01)**: `userland/Makefile` に
+  `vidict.dat` / `vidict_inc.s` / `dict` / `fetch-dict`、空辞書 fallback、
+  `kernel/scripts/build.sh` の生成 .s ミラーを case 文化 (console →
+  jpfont_inc.s、vi → vidict_inc.s)。
+- **Phase 2 (変換本体、完了 2026-11-01)**: vi.tc に `conv_*` /
+  `dict_lookup` (~200 行)、vi.bin 89 → 216 KB。test_os の fs_virtio
+  セッションに 4 行 (第 1 候補 / 第 2 候補 / Backspace 復元 / カタカナ
+  fallback) を追加、`grep <語> /tmp/k | wc` の行バイト数で保存結果を
+  検証。**実装メモ**: (a) vi は stdin を 8 byte バッチで読み、`:wq` で
+  quit するとバッチの残りを捨てるので、連続 pipe 入力では `:wq\r` の
+  後に LF を 7 個詰める (対話では起きない)。(b) `KERN: live=` canary は
+  vi の 216 KB イメージで kmalloc pool が 1 回だけ +5 成長する (1 回でも
+  2 回でも同値) ので上限を 145 → 150 に。(c) md5sum は
+  EXTRA_GUEST_TASKS で disk-demo に無いので使わなかった。
 - **Phase 3 (続編、動詞 / 形容詞に必須)**: 送りあり (`おくr` → 送 + る:
   読み末尾のかなを SKK の子音字に写像して okuri-ari 見出しを引き、
   flags=1 で区別)。任意: (先頭文字, rlen) 二段 bucket、前候補移動。

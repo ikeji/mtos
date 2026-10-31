@@ -33,6 +33,18 @@
 //   Kanji: any two keys from 40-key layout (e.g. KF=一, JD=二)
 //   Voiced: consonant+L+vowel (e.g. ELK=が), T+L+T+vowel=ぱ行
 //
+// Kana→kanji conversion (in TUT mode, docs/task/vi_kanji_conv.md):
+//   Ctrl+J    — take the hiragana run before the cursor (up to 8
+//               chars), look up its suffixes longest-first in the
+//               embedded SKK dictionary and replace it with the first
+//               candidate. Candidates of shorter readings follow, and
+//               the whole reading in katakana comes last.
+//   Ctrl+J / Space while converting — next candidate (wraps back to
+//               the plain reading)
+//   Backspace while converting — restore the reading
+//   any other key — keep the shown candidate, then act normally
+//   u (normal mode) undoes the whole conversion.
+//
 // Cmdline-mode (after ':'):
 //   w        — write buffer back to the file
 //   q        — quit if no unsaved changes
@@ -50,7 +62,11 @@
 import "../../lib/libtc/libtc.tc";
 
 fn _tut_grid_addr() -> u32;        // tut_data.s: 40×40 kanji/kana grid
-fn peek16(addr: u32) -> u16;       // task_crt0.s builtin
+fn vidict_addr() -> u32;           // vidict_inc.s: kana→kanji dictionary blob
+fn vidict_size_value() -> i32;     // its byte size (empty dictionary = header only)
+fn peek8(addr: u32) -> u8;         // task_crt0.s builtins
+fn peek16(addr: u32) -> u16;
+fn peek32(addr: u32) -> u32;
 
 const BUF_CAP: i32 = 16384;      // max file size in bytes
 const CMD_CAP: i32 = 128;        // max cmdline length
@@ -116,6 +132,24 @@ var g_tut: i32 = 0;
 var g_tut_k1: i32 = 0;              // first key position (0-39)
 var g_tut_kmap: U8Array = 0 as U8Array;  // ASCII→key position+1 (128 bytes)
 var g_tut_vo: U8Array = 0 as U8Array;    // voiced/small table (50 bytes)
+
+// Kana→kanji conversion state. The dictionary (vidict.dat, generated
+// from SKK-JISYO.M by userland/scripts/genvidict.py, layout documented
+// there) sits in .rodata and is read in place with peek8/16/32 — on
+// pico2 it stays in flash, nothing is copied into the arena.
+const CONV_MAX_READ: i32 = 8;     // hiragana codepoints scanned back from the cursor
+const CONV_MAX_CANDS: i32 = 32;   // candidate list cap (dictionary hits + katakana)
+const VD_HEADER: i32 = 12;        // magic, n_entries, total_bytes; then u32 bucket[97]
+const VD_BUCKETS: i32 = 96;       // one bucket per first codepoint U+3041..U+30A0
+
+var g_conv_n: i32 = 0;            // candidates in the list, 0 = not converting
+var g_conv_i: i32 = 0;            // current candidate, -1 = plain reading shown
+var g_conv_start: i32 = 0;        // byte offset of the replaced region (it ends at g_cur)
+var g_conv_rn: i32 = 0;           // reading length in codepoints
+var g_conv_rcp: I32Array = 0 as I32Array;   // reading codepoints [CONV_MAX_READ]
+var g_cand_addr: U32Array = 0 as U32Array;  // dictionary entry address, 0 = katakana
+var g_cand_ci: I32Array = 0 as I32Array;    // candidate index inside that entry
+var g_cand_rl: I32Array = 0 as I32Array;    // trailing reading codepoints it replaces
 
 // ===== terminal helpers =====
 
@@ -577,10 +611,30 @@ fn tut_init() -> void {
 }
 
 fn handle_tut(c: u8) -> void {
+    // Conversion in progress: Ctrl+J / Space cycle, Backspace restores
+    // the reading, anything else keeps the shown candidate and is then
+    // handled as usual (so ESC still leaves TUT, a TUT key starts a
+    // new stroke).
+    if g_conv_n > 0 {
+        if c == 10u8 || c == ' ' as u8 {
+            var ni: i32 = g_conv_i + 1;
+            if ni >= g_conv_n { ni = -1; }
+            conv_apply(ni);
+            return;
+        }
+        if c == 8u8 || c == 127u8 { conv_apply(-1); conv_commit(); return; }
+        conv_commit();
+    }
     // ESC: exit TUT mode, stay in insert mode
     if c == 27u8 { g_tut = 0; return; }
-    // Ctrl+J: also exit TUT mode
-    if c == 10u8 { g_tut = 0; return; }
+    // Ctrl+J: convert the hiragana before the cursor (a pending first
+    // stroke is dropped).
+    if c == 10u8 {
+        g_tut = 1;
+        if conv_build() { save_undo(); conv_apply(0); }
+        else { set_msg("no kana before cursor"); }
+        return;
+    }
     // Backspace: delete previous character normally
     if c == 8u8 || c == 127u8 { delete_byte_before_cur(); return; }
     // Enter: insert newline
@@ -645,6 +699,234 @@ fn handle_tut(c: u8) -> void {
         return;
     }
 
+    return;
+}
+
+// ===== kana→kanji conversion =====
+
+fn is_reading_cp(cp: i32) -> bool {
+    return (cp >= 0x3041 && cp <= 0x3096) || cp == 0x30FC;
+}
+
+fn kata_cp(cp: i32) -> i32 {
+    if cp >= 0x3041 && cp <= 0x3096 { return cp + 0x60; }
+    return cp;
+}
+
+// Emit a codepoint to stdout as UTF-8 (BMP only, like insert_codepoint).
+fn put_cp(cp: i32) -> void {
+    if cp < 0x80 { putchar(cp as u8); }
+    else if cp < 0x800 {
+        putchar((0xC0 | (cp >> 6)) as u8);
+        putchar((0x80 | (cp & 0x3F)) as u8);
+    } else {
+        putchar((0xE0 | (cp >> 12)) as u8);
+        putchar((0x80 | ((cp >> 6) & 0x3F)) as u8);
+        putchar((0x80 | (cp & 0x3F)) as u8);
+    }
+    return;
+}
+
+// Remove g_buf[a..b) and leave the cursor at a.
+fn delete_range(a: i32, b: i32) -> void {
+    var n: i32 = b - a;
+    if n <= 0 { return; }
+    var i: i32 = a;
+    while i + n < g_len {
+        set(g_buf, i, get(g_buf, i + n));
+        i = i + 1;
+    }
+    g_len = g_len - n;
+    g_cur = a;
+    g_modified = 1;
+    return;
+}
+
+// Scan back from the cursor over hiragana / ー, at most CONV_MAX_READ
+// codepoints (a newline or any other character ends the run). Fills
+// g_conv_start / g_conv_rn / g_conv_rcp.
+fn conv_collect() -> void {
+    var start: i32 = g_cur;
+    var n: i32 = 0;
+    var go: bool = true;
+    while go && n < CONV_MAX_READ && start > 0 {
+        var p: i32 = start - 1;
+        while p > 0 && is_cont(get(g_buf, p)) { p = p - 1; }
+        if is_reading_cp(utf8_decode_at(p)) {
+            start = p;
+            n = n + 1;
+        } else {
+            go = false;
+        }
+    }
+    g_conv_start = start;
+    g_conv_rn = n;
+    var i: i32 = 0;
+    var q: i32 = start;
+    while i < n {
+        set(g_conv_rcp, i, utf8_decode_at(q));
+        q = q + utf8_len(get(g_buf, q));
+        i = i + 1;
+    }
+    return;
+}
+
+// Look up the reading g_conv_rcp[off..off+n) in the dictionary: pick
+// the bucket of its first codepoint and walk the entries in it.
+// Returns the entry address (rlen, ncand, reading, candidates) or 0.
+fn dict_lookup(off: i32, n: i32) -> u32 {
+    if vidict_size_value() < VD_HEADER + (VD_BUCKETS + 1) * 4 { return 0u32; }
+    var base: u32 = vidict_addr();
+    var b: i32 = get(g_conv_rcp, off) - 0x3041;
+    if b < 0 || b >= VD_BUCKETS { return 0u32; }
+    var p: u32 = base + peek32(base + ((VD_HEADER + b * 4) as u32));
+    var end: u32 = base + peek32(base + ((VD_HEADER + (b + 1) * 4) as u32));
+    while p < end {
+        var rlen: i32 = peek8(p) as i32;
+        var ncand: i32 = peek8(p + 1u32) as i32;
+        if rlen == n {
+            var i: i32 = 0;
+            while i < n
+                && (peek16(p + ((2 + 2 * i) as u32)) as i32) == get(g_conv_rcp, off + i) {
+                i = i + 1;
+            }
+            if i == n { return p; }
+        }
+        var q: u32 = p + ((2 + 2 * rlen) as u32);
+        var c: i32 = 0;
+        while c < ncand {
+            q = q + ((2 + 2 * (peek8(q) as i32)) as u32);
+            c = c + 1;
+        }
+        p = q;
+    }
+    return 0u32;
+}
+
+// Address of candidate ci (its clen byte) inside entry e.
+fn cand_addr(e: u32, ci: i32) -> u32 {
+    var q: u32 = e + ((2 + 2 * (peek8(e) as i32)) as u32);
+    var c: i32 = 0;
+    while c < ci {
+        q = q + ((2 + 2 * (peek8(q) as i32)) as u32);
+        c = c + 1;
+    }
+    return q;
+}
+
+fn conv_put(cp: i32, mode: i32) -> i32 {
+    if mode == 0 { insert_codepoint(cp); }
+    else if mode == 1 { put_cp(cp); }
+    return char_width(cp);
+}
+
+// Walk candidate i (-1 = the plain reading): mode 0 inserts it at the
+// cursor (including the untouched prefix of the reading when the
+// candidate only covers a suffix), mode 1 prints the candidate text to
+// stdout, mode 2 just measures. Returns the candidate's display width.
+fn conv_walk(i: i32, mode: i32) -> i32 {
+    var w: i32 = 0;
+    var rl: i32 = g_conv_rn;
+    var e: u32 = 0u32;
+    var ci: i32 = 0;
+    if i >= 0 {
+        rl = get(g_cand_rl, i);
+        e = get(g_cand_addr, i);
+        ci = get(g_cand_ci, i);
+    }
+    var j: i32 = 0;
+    if mode == 0 {
+        while j < g_conv_rn - rl { insert_codepoint(get(g_conv_rcp, j)); j = j + 1; }
+    }
+    if e == 0u32 {
+        // plain reading (i == -1) or the katakana candidate
+        j = g_conv_rn - rl;
+        while j < g_conv_rn {
+            var cp: i32 = get(g_conv_rcp, j);
+            if i >= 0 { cp = kata_cp(cp); }
+            w = w + conv_put(cp, mode);
+            j = j + 1;
+        }
+        return w;
+    }
+    var q: u32 = cand_addr(e, ci);
+    var clen: i32 = peek8(q) as i32;
+    j = 0;
+    while j < clen {
+        w = w + conv_put(peek16(q + ((2 + 2 * j) as u32)) as i32, mode);
+        j = j + 1;
+    }
+    return w;
+}
+
+// Replace the region g_conv_start..g_cur with candidate i.
+fn conv_apply(i: i32) -> void {
+    delete_range(g_conv_start, g_cur);
+    conv_walk(i, 0);
+    g_conv_i = i;
+    return;
+}
+
+fn conv_commit() -> void {
+    g_conv_n = 0;
+    g_conv_i = 0;
+    return;
+}
+
+// Build the candidate list for the hiragana before the cursor:
+// dictionary hits for the longest suffix first, then shorter suffixes,
+// then the whole reading in katakana. False if there is no reading.
+fn conv_build() -> bool {
+    conv_collect();
+    if g_conv_rn == 0 { return false; }
+    var n: i32 = 0;
+    var k: i32 = g_conv_rn;
+    while k >= 1 {
+        var e: u32 = dict_lookup(g_conv_rn - k, k);
+        if e != 0u32 {
+            var ncand: i32 = peek8(e + 1u32) as i32;
+            var ci: i32 = 0;
+            while ci < ncand && n < CONV_MAX_CANDS - 1 {
+                set(g_cand_addr, n, e);
+                set(g_cand_ci, n, ci);
+                set(g_cand_rl, n, k);
+                n = n + 1;
+                ci = ci + 1;
+            }
+        }
+        k = k - 1;
+    }
+    set(g_cand_addr, n, 0u32);
+    set(g_cand_ci, n, 0);
+    set(g_cand_rl, n, g_conv_rn);
+    g_conv_n = n + 1;
+    return true;
+}
+
+// Status-line view of the candidates: "2/5 [感じ] 幹事 監事 …" starting
+// at the current one, cut to what fits in g_print_cols after the
+// 17-column "-- INSERT TUT -- " prefix.
+fn conv_status() -> void {
+    var budget: i32 = g_print_cols - 17 - 6;
+    print(g_conv_i + 1);
+    putchar('/' as u8);
+    print(g_conv_n);
+    putchar(' ' as u8);
+    var j: i32 = g_conv_i;
+    if j < 0 { j = 0; }
+    var go: bool = true;
+    while go && j < g_conv_n {
+        var w: i32 = conv_walk(j, 2) + 3;
+        if w > budget {
+            go = false;
+        } else {
+            if j == g_conv_i { putchar('[' as u8); } else { putchar(' ' as u8); }
+            conv_walk(j, 1);
+            if j == g_conv_i { putchar(']' as u8); } else { putchar(' ' as u8); }
+            budget = budget - w;
+            j = j + 1;
+        }
+    }
     return;
 }
 
@@ -779,7 +1061,9 @@ fn render() -> void {
     }
     else { puts("NORMAL"); }
     puts(" -- ");
-    if g_msg as u32 != 0u32 && g_msg_len > 0 {
+    if g_conv_n > 0 {
+        conv_status();
+    } else if g_msg as u32 != 0u32 && g_msg_len > 0 {
         puts_n(g_msg, g_msg_len);
     }
 
@@ -914,6 +1198,7 @@ fn handle_normal(c: u8) -> void {
 // which normal mode's move_right never does.
 fn handle_arrow(k: u8) -> void {
     if g_mode == 2 { return; }
+    if g_conv_n > 0 { conv_commit(); }
     if k == 'A' as u8 { move_up(); }
     else if k == 'B' as u8 { move_down(); }
     else if k == 'D' as u8 { move_left(); }
@@ -926,8 +1211,9 @@ fn handle_arrow(k: u8) -> void {
 
 fn handle_insert(c: u8) -> void {
     if c == 27u8 {
-        // ESC → if TUT active, exit TUT only; else exit insert mode.
-        if g_tut > 0 { g_tut = 0; return; }
+        // ESC → if TUT active, exit TUT only (keeping any candidate
+        // being shown); else exit insert mode.
+        if g_tut > 0 { conv_commit(); g_tut = 0; return; }
         g_mode = 0;
         if g_cur > 0 {
             var ls: i32 = line_start_at(g_cur);
@@ -1033,6 +1319,10 @@ fn main(argv: StringArray) -> i32 {
     g_buf = U8Array(BUF_CAP as u32);
     g_undo_buf = U8Array(BUF_CAP as u32);
     g_cmdbuf = U8Array(CMD_CAP as u32);
+    g_conv_rcp = I32Array(CONV_MAX_READ as u32);
+    g_cand_addr = U32Array(CONV_MAX_CANDS as u32);
+    g_cand_ci = I32Array(CONV_MAX_CANDS as u32);
+    g_cand_rl = I32Array(CONV_MAX_CANDS as u32);
     tut_init();
     load_term_env();
     load_file();
@@ -1080,6 +1370,10 @@ fn main(argv: StringArray) -> i32 {
     delete(g_cmdbuf);
     delete(g_tut_kmap);
     delete(g_tut_vo);
+    delete(g_conv_rcp);
+    delete(g_cand_addr);
+    delete(g_cand_ci);
+    delete(g_cand_rl);
     delete(g_path);
     if g_msg as u32 != 0u32 { delete(g_msg); }
     return 0;

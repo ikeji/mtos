@@ -17,6 +17,20 @@ I_InitGraphics) を完走、`DG_DrawFrame` から `/dev/fb` mode=0
 band-blit 経由で LCD に DOOM ロゴ + Doomguy を表示するまで到達。
 
 **最近の改善 (tn20k / K21 / K22)**:
+- 2026-11-01: **vi に単文節かな漢字変換** (`docs/task/vi_kanji_conv.md`)。
+  TUT モード中の Ctrl-J でカーソル直前のひらがな列 (最大 8 文字) を
+  長い接尾辞から順に辞書引きし、第 1 候補でその場置換。Ctrl-J / Space
+  で次候補 (短い読みの候補 → 読み全体のカタカナ → 元の読み、と循環)、
+  Backspace で読みに戻す、他のキーで確定、`u` で丸ごと undo。TUT を
+  抜けるのは ESC のみ (従来 Ctrl-J も抜けていた)。辞書は
+  `userland/scripts/genvidict.py` が SKK-JISYO.M (送りなし 6.4k 見出し、
+  GPL なので `tmp/` 置き、`make -C userland fetch-dict`) を u16
+  コードポイントの 112 KB バイナリ (先頭かな 96 バケット + 線形走査、
+  全フィールド 2 B 境界) にし、`vidict_inc.s` で vi の .rodata に埋める
+  (vi.bin 216 KB、XIP 環境では RAM 不要)。辞書ファイルが無ければ空辞書
+  で vi をビルドし test_os の変換チェックは SKIP。候補文字は JIS X 0208
+  に絞り LCD で豆腐にならない。**送りなし部だけなので動詞 / 形容詞は
+  引けない** (よむ → okuri-ari `よm`)、送りあり対応は同 doc の Phase 3。
 - 2026-10-31: **`date` コマンド** (`userland/bin/date/`)。引数なしで
   `/dev/rtc` を表示、`date YYYY-MM-DD HH:MM:SS` で設定して読み戻す。
   kernel の `rtc_parse_set` は範囲チェックが緩く devfs_close が結果を

@@ -112,7 +112,7 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     # kfree path for frame_buf / ram / stack / img / argv / stdio fds;
     # the kernel prints "KERN: live=N" at shutdown so the test asserts
     # the count stays bounded regardless of spawn iterations.
-    fs_out=$(printf 'tmpdemo\ncatfile\ncatfile /hello.txt\necho hi > /tmp/redir\ncatfile /tmp/redir\nrm /tmp/redir\nrm /tmp/redir\nls /dev\necho DEVFS_OK > /dev/uart\necho 2031-08-20 09:15:42 > /dev/rtc\ncat /dev/rtc\ndate\ndate 2040-02-29 23:59:58\ndate 2040-02-30 00:00:00\nfbtest\nkbdump\nKBDTEST_HELLO\necho PIPEWORD | wc\nps\nfree\nuptime\ndf\nfind /bin -name hel*\nfind /tmp /proc -type f\necho 15 > /proc/self/env/ROWS\necho lcd > /proc/self/env/TERM\ncat /proc/self/env/ROWS\nls /proc/self/env\ncatfile /proc/self/cmdline\ncat /proc/self/env/NOPE\nrm /proc/self/env/TERM\nls /proc/self/env\nsetenv COLS 56\ngetenv COLS\nunsetenv TERM\nenv\nsete\t TABC tab77\ngete\t TABC\necho ab\e[DX\e[CY\nxcho LE2\e[H\e[3~e\e[F ok\njunk\025echo KU\e[D\e[D\013K3\nconsole\ncat /proc/self/env/ROWS\necho CTEST\nquit\nquit\n' \
+    fs_out=$(printf 'tmpdemo\ncatfile\ncatfile /hello.txt\necho hi > /tmp/redir\ncatfile /tmp/redir\nrm /tmp/redir\nrm /tmp/redir\nls /dev\necho DEVFS_OK > /dev/uart\necho 2031-08-20 09:15:42 > /dev/rtc\ncat /dev/rtc\ndate\ndate 2040-02-29 23:59:58\ndate 2040-02-30 00:00:00\nfbtest\nkbdump\nKBDTEST_HELLO\necho PIPEWORD | wc\nps\nfree\nuptime\ndf\nfind /bin -name hel*\nfind /tmp /proc -type f\necho 15 > /proc/self/env/ROWS\necho lcd > /proc/self/env/TERM\ncat /proc/self/env/ROWS\nls /proc/self/env\ncatfile /proc/self/cmdline\ncat /proc/self/env/NOPE\nrm /proc/self/env/TERM\nls /proc/self/env\nsetenv COLS 56\ngetenv COLS\nunsetenv TERM\nenv\nsete\t TABC tab77\ngete\t TABC\necho ab\e[DX\e[CY\nxcho LE2\e[H\e[3~e\e[F ok\njunk\025echo KU\e[D\e[D\013K3\nvi /tmp/k\niAAAA=かんじ\n\n\e\rBB=かんじ\n\n\n\e\rCCCC=かんじ\n\n\177\e\rDDDDDD=ぴぴ\n\n\e\e:wq\r\n\n\n\n\n\n\ngrep 漢字 /tmp/k | wc\ngrep 幹事 /tmp/k | wc\ngrep かんじ /tmp/k | wc\ngrep ピピ /tmp/k | wc\nrm /tmp/k\nconsole\ncat /proc/self/env/ROWS\necho CTEST\nquit\nquit\n' \
         | timeout 10 qemu-system-riscv32 -smp 1 -nographic \
         -serial mon:stdio --no-reboot -m 128 \
         -machine virt,aclint=on -bios none \
@@ -207,6 +207,31 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     fs_edit1=$(echo "$fs_out" | grep -c "^aXbY$")
     fs_edit2=$(echo "$fs_out" | grep -c "^LE2 ok$")
     fs_edit3=$(echo "$fs_out" | grep -c "^K3$")
+    # vi kana→kanji conversion (docs/task/vi_kanji_conv.md): insert mode
+    # takes raw UTF-8 bytes, LF enters TUT mode, a second LF converts the
+    # hiragana before the cursor. Four lines: first candidate
+    # (AAAA=漢字), second candidate via another LF (BB=幹事), Backspace
+    # during conversion restores the reading (CCCC=かんじ), a reading the
+    # dictionary lacks falls back to katakana (DDDDDD=ピピ). After :wq,
+    # `grep <word> /tmp/k | wc` reads the saved file (not vi's screen
+    # echo): the labels are sized so each line's byte count is unique
+    # (12 / 10 / 15 / 14, none equal to PIPEWORD's 9). The 7 LFs after
+    # :wq are padding: vi reads stdin in 8-byte batches and drops what
+    # is left of the batch when it quits, which would otherwise eat
+    # the start of the next sh command (sh treats the surviving empty
+    # lines as no-ops). Skipped when vi was built with the empty
+    # fallback dictionary (tmp/SKK-JISYO.M missing — see
+    # userland/Makefile fetch-dict).
+    fs_vi_a=$(echo "$fs_out" | grep -c "^1 1 12")
+    fs_vi_b=$(echo "$fs_out" | grep -c "^1 1 10")
+    fs_vi_c=$(echo "$fs_out" | grep -c "^1 1 15")
+    fs_vi_d=$(echo "$fs_out" | grep -c "^1 1 14")
+    fs_vi=0
+    if [ "$fs_vi_a" -eq 1 ] && [ "$fs_vi_b" -eq 1 ] && [ "$fs_vi_c" -eq 1 ] && [ "$fs_vi_d" -eq 1 ]; then fs_vi=1; fi
+    fs_vi_note=""
+    if [ "$(wc -c < "$SCRIPT_DIR/../../userland/build/vidict.dat" 2>/dev/null || echo 0)" -le 400 ]; then
+        fs_vi=1; fs_vi_note=" (vi conversion SKIPPED: empty dictionary)"
+    fi
     fs_has_devwrite=$(echo "$fs_out" | grep -c "DEVFS_OK")
     # /dev/rtc roundtrip: writing a fixed datetime then reading it
     # back exercises devfs_write accumulation + commit-at-close +
@@ -235,6 +260,10 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     # Leak canary: the kernel prints its kmalloc live count at the
     # end. With the K1 process-table fix in place, this stays bounded
     # by a small constant regardless of how many children sh spawns.
+    # The bound (150) has ~5 of slack over the measured value: the first
+    # spawn of a task with a new allocation size grows the kmalloc pool
+    # once (vi's 216 KB image: baseline 128 → 133 after one vi, still
+    # 133 after two), which is pool growth, not a per-spawn leak.
     fs_live=$(echo "$fs_out" | sed -n 's/.*KERN: live=\([0-9]*\).*/\1/p' | tail -1)
     case "$fs_out" in
         *"BLOCK: virtio-blk detected"*"$expected"*"MTFS: mounted"*"FILE:hello, mtfs"*"all tasks done"*)
@@ -264,12 +293,13 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
                 && [ "$fs_env_cmd" -eq 1 ] && [ "$fs_env_nope" -eq 1 ] \
                 && [ "$fs_env_56" -eq 1 ] && [ "$fs_env_envc" -eq 1 ] && [ "$fs_env_envr" -eq 1 ] && [ "$fs_env_envt" -eq 0 ] && [ "$fs_env_tab" -eq 1 ] \
                 && [ "$fs_edit1" -eq 1 ] && [ "$fs_edit2" -eq 1 ] && [ "$fs_edit3" -eq 1 ] \
+                && [ "$fs_vi" -eq 1 ] \
                 && [ "$fs_has_sh" -gt 0 ] && [ "$fs_has_bye" -gt 0 ] \
-                && [ -n "$fs_live" ] && [ "$fs_live" -le 145 ]; then
-                report_pass "fs_virtio: kern.conf init + tmpdemo + catfile argv + redirect + devfs + rtc + date + fb + kbd + pipe + ps/free/uptime/df/find + /proc/self/env + console, live=$fs_live" "$elapsed"
+                && [ -n "$fs_live" ] && [ "$fs_live" -le 150 ]; then
+                report_pass "fs_virtio: kern.conf init + tmpdemo + catfile argv + redirect + devfs + rtc + date + fb + kbd + pipe + ps/free/uptime/df/find + /proc/self/env + vi kana→kanji + console, live=$fs_live$fs_vi_note" "$elapsed"
             else
                 report_fail_msg "fs_virtio" \
-                    "cat=$fs_cat_count cat2=$fs_cat2_count tmpok=$fs_has_tmpfs_ok tmppayload=$fs_has_tmpfs_payload redir=$fs_has_redir rmfail=$fs_rm_fail_count dev=$fs_has_dev devwr=$fs_has_devwrite rtc=$fs_has_rtc date=$fs_date_set/$fs_date_bad fb=$fs_has_fb kbd=$fs_has_kbd pipe=$fs_has_pipe ps=$fs_has_ps free=$fs_has_free uptime=$fs_has_uptime df=$fs_has_df find=$fs_has_find/$fs_has_find_tmp/$fs_find_dir env=$fs_env_15/$fs_env_ls/$fs_env_term/$fs_env_cmd/$fs_env_nope/$fs_env_56/$fs_env_envc/$fs_env_envr/$fs_env_envt/$fs_env_tab edit=$fs_edit1/$fs_edit2/$fs_edit3 console=$fs_has_console live=$fs_live a=$fs_has_a b=$fs_has_b mtfs=$fs_has_mtfs_msg sh=$fs_has_sh bye=$fs_has_bye; got: $(printf '%s' "$fs_out" | head -c 480)"
+                    "cat=$fs_cat_count cat2=$fs_cat2_count tmpok=$fs_has_tmpfs_ok tmppayload=$fs_has_tmpfs_payload redir=$fs_has_redir rmfail=$fs_rm_fail_count dev=$fs_has_dev devwr=$fs_has_devwrite rtc=$fs_has_rtc date=$fs_date_set/$fs_date_bad fb=$fs_has_fb kbd=$fs_has_kbd pipe=$fs_has_pipe ps=$fs_has_ps free=$fs_has_free uptime=$fs_has_uptime df=$fs_has_df find=$fs_has_find/$fs_has_find_tmp/$fs_find_dir env=$fs_env_15/$fs_env_ls/$fs_env_term/$fs_env_cmd/$fs_env_nope/$fs_env_56/$fs_env_envc/$fs_env_envr/$fs_env_envt/$fs_env_tab edit=$fs_edit1/$fs_edit2/$fs_edit3 vi=$fs_vi_a/$fs_vi_b/$fs_vi_c/$fs_vi_d console=$fs_has_console live=$fs_live a=$fs_has_a b=$fs_has_b mtfs=$fs_has_mtfs_msg sh=$fs_has_sh bye=$fs_has_bye; got: $(printf '%s' "$fs_out" | head -c 480)"
             fi
             ;;
         *)

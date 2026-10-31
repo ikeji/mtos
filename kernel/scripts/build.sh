@@ -189,19 +189,25 @@ for task in $TASKS; do
         [ -f "$_es" ] && [ "$_es" != "$ROOT_DIR/userland/bin/$task/$task.s" ] && _extra_s="$_extra_s $_es"
     done
     # Generated extra .s — userland/Makefile の TASK_EXTRA_S_<task> の
-    # ミラー。console は日本語フォント wrapper (jpfont_inc.s) を link
-    # する。従来ここが欠落していたが asm_pass3 の undefined-reloc
-    # silent skip (docs/solved.md #42) に隠れて発覚しなかった。
-    if [ "$task" = "console" ]; then
-        _jf="$ROOT_DIR/userland/build/jpfont_inc.s"
-        if [ ! -f "$_jf" ]; then
-            make -C "$ROOT_DIR/userland" font >/dev/null 2>&1 || true
+    # ミラー。console は日本語フォント wrapper (jpfont_inc.s)、vi は
+    # かな漢字辞書 wrapper (vidict_inc.s) を link する。従来 console の
+    # 分がここに無かったが asm_pass3 の undefined-reloc silent skip
+    # (docs/solved.md #42) に隠れて発覚しなかった。
+    _gen_s=""; _gen_target=""
+    case "$task" in
+        console) _gen_s="jpfont_inc.s"; _gen_target="font" ;;
+        vi)      _gen_s="vidict_inc.s"; _gen_target="dict" ;;
+    esac
+    if [ -n "$_gen_s" ]; then
+        _gf="$ROOT_DIR/userland/build/$_gen_s"
+        if [ ! -f "$_gf" ]; then
+            make -C "$ROOT_DIR/userland" "$_gen_target" >/dev/null 2>&1 || true
         fi
-        if [ ! -f "$_jf" ]; then
-            echo "Error: console needs $_jf (run: make -C userland font)" >&2
+        if [ ! -f "$_gf" ]; then
+            echo "Error: $task needs $_gf (run: make -C userland $_gen_target)" >&2
             exit 1
         fi
-        _extra_s="$_extra_s $_jf"
+        _extra_s="$_extra_s $_gf"
     fi
     CRT0="$TMP/${task}_crt0.s" \
     CRT0_DATA="$TASK_DATA" \
