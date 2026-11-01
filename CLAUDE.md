@@ -24,14 +24,19 @@ band-blit 経由で LCD に DOOM ロゴ + Doomguy を表示するまで到達。
   と循環)、
   Backspace で読みに戻す、他のキーで確定、`u` で丸ごと undo。TUT を
   抜けるのは ESC のみ (従来 Ctrl-J も抜けていた)。辞書は
-  `userland/scripts/genvidict.py` が SKK-JISYO.M (送りなし 6.4k 見出し、
-  GPL なので `tmp/` 置き、`make -C userland fetch-dict`) を u16
-  コードポイントの 112 KB バイナリ (先頭かな 96 バケット + 線形走査、
-  全フィールド 2 B 境界) にし、`vidict_inc.s` で vi の .rodata に埋める
-  (vi.bin 216 KB、XIP 環境では RAM 不要)。辞書ファイルが無ければ空辞書
-  で vi をビルドし test_os の変換チェックは SKIP。候補文字は JIS X 0208
-  に絞り LCD で豆腐にならない。**送りなし部だけなので動詞 / 形容詞は
-  引けない** (よむ → okuri-ari `よm`)、送りあり対応は同 doc の Phase 3。
+  `userland/scripts/genvidict.py` が SKK-JISYO.M (送りなし 6.4k +
+  送りあり 1.4k 見出し、GPL なので `tmp/` 置き、`make -C userland
+  fetch-dict`) を u16 コードポイントの 131 KB バイナリ (先頭かな 96
+  バケット + 線形走査、全フィールド 2 B 境界) にし、`vidict_inc.s` で
+  vi の .rodata に埋める (vi.bin 244 KB、XIP 環境では RAM 不要、loader
+  の 256 KB しきい値まで残り 12 KB)。辞書ファイルが無ければ空辞書で vi
+  をビルドし test_os の変換チェックは SKIP。候補文字は JIS X 0208 に
+  絞り LCD で豆腐にならない。**送りあり** (Phase 3、同日): 読みを
+  語幹 + 送り仮名に分割し、送り仮名先頭かなの SKK 子音字 (`よむ` →
+  `よm`、っ = t、ん = n、genvidict が c/j/f → t/z/h に正規化) で
+  okuri-ari 見出しを引き、漢字 + 打った送り仮名で置換 (読む / 高い /
+  感じる / 送った)。残 TODO (TUT 表に 「」ー、。を足す、確定時に TUT
+  打鍵ヒント表示) は同 doc の TODO 節。
 - 2026-10-31: **`date` コマンド** (`userland/bin/date/`)。引数なしで
   `/dev/rtc` を表示、`date YYYY-MM-DD HH:MM:SS` で設定して読み戻す。
   kernel の `rtc_parse_set` は範囲チェックが緩く devfs_close が結果を

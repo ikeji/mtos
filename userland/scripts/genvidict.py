@@ -8,12 +8,17 @@
 #   genvidict.py --empty <out.dat>          valid 0-entry dictionary
 #   genvidict.py --dump <in.dat>            decode .dat back to text
 #
-# Only the okuri-nasi section is used. Readings must be hiragana
-# (U+3041..U+3096) or ー (U+30FC) with a hiragana first character;
-# candidates must be representable in JIS X 0208 (what the console
-# font jpfont.dat covers) or ASCII, so nothing the LCD cannot draw is
-# offered. Annotations (`;...`) are dropped and `(concat ...)`
-# candidates are skipped.
+# Both sections are used. Readings must be hiragana (U+3041..U+3096)
+# or ー (U+30FC) with a hiragana first character; an okuri-ari reading
+# additionally ends with one ASCII letter, the SKK consonant of the
+# first okurigana kana (よm = 読む / 読め / ...). SKK spells some of
+# these letters two ways, so they are normalised to the letter vi
+# derives from the kana (c→t for ち/つ, j→z for じ, f→h for ふ) and
+# entries that collide are merged. Candidates must be representable in
+# JIS X 0208 (what the console font jpfont.dat covers) or ASCII, so
+# nothing the LCD cannot draw is offered. Annotations (`;...`) are
+# dropped, `(concat ...)` candidates and the strict `[okuri/.../]`
+# blocks are skipped.
 #
 # vidict.dat layout (little-endian, every field 2-byte aligned because
 # the tn20k core and the web emulator cannot do misaligned lh):
@@ -25,10 +30,14 @@
 #                         is the end of the last bucket. Entries inside
 #                         a bucket are sorted by reading codepoints.
 #   entry*:
-#     u8   rlen           reading length in codepoints (1..max-read)
+#     u8   rlen           reading length in codepoints (1..max-read),
+#                         the ASCII letter of an okuri-ari reading
+#                         included
 #     u8   ncand
 #     u16  reading[rlen]
-#     ncand x { u8 clen; u8 flags (0); u16 cand[clen] }
+#     ncand x { u8 clen; u8 flags; u16 cand[clen] }
+#                         flags: 1 = okuri-ari (the reader appends the
+#                         okurigana it saw after the stem), else 0
 
 import struct
 import sys
@@ -39,6 +48,7 @@ HIRA_FIRST = 0x3041
 HIRA_LAST = 0x3096
 CHOON = 0x30FC
 HEADER_SIZE = 12 + 4 * (N_BUCKETS + 1)
+OKURI_NORMALISE = {'c': 't', 'j': 'z', 'f': 'h'}
 
 
 def is_reading(s):
@@ -68,27 +78,47 @@ def parse_skk(path, max_cands, max_read):
     with open(path, 'rb') as f:
         raw = f.read()
     text = raw.decode('euc_jp', errors='replace')
-    in_nasi = False
+    section = None          # 'ari' / 'nasi'
     for line in text.split('\n'):
         if line.startswith(';;'):
             if 'okuri-nasi' in line:
-                in_nasi = True
+                section = 'nasi'
             elif 'okuri-ari' in line:
-                in_nasi = False
+                section = 'ari'
             continue
-        if not in_nasi or not line.strip():
+        if section is None or not line.strip():
             continue
         sp = line.find(' ')
         if sp < 0:
             continue
         reading = line[:sp]
         body = line[sp + 1:].strip()
-        if not is_reading(reading) or len(reading) > max_read:
+        if section == 'ari':
+            letter = reading[-1:]
+            if not ('a' <= letter <= 'z'):
+                continue
+            letter = OKURI_NORMALISE.get(letter, letter)
+            stem = reading[:-1]
+            if not is_reading(stem):
+                continue
+            reading = stem + letter
+        elif not is_reading(reading):
+            continue
+        if len(reading) > max_read:
             continue
         if not (body.startswith('/') and body.endswith('/')):
             continue
         cands = []
+        in_bracket = False
         for c in body[1:-1].split('/'):
+            # [る/送/] strict-okuri blocks: skip from "[..." to "]"
+            if in_bracket:
+                if c == ']':
+                    in_bracket = False
+                continue
+            if c.startswith('['):
+                in_bracket = True
+                continue
             c = c.split(';', 1)[0]
             if not c or c.startswith('(concat'):
                 continue
@@ -109,6 +139,10 @@ def parse_skk(path, max_cands, max_read):
     return out
 
 
+def is_okuri_ari(reading):
+    return 'a' <= reading[-1] <= 'z'
+
+
 def encode(entries):
     # entries: list of (reading, [cands]) sorted by reading codepoints
     body = bytearray()
@@ -122,8 +156,9 @@ def encode(entries):
             cur += 1
         body += struct.pack('<BB', len(r), len(cands))
         body += b''.join(struct.pack('<H', ord(c)) for c in r)
+        flags = 1 if is_okuri_ari(r) else 0
         for c in cands:
-            body += struct.pack('<BB', len(c), 0)
+            body += struct.pack('<BB', len(c), flags)
             body += b''.join(struct.pack('<H', ord(ch)) for ch in c)
         assert len(body) % 2 == 0
     while cur <= N_BUCKETS:
@@ -159,6 +194,8 @@ def decode(data):
             cands = []
             for _ in range(ncand):
                 clen, flags = struct.unpack_from('<BB', data, off)
+                if flags != (1 if is_okuri_ari(r) else 0):
+                    raise SystemExit('entry %r: candidate flags %d' % (r, flags))
                 off += 2
                 cands.append(''.join(chr(cp) for cp in
                                      struct.unpack_from('<%dH' % clen, data, off)))

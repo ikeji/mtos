@@ -14,8 +14,8 @@ TUT で「かんじ」と打って **Ctrl-J で「漢字」に置き換える** 
 - TUT モード中の Ctrl-J で、カーソル直前のひらがな列 (最大 8 文字) を
   **長い読みから順に** 辞書引きし、候補でその場置換する。Ctrl-J 連打で
   次候補、他のキーで確定。
-- 辞書は SKK-JISYO.M (送りなし部) をコンパクトなバイナリに変換して
-  `.incbin` で埋め込む。
+- 辞書は SKK-JISYO.M (送りなし部 + 送りあり部) をコンパクトなバイナリに
+  変換して `.incbin` で埋め込む。
 - qemu virt / pico2 / tn20k / web の 4 環境すべてで同じバイナリが動く。
 
 非ゴール (今回はやらない):
@@ -93,7 +93,7 @@ Ctrl-J)。`web/tests/test_console.sh` の Enter 回帰テストは CR を使っ�
 
 **SKK-JISYO.M** (skk-dev/dict、GPL-2+、EUC-JP、144 KB、送りなし
 6.4k 見出し) を既定にする (S = 55 KB / 2.4k は語彙不足、ML = 953 KB /
-41k は Phase 0 の表参照)。送りあり部は Phase 3 まで捨てる。
+41k は Phase 0 の表参照)。送りあり部 (1.4k 行) も Phase 3 から使う。
 font.bmp と同じく **リポジトリには入れず `tmp/SKK-JISYO.M` に置く**。
 `make -C userland fetch-dict` で
 `https://raw.githubusercontent.com/skk-dev/dict/master/SKK-JISYO.M`
@@ -109,8 +109,14 @@ genvidict.py --dump <in.dat>        .dat → テキスト (検証用)
 ```
 (実装済、往復テスト `userland/tests/test_genvidict.sh` を
 `make -C userland test` から実行。)
-- `;; okuri-nasi entries.` 以降を読む。見出し行 `よみ /候補1/候補2;注釈/`
-  の `;注釈` を落とし、`(concat ...)` を含む候補は捨てる。
+- `;; okuri-ari entries.` と `;; okuri-nasi entries.` の両方を読む。
+  見出し行 `よみ /候補1/候補2;注釈/` の `;注釈` を落とし、`(concat ...)`
+  を含む候補と `[る/送/]` 形式の厳密送り仮名ブロックは捨てる。
+- 送りあり見出しは「語幹 + 子音字 1 文字」(`よm`)。子音字は SKK の
+  ローマ字入力の揺れ (ち/つ = c or t、じ = j or z、ふ = f or h) を
+  **t / z / h に正規化**して衝突した見出しを併合し、vi 側の
+  `okuri_letter()` (かな → 行の子音、あ行は母音、っ = t、ん = n) と
+  一致させる。
 - 読みは先頭がひらがなで全文字がひらがな / `ー` のものだけ (数値
   `#`、カタカナ、ASCII 見出しは捨てる)。
 - 候補の各文字は **JIS X 0208 で表せるもの** (`euc_jp` で 2 バイト)、
@@ -136,7 +142,7 @@ entry*:
   u16 reading[rlen] コードポイント
   cand × ncand:
     u8  clen        候補の文字数
-    u8  flags       0 (Phase 3 で送りあり印に使う)
+    u8  flags       1 = 送りあり (reading 末尾が ASCII 子音字)、0 = 送りなし
     u16 cand[clen]  コードポイント
 ```
 - 文字は UTF-8 (3 B) ではなく **u16 コードポイント (2 B)** で持つ
@@ -150,7 +156,8 @@ entry*:
 
 ### サイズ実測 (Phase 0、2026-11-01) と loader の 256 KB しきい値
 
-`genvidict.py` (送りなし、`--max-read 8`) の出力:
+`genvidict.py` (送りなし、`--max-read 8`) の出力 (Phase 3 で送りあり
+1.4k 見出しが加わり M は 7.8k 見出し / 131 KB、vi.bin 244 KB):
 
 | ソース | 原本 | 見出し | 候補 | .dat (候補 ≤ 8) | .dat (候補 ≤ 4) |
 |---|---|---|---|---|---|
@@ -177,8 +184,9 @@ tn20k / web には無関係)。その場合の制限は「virt console 内で vi
 gcc_doom_pico2 は XIP 経路で early return)。
 
 **送りなしだけだと動詞 / 形容詞が引けない** (よむ・かく・たかい は
-okuri-ari 部に `よm /読/` の形でしかない)。Phase 3 の送りあり対応は
-「任意」から**本命の続編**に格上げ。
+okuri-ari 部に `よm /読/` の形でしかない) ので Phase 3 で送りあり対応
+(完了)。vi.bin は 244 KB で 256 KB しきい値まで残り 12 KB: 辞書を
+増やす (ML など) か vi がさらに太るときは loader のフラグ化が先。
 
 pico2 flash (kernel.bin ≈ 2.3 MB / 4 MiB)、tn20k / web (2.6 MB / 8 MB
 SDRAM) とも M の 112 KB は余裕。self-replicate は DROP_TASKS で vi を
@@ -248,9 +256,17 @@ SDRAM) とも M の 112 KB は余裕。self-replicate は DROP_TASKS で vi を
   vi の 216 KB イメージで kmalloc pool が 1 回だけ +5 成長する (1 回でも
   2 回でも同値) ので上限を 145 → 150 に。(c) md5sum は
   EXTRA_GUEST_TASKS で disk-demo に無いので使わなかった。
-- **Phase 3 (続編、動詞 / 形容詞に必須)**: 送りあり (`おくr` → 送 + る:
-  読み末尾のかなを SKK の子音字に写像して okuri-ari 見出しを引き、
-  flags=1 で区別)。
+- **Phase 3 (送りあり、完了 2026-11-01)**: genvidict が okuri-ari 部も
+  取り込み (子音字 c/j/f → t/z/h 正規化、`[...]` ブロック除去、
+  flags=1)、M は 6.4k → 7.8k 見出し / 112 → 131 KB、vi.bin 244 KB。
+  vi 側は読みの各接尾辞 (長い順) について「送りなし見出し → 語幹 +
+  送り仮名の分割 (送り仮名が短い順)」で候補を集め、送り仮名の先頭かな
+  を `okuri_letter()` で子音字にして `dict_lookup(off, n, letter)` を
+  引く。候補は漢字 + ユーザーが打った送り仮名 (`g_cand_ok` 文字) で
+  表示 / 挿入。`CONV_MAX_CANDS` 32 → 48。test_os にケース f (よむ →
+  読む、第 1 候補) / g (たかい → 高井 → 高い、Space 1 回) を追加、
+  手動で 感じる / 送った / 走る / 美しい / 食べた / 考える の第 1 候補
+  を確認。
 
 ## TODO (続編候補、未着手)
 

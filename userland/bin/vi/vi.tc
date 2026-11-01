@@ -39,7 +39,11 @@
 //               embedded SKK dictionary and replace it with the first
 //               candidate. Candidates of shorter readings follow, then
 //               katakana: the whole reading, then each shorter suffix
-//               (あんぱん → 版 アンパン ンパン パン ン).
+//               (あんぱん → 版 アンパン ンパン パン ン). Verbs and
+//               adjectives come from the okuri-ari part: the reading
+//               is split into stem + okurigana and the stem is looked
+//               up with the SKK consonant of the first okurigana kana
+//               (よむ → よm → 読む, たかい → たかi → 高い).
 //   Ctrl+J / Space while converting — next candidate (wraps back to
 //               the plain reading)
 //   Backspace while converting — restore the reading
@@ -139,7 +143,7 @@ var g_tut_vo: U8Array = 0 as U8Array;    // voiced/small table (50 bytes)
 // there) sits in .rodata and is read in place with peek8/16/32 — on
 // pico2 it stays in flash, nothing is copied into the arena.
 const CONV_MAX_READ: i32 = 8;     // hiragana codepoints scanned back from the cursor
-const CONV_MAX_CANDS: i32 = 32;   // candidate list cap (dictionary hits + katakana)
+const CONV_MAX_CANDS: i32 = 48;   // candidate list cap (dictionary hits + katakana)
 const VD_HEADER: i32 = 12;        // magic, n_entries, total_bytes; then u32 bucket[97]
 const VD_BUCKETS: i32 = 96;       // one bucket per first codepoint U+3041..U+30A0
 
@@ -151,6 +155,7 @@ var g_conv_rcp: I32Array = 0 as I32Array;   // reading codepoints [CONV_MAX_READ
 var g_cand_addr: U32Array = 0 as U32Array;  // dictionary entry address, 0 = katakana
 var g_cand_ci: I32Array = 0 as I32Array;    // candidate index inside that entry
 var g_cand_rl: I32Array = 0 as I32Array;    // trailing reading codepoints it replaces
+var g_cand_ok: I32Array = 0 as I32Array;    // of which okurigana kept after the kanji (0 = okuri-nasi)
 
 // ===== terminal helpers =====
 
@@ -772,10 +777,55 @@ fn conv_collect() -> void {
     return;
 }
 
+// SKK okuri letter for the first okurigana kana: the consonant of its
+// row (か行 k, が行 g, ... っ t, ん n), the vowel for あ行. 0 for ー and
+// anything else. genvidict normalises SKK's c/j/f to t/z/h to match.
+fn okuri_letter(cp: i32) -> i32 {
+    if cp >= 0x3041 && cp <= 0x304A {          // ぁあぃいぅうぇえぉお
+        var v: i32 = (cp - 0x3041) / 2;
+        if v == 0 { return 'a' as i32; }
+        if v == 1 { return 'i' as i32; }
+        if v == 2 { return 'u' as i32; }
+        if v == 3 { return 'e' as i32; }
+        return 'o' as i32;
+    }
+    if cp >= 0x304B && cp <= 0x3054 {          // か..ご: k / g alternate
+        if (cp - 0x304B) % 2 == 0 { return 'k' as i32; } else { return 'g' as i32; }
+    }
+    if cp >= 0x3055 && cp <= 0x305E {          // さ..ぞ: s / z
+        if (cp - 0x3055) % 2 == 0 { return 's' as i32; } else { return 'z' as i32; }
+    }
+    if cp >= 0x305F && cp <= 0x3062 {          // た だ ち ぢ
+        if (cp - 0x305F) % 2 == 0 { return 't' as i32; } else { return 'd' as i32; }
+    }
+    if cp == 0x3063 || cp == 0x3064 { return 't' as i32; }   // っ つ
+    if cp == 0x3065 { return 'd' as i32; }                    // づ
+    if cp >= 0x3066 && cp <= 0x3069 {          // て で と ど
+        if (cp - 0x3066) % 2 == 0 { return 't' as i32; } else { return 'd' as i32; }
+    }
+    if cp >= 0x306A && cp <= 0x306E { return 'n' as i32; }   // な行
+    if cp >= 0x306F && cp <= 0x307D {          // は..ぽ: h / b / p
+        var r: i32 = (cp - 0x306F) % 3;
+        if r == 0 { return 'h' as i32; }
+        if r == 1 { return 'b' as i32; }
+        return 'p' as i32;
+    }
+    if cp >= 0x307E && cp <= 0x3082 { return 'm' as i32; }   // ま行
+    if cp >= 0x3083 && cp <= 0x3088 { return 'y' as i32; }   // ゃやゅゆょよ
+    if cp >= 0x3089 && cp <= 0x308D { return 'r' as i32; }   // ら行
+    if cp >= 0x308E && cp <= 0x3092 { return 'w' as i32; }   // ゎわゐゑを
+    if cp == 0x3093 { return 'n' as i32; }                    // ん
+    if cp == 0x3094 { return 'v' as i32; }                    // ゔ
+    if cp == 0x3095 || cp == 0x3096 { return 'k' as i32; }   // ゕ ゖ
+    return 0;
+}
+
 // Look up the reading g_conv_rcp[off..off+n) in the dictionary: pick
-// the bucket of its first codepoint and walk the entries in it.
+// the bucket of its first codepoint and walk the entries in it. With
+// letter != 0 the okuri-ari entry "reading + letter" is looked up
+// instead (its rlen is n + 1).
 // Returns the entry address (rlen, ncand, reading, candidates) or 0.
-fn dict_lookup(off: i32, n: i32) -> u32 {
+fn dict_lookup(off: i32, n: i32, letter: i32) -> u32 {
     if vidict_size_value() < VD_HEADER + (VD_BUCKETS + 1) * 4 { return 0u32; }
     var base: u32 = vidict_addr();
     var b: i32 = get(g_conv_rcp, off) - 0x3041;
@@ -785,13 +835,17 @@ fn dict_lookup(off: i32, n: i32) -> u32 {
     while p < end {
         var rlen: i32 = peek8(p) as i32;
         var ncand: i32 = peek8(p + 1u32) as i32;
-        if rlen == n {
+        var want: i32 = n;
+        if letter != 0 { want = n + 1; }
+        if rlen == want {
             var i: i32 = 0;
             while i < n
                 && (peek16(p + ((2 + 2 * i) as u32)) as i32) == get(g_conv_rcp, off + i) {
                 i = i + 1;
             }
-            if i == n { return p; }
+            if i == n && (letter == 0 || (peek16(p + ((2 + 2 * n) as u32)) as i32) == letter) {
+                return p;
+            }
         }
         var q: u32 = p + ((2 + 2 * rlen) as u32);
         var c: i32 = 0;
@@ -830,10 +884,12 @@ fn conv_walk(i: i32, mode: i32) -> i32 {
     var rl: i32 = g_conv_rn;
     var e: u32 = 0u32;
     var ci: i32 = 0;
+    var ok: i32 = 0;
     if i >= 0 {
         rl = get(g_cand_rl, i);
         e = get(g_cand_addr, i);
         ci = get(g_cand_ci, i);
+        ok = get(g_cand_ok, i);
     }
     var j: i32 = 0;
     if mode == 0 {
@@ -857,6 +913,12 @@ fn conv_walk(i: i32, mode: i32) -> i32 {
         w = w + conv_put(peek16(q + ((2 + 2 * j) as u32)) as i32, mode);
         j = j + 1;
     }
+    // okuri-ari: the okurigana the user typed follows the kanji
+    j = g_conv_rn - ok;
+    while j < g_conv_rn {
+        w = w + conv_put(get(g_conv_rcp, j), mode);
+        j = j + 1;
+    }
     return w;
 }
 
@@ -874,28 +936,46 @@ fn conv_commit() -> void {
     return;
 }
 
-// Build the candidate list for the hiragana before the cursor:
-// dictionary hits for the longest suffix first, then shorter suffixes,
-// then katakana of the whole reading and of each shorter suffix (so
-// あんパン is reachable from あんぱん even though the dictionary only
-// knows ぱん = 版). False if there is no reading.
+// Append the candidates of dictionary entry e (0 = none) to the list
+// at n: each replaces the last rl reading codepoints, of which the
+// last ok are okurigana kept after the kanji. Returns the new n.
+fn conv_add(e: u32, rl: i32, ok: i32, n: i32) -> i32 {
+    if e == 0u32 { return n; }
+    var ncand: i32 = peek8(e + 1u32) as i32;
+    var ci: i32 = 0;
+    while ci < ncand && n < CONV_MAX_CANDS - g_conv_rn {
+        set(g_cand_addr, n, e);
+        set(g_cand_ci, n, ci);
+        set(g_cand_rl, n, rl);
+        set(g_cand_ok, n, ok);
+        n = n + 1;
+        ci = ci + 1;
+    }
+    return n;
+}
+
+// Build the candidate list for the hiragana before the cursor. For
+// each suffix of the reading, longest first: the okuri-nasi entry of
+// the whole suffix, then its stem + okurigana splits (shortest
+// okurigana first: よむ → よm, かんじる → かんじr, かんz). Then
+// katakana of the whole reading and of each shorter suffix (so あんパン
+// is reachable from あんぱん even though the dictionary only knows
+// ぱん = 版). False if there is no reading.
 fn conv_build() -> bool {
     conv_collect();
     if g_conv_rn == 0 { return false; }
     var n: i32 = 0;
     var k: i32 = g_conv_rn;
     while k >= 1 {
-        var e: u32 = dict_lookup(g_conv_rn - k, k);
-        if e != 0u32 {
-            var ncand: i32 = peek8(e + 1u32) as i32;
-            var ci: i32 = 0;
-            while ci < ncand && n < CONV_MAX_CANDS - g_conv_rn {
-                set(g_cand_addr, n, e);
-                set(g_cand_ci, n, ci);
-                set(g_cand_rl, n, k);
-                n = n + 1;
-                ci = ci + 1;
+        var off: i32 = g_conv_rn - k;
+        n = conv_add(dict_lookup(off, k, 0), k, 0, n);
+        var ok: i32 = 1;
+        while ok < k {
+            var letter: i32 = okuri_letter(get(g_conv_rcp, g_conv_rn - ok));
+            if letter != 0 {
+                n = conv_add(dict_lookup(off, k - ok, letter), k, ok, n);
             }
+            ok = ok + 1;
         }
         k = k - 1;
     }
@@ -907,6 +987,7 @@ fn conv_build() -> bool {
             set(g_cand_addr, n, 0u32);
             set(g_cand_ci, n, 0);
             set(g_cand_rl, n, k);
+            set(g_cand_ok, n, 0);
             n = n + 1;
         }
         k = k - 1;
@@ -1335,6 +1416,7 @@ fn main(argv: StringArray) -> i32 {
     g_cand_addr = U32Array(CONV_MAX_CANDS as u32);
     g_cand_ci = I32Array(CONV_MAX_CANDS as u32);
     g_cand_rl = I32Array(CONV_MAX_CANDS as u32);
+    g_cand_ok = I32Array(CONV_MAX_CANDS as u32);
     tut_init();
     load_term_env();
     load_file();
@@ -1390,6 +1472,7 @@ fn main(argv: StringArray) -> i32 {
     delete(g_cand_addr);
     delete(g_cand_ci);
     delete(g_cand_rl);
+    delete(g_cand_ok);
     delete(g_path);
     if g_msg as u32 != 0u32 { delete(g_msg); }
     return 0;

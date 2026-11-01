@@ -1,9 +1,11 @@
 #!/bin/bash
 # test_genvidict.sh — round-trip test for userland/scripts/genvidict.py.
 # Feeds a small synthetic SKK dictionary (EUC-JP) through the generator
-# and checks the decoded result: okuri-ari section skipped, annotations
-# and (concat ...) dropped, non-hiragana readings and JIS X 0208-external
-# candidates filtered, --max-cands honoured, --empty valid. ~0.1 s.
+# and checks the decoded result: okuri-ari readings kept with their
+# letter normalised (c→t, j→z, f→h) and merged, strict [okuri/...]
+# blocks skipped, annotations and (concat ...) dropped, non-hiragana
+# readings and JIS X 0208-external candidates filtered, --max-cands
+# honoured, --empty valid. ~0.1 s.
 set -u
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 GEN="$ROOT/userland/scripts/genvidict.py"
@@ -17,6 +19,11 @@ cat > "$TMP/in.utf8" <<'EOF'
 ;; -*- mode: fundamental; coding: euc-jp -*-
 ;; okuri-ari entries.
 よm /読/詠/
+かんz /感/
+かんj /感/慣/
+おくr /送/[る/送/]/贈/
+まc /待/
+#1k /引/
 ;; okuri-nasi entries.
 かんじ /漢字/幹事;annot/感じ/
 あ /阿/(concat "a\057b")/亜/
@@ -44,13 +51,23 @@ python3 -I "$GEN" --dump "$TMP/out.dat" > "$TMP/dump" || { echo "dump failed"; e
 check "entries sorted, filtered" \
 "あ /阿/亜/
 いち /一/壱/１/
+おくr /送/贈/
+かんz /感/慣/
 かんじ /漢字/幹事/感じ/
 きょう /今日/京/強/狭/橋/鏡/胸/共/
 に /日/
 へ /平/
+まt /待/
+よm /読/詠/
 らーめん /拉麺/
 わ /話/和/我/輪/倭/" "$(cat "$TMP/dump")"
-check "stats line" "genvidict: 8 entries, 24 candidates" "$(sed 's/, [0-9]* bytes.*//' "$TMP/stats")"
+check "stats line" "genvidict: 12 entries, 31 candidates" "$(sed 's/, [0-9]* bytes.*//' "$TMP/stats")"
+# okuri-ari candidates carry flags=1, okuri-nasi flags=0 (decode checks
+# consistency; here just look at the raw bytes of まt /待/ and に /日/)
+check "okuri-ari flags" "1" "$(python3 -I -c "
+import sys;d=open(sys.argv[1],'rb').read();i=d.find(b'\x02\x01\x7e\x30t\x00');print(d[i+7])" "$TMP/out.dat")"
+check "okuri-nasi flags" "0" "$(python3 -I -c "
+import sys;d=open(sys.argv[1],'rb').read();i=d.find(b'\x01\x01\x6b\x30');print(d[i+5])" "$TMP/out.dat")"
 
 # Alignment: every entry and candidate is an even number of bytes, so
 # total_bytes (u32 at offset 8) must be even and equal the file size.
@@ -67,6 +84,8 @@ check "--max-read 2 drops long readings" "あ
 いち
 に
 へ
+まt
+よm
 わ" "$(python3 -I "$GEN" --dump "$TMP/out2.dat" | cut -d' ' -f1)"
 
 python3 -I "$GEN" --empty "$TMP/empty.dat"
