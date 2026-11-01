@@ -1,0 +1,25 @@
+built from c598c58 on 2026-11-01T09:51Z
+       0 .nojekyll
+      59 MANIFEST.txt
+    6176 index.html
+ 2792096 kernels/tn20k_kernel.bin
+ 2793632 kernels/tn20k_kernel_console.bin
+ 2793632 kernels/tn20k_kernel_console_land.bin
+ 2793632 kernels/tn20k_kernel_console_text.bin
+ 2793632 kernels/tn20k_kernel_console_vram.bin
+ 5215392 kernels/tn20k_kernel_extra.bin
+   13268 src/cpu.js
+    2693 src/display.js
+    1762 src/fat32.js
+    6576 src/font_hankaku.js
+    8058 src/gpio.js
+    5538 src/lcd.js
+   12988 src/main.js
+    2195 src/ocr.js
+    6173 src/runner.js
+    4257 src/sd.js
+   10431 src/soc.js
+    2369 src/worker.js
+    1261 vendor/xterm/LICENSE
+    5559 vendor/xterm/xterm.css
+  289441 vendor/xterm/xterm.js
