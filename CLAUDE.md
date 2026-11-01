@@ -36,8 +36,10 @@ band-blit 経由で LCD に DOOM ロゴ + Doomguy を表示するまで到達。
   `よm`、っ = t、ん = n、genvidict が c/j/f → t/z/h に正規化) で
   okuri-ari 見出しを引き、漢字 + 打った送り仮名で置換 (読む / 高い /
   感じる / 送った)。status 行は TUT の打ちかけ 1 打目も出す
-  (`INSERT TUT k` / `kl` / `tlt`、Backspace は打ちかけを先に 1 打戻す)。残 TODO (TUT 表に 「」ー、。を足す、
-  確定時に TUT 打鍵ヒント表示) は同 doc の TODO 節。
+  (`INSERT TUT k` / `kl` / `tlt`、Backspace は打ちかけを先に 1 打戻す)。
+  記号は本家どおり「文字キー + Space」(t␣「 y␣」 d␣、 f␣。 e␣ー o␣・
+  など uim tutcode-rule の 30 字、`g_tut_sym`)、素の Space は空白。残 TODO (確定時に TUT 打鍵ヒント表示) は
+  同 doc の TODO 節。
 - 2026-10-31: **`date` コマンド** (`userland/bin/date/`)。引数なしで
   `/dev/rtc` を表示、`date YYYY-MM-DD HH:MM:SS` で設定して読み戻す。
   kernel の `rtc_parse_set` は範囲チェックが緩く devfs_close が結果を

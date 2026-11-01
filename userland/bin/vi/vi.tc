@@ -29,6 +29,9 @@
 // ESC exits TUT mode back to insert mode.
 //
 // TUT-code: two-stroke input for kana and kanji (773 characters).
+//   Symbols: letter key + Space, as in TUT-code (t␣=「 y␣=」 d␣=、
+//   f␣=。 e␣=ー o␣=・ i␣=… j␣=々 r␣=【 u␣=】 g␣=『 h␣=』 ...; the
+//   full table is g_tut_sym). Space with nothing pending is a space.
 //   The status line shows the pending stroke(s): "INSERT TUT k",
 //   "INSERT TUT kl" (voiced), "INSERT TUT tlt" (ぱ行); Backspace
 //   drops the last pending stroke before it deletes any text.
@@ -138,6 +141,7 @@ var g_undo_valid: i32 = 0;
 // 2=got first key, 3=voiced (after L), 4=semi-voiced (T+L+T)
 var g_tut: i32 = 0;
 var g_tut_k1: i32 = 0;              // first key position (0-39)
+var g_tut_sym: I32Array = 0 as I32Array;  // letter key (pos 10..39) + Space → symbol codepoint
 const TUT_KEYS: StringLiteral = "1234567890qwertyuiopasdfghjkl;zxcvbnm,./";  // position → key
 var g_tut_kmap: U8Array = 0 as U8Array;  // ASCII→key position+1 (128 bytes)
 var g_tut_vo: U8Array = 0 as U8Array;    // voiced/small table (50 bytes)
@@ -617,6 +621,39 @@ fn tut_init() -> void {
     tut_set5(g_tut_vo, 7, 0x83,   0,0x85,   0,0x87); // Q ゃ行 (small)
     tut_set5(g_tut_vo, 8,    0,   0,   0,   0,   0); // G (none)
     tut_set5(g_tut_vo, 9, 0x8E,   0,   0,   0,   0); // A ゎ (small)
+
+    // Symbols: letter key + Space (uim tutcode-rule.scm), index = pos - 10
+    g_tut_sym = I32Array(30);
+    set(g_tut_sym,  0, 0x201C);  // q + Space = “
+    set(g_tut_sym,  1, 0x3012);  // w + Space = 〒
+    set(g_tut_sym,  2, 0x30FC);  // e + Space = ー
+    set(g_tut_sym,  3, 0x3010);  // r + Space = 【
+    set(g_tut_sym,  4, 0x300C);  // t + Space = 「
+    set(g_tut_sym,  5, 0x300D);  // y + Space = 」
+    set(g_tut_sym,  6, 0x3011);  // u + Space = 】
+    set(g_tut_sym,  7, 0x2026);  // i + Space = …
+    set(g_tut_sym,  8, 0x30FB);  // o + Space = ・
+    set(g_tut_sym,  9, 0x201D);  // p + Space = ”
+    set(g_tut_sym, 10, 0x2018);  // a + Space = ‘
+    set(g_tut_sym, 11, 0x2606);  // s + Space = ☆
+    set(g_tut_sym, 12, 0x3001);  // d + Space = 、
+    set(g_tut_sym, 13, 0x3002);  // f + Space = 。
+    set(g_tut_sym, 14, 0x300E);  // g + Space = 『
+    set(g_tut_sym, 15, 0x300F);  // h + Space = 』
+    set(g_tut_sym, 16, 0x3005);  // j + Space = 々
+    set(g_tut_sym, 17, 0x203B);  // k + Space = ※
+    set(g_tut_sym, 18, 0xFF3C);  // l + Space = ＼
+    set(g_tut_sym, 19, 0x2019);  // ; + Space = ’
+    set(g_tut_sym, 20, 0x3006);  // z + Space = 〆
+    set(g_tut_sym, 21, 0x00A7);  // x + Space = §
+    set(g_tut_sym, 22, 0x25CB);  // c + Space = ○
+    set(g_tut_sym, 23, 0x00F7);  // v + Space = ÷
+    set(g_tut_sym, 24, 0x2190);  // b + Space = ←
+    set(g_tut_sym, 25, 0x2192);  // n + Space = →
+    set(g_tut_sym, 26, 0x00D7);  // m + Space = ×
+    set(g_tut_sym, 27, 0x300A);  // , + Space = 《
+    set(g_tut_sym, 28, 0x300B);  // . + Space = 》
+    set(g_tut_sym, 29, 0x002F);  // / + Space = /
     return;
 }
 
@@ -655,14 +692,21 @@ fn handle_tut(c: u8) -> void {
     if c == '\r' as u8 { insert_byte('\n' as u8); return; }
 
     if g_tut == 1 {
-        // Waiting for first key — accept any key in the 40-key layout
+        // Waiting for first key — accept any key in the 40-key layout;
+        // a bare Space is a space.
+        if c == ' ' as u8 { insert_byte(c); return; }
         var pos: i32 = tut_keypos(c);
         if pos >= 0 { g_tut_k1 = pos; g_tut = 2; }
         return;
     }
 
     if g_tut == 2 {
-        // Got first key, waiting for second key
+        // Got first key, waiting for second key. Space = symbol.
+        if c == ' ' as u8 {
+            g_tut = 1;
+            if g_tut_k1 >= 10 { insert_codepoint(get(g_tut_sym, g_tut_k1 - 10)); }
+            return;
+        }
         var p2: i32 = tut_keypos(c);
         if p2 < 0 { g_tut = 1; return; }
         // Look up the 2-stroke grid (kana + kanji)
@@ -1482,6 +1526,7 @@ fn main(argv: StringArray) -> i32 {
     delete(g_cmdbuf);
     delete(g_tut_kmap);
     delete(g_tut_vo);
+    delete(g_tut_sym);
     delete(g_conv_rcp);
     delete(g_cand_addr);
     delete(g_cand_ci);

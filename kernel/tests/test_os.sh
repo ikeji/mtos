@@ -112,7 +112,7 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     # kfree path for frame_buf / ram / stack / img / argv / stdio fds;
     # the kernel prints "KERN: live=N" at shutdown so the test asserts
     # the count stays bounded regardless of spawn iterations.
-    fs_out=$(printf 'tmpdemo\ncatfile\ncatfile /hello.txt\necho hi > /tmp/redir\ncatfile /tmp/redir\nrm /tmp/redir\nrm /tmp/redir\nls /dev\necho DEVFS_OK > /dev/uart\necho 2031-08-20 09:15:42 > /dev/rtc\ncat /dev/rtc\ndate\ndate 2040-02-29 23:59:58\ndate 2040-02-30 00:00:00\nfbtest\nkbdump\nKBDTEST_HELLO\necho PIPEWORD | wc\nps\nfree\nuptime\ndf\nfind /bin -name hel*\nfind /tmp /proc -type f\necho 15 > /proc/self/env/ROWS\necho lcd > /proc/self/env/TERM\ncat /proc/self/env/ROWS\nls /proc/self/env\ncatfile /proc/self/cmdline\ncat /proc/self/env/NOPE\nrm /proc/self/env/TERM\nls /proc/self/env\nsetenv COLS 56\ngetenv COLS\nunsetenv TERM\nenv\nsete\t TABC tab77\ngete\t TABC\necho ab\e[DX\e[CY\nxcho LE2\e[H\e[3~e\e[F ok\njunk\025echo KU\e[D\e[D\013K3\nvi /tmp/k\niAAAA=\n\n\eかんじ\n\n\e\rBB=かんじ\n\n\n\e\rCCCC=かんじ\n\n\177\e\rDDDDDD=ぴぴ\n\n\e\rEEE=あんぱん\n\n   \e\rFFFFF=よむ\n\n\e\rGGG=たかい\n\n \e\e:wq\r\n\n\n\n\n\n\ngrep 漢字 /tmp/k | wc\ngrep 幹事 /tmp/k | wc\ngrep かんじ /tmp/k | wc\ngrep ピピ /tmp/k | wc\ngrep パン /tmp/k | wc\ngrep 読む /tmp/k | wc\ngrep 高い /tmp/k | wc\nrm /tmp/k\nconsole\ncat /proc/self/env/ROWS\necho CTEST\nquit\nquit\n' \
+    fs_out=$(printf 'tmpdemo\ncatfile\ncatfile /hello.txt\necho hi > /tmp/redir\ncatfile /tmp/redir\nrm /tmp/redir\nrm /tmp/redir\nls /dev\necho DEVFS_OK > /dev/uart\necho 2031-08-20 09:15:42 > /dev/rtc\ncat /dev/rtc\ndate\ndate 2040-02-29 23:59:58\ndate 2040-02-30 00:00:00\nfbtest\nkbdump\nKBDTEST_HELLO\necho PIPEWORD | wc\nps\nfree\nuptime\ndf\nfind /bin -name hel*\nfind /tmp /proc -type f\necho 15 > /proc/self/env/ROWS\necho lcd > /proc/self/env/TERM\ncat /proc/self/env/ROWS\nls /proc/self/env\ncatfile /proc/self/cmdline\ncat /proc/self/env/NOPE\nrm /proc/self/env/TERM\nls /proc/self/env\nsetenv COLS 56\ngetenv COLS\nunsetenv TERM\nenv\nsete\t TABC tab77\ngete\t TABC\necho ab\e[DX\e[CY\nxcho LE2\e[H\e[3~e\e[F ok\njunk\025echo KU\e[D\e[D\013K3\nvi /tmp/k\niAAAA=\n\n\eかんじ\n\n\e\rBB=かんじ\n\n\n\e\rCCCC=かんじ\n\n\177\e\rDDDDDD=ぴぴ\n\n\e\rEEE=あんぱん\n\n   \e\rFFFFF=よむ\n\n\e\rGGG=たかい\n\n \e\rHHHHHH=\nt d f y \e\e:wq\r\n\n\n\n\n\n\ngrep 漢字 /tmp/k | wc\ngrep 幹事 /tmp/k | wc\ngrep かんじ /tmp/k | wc\ngrep ピピ /tmp/k | wc\ngrep パン /tmp/k | wc\ngrep 読む /tmp/k | wc\ngrep 高い /tmp/k | wc\ngrep 「 /tmp/k | wc\nrm /tmp/k\nconsole\ncat /proc/self/env/ROWS\necho CTEST\nquit\nquit\n' \
         | timeout 10 qemu-system-riscv32 -smp 1 -nographic \
         -serial mon:stdio --no-reboot -m 128 \
         -machine virt,aclint=on -bios none \
@@ -232,13 +232,15 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     # Case g: たかい → okuri-nasi 高井, then okuri-ari たかi → [高い] (1 Space) → "GGG=高い" = 11 B
     fs_vi_f=$(echo "$fs_out" | grep -c "^1 1 13")
     fs_vi_g=$(echo "$fs_out" | grep -c "^1 1 11")
+    # Case h: TUT symbols, letter + Space: t␣ d␣ f␣ y␣ → "HHHHHH=「、。」" = 20 B
+    fs_vi_h=$(echo "$fs_out" | grep -c "^1 1 20")
     # Case a presses Ctrl-J once more right after "AAAA=" (no kana before
     # the cursor): the message may be rendered once, but the next key
     # must clear it — it used to stick until the next set_msg and so
     # reappeared after a conversion was committed.
     fs_vi_m=$(echo "$fs_out" | grep -c "no kana before cursor")
     fs_vi=0
-    if [ "$fs_vi_a" -eq 1 ] && [ "$fs_vi_b" -eq 1 ] && [ "$fs_vi_c" -eq 1 ] && [ "$fs_vi_d" -eq 1 ] && [ "$fs_vi_e" -eq 1 ] && [ "$fs_vi_f" -eq 1 ] && [ "$fs_vi_g" -eq 1 ] && [ "$fs_vi_m" -le 1 ]; then fs_vi=1; fi
+    if [ "$fs_vi_a" -eq 1 ] && [ "$fs_vi_b" -eq 1 ] && [ "$fs_vi_c" -eq 1 ] && [ "$fs_vi_d" -eq 1 ] && [ "$fs_vi_e" -eq 1 ] && [ "$fs_vi_f" -eq 1 ] && [ "$fs_vi_g" -eq 1 ] && [ "$fs_vi_h" -eq 1 ] && [ "$fs_vi_m" -le 1 ]; then fs_vi=1; fi
     fs_vi_note=""
     if [ "$(wc -c < "$SCRIPT_DIR/../../userland/build/vidict.dat" 2>/dev/null || echo 0)" -le 400 ]; then
         fs_vi=1; fs_vi_note=" (vi conversion SKIPPED: empty dictionary)"
@@ -310,7 +312,7 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
                 report_pass "fs_virtio: kern.conf init + tmpdemo + catfile argv + redirect + devfs + rtc + date + fb + kbd + pipe + ps/free/uptime/df/find + /proc/self/env + vi kana→kanji + console, live=$fs_live$fs_vi_note" "$elapsed"
             else
                 report_fail_msg "fs_virtio" \
-                    "cat=$fs_cat_count cat2=$fs_cat2_count tmpok=$fs_has_tmpfs_ok tmppayload=$fs_has_tmpfs_payload redir=$fs_has_redir rmfail=$fs_rm_fail_count dev=$fs_has_dev devwr=$fs_has_devwrite rtc=$fs_has_rtc date=$fs_date_set/$fs_date_bad fb=$fs_has_fb kbd=$fs_has_kbd pipe=$fs_has_pipe ps=$fs_has_ps free=$fs_has_free uptime=$fs_has_uptime df=$fs_has_df find=$fs_has_find/$fs_has_find_tmp/$fs_find_dir env=$fs_env_15/$fs_env_ls/$fs_env_term/$fs_env_cmd/$fs_env_nope/$fs_env_56/$fs_env_envc/$fs_env_envr/$fs_env_envt/$fs_env_tab edit=$fs_edit1/$fs_edit2/$fs_edit3 vi=$fs_vi_a/$fs_vi_b/$fs_vi_c/$fs_vi_d/$fs_vi_e/$fs_vi_f/$fs_vi_g/msg$fs_vi_m console=$fs_has_console live=$fs_live a=$fs_has_a b=$fs_has_b mtfs=$fs_has_mtfs_msg sh=$fs_has_sh bye=$fs_has_bye; got: $(printf '%s' "$fs_out" | head -c 480)"
+                    "cat=$fs_cat_count cat2=$fs_cat2_count tmpok=$fs_has_tmpfs_ok tmppayload=$fs_has_tmpfs_payload redir=$fs_has_redir rmfail=$fs_rm_fail_count dev=$fs_has_dev devwr=$fs_has_devwrite rtc=$fs_has_rtc date=$fs_date_set/$fs_date_bad fb=$fs_has_fb kbd=$fs_has_kbd pipe=$fs_has_pipe ps=$fs_has_ps free=$fs_has_free uptime=$fs_has_uptime df=$fs_has_df find=$fs_has_find/$fs_has_find_tmp/$fs_find_dir env=$fs_env_15/$fs_env_ls/$fs_env_term/$fs_env_cmd/$fs_env_nope/$fs_env_56/$fs_env_envc/$fs_env_envr/$fs_env_envt/$fs_env_tab edit=$fs_edit1/$fs_edit2/$fs_edit3 vi=$fs_vi_a/$fs_vi_b/$fs_vi_c/$fs_vi_d/$fs_vi_e/$fs_vi_f/$fs_vi_g/$fs_vi_h/msg$fs_vi_m console=$fs_has_console live=$fs_live a=$fs_has_a b=$fs_has_b mtfs=$fs_has_mtfs_msg sh=$fs_has_sh bye=$fs_has_bye; got: $(printf '%s' "$fs_out" | head -c 480)"
             fi
             ;;
         *)
