@@ -20,8 +20,7 @@ band-blit 経由で LCD に DOOM ロゴ + Doomguy を表示するまで到達。
 - 2026-11-01: **vi に単文節かな漢字変換** (`docs/task/vi_kanji_conv.md`)。
   TUT モード中の Ctrl-J でカーソル直前のひらがな列 (最大 8 文字) を
   長い接尾辞から順に辞書引きし、第 1 候補でその場置換。Ctrl-J / Space
-  で次候補 (短い読みの候補 → カタカナ (読み全体 → 短い接尾辞) → 元の読み、
-  と循環)、
+  で次候補 (短い読みの候補 → 元の読み、と循環)、
   Backspace で読みに戻す、Enter は確定だけ (改行しない)、他のキーで
   確定、`u` で丸ごと undo。TUT を
   抜けるのは ESC のみ (従来 Ctrl-J も抜けていた)。辞書は
@@ -29,8 +28,8 @@ band-blit 経由で LCD に DOOM ロゴ + Doomguy を表示するまで到達。
   送りあり 1.4k 見出し、GPL なので `tmp/` 置き、`make -C userland
   fetch-dict`) を u16 コードポイントの 131 KB バイナリ (先頭かな 96
   バケット + 線形走査、全フィールド 2 B 境界) にし、`vidict_inc.s` で
-  vi の .rodata に埋める (vi.bin 244 KB、XIP 環境では RAM 不要、loader
-  の 256 KB しきい値まで残り 12 KB)。辞書ファイルが無ければ空辞書で vi
+  vi の .rodata に埋める (vi.bin 251 KiB、XIP 環境では RAM 不要、loader
+  の 256 KiB しきい値まで残り約 5 KB)。辞書ファイルが無ければ空辞書で vi
   をビルドし test_os の変換チェックは SKIP。候補文字は JIS X 0208 に
   絞り LCD で豆腐にならない。**送りあり** (Phase 3、同日): 読みを
   語幹 + 送り仮名に分割し、送り仮名先頭かなの SKK 子音字 (`よむ` →
@@ -39,9 +38,12 @@ band-blit 経由で LCD に DOOM ロゴ + Doomguy を表示するまで到達。
   感じる / 送った)。status 行は TUT の打ちかけ 1 打目も出す
   (`INSERT TUT k` / `kl` / `tlt`、Backspace は打ちかけを先に 1 打戻す)。
   記号は本家どおり「文字キー + Space」(t␣「 y␣」 d␣、 f␣。 e␣ー o␣・
-  など uim tutcode-rule の 30 字、`g_tut_sym`)、素の Space は空白。確定時には候補各文字の TUT 打鍵を status
-  行に出す (`字=no 事=uf`、濁音 `sli`、記号 `t_`、表に無い字は `?`、
-  カタカナはひらがなの打鍵 + Ctrl-J 回数 `ピ=tlti ^J*1`)。
+  など uim tutcode-rule の 30 字、`g_tut_sym`)、素の Space は空白。
+  **カタカナは TUT カタカナモード** (本家 tc2 と同じ `'` で入り、Ctrl-J
+  か `'` でひらがなに戻る、status `INSERT TUT KATA`、同じ打鍵で
+  カタカナ、カタカナ中は変換しない)。以前の「カタカナを変換候補に
+  足す」方式は廃止。確定時には候補各文字の TUT 打鍵を status
+  行に出す (`字=no 事=uf`、濁音 `sli`、記号 `t_`、表に無い字は `?`)。
 - 2026-10-31: **`date` コマンド** (`userland/bin/date/`)。引数なしで
   `/dev/rtc` を表示、`date YYYY-MM-DD HH:MM:SS` で設定して読み戻す。
   kernel の `rtc_parse_set` は範囲チェックが緩く devfs_close が結果を

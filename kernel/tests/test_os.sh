@@ -112,7 +112,7 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     # kfree path for frame_buf / ram / stack / img / argv / stdio fds;
     # the kernel prints "KERN: live=N" at shutdown so the test asserts
     # the count stays bounded regardless of spawn iterations.
-    fs_out=$(printf 'tmpdemo\ncatfile\ncatfile /hello.txt\necho hi > /tmp/redir\ncatfile /tmp/redir\nrm /tmp/redir\nrm /tmp/redir\nls /dev\necho DEVFS_OK > /dev/uart\necho 2031-08-20 09:15:42 > /dev/rtc\ncat /dev/rtc\ndate\ndate 2040-02-29 23:59:58\ndate 2040-02-30 00:00:00\nfbtest\nkbdump\nKBDTEST_HELLO\necho PIPEWORD | wc\nps\nfree\nuptime\ndf\nfind /bin -name hel*\nfind /tmp /proc -type f\necho 15 > /proc/self/env/ROWS\necho lcd > /proc/self/env/TERM\ncat /proc/self/env/ROWS\nls /proc/self/env\ncatfile /proc/self/cmdline\ncat /proc/self/env/NOPE\nrm /proc/self/env/TERM\nls /proc/self/env\nsetenv COLS 56\ngetenv COLS\nunsetenv TERM\nenv\nsete\t TABC tab77\ngete\t TABC\necho ab\e[DX\e[CY\nxcho LE2\e[H\e[3~e\e[F ok\njunk\025echo KU\e[D\e[D\013K3\nvi /tmp/k\niAAAA=\n\n\eかんじ\n\n\e\rBB=かんじ\n\n\n\e\rCCCC=かんじ\n\n\177\e\rDDDDDD=ぴぴ\n\n\e\rEEE=あんぱん\n\n   \e\rFFFFF=よむ\n\n\r\e\rGGG=たかい\n\n \e\rHHHHHH=\nt d f y \e\e:wq\r\n\n\n\n\n\n\ngrep 漢字 /tmp/k | wc\ngrep 幹事 /tmp/k | wc\ngrep かんじ /tmp/k | wc\ngrep ピピ /tmp/k | wc\ngrep パン /tmp/k | wc\ngrep 読む /tmp/k | wc\ngrep 高い /tmp/k | wc\ngrep 「 /tmp/k | wc\nwc /tmp/k\nrm /tmp/k\nconsole\ncat /proc/self/env/ROWS\necho CTEST\nquit\nquit\n' \
+    fs_out=$(printf 'tmpdemo\ncatfile\ncatfile /hello.txt\necho hi > /tmp/redir\ncatfile /tmp/redir\nrm /tmp/redir\nrm /tmp/redir\nls /dev\necho DEVFS_OK > /dev/uart\necho 2031-08-20 09:15:42 > /dev/rtc\ncat /dev/rtc\ndate\ndate 2040-02-29 23:59:58\ndate 2040-02-30 00:00:00\nfbtest\nkbdump\nKBDTEST_HELLO\necho PIPEWORD | wc\nps\nfree\nuptime\ndf\nfind /bin -name hel*\nfind /tmp /proc -type f\necho 15 > /proc/self/env/ROWS\necho lcd > /proc/self/env/TERM\ncat /proc/self/env/ROWS\nls /proc/self/env\ncatfile /proc/self/cmdline\ncat /proc/self/env/NOPE\nrm /proc/self/env/TERM\nls /proc/self/env\nsetenv COLS 56\ngetenv COLS\nunsetenv TERM\nenv\nsete\t TABC tab77\ngete\t TABC\necho ab\e[DX\e[CY\nxcho LE2\e[H\e[3~e\e[F ok\njunk\025echo KU\e[D\e[D\013K3\nvi /tmp/k\niAAAA=\n\n\eかんじ\n\n\e\rBB=かんじ\n\n\n\e\rCCCC=かんじ\n\n\177\e\rDDDDDD=\n\047tltitlti\n\e\rEE=あん\n\047tltkfl\nfl\e\rFFFFF=よむ\n\n\r\e\rGGG=たかい\n\n \e\rHHHHHH=\nt d f y \e\e:wq\r\n\n\n\n\n\n\ngrep 漢字 /tmp/k | wc\ngrep 幹事 /tmp/k | wc\ngrep かんじ /tmp/k | wc\ngrep ピピ /tmp/k | wc\ngrep パン /tmp/k | wc\ngrep 読む /tmp/k | wc\ngrep 高い /tmp/k | wc\ngrep 「 /tmp/k | wc\nwc /tmp/k\nrm /tmp/k\nconsole\ncat /proc/self/env/ROWS\necho CTEST\nquit\nquit\n' \
         | timeout 10 qemu-system-riscv32 -smp 1 -nographic \
         -serial mon:stdio --no-reboot -m 128 \
         -machine virt,aclint=on -bios none \
@@ -212,10 +212,10 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     # hiragana before the cursor. Four lines: first candidate
     # (AAAA=漢字), second candidate via another LF (BB=幹事), Backspace
     # during conversion restores the reading (CCCC=かんじ), a reading the
-    # dictionary lacks falls back to katakana (DDDDDD=ピピ). After :wq,
+    # dictionary lacks is typed in TUT katakana mode (DDDDDD=ピピ). After :wq,
     # `grep <word> /tmp/k | wc` reads the saved file (not vi's screen
     # echo): the labels are sized so each line's byte count is unique
-    # (12 / 10 / 15 / 14, none equal to PIPEWORD's 9). The 7 LFs after
+    # (12 / 10 / 15 / 14 / 19 / 13 / 11 / 20, none equal to PIPEWORD's 9). The 7 LFs after
     # :wq are padding: vi reads stdin in 8-byte batches and drops what
     # is left of the batch when it quits, which would otherwise eat
     # the start of the next sh command (sh treats the surviving empty
@@ -225,9 +225,12 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     fs_vi_a=$(echo "$fs_out" | grep -c "^1 1 12")
     fs_vi_b=$(echo "$fs_out" | grep -c "^1 1 10")
     fs_vi_c=$(echo "$fs_out" | grep -c "^1 1 15")
+    # Case d: ' enters katakana mode, tlti tlti → ピピ, Ctrl-J back → "DDDDDD=ピピ" = 14 B
     fs_vi_d=$(echo "$fs_out" | grep -c "^1 1 14")
-    # Case e: あんぱん → 版 / アンパン / ンパン / [パン] (3 Spaces) → "EEE=あんパン" = 17 B
-    fs_vi_e=$(echo "$fs_out" | grep -c "^1 1 17")
+    # Case e: あん typed, then ' tltk fl → パン, Ctrl-J back to hiragana
+    # (not a conversion: there is no kana before the cursor), fl → ん
+    # → "EE=あんパンん" = 19 B
+    fs_vi_e=$(echo "$fs_out" | grep -c "^1 1 19")
     # Case f: よむ → okuri-ari よm → [読む] (first) → "FFFFF=読む" = 13 B
     # Case g: たかい → okuri-nasi 高井, then okuri-ari たかi → [高い] (1 Space) → "GGG=高い" = 11 B
     fs_vi_f=$(echo "$fs_out" | grep -c "^1 1 13")
@@ -235,9 +238,9 @@ if command -v qemu-system-riscv32 >/dev/null 2>&1 \
     # Case h: TUT symbols, letter + Space: t␣ d␣ f␣ y␣ → "HHHHHH=「、。」" = 20 B
     fs_vi_h=$(echo "$fs_out" | grep -c "^1 1 20")
     # Case f commits with Enter (commit only, no newline), so the file
-    # is exactly the 8 lines above: 12+10+15+14+17+13+11+20 = 112 bytes
-    # minus the final newline that :wq never adds = 111 bytes / 7 LFs.
-    fs_vi_w=$(echo "$fs_out" | grep -c "^7 8 111")
+    # is exactly the 8 lines above: 12+10+15+14+19+13+11+20 = 114 bytes
+    # minus the final newline that :wq never adds = 113 bytes / 7 LFs.
+    fs_vi_w=$(echo "$fs_out" | grep -c "^7 8 113")
     # Case a presses Ctrl-J once more right after "AAAA=" (no kana before
     # the cursor): the message may be rendered once, but the next key
     # must clear it — it used to stick until the next set_msg and so

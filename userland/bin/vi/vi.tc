@@ -29,6 +29,12 @@
 // ESC exits TUT mode back to insert mode.
 //
 // TUT-code: two-stroke input for kana and kanji (773 characters).
+//   Katakana: ' (apostrophe, the tc2 toggle key; not in the 40-key
+//   layout) switches to katakana mode ("INSERT TUT KATA"), where the
+//   same strokes give katakana (tlti=ピ, fl=ン; kanji and symbols are
+//   unchanged). Ctrl+J or ' returns to hiragana. Conversion is not
+//   available in katakana mode (Ctrl+J just returns). Leaving TUT
+//   with ESC also resets to hiragana.
 //   Symbols: letter key + Space, as in TUT-code (t␣=「 y␣=」 d␣=、
 //   f␣=。 e␣=ー o␣=・ i␣=… j␣=々 r␣=【 u␣=】 g␣=『 h␣=』 ...; the
 //   full table is g_tut_sym). Space with nothing pending is a space.
@@ -43,10 +49,9 @@
 //   Ctrl+J    — take the hiragana run before the cursor (up to 8
 //               chars), look up its suffixes longest-first in the
 //               embedded SKK dictionary and replace it with the first
-//               candidate. Candidates of shorter readings follow, then
-//               katakana: the whole reading, then each shorter suffix
-//               (あんぱん → 版 アンパン ンパン パン ン). Verbs and
-//               adjectives come from the okuri-ari part: the reading
+//               candidate. Candidates of shorter readings follow
+//               (katakana is typed in katakana mode, not converted).
+//               Verbs and adjectives come from the okuri-ari part: the reading
 //               is split into stem + okurigana and the stem is looked
 //               up with the SKK consonant of the first okurigana kana
 //               (よむ → よm → 読む, たかい → たかi → 高い).
@@ -60,9 +65,7 @@
 //   When a candidate is committed the status line shows how to type
 //   each of its characters directly in TUT ("漢=kf 字=jd"; "sla" =
 //   voiced kana via L, "t_" = key + Space symbol, "?" = not typeable)
-//   until the next key. Katakana cannot be typed directly (the grid
-//   has none), so a katakana candidate shows the hiragana strokes plus
-//   how many Ctrl+J presses reach it: "ピ=tlti ピ=tlti ^J*1".
+//   until the next key.
 //
 // Cmdline-mode (after ':'):
 //   w        — write buffer back to the file
@@ -149,6 +152,7 @@ var g_undo_valid: i32 = 0;
 // 2=got first key, 3=voiced (after L), 4=semi-voiced (T+L+T)
 var g_tut: i32 = 0;
 var g_tut_k1: i32 = 0;              // first key position (0-39)
+var g_tut_kata: bool = false;       // katakana mode (' toggles, Ctrl+J returns)
 var g_tut_sym: I32Array = 0 as I32Array;  // letter key (pos 10..39) + Space → symbol codepoint
 const TUT_KEYS: StringLiteral = "1234567890qwertyuiopasdfghjkl;zxcvbnm,./";  // position → key
 var g_tut_kmap: U8Array = 0 as U8Array;  // ASCII→key position+1 (128 bytes)
@@ -159,7 +163,7 @@ var g_tut_vo: U8Array = 0 as U8Array;    // voiced/small table (50 bytes)
 // there) sits in .rodata and is read in place with peek8/16/32 — on
 // pico2 it stays in flash, nothing is copied into the arena.
 const CONV_MAX_READ: i32 = 8;     // hiragana codepoints scanned back from the cursor
-const CONV_MAX_CANDS: i32 = 48;   // candidate list cap (dictionary hits + katakana)
+const CONV_MAX_CANDS: i32 = 48;   // candidate list cap
 const VD_HEADER: i32 = 12;        // magic, n_entries, total_bytes; then u32 bucket[97]
 const VD_BUCKETS: i32 = 96;       // one bucket per first codepoint U+3041..U+30A0
 
@@ -168,7 +172,7 @@ var g_conv_i: i32 = 0;            // current candidate, -1 = plain reading shown
 var g_conv_start: i32 = 0;        // byte offset of the replaced region (it ends at g_cur)
 var g_conv_rn: i32 = 0;           // reading length in codepoints
 var g_conv_rcp: I32Array = 0 as I32Array;   // reading codepoints [CONV_MAX_READ]
-var g_cand_addr: U32Array = 0 as U32Array;  // dictionary entry address, 0 = katakana
+var g_cand_addr: U32Array = 0 as U32Array;  // dictionary entry address
 var g_cand_ci: I32Array = 0 as I32Array;    // candidate index inside that entry
 var g_cand_rl: I32Array = 0 as I32Array;    // trailing reading codepoints it replaces
 var g_cand_ok: I32Array = 0 as I32Array;    // of which okurigana kept after the kanji (0 = okuri-nasi)
@@ -682,7 +686,12 @@ fn handle_tut(c: u8) -> void {
         conv_commit();
     }
     // ESC: exit TUT mode, stay in insert mode
-    if c == 27u8 { g_tut = 0; return; }
+    if c == 27u8 { g_tut = 0; g_tut_kata = false; return; }
+    // ' (apostrophe, 0x27): toggle katakana mode (a pending stroke is
+    // dropped). The key is free: it is not in the 40-key layout.
+    if c == 39u8 { g_tut = 1; g_tut_kata = !g_tut_kata; return; }
+    // Ctrl+J in katakana mode: back to hiragana (no conversion).
+    if c == 10u8 && g_tut_kata { g_tut = 1; g_tut_kata = false; return; }
     // Ctrl+J: convert the hiragana before the cursor (a pending first
     // stroke is dropped).
     if c == 10u8 {
@@ -713,7 +722,7 @@ fn handle_tut(c: u8) -> void {
         // Got first key, waiting for second key. Space = symbol.
         if c == ' ' as u8 {
             g_tut = 1;
-            if g_tut_k1 >= 10 { insert_codepoint(get(g_tut_sym, g_tut_k1 - 10)); }
+            if g_tut_k1 >= 10 { tut_insert(get(g_tut_sym, g_tut_k1 - 10)); }
             return;
         }
         var p2: i32 = tut_keypos(c);
@@ -721,7 +730,7 @@ fn handle_tut(c: u8) -> void {
         // Look up the 2-stroke grid (kana + kanji)
         var cp: i32 = tut_grid_lookup(g_tut_k1, p2);
         if cp != 0 {
-            insert_codepoint(cp);
+            tut_insert(cp);
             g_tut = 1;
             return;
         }
@@ -748,7 +757,7 @@ fn handle_tut(c: u8) -> void {
             var col: i32 = tut_pos_to_col(p2);
             if col >= 0 {
                 var off: i32 = get(g_tut_vo, row * 5 + col) as i32;
-                if off != 0 { insert_codepoint(0x3000 + off); }
+                if off != 0 { tut_insert(0x3000 + off); }
             }
         }
         g_tut = 1;
@@ -760,7 +769,7 @@ fn handle_tut(c: u8) -> void {
         var p2: i32 = tut_keypos(c);
         if p2 >= 0 {
             var col: i32 = tut_pos_to_col(p2);
-            if col >= 0 { insert_codepoint(0x3071 + col * 3); }
+            if col >= 0 { tut_insert(0x3071 + col * 3); }
         }
         g_tut = 1;
         return;
@@ -778,6 +787,14 @@ fn is_reading_cp(cp: i32) -> bool {
 fn kata_cp(cp: i32) -> i32 {
     if cp >= 0x3041 && cp <= 0x3096 { return cp + 0x60; }
     return cp;
+}
+
+// Insert a character typed in TUT: katakana mode turns hiragana into
+// katakana (kanji, symbols and ー are unchanged).
+fn tut_insert(cp: i32) -> void {
+    if g_tut_kata { cp = kata_cp(cp); }
+    insert_codepoint(cp);
+    return;
 }
 
 // Emit a codepoint to stdout as UTF-8 (BMP only, like insert_codepoint).
@@ -957,12 +974,10 @@ fn conv_walk(i: i32, mode: i32) -> i32 {
         while j < g_conv_rn - rl { insert_codepoint(get(g_conv_rcp, j)); j = j + 1; }
     }
     if e == 0u32 {
-        // plain reading (i == -1) or the katakana candidate
+        // plain reading (i == -1)
         j = g_conv_rn - rl;
         while j < g_conv_rn {
-            var cp: i32 = get(g_conv_rcp, j);
-            if i >= 0 { cp = kata_cp(cp); }
-            w = w + conv_put(cp, mode);
+            w = w + conv_put(get(g_conv_rcp, j), mode);
             j = j + 1;
         }
         return w;
@@ -1101,17 +1116,16 @@ fn msg_put_tut(cp: i32) -> i32 {
     return 0;
 }
 
-// Append "SHOWN=strokes" for one character to the hint (strokes of
-// TYPED, which differs from SHOWN only for katakana). Returns the
+// Append "字=strokes" for one character to the hint. Returns the
 // columns used, or -1 (and leaves the message as it was) if it does
 // not fit in budget.
-fn hint_put(shown: i32, typed: i32, first: bool, budget: i32) -> i32 {
+fn hint_put(cp: i32, first: bool, budget: i32) -> i32 {
     var save: i32 = g_msg_len;
-    var w: i32 = char_width(shown) + 1;
+    var w: i32 = char_width(cp) + 1;
     if !first { msg_putb(' ' as u8); w = w + 1; }
-    msg_put_cp(shown);
+    msg_put_cp(cp);
     msg_putb('=' as u8);
-    var kw: i32 = msg_put_tut(typed);
+    var kw: i32 = msg_put_tut(cp);
     if kw == 0 { msg_putb('?' as u8); kw = 1; }
     w = w + kw;
     if w > budget { g_msg_len = save; return -1; }
@@ -1119,35 +1133,18 @@ fn hint_put(shown: i32, typed: i32, first: bool, budget: i32) -> i32 {
 }
 
 // Status message after committing candidate i: "漢=kf 字=jd" for the
-// dictionary text (the okurigana were typed by the user). A katakana
-// candidate has no direct strokes: show the hiragana strokes and the
-// number of Ctrl+J presses that reach it ("ピ=tlti ピ=tlti ^J*1").
-// Cut to the status-line width, cleared by the next key.
+// dictionary text (the okurigana were typed by the user). Cut to the
+// status-line width, cleared by the next key.
 fn conv_hint(i: i32) -> void {
     var e: u32 = get(g_cand_addr, i);
     msg_reset();
     var budget: i32 = g_print_cols - 20;
     var j: i32 = 0;
-    if e == 0u32 {
-        var rl: i32 = get(g_cand_rl, i);
-        j = g_conv_rn - rl;
-        while j < g_conv_rn {
-            var cp: i32 = get(g_conv_rcp, j);
-            var w: i32 = hint_put(kata_cp(cp), cp, j == g_conv_rn - rl, budget - 6);
-            if w < 0 { j = g_conv_rn; } else { budget = budget - w; j = j + 1; }
-        }
-        // " ^J*n": Ctrl+J once to convert, then i more presses
-        msg_putb(' ' as u8); msg_putb('^' as u8); msg_putb('J' as u8); msg_putb('*' as u8);
-        var n: i32 = i + 1;
-        if n >= 10 { msg_putb(('0' as i32 + n / 10) as u8); }
-        msg_putb(('0' as i32 + n % 10) as u8);
-        return;
-    }
     var q: u32 = cand_addr(e, get(g_cand_ci, i));
     var clen: i32 = peek8(q) as i32;
     while j < clen {
         var cp: i32 = peek16(q + ((2 + 2 * j) as u32)) as i32;
-        var w: i32 = hint_put(cp, cp, j == 0, budget);
+        var w: i32 = hint_put(cp, j == 0, budget);
         if w < 0 { j = clen; } else { budget = budget - w; j = j + 1; }
     }
     return;
@@ -1160,7 +1157,7 @@ fn conv_add(e: u32, rl: i32, ok: i32, n: i32) -> i32 {
     if e == 0u32 { return n; }
     var ncand: i32 = peek8(e + 1u32) as i32;
     var ci: i32 = 0;
-    while ci < ncand && n < CONV_MAX_CANDS - g_conv_rn {
+    while ci < ncand && n < CONV_MAX_CANDS {
         set(g_cand_addr, n, e);
         set(g_cand_ci, n, ci);
         set(g_cand_rl, n, rl);
@@ -1174,10 +1171,9 @@ fn conv_add(e: u32, rl: i32, ok: i32, n: i32) -> i32 {
 // Build the candidate list for the hiragana before the cursor. For
 // each suffix of the reading, longest first: the okuri-nasi entry of
 // the whole suffix, then its stem + okurigana splits (shortest
-// okurigana first: よむ → よm, かんじる → かんじr, かんz). Then
-// katakana of the whole reading and of each shorter suffix (so あんパン
-// is reachable from あんぱん even though the dictionary only knows
-// ぱん = 版). False if there is no reading.
+// okurigana first: よむ → よm, かんじる → かんじr, かんz). Katakana
+// is not a candidate: it is typed in TUT katakana mode. False if
+// there is no reading.
 fn conv_build() -> bool {
     conv_collect();
     if g_conv_rn == 0 { return false; }
@@ -1193,19 +1189,6 @@ fn conv_build() -> bool {
                 n = conv_add(dict_lookup(off, k - ok, letter), k, ok, n);
             }
             ok = ok + 1;
-        }
-        k = k - 1;
-    }
-    // Katakana, longest suffix first; a suffix starting with ー is
-    // skipped (ーメン from らーめん is never wanted).
-    k = g_conv_rn;
-    while k >= 1 {
-        if get(g_conv_rcp, g_conv_rn - k) != 0x30FC {
-            set(g_cand_addr, n, 0u32);
-            set(g_cand_ci, n, 0);
-            set(g_cand_rl, n, k);
-            set(g_cand_ok, n, 0);
-            n = n + 1;
         }
         k = k - 1;
     }
@@ -1364,6 +1347,7 @@ fn render() -> void {
     if g_mode == 1 {
         if g_tut > 0 {
             puts("INSERT TUT");
+            if g_tut_kata { puts(" KATA"); }
             // pending strokes: "k" (first key), "kl" (voiced), "tlt" (ぱ行)
             if g_tut >= 2 { putchar(' ' as u8); putchar(get(TUT_KEYS, g_tut_k1)); }
             if g_tut >= 3 { putchar('l' as u8); }
@@ -1529,7 +1513,7 @@ fn handle_insert(c: u8) -> void {
     if c == 27u8 {
         // ESC → if TUT active, exit TUT only (keeping any candidate
         // being shown); else exit insert mode.
-        if g_tut > 0 { conv_commit(); g_tut = 0; return; }
+        if g_tut > 0 { conv_commit(); g_tut = 0; g_tut_kata = false; return; }
         g_mode = 0;
         if g_cur > 0 {
             var ls: i32 = line_start_at(g_cur);
@@ -1547,9 +1531,10 @@ fn handle_insert(c: u8) -> void {
         handle_tut(c);
         return;
     }
-    // Ctrl+J: enter TUT mode.
+    // Ctrl+J: enter TUT mode (hiragana).
     if c == 10u8 {
         g_tut = 1;
+        g_tut_kata = false;
         return;
     }
     if c == 8u8 || c == 127u8 {
