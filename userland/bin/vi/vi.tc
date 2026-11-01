@@ -55,6 +55,10 @@
 //   Backspace while converting — restore the reading
 //   any other key — keep the shown candidate, then act normally
 //   u (normal mode) undoes the whole conversion.
+//   When a candidate is committed the status line shows how to type
+//   each of its characters directly in TUT ("漢=kf 字=jd"; "sla" =
+//   voiced kana via L, "t_" = key + Space symbol, "?" = not typeable)
+//   until the next key.
 //
 // Cmdline-mode (after ':'):
 //   w        — write buffer back to the file
@@ -983,8 +987,139 @@ fn conv_apply(i: i32) -> void {
 }
 
 fn conv_commit() -> void {
+    if g_conv_n > 0 && g_conv_i >= 0 { conv_hint(g_conv_i); }
     g_conv_n = 0;
     g_conv_i = 0;
+    return;
+}
+
+// ===== TUT hint: how to type the committed candidate directly =====
+
+const MSG_CAP: i32 = 160;
+
+// Start a fresh dynamic status message (set_msg is for literals).
+fn msg_reset() -> void {
+    if g_msg as u32 != 0u32 { delete(g_msg); }
+    g_msg = U8Array((MSG_CAP + 1) as u32);
+    g_msg_len = 0;
+    return;
+}
+
+fn msg_putb(b: u8) -> void {
+    if g_msg_len < MSG_CAP {
+        set(g_msg, g_msg_len, b);
+        g_msg_len = g_msg_len + 1;
+    }
+    return;
+}
+
+fn msg_put_cp(cp: i32) -> void {
+    if cp < 0x80 { msg_putb(cp as u8); }
+    else if cp < 0x800 {
+        msg_putb((0xC0 | (cp >> 6)) as u8);
+        msg_putb((0x80 | (cp & 0x3F)) as u8);
+    } else {
+        msg_putb((0xE0 | (cp >> 12)) as u8);
+        msg_putb((0x80 | ((cp >> 6) & 0x3F)) as u8);
+        msg_putb((0x80 | (cp & 0x3F)) as u8);
+    }
+    return;
+}
+
+// Inverses of tut_pos_to_row / tut_pos_to_col.
+fn tut_row_to_pos(row: i32) -> i32 {
+    if row == 0 { return 13; }
+    if row == 1 { return 12; }
+    if row == 2 { return 21; }
+    if row == 3 { return 22; }
+    if row == 4 { return 23; }
+    if row == 5 { return 14; }
+    if row == 6 { return 11; }
+    if row == 7 { return 10; }
+    if row == 8 { return 24; }
+    return 20;
+}
+
+fn tut_col_to_pos(col: i32) -> i32 {
+    if col == 0 { return 27; }
+    if col == 1 { return 17; }
+    if col == 2 { return 16; }
+    if col == 3 { return 25; }
+    return 26;
+}
+
+// Append the TUT strokes for cp to the message: "kf" (2-stroke grid),
+// "sla" (voiced / small kana via L), "tlta" (ぱ行), "t_" (key + Space
+// symbol). Returns the columns written, 0 if cp cannot be typed.
+fn msg_put_tut(cp: i32) -> i32 {
+    var k1: i32 = 10;                 // the grid never uses the number row
+    while k1 < 40 {
+        var k2: i32 = 10;
+        while k2 < 40 {
+            if tut_grid_lookup(k1, k2) == cp {
+                msg_putb(get(TUT_KEYS, k1));
+                msg_putb(get(TUT_KEYS, k2));
+                return 2;
+            }
+            k2 = k2 + 1;
+        }
+        k1 = k1 + 1;
+    }
+    if cp >= 0x3041 && cp <= 0x3096 {
+        var i: i32 = 0;
+        while i < 50 {
+            if (get(g_tut_vo, i) as i32) == cp - 0x3000 {
+                msg_putb(get(TUT_KEYS, tut_row_to_pos(i / 5)));
+                msg_putb('l' as u8);
+                msg_putb(get(TUT_KEYS, tut_col_to_pos(i % 5)));
+                return 3;
+            }
+            i = i + 1;
+        }
+        if cp >= 0x3071 && cp <= 0x307D && (cp - 0x3071) % 3 == 0 {
+            msg_putb('t' as u8);
+            msg_putb('l' as u8);
+            msg_putb('t' as u8);
+            msg_putb(get(TUT_KEYS, tut_col_to_pos((cp - 0x3071) / 3)));
+            return 4;
+        }
+    }
+    var s: i32 = 0;
+    while s < 30 {
+        if get(g_tut_sym, s) == cp {
+            msg_putb(get(TUT_KEYS, 10 + s));
+            msg_putb('_' as u8);
+            return 2;
+        }
+        s = s + 1;
+    }
+    return 0;
+}
+
+// Status message after committing candidate i: "漢=kf 字=jd" for the
+// dictionary text (the okurigana / katakana were typed by the user),
+// cut to the status-line width. Cleared by the next key.
+fn conv_hint(i: i32) -> void {
+    var e: u32 = get(g_cand_addr, i);
+    if e == 0u32 { return; }
+    msg_reset();
+    var budget: i32 = g_print_cols - 20;
+    var q: u32 = cand_addr(e, get(g_cand_ci, i));
+    var clen: i32 = peek8(q) as i32;
+    var j: i32 = 0;
+    while j < clen {
+        var cp: i32 = peek16(q + ((2 + 2 * j) as u32)) as i32;
+        var save: i32 = g_msg_len;
+        var w: i32 = char_width(cp) + 1;
+        if j > 0 { msg_putb(' ' as u8); w = w + 1; }
+        msg_put_cp(cp);
+        msg_putb('=' as u8);
+        var kw: i32 = msg_put_tut(cp);
+        if kw == 0 { msg_putb('?' as u8); kw = 1; }
+        w = w + kw;
+        if w > budget { g_msg_len = save; j = clen; }
+        else { budget = budget - w; j = j + 1; }
+    }
     return;
 }
 

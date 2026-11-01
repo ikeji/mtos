@@ -38,8 +38,8 @@ band-blit 経由で LCD に DOOM ロゴ + Doomguy を表示するまで到達。
   感じる / 送った)。status 行は TUT の打ちかけ 1 打目も出す
   (`INSERT TUT k` / `kl` / `tlt`、Backspace は打ちかけを先に 1 打戻す)。
   記号は本家どおり「文字キー + Space」(t␣「 y␣」 d␣、 f␣。 e␣ー o␣・
-  など uim tutcode-rule の 30 字、`g_tut_sym`)、素の Space は空白。残 TODO (確定時に TUT 打鍵ヒント表示) は
-  同 doc の TODO 節。
+  など uim tutcode-rule の 30 字、`g_tut_sym`)、素の Space は空白。確定時には候補各文字の TUT 打鍵を status
+  行に出す (`字=no 事=uf`、濁音 `sla`、記号 `t_`、表に無い字は `?`)。
 - 2026-10-31: **`date` コマンド** (`userland/bin/date/`)。引数なしで
   `/dev/rtc` を表示、`date YYYY-MM-DD HH:MM:SS` で設定して読み戻す。
   kernel の `rtc_parse_set` は範囲チェックが緩く devfs_close が結果を
