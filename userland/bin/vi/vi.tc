@@ -1346,6 +1346,10 @@ fn main(argv: StringArray) -> i32 {
             var i: i32 = 0;
             while i < n && g_running == 1 {
                 var c: u8 = get(inb, i);
+                // Any key clears the status message (like vi): a
+                // message only describes the previous command. Keys
+                // that produce a message set it again below.
+                g_msg_len = 0;
                 if c == 27u8 && i + 2 < n && get(inb, i + 1) == '[' as u8
                     && get(inb, i + 2) >= 'A' as u8 && get(inb, i + 2) <= 'D' as u8 {
                     handle_arrow(get(inb, i + 2));

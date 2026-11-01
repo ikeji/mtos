@@ -76,6 +76,14 @@ Ctrl-J)。`web/tests/test_console.sh` の Enter 回帰テストは CR を使っ�
 読んで UTF-8 に encode して `putchar` する小関数を 1 つ足す
 (`insert_codepoint` の encode 部を `utf8_emit(cp, sink)` 的に共用)。
 
+`set_msg` のメッセージ ("no kana before cursor" など) は**次のキーで
+消す** (2026-11-01 修正)。以前は次の `set_msg` まで残り、変換中は候補
+表示に隠れていたぶん確定した瞬間に古い "no kana before cursor" が
+再表示されて「確定するとエラーが出る」ように見えた。main loop が
+キー 1 個ごとに `g_msg_len = 0` してから handler に渡す (そのキー自身が
+出すメッセージは残る)。test_os は "no kana before cursor" を 1 回わざと
+出し、ログ中の出現回数が 1 以下であることを見る。
+
 ## 辞書
 
 ### ソース
