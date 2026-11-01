@@ -29,6 +29,8 @@
 // ESC exits TUT mode back to insert mode.
 //
 // TUT-code: two-stroke input for kana and kanji (773 characters).
+//   The status line shows the pending stroke(s): "INSERT TUT k",
+//   "INSERT TUT kl" (voiced), "INSERT TUT tlt" (ぱ行).
 //   Kana: consonant + vowel (e.g. RK=あ, EK=か, FL=ん)
 //   Kanji: any two keys from 40-key layout (e.g. KF=一, JD=二)
 //   Voiced: consonant+L+vowel (e.g. ELK=が), T+L+T+vowel=ぱ行
@@ -135,6 +137,7 @@ var g_undo_valid: i32 = 0;
 // 2=got first key, 3=voiced (after L), 4=semi-voiced (T+L+T)
 var g_tut: i32 = 0;
 var g_tut_k1: i32 = 0;              // first key position (0-39)
+const TUT_KEYS: StringLiteral = "1234567890qwertyuiopasdfghjkl;zxcvbnm,./";  // position → key
 var g_tut_kmap: U8Array = 0 as U8Array;  // ASCII→key position+1 (128 bytes)
 var g_tut_vo: U8Array = 0 as U8Array;    // voiced/small table (50 bytes)
 
@@ -592,7 +595,7 @@ fn tut_grid_lookup(k1: i32, k2: i32) -> i32 {
 fn tut_init() -> void {
     // Key position map (ASCII → pos+1, 0 = invalid)
     g_tut_kmap = U8Array(128);
-    var keys: StringLiteral = "1234567890qwertyuiopasdfghjkl;zxcvbnm,./";
+    var keys: StringLiteral = TUT_KEYS;
     var i: i32 = 0;
     while i < 40 {
         set(g_tut_kmap, get(keys, i) as i32, (i + 1) as u8);
@@ -1145,7 +1148,13 @@ fn render() -> void {
     // Status line on row g_screen_rows.
     puts("-- ");
     if g_mode == 1 {
-        if g_tut > 0 { puts("INSERT TUT"); }
+        if g_tut > 0 {
+            puts("INSERT TUT");
+            // pending strokes: "k" (first key), "kl" (voiced), "tlt" (ぱ行)
+            if g_tut >= 2 { putchar(' ' as u8); putchar(get(TUT_KEYS, g_tut_k1)); }
+            if g_tut >= 3 { putchar('l' as u8); }
+            if g_tut == 4 { putchar('t' as u8); }
+        }
         else { puts("INSERT"); }
     }
     else if g_mode == 2 {
