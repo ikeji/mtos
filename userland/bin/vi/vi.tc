@@ -52,13 +52,17 @@
 //               (よむ → よm → 読む, たかい → たかi → 高い).
 //   Ctrl+J / Space while converting — next candidate (wraps back to
 //               the plain reading)
+//   Enter while converting — commit only (no newline; Enter again
+//               for a newline). ESC commits and leaves TUT.
 //   Backspace while converting — restore the reading
 //   any other key — keep the shown candidate, then act normally
 //   u (normal mode) undoes the whole conversion.
 //   When a candidate is committed the status line shows how to type
 //   each of its characters directly in TUT ("漢=kf 字=jd"; "sla" =
 //   voiced kana via L, "t_" = key + Space symbol, "?" = not typeable)
-//   until the next key.
+//   until the next key. Katakana cannot be typed directly (the grid
+//   has none), so a katakana candidate shows the hiragana strokes plus
+//   how many Ctrl+J presses reach it: "ピ=tlti ピ=tlti ^J*1".
 //
 // Cmdline-mode (after ':'):
 //   w        — write buffer back to the file
@@ -674,6 +678,7 @@ fn handle_tut(c: u8) -> void {
             return;
         }
         if c == 8u8 || c == 127u8 { conv_apply(-1); conv_commit(); return; }
+        if c == '\r' as u8 { conv_commit(); return; }   // Enter: commit only
         conv_commit();
     }
     // ESC: exit TUT mode, stay in insert mode
@@ -1096,29 +1101,54 @@ fn msg_put_tut(cp: i32) -> i32 {
     return 0;
 }
 
+// Append "SHOWN=strokes" for one character to the hint (strokes of
+// TYPED, which differs from SHOWN only for katakana). Returns the
+// columns used, or -1 (and leaves the message as it was) if it does
+// not fit in budget.
+fn hint_put(shown: i32, typed: i32, first: bool, budget: i32) -> i32 {
+    var save: i32 = g_msg_len;
+    var w: i32 = char_width(shown) + 1;
+    if !first { msg_putb(' ' as u8); w = w + 1; }
+    msg_put_cp(shown);
+    msg_putb('=' as u8);
+    var kw: i32 = msg_put_tut(typed);
+    if kw == 0 { msg_putb('?' as u8); kw = 1; }
+    w = w + kw;
+    if w > budget { g_msg_len = save; return -1; }
+    return w;
+}
+
 // Status message after committing candidate i: "漢=kf 字=jd" for the
-// dictionary text (the okurigana / katakana were typed by the user),
-// cut to the status-line width. Cleared by the next key.
+// dictionary text (the okurigana were typed by the user). A katakana
+// candidate has no direct strokes: show the hiragana strokes and the
+// number of Ctrl+J presses that reach it ("ピ=tlti ピ=tlti ^J*1").
+// Cut to the status-line width, cleared by the next key.
 fn conv_hint(i: i32) -> void {
     var e: u32 = get(g_cand_addr, i);
-    if e == 0u32 { return; }
     msg_reset();
     var budget: i32 = g_print_cols - 20;
+    var j: i32 = 0;
+    if e == 0u32 {
+        var rl: i32 = get(g_cand_rl, i);
+        j = g_conv_rn - rl;
+        while j < g_conv_rn {
+            var cp: i32 = get(g_conv_rcp, j);
+            var w: i32 = hint_put(kata_cp(cp), cp, j == g_conv_rn - rl, budget - 6);
+            if w < 0 { j = g_conv_rn; } else { budget = budget - w; j = j + 1; }
+        }
+        // " ^J*n": Ctrl+J once to convert, then i more presses
+        msg_putb(' ' as u8); msg_putb('^' as u8); msg_putb('J' as u8); msg_putb('*' as u8);
+        var n: i32 = i + 1;
+        if n >= 10 { msg_putb(('0' as i32 + n / 10) as u8); }
+        msg_putb(('0' as i32 + n % 10) as u8);
+        return;
+    }
     var q: u32 = cand_addr(e, get(g_cand_ci, i));
     var clen: i32 = peek8(q) as i32;
-    var j: i32 = 0;
     while j < clen {
         var cp: i32 = peek16(q + ((2 + 2 * j) as u32)) as i32;
-        var save: i32 = g_msg_len;
-        var w: i32 = char_width(cp) + 1;
-        if j > 0 { msg_putb(' ' as u8); w = w + 1; }
-        msg_put_cp(cp);
-        msg_putb('=' as u8);
-        var kw: i32 = msg_put_tut(cp);
-        if kw == 0 { msg_putb('?' as u8); kw = 1; }
-        w = w + kw;
-        if w > budget { g_msg_len = save; j = clen; }
-        else { budget = budget - w; j = j + 1; }
+        var w: i32 = hint_put(cp, cp, j == 0, budget);
+        if w < 0 { j = clen; } else { budget = budget - w; j = j + 1; }
     }
     return;
 }

@@ -22,7 +22,8 @@ band-blit 経由で LCD に DOOM ロゴ + Doomguy を表示するまで到達。
   長い接尾辞から順に辞書引きし、第 1 候補でその場置換。Ctrl-J / Space
   で次候補 (短い読みの候補 → カタカナ (読み全体 → 短い接尾辞) → 元の読み、
   と循環)、
-  Backspace で読みに戻す、他のキーで確定、`u` で丸ごと undo。TUT を
+  Backspace で読みに戻す、Enter は確定だけ (改行しない)、他のキーで
+  確定、`u` で丸ごと undo。TUT を
   抜けるのは ESC のみ (従来 Ctrl-J も抜けていた)。辞書は
   `userland/scripts/genvidict.py` が SKK-JISYO.M (送りなし 6.4k +
   送りあり 1.4k 見出し、GPL なので `tmp/` 置き、`make -C userland
@@ -39,7 +40,8 @@ band-blit 経由で LCD に DOOM ロゴ + Doomguy を表示するまで到達。
   (`INSERT TUT k` / `kl` / `tlt`、Backspace は打ちかけを先に 1 打戻す)。
   記号は本家どおり「文字キー + Space」(t␣「 y␣」 d␣、 f␣。 e␣ー o␣・
   など uim tutcode-rule の 30 字、`g_tut_sym`)、素の Space は空白。確定時には候補各文字の TUT 打鍵を status
-  行に出す (`字=no 事=uf`、濁音 `sla`、記号 `t_`、表に無い字は `?`)。
+  行に出す (`字=no 事=uf`、濁音 `sli`、記号 `t_`、表に無い字は `?`、
+  カタカナはひらがなの打鍵 + Ctrl-J 回数 `ピ=tlti ^J*1`)。
 - 2026-10-31: **`date` コマンド** (`userland/bin/date/`)。引数なしで
   `/dev/rtc` を表示、`date YYYY-MM-DD HH:MM:SS` で設定して読み戻す。
   kernel の `rtc_parse_set` は範囲チェックが緩く devfs_close が結果を
