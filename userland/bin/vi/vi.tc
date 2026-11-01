@@ -30,7 +30,8 @@
 //
 // TUT-code: two-stroke input for kana and kanji (773 characters).
 //   The status line shows the pending stroke(s): "INSERT TUT k",
-//   "INSERT TUT kl" (voiced), "INSERT TUT tlt" (ぱ行).
+//   "INSERT TUT kl" (voiced), "INSERT TUT tlt" (ぱ行); Backspace
+//   drops the last pending stroke before it deletes any text.
 //   Kana: consonant + vowel (e.g. RK=あ, EK=か, FL=ん)
 //   Kanji: any two keys from 40-key layout (e.g. KF=一, JD=二)
 //   Voiced: consonant+L+vowel (e.g. ELK=が), T+L+T+vowel=ぱ行
@@ -644,6 +645,10 @@ fn handle_tut(c: u8) -> void {
         else { set_msg("no kana before cursor"); }
         return;
     }
+    // Backspace: with strokes pending ("k" / "kl" / "tlt") drop the
+    // last stroke instead of a character (4 → 3 → 2 → 1 keeps the
+    // first key until the whole stroke is gone).
+    if (c == 8u8 || c == 127u8) && g_tut >= 2 { g_tut = g_tut - 1; return; }
     // Backspace: delete previous character normally
     if c == 8u8 || c == 127u8 { delete_byte_before_cur(); return; }
     // Enter: insert newline
