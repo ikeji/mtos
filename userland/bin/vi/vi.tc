@@ -37,8 +37,9 @@
 //   Ctrl+J    — take the hiragana run before the cursor (up to 8
 //               chars), look up its suffixes longest-first in the
 //               embedded SKK dictionary and replace it with the first
-//               candidate. Candidates of shorter readings follow, and
-//               the whole reading in katakana comes last.
+//               candidate. Candidates of shorter readings follow, then
+//               katakana: the whole reading, then each shorter suffix
+//               (あんぱん → 版 アンパン ンパン パン ン).
 //   Ctrl+J / Space while converting — next candidate (wraps back to
 //               the plain reading)
 //   Backspace while converting — restore the reading
@@ -875,7 +876,9 @@ fn conv_commit() -> void {
 
 // Build the candidate list for the hiragana before the cursor:
 // dictionary hits for the longest suffix first, then shorter suffixes,
-// then the whole reading in katakana. False if there is no reading.
+// then katakana of the whole reading and of each shorter suffix (so
+// あんパン is reachable from あんぱん even though the dictionary only
+// knows ぱん = 版). False if there is no reading.
 fn conv_build() -> bool {
     conv_collect();
     if g_conv_rn == 0 { return false; }
@@ -886,7 +889,7 @@ fn conv_build() -> bool {
         if e != 0u32 {
             var ncand: i32 = peek8(e + 1u32) as i32;
             var ci: i32 = 0;
-            while ci < ncand && n < CONV_MAX_CANDS - 1 {
+            while ci < ncand && n < CONV_MAX_CANDS - g_conv_rn {
                 set(g_cand_addr, n, e);
                 set(g_cand_ci, n, ci);
                 set(g_cand_rl, n, k);
@@ -896,10 +899,19 @@ fn conv_build() -> bool {
         }
         k = k - 1;
     }
-    set(g_cand_addr, n, 0u32);
-    set(g_cand_ci, n, 0);
-    set(g_cand_rl, n, g_conv_rn);
-    g_conv_n = n + 1;
+    // Katakana, longest suffix first; a suffix starting with ー is
+    // skipped (ーメン from らーめん is never wanted).
+    k = g_conv_rn;
+    while k >= 1 {
+        if get(g_conv_rcp, g_conv_rn - k) != 0x30FC {
+            set(g_cand_addr, n, 0u32);
+            set(g_cand_ci, n, 0);
+            set(g_cand_rl, n, k);
+            n = n + 1;
+        }
+        k = k - 1;
+    }
+    g_conv_n = n;
     return true;
 }
 

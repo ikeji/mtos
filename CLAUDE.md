@@ -20,7 +20,8 @@ band-blit 経由で LCD に DOOM ロゴ + Doomguy を表示するまで到達。
 - 2026-11-01: **vi に単文節かな漢字変換** (`docs/task/vi_kanji_conv.md`)。
   TUT モード中の Ctrl-J でカーソル直前のひらがな列 (最大 8 文字) を
   長い接尾辞から順に辞書引きし、第 1 候補でその場置換。Ctrl-J / Space
-  で次候補 (短い読みの候補 → 読み全体のカタカナ → 元の読み、と循環)、
+  で次候補 (短い読みの候補 → カタカナ (読み全体 → 短い接尾辞) → 元の読み、
+  と循環)、
   Backspace で読みに戻す、他のキーで確定、`u` で丸ごと undo。TUT を
   抜けるのは ESC のみ (従来 Ctrl-J も抜けていた)。辞書は
   `userland/scripts/genvidict.py` が SKK-JISYO.M (送りなし 6.4k 見出し、
